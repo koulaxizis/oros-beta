@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Privacy-first creative toolkit for writers, musicians, photographers. No tracking, no ads, fully offline.">
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://useoros.com/">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>orOS — Artist's Operating System</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <script>
+    (function(){
+      var t = localStorage.getItem('oros-theme');
+      if(!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body class="landing-page">
+
+  <div id="oros-header"></div>
+  <script src="assets/js/components/header.js"></script>
+
+  <main class="hero">
+    <div class="container">
+      <img src="favicon.svg" alt="orOS" class="hero-logo">
+      <h1><b>or</b><i>OS</i></h1>
+      <p data-i18n="site_tagline">The artist's operating system</p>
+    </div>
+  </main>
+
+  <section class="container">
+    <p style="text-align:center;color:var(--text-secondary);" data-i18n="tools_intro">
+      Select a tool below. All applications work offline and respect your personal data.
+    </p>
+
+    <div class="tools-grid">
+      <a href="editor.html" class="tool-card">
+        <div class="tool-icon">✏️</div>
+        <div class="tool-name" data-i18n="editor_name">Writer</div>
+        <div class="tool-desc" data-i18n="editor_desc">Simple text editor with autosave</div>
+      </a>
+    </div>
+  </section>
+
+  <div id="oros-footer"></div>
+  <script src="assets/js/components/footer.js"></script>
+
+  <script src="assets/js/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
