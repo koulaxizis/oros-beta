@@ -11,7 +11,7 @@
   mount.innerHTML =
     '<footer class="footer">' +
       '<div class="footer-inner">' +
-        '<div class="footer-text" data-i18n="footer_text">Open Source · No Tracking · No Ads · Privacy First</div>' +
+        '<div class="footer-text" data-i18n="footer_privacy_badge">Open Source · No Tracking · No Ads · Privacy First</div>' +
         '<div class="footer-credits"></div>' +
       '</div>' +
     '</footer>' +
