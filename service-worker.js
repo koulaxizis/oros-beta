@@ -1,21 +1,21 @@
-const CACHE_NAME = 'oros-v5';
+const CACHE_NAME = 'oros-beta-v5';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/editor.html',
-  '/assets/css/style.css',
-  '/assets/js/main.js',
-  '/assets/js/editor.js',
-  '/assets/js/translations.json',
-  '/assets/js/components/header.js',
-  '/assets/js/components/footer.js',
-  '/assets/fonts/nunito-regular.woff2',
-  '/assets/fonts/nunito-medium.woff2',
-  '/assets/fonts/nunito-semibold.woff2',
-  '/assets/fonts/nunito-bold.woff2',
-  '/assets/fonts/nunito-extrabold.woff2',
-  '/favicon.svg',
-  '/manifest.json'
+  '/oros-beta/',
+  '/oros-beta/index.html',
+  '/oros-beta/editor.html',
+  '/oros-beta/assets/css/style.css',
+  '/oros-beta/assets/js/main.js',
+  '/oros-beta/assets/js/editor.js',
+  '/oros-beta/assets/js/translations.json',
+  '/oros-beta/assets/js/components/header.js',
+  '/oros-beta/assets/js/components/footer.js',
+  '/oros-beta/assets/fonts/nunito-regular.woff2',
+  '/oros-beta/assets/fonts/nunito-medium.woff2',
+  '/oros-beta/assets/fonts/nunito-semibold.woff2',
+  '/oros-beta/assets/fonts/nunito-bold.woff2',
+  '/oros-beta/assets/fonts/nunito-extrabold.woff2',
+  '/oros-beta/favicon.svg',
+  '/oros-beta/manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
