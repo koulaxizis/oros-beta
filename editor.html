@@ -13,37 +13,24 @@
 
 <div id="oros-header"></div>
 
-<!-- Unified Toolbar (single bar, top) -->
+<!-- Unified Toolbar — THREE-GROUP LAYOUT -->
 <div class="main-toolbar">
-  <!-- Format group (toggleable via Settings) -->
-  <div class="toolbar-group" id="quick-format-toolbar">
-    <button class="fmt-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold">B</button>
-    <button class="fmt-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic">I</button>
-    <button class="fmt-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline">U</button>
-    <div class="toolbar-divider"></div>
-    <button class="fmt-btn" data-block="H1" data-i18n-tooltip="toolbar_h1" title="Heading 1">#</button>
-    <button class="fmt-btn" data-block="H2" data-i18n-tooltip="toolbar_h2" title="Heading 2">##</button>
-    <button class="fmt-btn" data-block="H3" data-i18n-tooltip="toolbar_h3" title="Heading 3">###</button>
-    <div class="toolbar-divider"></div>
-    <button class="fmt-btn" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet List">•</button>
-    <button class="fmt-btn" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered List">1.</button>
-    <div class="toolbar-divider"></div>
-  </div>
-  <!-- File actions -->
-  <div class="toolbar-group">
-    <button id="btn-save" class="action-btn primary-btn" data-i18n-tooltip="tooltip_save">
-      <span class="icon">💾</span>
+  <!-- File Actions — LEFT -->
+  <div class="toolbar-group toolbar-left">
+    <button id="btn-save" class="action-btn primary-btn" data-i18n-tooltip="tooltip_save" title="Save">
+      <svg class="action-icon" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2l4 4v6H4V6L8 2zm-4 9h8v-5l-4-4-4 4v5z"/></svg>
     </button>
-    <button id="btn-open" class="action-btn" data-i18n-tooltip="tooltip_open">
-      <span class="icon">📂</span>
+    <button id="btn-open" class="action-btn" data-i18n-tooltip="tooltip_open" title="Open file">
+      <svg class="action-icon" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 4h5l2 2h5v8H2V4zm2 2v6h8V6h-4L7 4H4v2z"/></svg>
     </button>
     <input type="file" id="file-input" accept=".txt,.md,.markdown" style="display:none;" aria-hidden="true"/>
-    <button id="btn-clear" class="action-btn warning-btn" data-i18n-tooltip="tooltip_clear">
-      <span class="icon">🗑</span>
+    <button id="btn-clear" class="action-btn warning-btn" data-i18n-tooltip="tooltip_clear" title="Clear all content">
+      <svg class="action-icon" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M6 2h4l1 2h4v2H1V4h4l1-2zm-1 5h2v6H5V7zm6 0h2v6h-2V7zM4 10h8v2H4v-2z"/></svg>
     </button>
     <div class="dropdown-container">
-      <button id="btn-export" class="action-btn dropdown-trigger" data-i18n-tooltip="tooltip_export">
-        <span class="icon">📥</span>
+      <button id="btn-export" class="action-btn dropdown-trigger" data-i18n-tooltip="tooltip_export" title="Export document">
+        <svg class="action-icon" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2v6l2-2 3 3-5 5-5-5 3-3 2 2V2h2z"/><path d="M2 12h12v2H2v-2z"/></svg>
+        <span class="dropdown-arrow">▼</span>
       </button>
       <div class="dropdown-menu" id="export-dropdown">
         <button data-format="md" data-i18n="export_md">Markdown (.md)</button>
@@ -55,15 +42,58 @@
     </div>
     <div class="toolbar-divider"></div>
   </div>
-  <!-- Tools -->
-  <div class="toolbar-group">
-    <button id="btn-goal" class="tool-btn" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker">🎯</button>
-    <button id="btn-outline" class="tool-btn" data-i18n-tooltip="tooltip_outline" title="Document outline">📑</button>
-    <button id="btn-metadata" class="tool-btn" data-i18n-tooltip="tooltip_metadata" title="Document metadata">ℹ️</button>
-    <button id="btn-find" class="tool-btn" data-i18n-tooltip="tooltip_find" title="Find and replace">🔍</button>
-    <button id="btn-wordfreq" class="tool-btn" data-i18n-tooltip="word_freq_title" title="Word Frequency">📊</button>
+  
+  <!-- Format Group — CENTER -->
+  <div class="toolbar-group toolbar-center" id="quick-format-toolbar">
+    <button class="fmt-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M4 2h5a4 4 0 010 8H4V2zm0 6h5a2 2 0 000-4H4v4z"/></svg>
+    </button>
+    <button class="fmt-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3 2h3v2h-1l-3 8H4v2H1v-2h1l3-8H4V2z"/></svg>
+    </button>
+    <button class="fmt-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M4 1v6a4 4 0 008 0V1h2v6a6 6 0 01-12 0V1h2zm-2 13h12v-2H2v2z"/></svg>
+    </button>
+    <div class="toolbar-divider"></div>
+    <button class="fmt-btn" data-block="H1" data-i18n-tooltip="toolbar_h1" title="Heading 1">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M2 2h2v6h3V2h2v12H7V8H4v6H2V2z"/></svg>
+    </button>
+    <button class="fmt-btn" data-block="H2" data-i18n-tooltip="toolbar_h2" title="Heading 2">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M2 2h2v4h3V2h2v12H7V8H4v6H2V2zm8 6h4v2h-4v2h3v2h-3v2h4v2h-6V8z"/></svg>
+    </button>
+    <button class="fmt-btn" data-block="H3" data-i18n-tooltip="toolbar_h3" title="Heading 3">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M2 2h2v4h3V2h2v12H7V8H4v6H2V2zm9 5h3v2h-2v1h2v2h-2v1h2v2h-3v-8z"/></svg>
+    </button>
+    <div class="toolbar-divider"></div>
+    <button class="fmt-btn" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet List">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="4" cy="4" r="2"/><rect x="7" y="2" width="7" height="2"/><circle cx="4" cy="8" r="2"/><rect x="7" y="6" width="7" height="2"/><circle cx="4" cy="12" r="2"/><rect x="7" y="10" width="7" height="2"/></svg>
+    </button>
+    <button class="fmt-btn" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered List">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3 3h2v2H3v1h2v2H3v1h2v2H2V2h1zm5 2h5v2H8V5zm0 4h5v2H8V9zm0 4h3v2H8v-2z"/></svg>
+    </button>
+    <div class="toolbar-divider"></div>
   </div>
-  <!-- Save indicator (right side) -->
+  
+  <!-- Tools Icons — RIGHT -->
+  <div class="toolbar-group toolbar-right">
+    <button id="btn-goal" class="tool-btn" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker">
+      <svg class="tool-icon-svg" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 2l2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1 2-4z"/></svg>
+    </button>
+    <button id="btn-outline" class="tool-btn" data-i18n-tooltip="tooltip_outline" title="Document outline">
+      <svg class="tool-icon-svg" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 2h12v12H2V2zm2 2v8h8V4H4zm2 2h4v1H6V6zm0 3h4v1H6V9zm0 3h4v1H6v-1z"/></svg>
+    </button>
+    <button id="btn-metadata" class="tool-btn" data-i18n-tooltip="tooltip_metadata" title="Document metadata">
+      <svg class="tool-icon-svg" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M1 2h12v12H1V2zm2 2v8h8V4H3zm2 2h4v1H5V6zm0 3h4v1H5V9zm0 3h4v1H5v-1zm8-7h1v1h-1V6zm0 2h1v1h-1V8zm0 2h1v1h-1v-1z"/></svg>
+    </button>
+    <button id="btn-find" class="tool-btn" data-i18n-tooltip="tooltip_find" title="Find and replace">
+      <svg class="tool-icon-svg" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M7 2a5 5 0 014 8l4 4-2 2-4-4A5 5 0 117 2zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>
+    </button>
+    <button id="btn-wordfreq" class="tool-btn" data-i18n-tooltip="word_freq_title" title="Word Frequency">
+      <svg class="tool-icon-svg" viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M2 12h2V8H2v4zm4 0h2V4H6v8zm4 0h2V6h-2v6zm4 0h2v-2h-2v2z"/></svg>
+    </button>
+  </div>
+  
+  <!-- Save indicator — RIGHTmost -->
   <span id="save-indicator" class="save-indicator">—</span>
 </div>
 
@@ -76,7 +106,7 @@
 <!-- Reading Progress Bar -->
 <div id="reading-progress-bar" class="reading-progress"></div>
 
-<!-- Goal Progress Bar -->
+<!-- Goal Bar -->
 <div id="goal-bar" class="goal-bar" style="display:none;">
 <select id="goal-unit">
 <option value="words" data-i18n="goal_unit_words">Words</option>
@@ -86,7 +116,7 @@
 <input type="number" id="goal-target-input" min="1" placeholder="0" data-i18n-placeholder="goal_target_placeholder" aria-label="Target number"/>
 <label class="goal-lock-label"><input type="checkbox" id="goal-lock"/><span data-i18n="goal_lock_label">Lock</span></label>
 <button id="btn-set-goal" class="goal-action-btn" data-i18n-tooltip="btn_set_goal_tt" title="Set">✓</button>
-<button id="btn-clear-goal" class="goal-action-btn" data-i18n-tooltip="btn_clear_goal_tt" title="Clear goal">🗑</button>
+<button id="btn-clear-goal" class="goal-action-btn" data-i18n-tooltip="btn_clear_goal_tt" title="Clear goal">✕</button>
 <button id="btn-close-goal" class="goal-action-btn" data-i18n-tooltip="btn_close_tt" title="Close">×</button>
 </div>
 
