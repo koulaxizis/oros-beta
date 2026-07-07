@@ -110,14 +110,17 @@
   function formatNumber(num) {
     return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString();
   }
-  function getTextContent() { return richEditor.innerText || ''; }
+  function getTextContent() {
+    var text = richEditor.innerText || '';
+    return text.replace(/\n$/, '');
+  }
 
   // ========== SAVE INDICATOR UPDATE ==========
   function updateSaveIndicator() {
     if (!saveIndicator) return;
     var trans = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[getCurrentLang()]) || {};
     if (!lastSavedTime) {
-      saveIndicator.textContent = trans.text_not_saved || '—';
+      saveIndicator.textContent = trans.text_not_saved || '\u2014';
       return;
     }
     var diff = Math.floor((Date.now() - lastSavedTime) / 1000);
@@ -348,8 +351,8 @@
     var sentences = text.split(/[.!?…]+(?:\s|$)/).filter(function(s) {
       return s.trim().length > 0;
     }).length;
-    var readMin = Math.max(1, Math.ceil(words / 225));
-    var speakMin = Math.max(1, Math.ceil(words / 140));
+    var readMin = Math.ceil(words / 225) || 0;
+    var speakMin = Math.ceil(words / 140) || 0;
 
     if (statsDefaultEl) {
       var arrow = statsExpanded ? ' \u25B4' : ' \u25BE';
