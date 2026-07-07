@@ -103,7 +103,7 @@ body.landing-page {
   overflow: hidden;
 }
 
-/* ---------- UNIFIED TOOLBAR (Main toolbar) ========== */
+/* ========== UNIFIED TOOLBAR (Main toolbar) ========== */
 .main-toolbar {
   display: flex;
   justify-content: space-between;
@@ -124,8 +124,12 @@ body.landing-page {
   gap: 0.25rem;
 }
 
+.toolbar-left { order: 1; }
+.toolbar-center { order: 2; flex: 1; justify-content: center; }
+.toolbar-right { order: 3; }
+
 .save-indicator {
-  margin-left: auto;
+  margin-right: auto;
   font-size: 0.7rem;
   color: var(--text-secondary);
   font-weight: 600;
@@ -192,6 +196,12 @@ body.landing-page {
   color: var(--accent);
 }
 
+.action-icon {
+  display: block;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
 .primary-btn {
   background: var(--accent);
   color: white;
@@ -223,6 +233,9 @@ body.landing-page {
 .dropdown-trigger {
   min-width: 50px;
   padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .dropdown-menu {
@@ -261,6 +274,16 @@ body.landing-page {
   color: white;
 }
 
+.dropdown-arrow {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-left: 0.15rem;
+}
+
+.action-btn:hover .dropdown-arrow {
+  color: inherit;
+}
+
 /* ========== TOOL BUTTONS (Tools icons) ========== */
 .tool-btn {
   display: flex;
@@ -279,6 +302,13 @@ body.landing-page {
 .tool-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.tool-icon-svg {
+  fill: currentColor;
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 /* ========== Rich Text Editor (both class AND id selectors) ---------- */
