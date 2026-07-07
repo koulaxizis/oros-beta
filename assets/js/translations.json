@@ -111,7 +111,12 @@
     "beta_live_link": "Live Site",
     "shortcuts_info_note": "Formatting is also available via Alt + Right-click context menu.",
     "footer_credits_link": "Christos Koulaxizis",
-    "footer_credits_suffix": ". Built with ♥ for artists."
+    "footer_credits_suffix": ". Built with ♥ for artists.",
+    "footer_privacy_badge": "Open Source · No Tracking · No Ads · Privacy First",
+    "site_tagline": "The artist's operating system",
+    "tools_intro": "Select a tool below. All applications work offline and respect your personal data.",
+    "editor_name": "Writer",
+    "editor_desc": "Simple text editor with autosave"
   },
   "el": {
     "editor_placeholder": "Ξεκίνα να γράφεις...",
@@ -225,7 +230,12 @@
     "beta_live_link": "Live Site",
     "shortcuts_info_note": "Η μορφοποίηση είναι επίσης διαθέσιμη μέσω Alt + Δεξί click.",
     "footer_credits_link": "Χρήστος Κουλαξίζης",
-    "footer_credits_suffix": ". Φτιαγμένο με ♥ για καλλιτέχνες."
+    "footer_credits_suffix": ". Φτιαγμένο με ♥ για καλλιτέχνες.",
+    "footer_privacy_badge": "Ανοιχτός Κώδικας · Χωρίς Παρακολούθηση · Χωρίς Διαφημίσεις · Απόρρητο Πρώτα",
+    "site_tagline": "Το λειτουργικό σύστημα του καλλιτέχνη",
+    "tools_intro": "Επιλέξτε ένα εργαλείο παρακάτω. Όλες οι εφαρμογές δουλεύουν offline και σέβονται τα προσωπικά σας δεδομένα.",
+    "editor_name": "Συγγραφέας",
+    "editor_desc": "Απλός επεξεργαστής κειμένου με αυτόματη αποθήκευση"
   },
   "es": {
     "editor_placeholder": "Empieza a escribir...",
@@ -339,9 +349,14 @@
     "beta_live_link": "Sitio en vivo",
     "shortcuts_info_note": "El formato también está disponible mediante Alt + Clic derecho.",
     "footer_credits_link": "Christos Koulaxizis",
-    "footer_credits_suffix": ". Hecho con ♥ para artistas."
+    "footer_credits_suffix": ". Hecho con ♥ para artistas.",
+    "footer_privacy_badge": "Código Abierto · Sin Rastreo · Sin Anuncios · Privacidad Primero",
+    "site_tagline": "El sistema operativo del artista",
+    "tools_intro": "Selecciona una herramienta abajo. Todas las aplicaciones funcionan sin conexión y respetan tus datos personales.",
+    "editor_name": "Escritor",
+    "editor_desc": "Editor de texto simple con autoguardado"
   },
-  "it": {
+    "it": {
     "editor_placeholder": "Inizia a scrivere...",
     "settings": "Impostazioni",
     "tab_global": "Generali",
@@ -453,7 +468,12 @@
     "beta_live_link": "Sito live",
     "shortcuts_info_note": "La formattazione è disponibile anche tramite Alt + Clic destro.",
     "footer_credits_link": "Christos Koulaxizis",
-    "footer_credits_suffix": ". Costruito con ♥ per artisti."
+    "footer_credits_suffix": ". Costruito con ♥ per artisti.",
+    "footer_privacy_badge": "Codice Aperto · Nessun Tracciamento · Nessuna Pubblicità · Privacy Prima",
+    "site_tagline": "Il sistema operativo dell'artista",
+    "tools_intro": "Seleziona uno strumento qui sotto. Tutte le applicazioni funzionano offline e rispettano i tuoi dati personali.",
+    "editor_name": "Scrittore",
+    "editor_desc": "Editor di testo semplice con salvataggio automatico"
   },
   "fr": {
     "editor_placeholder": "Commencez à écrire...",
@@ -567,7 +587,12 @@
     "beta_live_link": "Site en direct",
     "shortcuts_info_note": "Le formatage est également disponible via Alt + Clic droit.",
     "footer_credits_link": "Christos Koulaxizis",
-    "footer_credits_suffix": ". Créé avec ♥ pour les artistes."
+    "footer_credits_suffix": ". Créé avec ♥ pour les artistes.",
+    "footer_privacy_badge": "Code Ouvert · Sans Suivi · Sans Publicité · Confidentialité D'abord",
+    "site_tagline": "Le système d'exploitation de l'artiste",
+    "tools_intro": "Sélectionnez un outil ci-dessous. Toutes les applications fonctionnent hors ligne et respectent vos données personnelles.",
+    "editor_name": "Écrivain",
+    "editor_desc": "Éditeur de texte simple avec sauvegarde automatique"
   },
   "de": {
     "editor_placeholder": "Schreib los...",
@@ -681,6 +706,11 @@
     "beta_live_link": "Live-Seite",
     "shortcuts_info_note": "Formatierung ist auch über Alt + Rechtsklick verfügbar.",
     "footer_credits_link": "Christos Koulaxizis",
-    "footer_credits_suffix": ". Mit ♥ für Künstler erstellt."
+    "footer_credits_suffix": ". Mit ♥ für Künstler erstellt.",
+    "footer_privacy_badge": "Open Source · Kein Tracking · Keine Werbung · Datenschutz Zuerst",
+    "site_tagline": "Das Betriebssystem des Künstlers",
+    "tools_intro": "Wählen Sie unten ein Werkzeug aus. Alle Anwendungen funktionieren offline und respektieren Ihre persönlichen Daten.",
+    "editor_name": "Schreiber",
+    "editor_desc": "Einfacher Texteditor mit automatischem Speichern"
   }
 }
