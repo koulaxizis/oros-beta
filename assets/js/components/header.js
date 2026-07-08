@@ -3,7 +3,7 @@
     var headerEl = document.getElementById('oros-header');
     if (!headerEl) return;
 
-    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.5-beta';
+    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.6.1';
     var channel = (window.OROS_CONFIG && window.OROS_CONFIG.channel) || 'beta';
 
     headerEl.innerHTML =
@@ -16,6 +16,7 @@
             '</a>' +
             '<span class="version-badge">' + version + '</span>' +
             (channel === 'beta' ? '<span class="channel-badge beta">BETA</span>' : '') +
+			(channel === 'prod' ? '<span class="channel-badge beta">PROD</span>' : '') +
           '</div>' +
           '<div class="header-right">' +
             '<select id="language-select" class="lang-select" aria-label="Language"></select>' +
