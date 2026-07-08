@@ -2,19 +2,21 @@
   "name": "orOS Writer",
   "short_name": "orOS",
   "description": "Privacy-first rich text editor. Works offline. No tracking.",
-  "start_url": "/oros-beta/editor.html",
-  "scope": "/oros-beta/",
+  "start_url": "editor.html",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1b1a18",
-  "theme_color": "#1b1a18",
-  "lang": "en",
+  "theme_color": "#c8a96e",
   "icons": [
     {
-      "src": "/oros-beta/favicon.svg",
+      "src": "favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
 }
