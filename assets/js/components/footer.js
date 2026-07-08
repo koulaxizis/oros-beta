@@ -10,9 +10,6 @@
       '<footer class="footer">' +
         '<div class="footer-content">' +
           '<div class="footer-left">' +
-            '<span class="footer-version">V' + version + '</span>' +
-          '</div>' +
-          '<div class="footer-center">' +
             '<span class="footer-credits">\u00A9 2026 <a href="https://koulaxizis.gr" target="_blank" rel="noopener" class="footer-link">Christos Koulaxizis</a></span>' +
           '</div>' +
           '<div class="footer-right">' +
