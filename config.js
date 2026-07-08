@@ -4,6 +4,6 @@
 
 window.OROS_CONFIG = {
   baseHref: '/oros-beta/',
-  version: '0.6.1',
-  channel: 'prod'
+  version: '0.6.2',
+  channel: 'beta'
 };

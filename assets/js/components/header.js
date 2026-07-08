@@ -3,7 +3,7 @@
     var headerEl = document.getElementById('oros-header');
     if (!headerEl) return;
 
-    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.6.1';
+    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.6.2';
     var channel = (window.OROS_CONFIG && window.OROS_CONFIG.channel) || 'beta';
 
     headerEl.innerHTML =
