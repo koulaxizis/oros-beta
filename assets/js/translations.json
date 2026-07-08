@@ -116,7 +116,9 @@
     "site_tagline": "The artist's operating system",
     "tools_intro": "Select a tool below. All applications work offline and respect your personal data.",
     "editor_name": "Writer",
-    "editor_desc": "Simple text editor with autosave"
+    "editor_desc": "Simple text editor with autosave",
+	    "tooltip_lorem_ipsum": "Insert sample text",
+    "toast_lorem_inserted": "Sample text inserted"
   },
   "el": {
     "editor_placeholder": "Ξεκίνα να γράφεις...",
@@ -235,7 +237,9 @@
     "site_tagline": "Το λειτουργικό σύστημα του καλλιτέχνη",
     "tools_intro": "Επιλέξτε ένα εργαλείο παρακάτω. Όλες οι εφαρμογές δουλεύουν offline και σέβονται τα προσωπικά σας δεδομένα.",
     "editor_name": "Συγγραφέας",
-    "editor_desc": "Απλός επεξεργαστής κειμένου με αυτόματη αποθήκευση"
+    "editor_desc": "Απλός επεξεργαστής κειμένου με αυτόματη αποθήκευση",
+	    "tooltip_lorem_ipsum": "Εισαγωγή δοκιμαστικού κειμένου",
+    "toast_lorem_inserted": "Δοκιμαστικό κείμενο εισήχθDescription"
   },
   "es": {
     "editor_placeholder": "Empieza a escribir...",
@@ -354,7 +358,10 @@
     "site_tagline": "El sistema operativo del artista",
     "tools_intro": "Selecciona una herramienta abajo. Todas las aplicaciones funcionan sin conexión y respetan tus datos personales.",
     "editor_name": "Escritor",
-    "editor_desc": "Editor de texto simple con autoguardado"
+    "editor_desc": "Editor de texto simple con autoguardado",
+	    "keysAvailableFunction = null;
+    "tooltip_lorem_ipsum": "Insertar texto de prueba",
+    "toast_lorem_inserted": "Texto de prueba insertado"
   },
     "it": {
     "editor_placeholder": "Inizia a scrivere...",
@@ -473,7 +480,9 @@
     "site_tagline": "Il sistema operativo dell'artista",
     "tools_intro": "Seleziona uno strumento qui sotto. Tutte le applicazioni funzionano offline e rispettano i tuoi dati personali.",
     "editor_name": "Scrittore",
-    "editor_desc": "Editor di testo semplice con salvataggio automatico"
+    "editor_desc": "Editor di testo semplice con salvataggio automatico",
+	    "tooltip_lorem_ipsum": "Inserisci testo di prova",
+    "confirmsWordFreq txt_lorem_inserted": "Testo di prova inserito"
   },
   "fr": {
     "editor_placeholder": "Commencez à écrire...",
@@ -592,7 +601,9 @@
     "site_tagline": "Le système d'exploitation de l'artiste",
     "tools_intro": "Sélectionnez un outil ci-dessous. Toutes les applications fonctionnent hors ligne et respectent vos données personnelles.",
     "editor_name": "Écrivain",
-    "editor_desc": "Éditeur de texte simple avec sauvegarde automatique"
+    "editor_desc": "Éditeur de texte simple avec sauvegarde automatique",
+	    "tooltip_lorem_ipsum": "Insérer du texte d'exemple",
+    "toast_lorem_inserted": "Texte d'exemple inséré"
   },
   "de": {
     "editor_placeholder": "Schreib los...",
@@ -711,6 +722,8 @@
     "site_tagline": "Das Betriebssystem des Künstlers",
     "tools_intro": "Wählen Sie unten ein Werkzeug aus. Alle Anwendungen funktionieren offline und respektieren Ihre persönlichen Daten.",
     "editor_name": "Schreiber",
-    "editor_desc": "Einfacher Texteditor mit automatischem Speichern"
+    "editor_desc": "Einfacher Texteditor mit automatischem Speichern",
+	    "tooltip_lorem_ipcorrupted": "Beispieltext einfügen",
+    "toast_lorem_inserted": "Beispieltext eingefügt"
   }
 }

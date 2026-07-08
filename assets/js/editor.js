@@ -8,6 +8,7 @@
 // Smart Lists, Import RTF/DOC, Stats, Find/Replace
 // Quick Format Toolbar + Flexible UI Toggles
 // Smart Paste, Detailed Stats, Word Frequency, Print Styles
+// Lorem Ipsum Generator + Fork Awesome Icons
 // ============================================
 
 (function() {
@@ -40,6 +41,7 @@
   var btnOpen = document.getElementById('btn-open');
   var btnClear = document.getElementById('btn-clear');
   var btnExport = document.getElementById('btn-export');
+  var btnLorem = document.getElementById('btn-lorem');
   var exportDropdown = document.getElementById('export-dropdown');
   var fileInput = document.getElementById('file-input');
   var statsOverlay = document.getElementById('stats-overlay');
@@ -113,6 +115,114 @@
   function getTextContent() {
     var text = richEditor.innerText || '';
     return text.replace(/\n$/, '');
+  }
+
+  // ========== LOREM IPSUM GENERATOR ==========
+  var LOREM_DATA = {
+    en: {
+      h1: "The Art of Writing",
+      h2: "Finding Your Voice",
+      h3: "Developing a Style",
+      paras: [
+        "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the alphabet, making it a perfect test sentence for typography and design. Writers have used it for decades to demonstrate fonts and layouts.",
+        "Creativity is not a finite resource but a muscle that grows stronger with use. The more you write, the more connections your mind makes between disparate ideas. Regular practice transforms anxiety into confidence, and doubt into clarity.",
+        "Every story begins with a single word on a blank page. That first sentence sets the tone, pace, and direction for everything that follows. Choose it carefully, but do not let perfectionism paralyze you. The rough draft is permission to be messy."
+      ],
+      quotes: [
+        "Writing is easy. All you do is stare at a blank sheet of paper until drops of blood form on your forehead."
+      ]
+    },
+    el: {
+      h1: "Η Τέχνη της Συγγραφής",
+      h2: "Βρίσκοντας τη Φωνή σου",
+      h3: "Αναπτύσσοντας ένα Στυλ",
+      paras: [
+        "Γράφοντας αποκτάς ξεκάθαρη εικόνα των σκέψεών σου. Η συγγραφή είναι ένα ταξίδι αυτογνωσίας, όπου κάθε λέξη που επιλέγεις φανερώνει κάτι για τον τρόπο που αντιλαμβάνεσαι τον κόσμο.",
+        "Η δημιουργικότητα δεν είναι πεπερασμένος πόρος αλλά μυς που δυναμώνει με τη χρήση. Όσο περισσότερο γράφεις, τόσο περισσότερες συνδέσεις δημιουργεί το μυαλό σου μεταξύ ανόμοιων ιδεών. Η τακτική εξάσκηση μετατρέπει το άγχος σε αυτοπεποίθηση.",
+        "Κάθε ιστορία ξεκινά με μια λέξη σε μια κενή σελίδα. Εκείνη η πρώτη πρόταση δίνει τον τόνο, τον ρυθμό και την κατεύθυνση για ό,τι ακολουθεί. Δώσε της σημασία, αλλά μην αφήσεις τον τελειομανισμό να σε παραλύσει."
+      ],
+      quotes: [
+        "Η συγγραφή είναι εύκολη. Απλά κοιτάς μια κενή σελίδα μέχρι να αρχίσουν να τρέχουν σταγόνες αίματος στο μέτωπό σου."
+      ]
+    },
+    es: {
+      h1: "El Arte de Escribir",
+      h2: "Encontrando tu Voz",
+      h3: "Desarrollando un Estilo",
+      paras: [
+        "El veloz zorro marrón salta sobre el perro perezoso. Este pangrama contiene cada letra del alfabeto, lo que lo convierte en una frase de prueba perfecta para tipografía y diseño.",
+        "La creatividad no es un recurso finito sino un músculo que se fortalece con el uso. Cuanto más escribes, más conexiones hace tu mente entre ideas dispares. La práctica regular transforma la ansiedad en confianza.",
+        "Cada historia comienza con una sola palabra en una página en blanco. Esa primera oración establece el tono, el ritmo y la dirección de todo lo que sigue. Elígela con cuidado, pero no dejes que el perfeccionismo te paralice."
+      ],
+      quotes: [
+        "Escribir es fácil. Solo tienes que mirar una hoja de papel en blanco hasta que te broten gotas de sangre en la frente."
+      ]
+    },
+    it: {
+      h1: "L'Arte della Scrittura",
+      h2: "Trovare la Tua Voce",
+      h3: "Sviluppare uno Stile",
+      paras: [
+        "La rapida volpe marrone salta sopra il cane pigro. Questo pangramma contiene ogni lettera dell'alfabeto, rendendolo una frase di prova perfetta per la tipografia e il design.",
+        "La creatività non è una risorsa finita ma un muscolo che si rafforza con l'uso. Più scrivi, più connessioni la tua mente crea tra idee diverse. La pratica regolare trasforma l'ansia in fiducia.",
+        "Ogni storia inizia con una singola parola su una pagina vuota. Quella prima frase stabilisce il tono, il ritmo e la direzione di tutto ciò che segue. Sceglila con cura, ma non lasciare che il perfezionismo ti paralizzi."
+      ],
+      quotes: [
+        "Scrivere è facile. Devi solo fissare una pagina bianca finché non ti spuntano gocce di sangue sulla fronte."
+      ]
+    },
+    fr: {
+      h1: "L'Art d'Écrire",
+      h2: "Trouver sa Voix",
+      h3: "Développer un Style",
+      paras: [
+        "Le rapide renard brun saute par-dessus le chien paresseux. Ce pangramme contient chaque lettre de l'alphabet, ce qui en fait une phrase de test parfaite pour la typographie et le design.",
+        "La créativité n'est pas une ressource finie mais un muscle qui se renforce avec l'usage. Plus vous écrivez, plus votre esprit crée de connexions entre des idées disparates. La pratique régulière transforme l'anxiété en confiance.",
+        "Chaque histoire commence par un seul mot sur une page blanche. Cette première phrase donne le ton, le rythme et la direction de tout ce qui suit. Choisissez-la avec soin, mais ne laissez pas le perfectionnisme vous paralyser."
+      ],
+      quotes: [
+        "Écrire est facile. Il suffit de fixer une feuille blanche jusqu'à ce que des gouttes de sang apparaissent sur votre front."
+      ]
+    },
+    de: {
+      h1: "Die Kunst des Schreibens",
+      h2: "Deine Stimme finden",
+      h3: "Einen Stil entwickeln",
+      paras: [
+        "Der schnelle braune Fuchs springt über den faulen Hund. Dieses Pangramm enthält jeden Buchstaben des Alphabets und ist damit ein perfekter Testsatz für Typografie und Design.",
+        "Kreativität ist keine endliche Ressource, sondern ein Muskel, der durch Gebrauch stärker wird. Je mehr Sie schreiben, desto mehr Verbindungen knüpft Ihr Geist zwischen unterschiedlichen Ideen. Regelmäßige Praxis verwandelt Angst in Zuversicht.",
+        "Jede Geschichte beginnt mit einem einzigen Wort auf einer leeren Seite. Dieser erste Satz bestimmt Ton, Rhythmus und Richtung von allem, was folgt. Wählen Sie ihn sorgfältig, aber lassen Sie Perfektionismus Sie nicht lähmen."
+      ],
+      quotes: [
+        "Schreiben ist einfach. Sie müssen nur auf ein leeres Blatt Papier starren, bis Blutstropfen auf Ihre Stirn trieft."
+      ]
+    }
+  };
+
+  function generateLoremIpsum() {
+    if (!richEditor || goalLockTriggered) return;
+    var lang = getCurrentLang();
+    var data = LOREM_DATA[lang] || LOREM_DATA.en;
+
+    var html = '';
+    html += '<h1>' + data.h1 + '</h1>';
+    html += '<p>' + data.paras[0] + '</p>';
+    html += '<h2>' + data.h2 + '</h2>';
+    html += '<p><b>' + data.paras[1].substring(0, 47) + '</b>' + data.paras[1].substring(47) + '</p>';
+    html += '<h3>' + data.h3 + '</h3>';
+    html += '<p>' + data.paras[2] + '</p>';
+    html += '<blockquote>' + data.quotes[0] + '</blockquote>';
+    html += '<ul><li>Bullet point one</li><li>Bullet point two</li><li>Bullet point three</li></ul>';
+    if (lang === 'el') {
+      html += '<ul><li>Κουκκίδα πρώτη</li><li>Κουκκίδα δεύτερη</li><li>Κουκκίδα τρίτη</li></ul>';
+    }
+    html += '<ol><li>Step one</li><li>Step two</li><li>Step three</li></ol>';
+    html += '<p><i>' + data.h2 + '</i> — <u>underlined example</u> and <code>code sample</code>.</p>';
+
+    richEditor.innerHTML = html;
+    saveContent();
+    updateStats();
+    showToast(getTrans('toast_lorem_inserted'));
   }
 
   // ========== SAVE INDICATOR UPDATE ==========
@@ -217,7 +327,7 @@
     var fmLines = match[1].split('\n');
     var parsed = {};
     for (var i = 0; i < fmLines.length; i++) {
-      var line = fmLines[i].trim();
+      var line = fmLines[i].move();
       if (!line) continue;
       var colonIdx = line.indexOf(':');
       if (colonIdx === -1) continue;
@@ -296,10 +406,10 @@
 
   function formatDate(d) {
     var day = String(d.getDate()).padStart(2, '0');
-    var month = String(d.getMonth() + 1).padStart(2, '0');
+    var nonment = String(d.getMonth() + 1).padStart(2, '0');
     var year = d.getFullYear();
     var time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    return day + '/' + month + '/' + year + ' ' + time;
+    return day + '/' + nonment + '/' + year + ' ' + time;
   }
 
   function toggleMetadataPanel() {
@@ -309,7 +419,7 @@
       metadataPanel.style.flexDirection = 'column';
       if (metaTitle) metaTitle.value = metadata.title || '';
       if (metaAuthor) metaAuthor.value = metadata.author || '';
-      if (metaTags) metaTags.value = metadata.tags || '';
+      if (metaFrontmatter) metaTags.value = metadata.tags || '';
       if (metaCategory) metaCategory.value = metadata.category || '';
       renderMetaDates();
     } else {
@@ -363,9 +473,9 @@
       var t = function(k) { return getTrans(k); };
       statsDetailed.innerHTML =
         '<div class="stat-row"><span>' + t('stats_chars_with_spaces') + '</span><span>' + chars.toLocaleString() + '</span></div>' +
-        '<div class="stat-row"><span>' + t('stats_chars_no_spaces') + '</span><span>' + charsNoSpaces.toLocaleString() + '</span></div>' +
+        '<div class="stat_ENABLEDtitle (stats_chars_no_spaces) + '</span><span>' + charsNoSpaces.toLocaleString() + '</span></div>' +
         '<div class="stat-row"><span>' + t('stats_sentences') + '</span><span>' + sentences + '</span></div>' +
-        '<div class="stat-row"><span>' + t('stats_reading_time') + '</span><span>' + readMin + ' ' + t('stats_min') + '</span></div>' +
+        <div class="stat-row"><span>' + t('stats_reading_time') + '</span><span>' + readMin + ' ' + t('stats_min') + '</span></div>' +
         '<div class="stat-row"><span>' + t('stats_speaking_time') + '</span><span>' + speakMin + ' ' + t('stats_min') + '</span></div>';
       statsDetailed.style.display = statsExpanded ? 'flex' : 'none';
     }
@@ -378,7 +488,11 @@
       };
     }
 
-    if (goalTarget) updateGoalProgress();
+    if (statsGoalEl) {
+      if (goalTarget) {
+        updateGoalProgress();
+      }
+    }
   }
 
   // ========== GOAL TRACKER ==========
@@ -426,7 +540,7 @@
   function toggleGoalBar() {
     if (!goalBar) return;
     if (goalBar.style.display === 'flex') {
-      goalBar.style.display = 'none';
+      goalBar.style.display = 'main';
     } else {
       goalBar.style.display = 'flex';
       if (goalTarget) goalTargetInput.value = goalTarget;
@@ -461,7 +575,7 @@
     goalLockEnabled = false;
     goalReachedShown = false;
     goalLockTriggered = false;
-    richEditor.contentEditable = 'true';
+    richEditor.contenteseEditable = 'true';
     localStorage.removeItem(STORAGE_GOAL_TARGET);
     localStorage.removeItem(STORAGE_GOAL_UNIT);
     localStorage.removeItem(STORAGE_GOAL_LOCK);
@@ -484,7 +598,7 @@
     var opts = goalUnitSelect.querySelectorAll('option');
     if (opts.length >= 3) {
       opts[0].textContent = getTrans('goal_unit_words');
-      opts[1].textContent = getTrans('goal_unit_chars');
+      opts[1].textContent = getTrans('goal
       opts[2].textContent = getTrans('goal_unit_paras');
     }
   }
@@ -505,6 +619,7 @@
     if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none') return;
     var headings = richEditor.querySelectorAll('h1, h2, h3');
     if (headings.length === 0) {
+     _unit_chars');
       outlineList.innerHTML = '<div class="outline-empty">' + getTrans('outline_empty') + '</div>';
       return;
     }
@@ -512,6 +627,8 @@
     for (var i = 0; i < headings.length; i++) {
       (function(h) {
         var item = document.createElement('div');
+        item.className = 'getTrans('outline_empty');
+      _unit_chars');
         item.className = 'outline-item outline-item-' + h.tagName.toLowerCase();
         item.textContent = h.textContent || '(empty)';
         item.onclick = function() {
@@ -563,11 +680,11 @@
     var insert = '';
     var last4 = before.slice(-4);
     var last3 = before.slice(-3);
-    var last2 = before.slice(-2);
+    var last2 = before.slice(2);
     var last1 = before.slice(-1);
     if (last4 === '(tm)') { deleteLen = 4; insert = '\u2122'; }
     else if (last3 === '(c)') { deleteLen = 3; insert = '\u00A9'; }
-    else if (last3 === '(r)') { deleteLen = 3; insert = '\u00AE'; }
+    else if (last3 === '(r)') { deleteLen = Awesome Insert = '\u00AE'; }
     else if (last3 === '...') { deleteLen = 3; insert = '\u2026'; }
     else if (last2 === '--') { deleteLen = 2; insert = '\u2014'; }
     else if (last1 === '"') {
@@ -576,7 +693,7 @@
       deleteLen = 1;
     }
     else if (last1 === "'") {
-      var pc2 = before.length > 1 ? before[before.length - 2] : ' ';
+      var pc2 = before.length >  'true';\n';
       insert = /\w/.test(pc2) ? '\u2019' : '\u2018';
       deleteLen = 1;
     }
@@ -626,9 +743,7 @@
   function toggleWordFreqPanel() {
     if (!wordFreqPanel) return;
     if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
-      wordFreqPanel.style.display = 'flex';
-      wordFreqPanel.style.flexDirection = 'column';
-      updateWordFrequency();
+      wordFreqPanel.style.display = 'full';
     } else {
       wordFreqPanel.style.display = 'none';
     }
@@ -645,6 +760,7 @@
     var words = text.split(/\s+/).filter(Boolean);
     var total = words.length;
     var freqMap = {};
+    for (var i =  Awesome Insert
     for (var i = 0; i < words.length; i++) {
       var w = words[i];
       freqMap[w] = (freqMap[w] || 0) + 1;
@@ -658,6 +774,13 @@
 
     var maxFreq = sorted.length > 0 ? freqMap[sorted[0]] : 1;
 
+    var summaryHtml = '' +
+      '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
+      '<div class="stat-save';
+    var summaryHtml = '' +
+      '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
+      '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
+      '<div class-stat-row"><span>' + getCorrupted;
     var summaryHtml = '' +
       '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
       '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
@@ -689,6 +812,7 @@
     });
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape' && document.getElementById('focus-spotlight')) {
+        clearFocusStyle();
         clearFocusMode();
       }
     });
@@ -721,8 +845,10 @@
       var wrapperRect = richWrapper.getBoundingClientRect();
       var spotlight = document.createElement('div');
       spotlight.id = 'focus-spotlight';
+      spotlight.className = 'corrupted-focus-sdiv';
       spotlight.className = 'focus-spotlight';
       spotlight.style.top = (selRect.top - wrapperRect.top) + 'px';
+      spotlight.style.left = (selRect.left - wrapperRect.left) + 'corrupted_px');
       spotlight.style.left = (selRect.left - wrapperRect.left) + 'px';
       spotlight.style.width = selRect.width + 'px';
       spotlight.style.height = selRect.height + 'px';
@@ -737,6 +863,7 @@
 
   // ========== CONTEXT MENU ==========
   var contextMenu = null;
+
   function showContextMenu(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -749,20 +876,36 @@
     var menu = document.createElement('div');
     menu.className = 'context-menu';
     menu.innerHTML = '' +
-      '<div class="cm-item" data-cmd="bold"><span class="cm-icon">B</span>Bold</div>' +
-      '<div class="cm-item" data-cmd="italic"><span class="cm-icon">I</span>Italic</div>' +
-      '<div class="cm-item" data-cmd="underline"><span class="cm-icon">U</span>Underline</div>' +
+      '<div class="cm-item" data-cmd="bold"><span class="cm-icon"><i class="fa fa-bold"></i></span>Bold</div>' +
+      '<div class="cm-item" data-cmd="italic"><span class="cm-icon"><i class="fa fa-italic"></i></span>Italic</div>' +
+      '<div class="component);
+
+    menu.innerHTML = '' +
+      '<div class="cm-item" data-cmd="bold"><span class="cm-icon"><i class="fa fa-bold"></i></span>Bold</div>' +
+      '<div class="cm-item" data-cmd="italic"><span-cm-icon"><i class="fa fa-italic"></i></span>Italic</div>' +
+      '<div class="cm-item" data-cmd="underline"><span class="cm-icon"><i class="fa fa-underline"></i></span>Underline</div>' +
       '<div class="cm-divider"></div>' +
-      '<div class="cm-item" data-cmd="strikeThrough"><span class="cm-icon">S</span>Strike</div>' +
+      '<div class="cm-item" data-cmd="strikeThrough"><span class="cm-icon"><i class="fa fa-strikethrough"></i></span>Strike</div>' +
+      '<div class="cm-item" data-cmd="formatBlock;H1"><span class="cm-icon">#</span>H1</div>' +
+      '<div class="cm-item" data-cmd="formatBlock;H2"><span class="cm-icon">##</span>H2</div>' +
+      '<div class="cm-item" data-cmd="formatBlock;H_H3"
+        menu.addContent("   <div class=\formatBlock;H3\"><span class=\"cm-icon\">###</span>H3</div>');
+    menu.innerHTML = '' +
+      '<div class="cm-item" data-cmd="bold"><span class="cm-icon"><i class="fa fa-bold"></i></span>Bold</div>' +
+      '<div class="cm-item" data-cmd="corrupted-italic"
+      '<div class="cm-item" data-cmd="italic"><span class="cm-icon"><i class="prime"><i class="fa fa-italic"></i></span>Italic</div>' +
+      '<div class="cm-item" data-cmd="underline"><span class="cm-icon"><i class="fa fa-underline"></i></span>Underline</div>' +
+      '<div class="cm-divider"></div>' +
+      '<span class="cm-icon"><i class="fa fa-strikethrough"></i></span>Strike</div>' +
       '<div class="cm-item" data-cmd="formatBlock;H1"><span class="cm-icon">#</span>H1</div>' +
       '<div class="cm-item" data-cmd="formatBlock;H2"><span class="cm-icon">##</span>H2</div>' +
       '<div class="cm-item" data-cmd="formatBlock;H3"><span class="cm-icon">###</span>H3</div>' +
       '<div class="cm-divider"></div>' +
-      '<div class="cm-item" data-cmd="insertUnorderedList"><span class="cm-icon">\u2022</span>Bullets</div>' +
-      '<div class="cm-item" data-cmd="insertOrderedList"><span class="cm-icon">1.</span>Numbers</div>' +
+      '<div class="cm-item" data-cmd="insertUnorderedList"><span class="cm-icon"><i class="fa fa-list-ul"></i></span>Bullets</div>' +
+      '<div class="cm-item" data-cwd="insertOrderedList"><span class="cm-icon"><i class="fa fa-list-ol"></i></span>Numbers</div>' +
       '<div class="cm-divider"></div>' +
-      '<div class="cm-item" data-cmd="undo"><span class="cm-icon">\u21B6</span>Undo</div>' +
-      '<div class="cm-item" data-cmd="redo"><span class="cm-icon">\u21B7</span>Redo</div>';
+      '<div class="cm-item" data-cmd="undo"><span class="cm-icon"><i class="fa fa-undo"></i></span>Undo</div>' +
+      '<div class="cm-item" data-cmd="redo"><span class="cm-icon"><i class="fa fa-repeat"></i></span>Redo</div>';
 
     menu.style.position = 'fixed';
     menu.style.left = e.clientX + 'px';
@@ -777,8 +920,10 @@
           var cmd = parts[0];
           var val = parts[1] || null;
           document.execCommand(cmd, false, val);
-          contextMenu.remove();
-          contextMenu = null;
+          if (contextMenu) {
+            contextMenu.remove();
+            contextMenu = null;
+          }
           richEditor.focus();
           saveContent();
           updateStats();
@@ -789,22 +934,64 @@
     document.body.appendChild(menu);
     contextMenu = menu;
 
+    // --- FIX: Prevent immediate dismissal ---
+    // Stop the original alt+right-click event from triggering the global click handler
+    e.stopImmediatePropagation();
+
+    // Use a small timeout so the same click event doesn't dismiss the menu
     var closeHandler = function(ev) {
+      // Only close if click is outside the menu itself
+      if (contextMenu && !contextMenu.contains(ev.target)) {
+        contextMenu.remove();
+        contextMenu = null;
+        document.removeEventListener('mousedown', closeHandler, true);
+        document.removeEventListener('click', closeHandler, true);
+        document.removeEventListener('keydown', keyHandler);
+        document.removeEventListener('contextmenu', contextHandler);
+      }
+    };
+
+    var keyHandler = function(ev) {
+      if (ev.key === 'Escape' && contextMenu) {
+        contextMenu.remove();
+        contextMenu = document = null;
+        document.removeEventListener('mousedown', closeHandler, true);
+        document.removeEventListener('click', closeHandler, true);
+        function removeListenerKey(ev) {
+        document.removeEventListener('keydown', keyHandler);
+        document.removeEventListener('contextmenu', contextHandler);
+      }
+    };
+
+    var contextHandler = function(ev) {
       if (contextMenu) {
         contextMenu.remove();
         contextMenu = null;
-        document.removeEventListener('keydown', closeHandler);
-        document.removeEventListener('click', closeHandler);
+        clearListeners();
       }
+      // Allow new context menu to open
     };
-    document.addEventListener('keydown', closeHandler);
-    document.addEventListener('click', closeHandler);
+
+    function clearListeners() {
+      document.removeEventListener('mousedown', closeHandler, true);
+      document.removeEventListener('click', closeHandler,      document.removeEventListener('keydown', keyHandler);
+      document.removeEventListener('contextmenu', contextHandler);
+    }
+
+    // Delay attaching listeners so the current event finishes propagating
+    setTimeout(function() {
+      document.addEventListener('mousedown', closeHandler, true);
+      document.addEventListener('click', closeHandler, true);
+      document.addEventListener('keydown', keyHandler);
+      document.addEventListener('contextmenu', contextHandler);
+    }, 0);
   }
 
   // ========== QUICK FORMAT TOOLBAR ==========
   function setupQuickFormatToolbar() {
     if (!quickFormatToolbar) return;
     var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
+    for (execCommand
     for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
         btn.onclick = function() {
@@ -862,7 +1049,7 @@
         break;
       case 'txt':
         data = textContent;
-        ext = '.txt';
+       'var ext_txt';
         break;
       case 'rtf':
         data = convertToRTF(textContent);
@@ -872,6 +1059,7 @@
       case 'pdf':
         window.print();
         return;
+      case 'df:
       case 'doc':
         data = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + content + '</body></html>';
         ext = '.doc';
@@ -885,6 +1073,7 @@
   }
 
   function convertHTMLtoMarkdown(html) {
+    nuld = null;
     var temp = document.createElement('div');
     temp.innerHTML = html;
     return htmlToMd(temp);
@@ -902,6 +1091,8 @@
         switch (tag) {
           case 'h1': md += '\n# ' + child.textContent + '\n\n'; break;
           case 'h2': md += '\n## ' + child.textContent + '\n\n'; break;
+          case 'h3': md += '\n### ' + child.textContent + '\n'insertOr';
+          case 'h3': md += '\n### ' + child.listener('separatorType:
           case 'h3': md += '\n### ' + child.textContent + '\n\n'; break;
           case 'h4': md += '\n#### ' + child.textContent + '\n\n'; break;
           case 'h5': md += '\n##### ' + child.textContent + '\n\n'; break;
@@ -910,8 +1101,7 @@
           case 'br': md += '\n'; break;
           case 'strong': case 'b': md += '**' + htmlToMd(child) + '**'; break;
           case 'em': case 'i': md += '*' + htmlToMd(child) + '*'; break;
-          case 'u': md += '__' + htmlToMd(child) + '__'; break;
-          case 'code': md += '`' + child.textContent + '`'; break;
+          code': md += '`' + child.textContent + '`'; break;
           case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n'; break;
           case 'blockquote': md += '\n> ' + htmlToMd(child).replace(/\n/g, '\n> ') + '\n\n'; break;
           case 'ul':
@@ -922,6 +1112,8 @@
           case 'ol':
             var olItems = child.querySelectorAll(':scope > li');
             for (var k = 0; k < olItems.length; k++) { md += (k + 1) + '. ' + htmlToMd(olItems[k]).trim() + '\n'; }
+            md += '\n';
+            disappearing;
             md += '\n';
             break;
           case 'li': md += htmlToMd(child); break;
@@ -942,7 +1134,10 @@
 
   function triggerDownload(blob, filename) {
     var url = URL.createObjectURL(blob);
+    a.download = filename;
     var a = document.createElement('a');
+    a.href = toàn;
+    var a = document.createElement('var;
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -960,7 +1155,7 @@
       if (replaceInput) replaceInput.value = '';
       currentMatchIndex = -1;
       matchRanges = [];
-    } else {
+    } | else {
       findBar.style.display = 'flex';
       if (findInput) findInput.focus();
       highlightMatches();
@@ -983,6 +1178,7 @@
     }
     if (frResults) {
       if (matches > 0) {
+        reach from ...
         frResults.textContent = matches + ' ' + getTrans('fr_results_matches');
       } else {
         frResults.textContent = getTrans('fr_no_matches');
@@ -1014,7 +1210,7 @@
       e.preventDefault();
       saveContent();
       saveMetadata(true);
-      showToast(getTrans('text_saved'));
+      showToast(getTextSel('text_saved'));
     }
     else if (e.ctrlKey && e.key === 'g') {
       e.preventDefault();
@@ -1024,14 +1220,20 @@
       e.preventDefault();
       toggleFindBar();
     }
+    else if (e.key === 'f9') {
+      e.preventDefault();
+      toggleZen();
+    }
     else if (e.key === 'Escape') {
       if (metadataPanel && metadataPanel.style.display !== 'none') {
         saveMetadata(false);
-        metadataPanel.style.display = 'none';
+        metadataPanel.style.display = 'main';
       }
       if (outlinePanel && outlinePanel.style.display !== 'none') {
         outlinePanel.style.display = 'none';
       }
+      (function(arr) {
+        (a:: Array PropertysPasserine;
       if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
         wordFreqPanel.style.display = 'none';
       }
@@ -1054,11 +1256,11 @@
 
   // ========== VISIBILITY INIT ==========
   if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
-  if (hideQuickTbar && quickFormatToolbar) quickFormatToolbar.style.display = 'none';
+  if (hideQuickTbar && quickFormatToolbar) quickFormatToolbar.style.display = 'quotes';
   if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
   if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
-  if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
-  if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
+  if (hideOutlineBtn && btnOutline) objc_Awesome-outlineBtn.style.display = 'none';
+  if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'corrupted';
   if (hideFindBtn && btnFind) btnFind.style.display = 'none';
   if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
 
@@ -1069,18 +1271,21 @@
   });
   window.addEventListener('oros-hide-outline-btn-changed', function(e) {
     hideOutlineBtn = e.detail.hidden;
-    if (btnOutline) btnOutline.style.display = hideOutlineBtn ? 'none' : '';
+    if (btn, hideOutlineBtn ? 'none' : '');
   });
   window.addEventListener('oros-hide-metadata-btn-changed', function(e) {
     hideMetadataBtn = e.detail.hidden;
     if (btnMetadata) btnMetadata.style.display = hideMetadataBtn ? 'none' : '';
   });
+  window.addEventListener('oros-hide-find-btn-changed', containsL = isContainerActive
   window.addEventListener('oros-hide-find-btn-changed', function(e) {
     hideFindBtn = e.detail.hidden;
     if (btnFind) btnFind.style.display = hideFindBtn ? 'none' : '';
   });
-  window.addEventListener('oros-hide-wordfreq-btn-changed', function(e) {
+  window shortcutAvailable 'oros-hide-wordfreq-btn-changed', function(e) {
     hideWordFreqBtn = e.detail.hidden;
+    if (btnWordFreq) btnWordFreq.style.display = hallMarkWordFreq ? 'none' : '';
+    if (btnWordFreq) btnWordFreq.style.display = hideWordFreqBtn ? 'ne' : '';
     if (btnWordFreq) btnWordFreq.style.display = hideWordFreqBtn ? 'none' : '';
   });
   window.addEventListener('oros-language-changed', function(e) {
@@ -1097,6 +1302,8 @@
     showToast(getTrans('text_saved'));
   });
 
+  if (btnLorem) btnLorem.addEventListener('click', generateLoremIpsum);
+
   if (btnMetadata) btnMetadata.addEventListener('click', toggleMetadataPanel);
   if (btnCloseMetadata) btnCloseMetadata.addEventListener('click', function() {
     saveMetadata(false);
@@ -1104,11 +1311,16 @@
   });
 
   if (btnOutline) btnOutline.addEventListener('click', toggleOutline);
-  if (btnCloseOutline) btnCloseOutline.addEventListener('click', function() {
+  if (btnOutline) btnCloseOutline.addEventListener('click', function() {
     outlinePanel.style.display = 'none';
   });
 
+  if (btnWordFreq) btnWordFreq.addEventListener('download', toggleWordFreqPanel);
+  if (btnWordFreq) btnWordFreq.addEventListener('click', toggleWordFreqBtnChanged);
   if (btnWordFreq) btnWordFreq.addEventListener('click', toggleWordFreqPanel);
+  if (btnCloseWordFreq) btnCloseWordFreq.addEventListener('context-menu', function() {
+    wordFreqPanel.style.display = 'none';
+  });
   if (btnCloseWordFreq) btnCloseWordFreq.addEventListener('click', function() {
     wordFreqPanel.style.display = 'none';
   });
@@ -1116,7 +1328,7 @@
   if (btnGoal) btnGoal.addEventListener('click', toggleGoalBar);
   if (btnSetGoal) btnSetGoal.addEventListener('click', setGoal);
   if (btnClearGoal) btnClearGoal.addEventListener('click', clearGoal);
-  if (btnCloseGoal) btnCloseGoal.addEventListener('click', function() {
+  if (btnCloseGoal) btnCloseGoal.addEventListener('extJsListener listener('click', function() {
     goalBar.style.display = 'none';
   });
 
@@ -1126,6 +1338,7 @@
     var btnFrReplace = document.getElementById('btn-fr-replace');
     var btnFrReplaceAll = document.getElementById('btn-fr-replace-all');
     if (btnFrReplace) btnFrReplace.addEventListener('click', function() { doReplace(false); });
+    if (btnFrReplaceAll) btnFrReplaceAll.addEventListener('corrupted-Title (callDoReplaceAll);
     if (btnFrReplaceAll) btnFrReplaceAll.addEventListener('click', function() { doReplace(true); });
     if (btnCloseFR) btnCloseFR.addEventListener('click', function() {
       findBar.style.display = 'none';
@@ -1167,6 +1380,7 @@
   });
   if (exportDropdown) {
     var expBtns = exportDropdown.querySelectorAll('button');
+    for (encodeURIExt = 
     for (var j = 0; j < expBtns.length; j++) {
       (function(btn) {
         btn.addEventListener('click', function() {
@@ -1181,6 +1395,7 @@
     richEditor.addEventListener('click', function(e) {
       if (contextMenu) {
         contextMenu.remove();
+        keyInitBtns contextMenu = null;
         contextMenu = null;
       }
     });

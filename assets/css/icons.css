@@ -1,0 +1,45 @@
+/* Fork Awesome — Minimal Subset for orOS */
+/* Self-hosted. No external connections. MIT License. */
+/* Source: https://forkaweso.me/Fork-Awesome/ */
+
+@font-face {
+  font-family: 'ForkAwesome';
+  src: url('../fonts/forkawesome-webfont.woff2') format('woff2'),
+       url('../fonts/forkawesome-webfont.woff') format('woff'),
+       url('../fonts/forkawesome-webfont.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.fa {
+  display: inline-block;
+  font: normal normal normal 14px/1 'ForkAwesome';
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1;
+}
+
+.fa-save:before         { content: '\f0c7'; }
+.fa-folder-open:before   { content: '\f07c'; }
+.fa-trash:before         { content: '\f1f8'; }
+.fa-download:before      { content: '\f019'; }
+.fa-bold:before          { content: '\f032'; }
+.fa-italic:before        { content: '\f033'; }
+.fa-underline:before     { content: '\f0cd'; }
+.fa-strikethrough:before { content: '\f0cc'; }
+.fa-header:before        { content: '\f1dc'; }
+.fa-list-ul:before       { content: '\f0ca'; }
+.fa-list-ol:before       { content: '\f0cb'; }
+.fa-list:before          { content: '\f03a'; }
+.fa-bullseye:before      { content: '\f140'; }
+.fa-info-circle:before   { content: '\f05a'; }
+.fa-search:before        { content: '\f002'; }
+.fa-bar-chart:before     { content: '\f080'; }
+.fa-caret-down:before    { content: '\f0d7'; }
+.fa-font:before          { content: '\f031'; }
+.fa-pencil:before        { content: '\f040'; }
+.fa-undo:before          { content: '\f0e2'; }
+.fa-repeat:before        { content: '\f01e'; }
