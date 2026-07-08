@@ -1,14 +1,19 @@
 // ============================================
-// orOS — Channel Configuration
-// ════════════════════════════════════════════
-// Αυτό είναι το ΜΟΝΑΔΙΚΟ αρχείο που αλλάζεις
-// όταν κάνεις switch μεταξύ beta και production.
+// orOS — Configuration
+// Centralized baseHref and version management
 // ============================================
 
 window.OROS_CONFIG = {
-  channel: 'beta',              // 'beta' ή 'prod'
-  baseHref: '/oros-beta/',       // '/' για production
-  isBeta: true,                 // false για production
-  version: 'v0.5-BETA',         // 'v0.5' για production
-  swCacheVersion: 'v5'          // ίδιο και για τα δύο κανάλια
+  // CHANGE THIS ONCE PER CHANNEL (Production/Beta)
+  baseHref: 'https://koulaxizis.github.io/oros-beta/',
+  
+  version: 'v0.5-beta',
+  swCacheVersion: 'v5',
+  
+  // Feature flags
+  enablePWA: true,
+  enableOffline: true,
+  
+  // Analytics (disabled for privacy)
+  analyticsEnabled: false
 };

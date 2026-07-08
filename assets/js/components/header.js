@@ -13,7 +13,7 @@
   var logoHref = './index.html';
 
   mount.innerHTML =
-    '<header class="header">' +
+    '<header class="header" id="oros-header-inner">' +
       '<div class="header-content">' +
         '<a href="' + logoHref + '" class="logo">' +
           '<img src="favicon.svg" alt="" class="logo-icon" width="24" height="24">' +

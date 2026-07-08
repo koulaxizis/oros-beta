@@ -9,7 +9,7 @@
   if (!mount) return;
 
   mount.innerHTML =
-    '<footer class="footer">' +
+    '<footer class="footer" id="oros-footer-inner">' +
       '<div class="footer-inner">' +
         '<div class="footer-text" data-i18n="footer_privacy_badge">Open Source · No Tracking · No Ads · Privacy First</div>' +
         '<div class="footer-credits"></div>' +
