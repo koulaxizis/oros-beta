@@ -1,64 +1,109 @@
-const CACHE_NAME = 'oros-beta-v6';
-const STATIC_ASSETS = [
-  '/oros-beta/',
-  '/oros-beta/index.html',
-  '/oros-beta/editor.html',
-  '/oros-beta/assets/css/style.css',
-  '/oros-beta/assets/css/icons.css',
-  '/oros-beta/assets/js/main.js',
-  '/oros-beta/assets/js/editor.js',
-  '/oros-beta/assets/js/translations.json',
-  '/oros-beta/assets/js/components/header.js',
-  '/oros-beta/assets/js/components/footer.js',
-  /timos-beta/asset/assets/fonts/nunito-regular.woff2',
-  '/oros-beta/assets/fonts/nunito-regular.woff2',
-  '/oros-beta/assets/fonts/nunito-medium.woff2',
-  '/oros-beta/assets/fonts/nunito-semibold.woff2',
-  '/oros-beta/assets/fonts/nunito-bold.woff2',
-  '/oros-beta/assets/fonts/nunito-extrabold.woff2',
-  '/oros-beta/assets/fonts/forkawesome-webfont.woff2',
-  '/oros-beta/assets/fonts/forkawesome-webfont.woff',
-  '/oros-beta/assets/fonts/forkawesome-webfont.ttf',
-  '/oros-beta/assets/fonts/main.js',
-  '/oros-beta/assets/fonts/style.css',
-  '/oros-beta/favicon.svg',
-  '/oros-beta/manifest.json'
+// ============================================
+// orOS — Service Worker
+// Dynamic scope-based caching (no hardcoded paths)
+// ============================================
+
+var SCOPE = self.registration.scope;
+var IS_BETA = SCOPE.indexOf('oros-beta') !== -1;
+var CACHE_NAME = 'oros-' + (IS_BETA ? 'beta-' : '') +
+                 ((window.OROS_CONFIG && window.OROS_CONFIG.swCacheVersion) || 'v5');
+
+// Note: SW can't read window variables, so we derive everything from scope
+var CACHE_VERSION = 'v5';
+CACHE_NAME = 'oros-' + (IS_BETA ? 'beta-' : '') + CACHE_VERSION;
+
+var ASSETS_TO_CACHE = [
+  '',
+  'index.html',
+  'editor.html',
+  'config.js',
+  'favicon.svg',
+  'manifest.json',
+  'assets/css/style.css',
+  'assets/css/icons.css',
+  'assets/fonts/nunito-regular.woff2',
+  'assets/fonts/nunito-medium.woff2',
+  'assets/fonts/nunito-semibold.woff2',
+  'assets/fonts/nunito-bold.woff2',
+  'assets/fonts/nunito-extrabold.woff2',
+  // Fork Awesome fonts — uncomment αφού τα προσθέσεις:
+  // 'assets/fonts/forkawesome-webfont.woff2',
+  // 'assets/fonts/forkawesome-webfont.woff',
+  // 'assets/fonts/forkawesome-webfont.ttf',
+  'assets/js/editor.js',
+  'assets/js/main.js',
+  'assets/js/translations.json',
+  'assets/js/components/header.js',
+  'assets/js/components/footer.js'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
+var FULL_URLS = ASSETS_TO_CACHE.map(function(asset) {
+  return SCOPE + asset;
 });
 
-self.addEventListener('activate', (e) => {
-  e corrupted_assets/main.
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(response => {
-      if (reactToBadge) ; {
-      if (response) return response;
-      return fetch(e.request).then(networkResponse => {
-        if (networkResponse.ok && e.request.method === 'GET') {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_ASSET_CLASS).then(cache => cache.put(e.request, clone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        return new Response('Offline — Your last cached version.', {
-          statOr: {
-          status: 503,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      });
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      // Use individual add() so one 404 doesn't kill the whole cache
+      return Promise.all(
+        FULL_URLS.map(function(url) {
+          return cache.add(url).catch(function() {
+            console.warn('[SW] Could not cache:', url);
+          });
+        })
+      );
+    }).then(function() {
+      return self.skipWaiting();
     })
   );
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(names) {
+      return Promise.all(
+        names.filter(function(name) {
+          return name !== CACHE_NAME;
+        }).map(function(name) {
+          return caches.delete(name);
+        })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
+  );
+});
+
+self.addEventListener('fetch', function(event) {
+  // Only handle GET
+  if (event.request.method !== 'GET') return;
+
+  // Only handle same-origin requests
+  var url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for navigation, cache-first for assets
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return caches.match(event.request).then(function(resp) {
+          return resp || caches.match(SCOPE + 'index.html');
+        });
+      })
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(function(resp) {
+        return resp || fetch(event.request).then(function(response) {
+          if (response.ok) {
+            var clone = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) {
+              cache.put(event.request, clone);
+            });
+          }
+          return response;
+        });
+      })
+    );
+  }
 });

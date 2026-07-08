@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS Writer — Privacy-first rich text editor. Works offline. No tracking.">
   <title>orOS Writer</title>
-
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (window.OROS_CONFIG.baseHref || '/') + '">');
+  </script>
+  
+    <!-- favicon: στη ρίζα, όχι σε assets/img/ -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
   <link rel="canonical" href="https://koulaxizis.github.io/oros-beta/editor.html">
@@ -21,6 +26,9 @@
 
   <link rel="manifest" href="manifest.json">
 
+
+
+  <!-- JS components paths -->
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/editor.js" defer></script>

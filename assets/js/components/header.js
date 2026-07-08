@@ -8,9 +8,8 @@
   var mount = document.getElementById('oros-header');
   if (!mount) return;
 
-  var isBeta = window.location.hostname.indexOf('koulaxizis.github.io') !== -1 &&
-               window.location.pathname.indexOf('oros-beta') !== -1;
-
+  var cfg = window.OROS_CONFIG || {};
+  var version = cfg.version || 'v0.5';
   var logoHref = './index.html';
 
   mount.innerHTML =
@@ -19,7 +18,7 @@
         '<a href="' + logoHref + '" class="logo">' +
           '<img src="favicon.svg" alt="" class="logo-icon" width="24" height="24">' +
           '<span class="logo-text"><b>or</b><i>OS</i></span>' +
-          '<span class="version-badge">' + (isBeta ? 'v0.5-BETA' : 'v0.5') + '</span>' +
+          '<span class="version-badge">' + version + '</span>' +
         '</a>' +
         '<div class="header-controls">' +
           '<select id="language-select" class="lang-select" data-i18n-aria="aria_language" aria-label="Language"></select>' +
