@@ -23,6 +23,7 @@
     "toggle_hide_metadata_btn": "Hide Metadata Button",
     "toggle_hide_find_btn": "Hide Find Button",
     "toggle_hide_wordfreq_btn": "Hide Word Frequency Button",
+    "toggle_hide_save_indicator": "Hide Save Indicator",
     "action_save": "Save",
     "action_open": "Open",
     "action_clear": "Clear",
@@ -117,7 +118,7 @@
     "tools_intro": "Select a tool below. All applications work offline and respect your personal data.",
     "editor_name": "Writer",
     "editor_desc": "Simple text editor with autosave",
-	    "tooltip_lorem_ipsum": "Insert sample text",
+    "tooltip_lorem_ipsum": "Insert sample text",
     "toast_lorem_inserted": "Sample text inserted"
   },
   "el": {
@@ -144,6 +145,7 @@
     "toggle_hide_metadata_btn": "Απόκρυψη Μεταδεδομένων",
     "toggle_hide_find_btn": "Απόκρυψη Εύρεσης",
     "toggle_hide_wordfreq_btn": "Απόκρυψη Συχνότητας Λέξεων",
+    "toggle_hide_save_indicator": "Απόκρυψη Ένδειξης Αποθήκευσης",
     "action_save": "Αποθήκευση",
     "action_open": "Άνοιγμα",
     "action_clear": "Καθαρισμός",
@@ -238,7 +240,7 @@
     "tools_intro": "Επιλέξτε ένα εργαλείο παρακάτω. Όλες οι εφαρμογές δουλεύουν offline και σέβονται τα προσωπικά σας δεδομένα.",
     "editor_name": "Συγγραφέας",
     "editor_desc": "Απλός επεξεργαστής κειμένου με αυτόματη αποθήκευση",
-	    "tooltip_lorem_ipsum": "Εισαγωγή δοκιμαστικού κειμένου",
+    "tooltip_lorem_ipsum": "Εισαγωγή δοκιμαστικού κειμένου",
     "toast_lorem_inserted": "Δοκιμαστικό κείμενο εισήχθη"
   },
   "es": {
@@ -265,6 +267,7 @@
     "toggle_hide_metadata_btn": "Ocultar botón de metadatos",
     "toggle_hide_find_btn": "Ocultar botón de búsqueda",
     "toggle_hide_wordfreq_btn": "Ocultar frecuencia de palabras",
+    "toggle_hide_save_indicator": "Ocultar indicador de guardado",
     "action_save": "Guardar",
     "action_open": "Abrir",
     "action_clear": "Limpiar",
@@ -362,7 +365,7 @@
     "tooltip_lorem_ipsum": "Insertar texto de prueba",
     "toast_lorem_inserted": "Texto de prueba insertado"
   },
-    "it": {
+  "it": {
     "editor_placeholder": "Inizia a scrivere...",
     "settings": "Impostazioni",
     "tab_global": "Generali",
@@ -386,6 +389,7 @@
     "toggle_hide_metadata_btn": "Nascondi pulsante metadati",
     "toggle_hide_find_btn": "Nascondi pulsante cerca",
     "toggle_hide_wordfreq_btn": "Nascondi frequenza parole",
+    "toggle_hide_save_indicator": "Nascondi indicatore di salvataggio",
     "action_save": "Salva",
     "action_open": "Apri",
     "action_clear": "Pulisci",
@@ -480,7 +484,7 @@
     "tools_intro": "Seleziona uno strumento qui sotto. Tutte le applicazioni funzionano offline e rispettano i tuoi dati personali.",
     "editor_name": "Scrittore",
     "editor_desc": "Editor di testo semplice con salvataggio automatico",
-	    "tooltip_lorem_ipsum": "Inserisci testo di prova",
+    "tooltip_lorem_ipsum": "Inserisci testo di prova",
     "toast_lorem_inserted": "Testo di prova inserito"
   },
   "fr": {
@@ -507,6 +511,7 @@
     "toggle_hide_metadata_btn": "Masquer bouton métadonnées",
     "toggle_hide_find_btn": "Masquer bouton recherche",
     "toggle_hide_wordfreq_btn": "Masquer fréquence mots",
+    "toggle_hide_save_indicator": "Masquer indicateur de sauvegarde",
     "action_save": "Enregistrer",
     "action_open": "Ouvrir",
     "action_clear": "Effacer",
@@ -601,7 +606,7 @@
     "tools_intro": "Sélectionnez un outil ci-dessous. Toutes les applications fonctionnent hors ligne et respectent vos données personnelles.",
     "editor_name": "Écrivain",
     "editor_desc": "Éditeur de texte simple avec sauvegarde automatique",
-	    "tooltip_lorem_ipsum": "Insérer du texte d'exemple",
+    "tooltip_lorem_ipsum": "Insérer du texte d'exemple",
     "toast_lorem_inserted": "Texte d'exemple inséré"
   },
   "de": {
@@ -628,6 +633,7 @@
     "toggle_hide_metadata_btn": "Metadaten-Button ausblenden",
     "toggle_hide_find_btn": "Suche-Button ausblenden",
     "toggle_hide_wordfreq_btn": "Worthäufigkeit-Button ausblenden",
+    "toggle_hide_save_indicator": "Speicherindikator ausblenden",
     "action_save": "Speichern",
     "action_open": "Öffnen",
     "action_clear": "Löschen",
@@ -722,7 +728,7 @@
     "tools_intro": "Wählen Sie unten ein Werkzeug aus. Alle Anwendungen funktionieren offline und respektieren Ihre persönlichen Daten.",
     "editor_name": "Schreiber",
     "editor_desc": "Einfacher Texteditor mit automatischem Speichern",
-"tooltip_lorem_ipsum": "Beispieltext einfügen",
+    "tooltip_lorem_ipsum": "Beispieltext einfügen",
     "toast_lorem_inserted": "Beispieltext eingefügt"
   }
 }

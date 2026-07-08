@@ -30,6 +30,7 @@
   var STORAGE_HIDE_METADATA_BTN = 'oros_hide_metadata_btn';
   var STORAGE_HIDE_FIND_BTN = 'oros_hide_find_btn';
   var STORAGE_HIDE_WORDFREQ_BTN = 'oros_hide_wordfreq_btn';
+  var STORAGE_HIDE_SAVE_INDICATOR = 'oros_hide_save_indicator';
   var STORAGE_METADATA = 'oros_writer_metadata';
 
   var richEditor = document.getElementById('rich-editor');
@@ -95,6 +96,7 @@
   var hideMetadataBtn = localStorage.getItem(STORAGE_HIDE_METADATA_BTN) === 'true';
   var hideFindBtn = localStorage.getItem(STORAGE_HIDE_FIND_BTN) === 'true';
   var hideWordFreqBtn = localStorage.getItem(STORAGE_HIDE_WORDFREQ_BTN) === 'true';
+  var hideSaveIndicator = localStorage.getItem(STORAGE_HIDE_SAVE_INDICATOR) === 'true';
   var goalReachedShown = false;
   var goalLockTriggered = false;
   var currentMatchIndex = -1;
@@ -128,7 +130,7 @@
           'all working together seamlessly. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
           '<ul><li>First bullet point item</li><li>Second bullet point item</li><li>Third bullet point item</li></ul>' +
           '<h2>Section Subheading</h2>' +
-          '<blockquote>Art is a lie that makes us realize the truth. — Pablo Picasso</blockquote>' +
+          '<blockquote>Art is a lie that makes us realize the truth. \u2014 Pablo Picasso</blockquote>' +
           '<p>The <em>final paragraph</em> wraps up the sample content. ' +
           'Use this text to test your editor\u2019s formatting, exports, and statistics. ' +
           'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>' +
@@ -145,7 +147,7 @@
           '<li>\u03a4\u03c1\u03af\u03c4\u03bf \u03c3\u03c4\u03bf\u03b9\u03c7\u03b5\u03af\u03bf \u03bb\u03af\u03c3\u03c4\u03b1\u03c2</li></ul>' +
           '<h2>\u03a5\u03c0\u03cc\u03c4\u03b9\u03c4\u03bb\u03bf\u03c2 \u03a4\u03bc\u03ae\u03bc\u03b1\u03c4\u03bf\u03c2</h2>' +
           '<blockquote>\u0397 \u03c4\u03ad\u03c7\u03bd\u03b7 \u03b5\u03af\u03bd\u03b1\u03b9 \u03ad\u03bd\u03b1 \u03c8\u03ad\u03bc\u03b1 \u03c0\u03bf\u03c5 \u03bc\u03b1\u03c2 \u03ba\u03ac\u03bd\u03b5\u03b9 \u03bd\u03b1 \u03c3\u03c5\u03bd\u03b5\u03b9\u03b4\u03b7\u03c4\u03bf\u03c0\u03bf\u03b9\u03bf\u03cd\u03bc\u03b5 \u03c4\u03b7\u03bd \u03b1\u03bb\u03ae\u03b8\u03b5\u03b9\u03b1.</blockquote>' +
-          '<p>\u0397 <em>\u03c4\u03b5\u03bb\u03b5\u03c5\u03c4\u03b1\u03af\u03b1 \u03c0\u03b1\u03c1\u03ac\u03b3\u03c1\u03b1\u03c6\u03bf\u03c2</strong> ' +
+          '<p>\u0397 <em>\u03c4\u03b5\u03bb\u03b5\u03c5\u03c4\u03b1\u03af\u03b1 \u03c0\u03b1\u03c1\u03ac\u03b3\u03c1\u03b1\u03c6\u03bf\u03c2</em> ' +
           '\u03ba\u03bb\u03b5\u03af\u03bd\u03b5\u03b9 \u03c4\u03bf \u03b4\u03bf\u03ba\u03b9\u03bc\u03b1\u03c3\u03c4\u03b9\u03ba\u03cc \u03ba\u03b5\u03af\u03bc\u03b5\u03bd\u03bf. ' +
           '\u03a7\u03c1\u03b7\u03c3\u03b9\u03bc\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b5 \u03b1\u03c5\u03c4\u03cc \u03c4\u03bf \u03ba\u03b5\u03af\u03bc\u03b5\u03bd\u03bf ' +
           '\u03b3\u03b9\u03b1 \u03bd\u03b1 \u03b4\u03bf\u03ba\u03b9\u03bc\u03ac\u03c3\u03b5\u03b9\u03c2 \u03c4\u03b7\u03bd \u03bc\u03bf\u03c1\u03c6\u03bf\u03c0\u03bf\u03af\u03b7\u03c3\u03b7, ' +
@@ -207,6 +209,11 @@
   // ========== SAVE INDICATOR UPDATE ==========
   function updateSaveIndicator() {
     if (!saveIndicator) return;
+    if (hideSaveIndicator) {
+      saveIndicator.style.visibility = 'hidden';
+      return;
+    }
+    saveIndicator.style.visibility = 'visible';
     var trans = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[getCurrentLang()]) || {};
     if (!lastSavedTime) {
       saveIndicator.textContent = trans.text_not_saved || '\u2014';
@@ -825,6 +832,7 @@
   function showContextMenu(e) {
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
 
     if (contextMenu) {
       contextMenu.remove();
@@ -853,7 +861,6 @@
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
 
-    // Prevent menu-internal events from closing it
     menu.addEventListener('click', function(ev) { ev.stopPropagation(); });
     menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation(); });
     menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
@@ -880,8 +887,6 @@
     document.body.appendChild(menu);
     contextMenu = menu;
 
-    // FIX: Delay attaching close listeners so the current event cycle completes first.
-    // Using mousedown (fires before click) + contains() check prevents premature dismissal.
     setTimeout(function() {
       document.addEventListener('mousedown', closeOnOutsideClick);
       document.addEventListener('keydown', closeOnKeydown);
@@ -1134,22 +1139,22 @@
       if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
         wordFreqPanel.style.display = 'none';
       }
-              if (findBar && findBar.style.display === 'flex') {
-          findBar.style.display = 'none';
-        }
-        if (goalBar && goalBar.style.display === 'flex') {
-          goalBar.style.display = 'none';
-        }
-        if (statsExpanded) {
-          statsExpanded = false;
-          updateStats();
-        }
-        if (contextMenu) {
-          contextMenu.remove();
-          contextMenu = null;
-          removeCloseListeners();
-        }
+      if (findBar && findBar.style.display === 'flex') {
+        findBar.style.display = 'none';
       }
+      if (goalBar && goalBar.style.display === 'flex') {
+        goalBar.style.display = 'none';
+      }
+      if (statsExpanded) {
+        statsExpanded = false;
+        updateStats();
+      }
+      if (contextMenu) {
+        contextMenu.remove();
+        contextMenu = null;
+        removeCloseListeners();
+      }
+    }
   });
 
   // ========== VISIBILITY INIT ==========
@@ -1161,6 +1166,7 @@
   if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
   if (hideFindBtn && btnFind) btnFind.style.display = 'none';
   if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
+  if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
 
   // ========== CUSTOM EVENTS ==========
   window.addEventListener('oros-hide-goal-btn-changed', function(e) {
@@ -1182,6 +1188,10 @@
   window.addEventListener('oros-hide-wordfreq-btn-changed', function(e) {
     hideWordFreqBtn = e.detail.hidden;
     if (btnWordFreq) btnWordFreq.style.display = hideWordFreqBtn ? 'none' : '';
+  });
+  window.addEventListener('oros-hide-save-indicator-changed', function(e) {
+    hideSaveIndicator = e.detail.hidden;
+    updateSaveIndicator();
   });
   window.addEventListener('oros-language-changed', function(e) {
     updateStats();
@@ -1248,7 +1258,7 @@
 
   if (btnClear) btnClear.addEventListener('click', function() {
     var msg = getCurrentLang() === 'el'
-      ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
+      ? '\u03a3\u03af\u03b3\u03bf\u03c5\u03c1\u03b1; \u038c\u03bb\u03bf \u03c4\u03bf \u03c0\u03b5\u03c1\u03b9\u03b5\u03c7\u03cc\u03bc\u03b5\u03bd\u03bf \u03b8\u03b1 \u03c7\u03b1\u03b8\u03b5\u03af.'
       : 'Are you sure? All content will be lost.';
     if (confirm(msg)) {
       richEditor.innerHTML = '';
