@@ -14,7 +14,7 @@
               '<img src="favicon.svg" alt="orOS" class="logo-icon" />' +
               '<span class="logo-text">orOS</span>' +
             '</a>' +
-            '<span class="version-badge"></span>' +
+            '<span class="version-badge">' + version + '</span>' +
             (channel === 'beta' ? '<span class="channel-badge beta">BETA</span>' : '') +
 			(channel === 'stable' ? '<span class="channel-badge beta">STABLE</span>' : '') +
           '</div>' +
