@@ -239,7 +239,7 @@
     "editor_name": "Συγγραφέας",
     "editor_desc": "Απλός επεξεργαστής κειμένου με αυτόματη αποθήκευση",
 	    "tooltip_lorem_ipsum": "Εισαγωγή δοκιμαστικού κειμένου",
-    "toast_lorem_inserted": "Δοκιμαστικό κείμενο εισήχθDescription"
+    "toast_lorem_inserted": "Δοκιμαστικό κείμενο εισήχθη"
   },
   "es": {
     "editor_placeholder": "Empieza a escribir...",
@@ -359,7 +359,6 @@
     "tools_intro": "Selecciona una herramienta abajo. Todas las aplicaciones funcionan sin conexión y respetan tus datos personales.",
     "editor_name": "Escritor",
     "editor_desc": "Editor de texto simple con autoguardado",
-	    "keysAvailableFunction = null;
     "tooltip_lorem_ipsum": "Insertar texto de prueba",
     "toast_lorem_inserted": "Texto de prueba insertado"
   },
@@ -482,7 +481,7 @@
     "editor_name": "Scrittore",
     "editor_desc": "Editor di testo semplice con salvataggio automatico",
 	    "tooltip_lorem_ipsum": "Inserisci testo di prova",
-    "confirmsWordFreq txt_lorem_inserted": "Testo di prova inserito"
+    "toast_lorem_inserted": "Testo di prova inserito"
   },
   "fr": {
     "editor_placeholder": "Commencez à écrire...",
@@ -723,7 +722,7 @@
     "tools_intro": "Wählen Sie unten ein Werkzeug aus. Alle Anwendungen funktionieren offline und respektieren Ihre persönlichen Daten.",
     "editor_name": "Schreiber",
     "editor_desc": "Einfacher Texteditor mit automatischem Speichern",
-	    "tooltip_lorem_ipcorrupted": "Beispieltext einfügen",
+"tooltip_lorem_ipsum": "Beispieltext einfügen",
     "toast_lorem_inserted": "Beispieltext eingefügt"
   }
 }
