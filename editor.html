@@ -6,90 +6,85 @@
   <meta name="description" content="orOS Writer — Privacy-first rich text editor. Works offline. No tracking.">
   <title>orOS Writer</title>
 
-  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 
   <link rel="canonical" href="https://koulaxizis.github.io/oros-beta/editor.html">
 
-  <!-- Self-hosted Nunito fonts -->
-  <link rel="preload" href="../assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="../assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="../assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="../assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="../assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="../assets/css/icons.css">
-  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="../manifest.json">
+  <link rel="manifest" href="manifest.json">
 
-  <!-- Scripts -->
-  <script src="../assets/js/editor.js" defer></script>
-  <script src="../assets/js/editor-tools.js" defer></script>
-  <script src="../assets/js/main.js" defer></script>
+  <script src="assets/js/header.js" defer></script>
+  <script src="assets/js/footer.js" defer></script>
+  <script src="assets/js/editor.js" defer></script>
+  <script src="assets/js/editor-tools.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
 </head>
 <body>
 
-  <!-- Global Header -->
-  <div id="header-root"></div>
+  <div id="oros-header"></div>
 
-  <!-- Editor Wrapper -->
   <div id="editor-wrapper">
 
-    <!-- Main Toolbar -->
     <div class="main-toolbar" id="main-toolbar">
       <div class="toolbar-group toolbar-left">
-        <button class="action-btn" id="btn-save" data-i18n="tooltip_save" title="Save (Ctrl+S)">
+        <button class="action-btn" id="btn-save" data-i18n-tooltip="tooltip_save" title="Save (Ctrl+S)">
           <i class="fa fa-save"></i>
         </button>
-        <button class="action-btn" id="btn-open" data-i18n="tooltip_open" title="Open file">
+        <button class="action-btn" id="btn-open" data-i18n-tooltip="tooltip_open" title="Open file">
           <i class="fa fa-folder-open"></i>
         </button>
         <input type="file" id="file-input" accept=".txt,.md,.markdown,.rtf" style="display:none;">
-        <button class="action-btn" id="btn-clear" data-i18n="tooltip_clear" title="Clear all content">
+        <button class="action-btn" id="btn-clear" data-i18n-tooltip="tooltip_clear" title="Clear all content">
           <i class="fa fa-trash"></i>
         </button>
       </div>
 
       <div class="toolbar-group toolbar-center">
-        <button class="fmt-text-btn" data-cmd="bold" data-block="" data-i18n="toolbar_bold" title="Bold">
+        <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold">
           <i class="fa fa-bold"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="italic" data-block="" data-i18n="toolbar_italic" title="Italic">
+        <button class="fmt-text-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic">
           <i class="fa fa-italic"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="underline" data-block="" data-i18n="toolbar_underline" title="Underline">
+        <button class="fmt-text-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline">
           <i class="fa fa-underline"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="fmt-text-btn" data-h="H1" data-block="h1" data-i18n="toolbar_h1" title="Heading 1">H1</button>
-        <button class="fmt-text-btn" data-h="H2" data-block="h2" data-i18n="toolbar_h2" title="Heading 2">H2</button>
-        <button class="fmt-text-btn" data-h="H3" data-block="h3" data-i18n="toolbar_h3" title="Heading 3">H3</button>
+        <button class="fmt-text-btn" data-h="H1" data-block="h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
+        <button class="fmt-text-btn" data-h="H2" data-block="h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
+        <button class="fmt-text-btn" data-h="H3" data-block="h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
       </div>
 
       <div class="toolbar-group toolbar-right">
-        <button class="action-btn" id="btn-goal" data-i18n="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
+        <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
         </button>
-        <button class="action-btn" id="btn-outline" data-i18n="tooltip_outline" title="Document outline">
+        <button class="action-btn" id="btn-outline" data-i18n-tooltip="tooltip_outline" title="Document outline">
           <i class="fa fa-list-ul"></i>
         </button>
-        <button class="action-btn" id="btn-metadata" data-i18n="tooltip_metadata" title="Document metadata">
+        <button class="action-btn" id="btn-metadata" data-i18n-tooltip="tooltip_metadata" title="Document metadata">
           <i class="fa fa-info-circle"></i>
         </button>
-        <button class="action-btn" id="btn-find" data-i18n="tooltip_find" title="Find and replace (Ctrl+F)">
+        <button class="action-btn" id="btn-find" data-i18n-tooltip="tooltip_find" title="Find and replace (Ctrl+F)">
           <i class="fa fa-search"></i>
         </button>
-        <button class="action-btn" id="btn-wordfreq" data-i18n="tooltip_find" title="Word frequency">
+        <button class="action-btn" id="btn-wordfreq" data-i18n-tooltip="tooltip_find" title="Word frequency">
           <i class="fa fa-bar-chart"></i>
         </button>
-        <button class="action-btn" id="btn-lorem" data-i18n="tooltip_lorem_ipsum" title="Insert sample text">
+        <button class="action-btn" id="btn-lorem" data-i18n-tooltip="tooltip_lorem_ipsum" title="Insert sample text">
           <i class="fa fa-pencil"></i>
         </button>
         <span class="tb-separator"></span>
         <div class="dropdown" id="export-dropdown-container">
-          <button class="action-btn dropdown-toggle" id="btn-export" data-i18n="tooltip_export" title="Export document">
+          <button class="action-btn dropdown-toggle" id="btn-export" data-i18n-tooltip="tooltip_export" title="Export document">
             <i class="fa fa-download"></i>
             <i class="fa fa-caret-down dropdown-arrow-icon"></i>
           </button>
@@ -104,58 +99,53 @@
       </div>
     </div>
 
-    <!-- Goal Bar (below main toolbar) -->
     <div class="goal-bar" id="goal-bar" style="display:none;">
       <select id="goal-unit">
-        <option value="words">Words</option>
-        <option value="chars">Characters</option>
-        <option value="paras">Paragraphs</option>
+        <option value="words" data-i18n="goal_unit_words">Words</option>
+        <option value="chars" data-i18n="goal_unit_chars">Characters</option>
+        <option value="paras" data-i18n="goal_unit_paras">Paragraphs</option>
       </select>
       <input type="number" id="goal-target-input" placeholder="0" min="1" />
       <label class="goal-lock-label">
-        <input type="checkbox" id="goal-lock"> Lock
+        <input type="checkbox" id="goal-lock">
+        <span data-i18n="goal_lock_label">Lock</span>
       </label>
-      <button class="mini-btn" id="btn-set-goal" data-i18n="btn_set_goal_tt" title="Set goal">&#10003;</button>
-      <button class="mini-btn" id="btn-clear-goal" data-i18n="btn_clear_goal_tt" title="Clear goal">&#10005;</button>
-      <button class="mini-btn" id="btn-close-goal" data-i18n="btn_close_tt" title="Close">&#10005;</button>
+      <button class="mini-btn" id="btn-set-goal" data-i18n-tooltip="btn_set_goal_tt" title="Set goal">&#10003;</button>
+      <button class="mini-btn" id="btn-clear-goal" data-i18n-tooltip="btn_clear_goal_tt" title="Clear goal">&#10005;</button>
+      <button class="mini-btn" id="btn-close-goal" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
     </div>
 
-    <!-- Find & Replace Bar (below main toolbar) -->
     <div class="find-replace-bar" id="find-replace-bar" style="display:none;">
-      <input type="text" id="find-find" placeholder="Find..." />
-      <input type="text" id="find-replace" placeholder="Replace..." />
+      <input type="text" id="find-find" data-i18n-placeholder="fr_find_placeholder" placeholder="Find..." />
+      <input type="text" id="find-replace" data-i18n-placeholder="fr_replace_placeholder" placeholder="Replace..." />
       <span id="fr_results" class="fr-results"></span>
-      <button class="mini-btn" id="btn-fr-replace" data-i18n="fr_button_replace" title="Replace">Replace</button>
-      <button class="mini-btn" id="btn-fr-replace-all" data-i18n="fr_button_replace_all" title="Replace All">Replace All</button>
-      <button class="mini-btn" id="btn-close-fr" data-i18n="btn_close_tt" title="Close">&#10005;</button>
+      <button class="mini-btn" id="btn-fr-replace" data-i18n="fr_button_replace">Replace</button>
+      <button class="mini-btn" id="btn-fr-replace-all" data-i18n="fr_button_replace_all">Replace All</button>
+      <button class="mini-btn" id="btn-close-fr" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
     </div>
 
-    <!-- Quick Format Toolbar -->
     <div class="quick-format-toolbar" id="quick-format-toolbar">
       <button class="fmt-btn" data-cmd="bold" title="Bold"><i class="fa fa-bold"></i></button>
       <button class="fmt-btn" data-cmd="italic" title="Italic"><i class="fa fa-italic"></i></button>
       <button class="fmt-btn" data-cmd="underline" title="Underline"><i class="fa fa-underline"></i></button>
     </div>
 
-    <!-- Reading Progress Bar -->
     <div class="reading-progress-container">
       <div class="reading-progress-bar" id="reading-progress-bar" style="display:none;"></div>
     </div>
 
-    <!-- Rich Editor Area -->
     <div class="rich-wrapper" id="rich-wrapper">
       <div
         class="rich-editor"
         id="rich-editor"
         contenteditable="true"
         spellcheck="true"
+        data-i18n-placeholder="editor_placeholder"
         data-placeholder="Start writing..."
       ></div>
 
-      <!-- Save Indicator Overlay (bottom-left) -->
       <div class="save-indicator-overlay" id="save-indicator">&mdash;</div>
 
-      <!-- Stats Overlay (bottom-right) -->
       <div class="stats-overlay" id="stats-overlay">
         <span class="stats-default" id="stats-default">0 words &middot; 0 chars &#9662;</span>
         <span class="stats-goal" id="stats-goal" style="display:none;"></span>
@@ -163,50 +153,47 @@
       </div>
     </div>
 
-    <!-- Outline Panel -->
     <div class="side-panel outline-panel" id="outline-panel" style="display:none;">
       <div class="panel-header">
         <span class="panel-title" data-i18n="outline_title">Outline</span>
-        <button class="mini-btn panel-close" id="btn-close-outline" title="Close">&#10005;</button>
+        <button class="mini-btn panel-close" id="btn-close-outline" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
       </div>
       <div class="panel-body" id="outline-list"></div>
     </div>
 
-    <!-- Metadata Panel -->
     <div class="side-panel metadata-panel" id="metadata-panel" style="display:none;">
       <div class="panel-header">
         <span class="panel-title" data-i18n="meta_panel_title">Metadata</span>
-        <button class="mini-btn panel-close" id="btn-close-metadata" title="Close">&#10005;</button>
+        <button class="mini-btn panel-close" id="btn-close-metadata" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
       </div>
       <div class="panel-body">
         <div class="meta-field">
           <label data-i18n="meta_label_title">Title</label>
-          <input type="text" id="meta-title" data-i18n-ph="meta_placeholder_title" placeholder="Enter document title...">
+          <input type="text" id="meta-title" data-i18n-placeholder="meta_placeholder_title" placeholder="Enter document title...">
         </div>
         <div class="meta-field">
           <label data-i18n="meta_label_author">Author</label>
-          <input type="text" id="meta-author" data-i18n-ph="meta_placeholder_author" placeholder="Your name...">
+          <input type="text" id="meta-author" data-i18n-placeholder="meta_placeholder_author" placeholder="Your name...">
         </div>
         <div class="meta-field">
           <label data-i18n="meta_label_category">Category</label>
-          <input type="text" id="meta-category" data-i18n-ph="meta_placeholder_category" placeholder="Blog post, Article, Story...">
+          <input type="text" id="meta-category" data-i18n-placeholder="meta_placeholder_category" placeholder="Blog post, Article, Story...">
         </div>
         <div class="meta-field">
           <label data-i18n="meta_label_tags">Tags</label>
-          <input type="text" id="meta-tags" data-i18n-ph="meta_placeholder_tags" placeholder="tag1, tag2, tag3...">
+          <input type="text" id="meta-tags" data-i18n-placeholder="meta_placeholder_tags" placeholder="tag1, tag2, tag3...">
         </div>
         <div class="meta-dates">
-          <div class="meta-date-row" id="meta-created">Created: &mdash;</div>
-          <div class="meta-date-row" id="meta-modified">Modified: &mdash;</div>
+          <div class="meta-date-row" id="meta-created" data-i18n-prefix="meta_label_created">Created: &mdash;</div>
+          <div class="meta-date-row" id="meta-modified" data-i18n-prefix="meta_label_modified">Modified: &mdash;</div>
         </div>
       </div>
     </div>
 
-    <!-- Word Frequency Panel -->
     <div class="side-panel wordfreq-panel" id="wordfreq-panel" style="display:none;">
       <div class="panel-header">
         <span class="panel-title" data-i18n="word_freq_title">Word Frequency</span>
-        <button class="mini-btn panel-close" id="btn-close-wordfreq" title="Close">&#10005;</button>
+        <button class="mini-btn panel-close" id="btn-close-wordfreq" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
       </div>
       <div class="panel-body">
         <div class="wordfreq-summary" id="wordfreq-summary"></div>
@@ -216,8 +203,17 @@
 
   </div>
 
-  <!-- Global Footer -->
-  <div id="footer-root"></div>
+  <div id="oros-footer"></div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
 
 </body>
 </html>
