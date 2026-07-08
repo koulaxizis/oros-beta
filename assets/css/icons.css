@@ -1,6 +1,6 @@
-/* Fork Awesome — Minimal Subset for orOS */
-/* Self-hosted. No external connections. MIT License. */
-/* Source: https://forkaweso.me/Fork-Awesome/ */
+/* ============================================
+   orOS — Fork Awesome Icon Font
+   ============================================ */
 
 @font-face {
   font-family: 'ForkAwesome';
@@ -14,32 +14,44 @@
 
 .fa {
   display: inline-block;
-  font: normal normal normal 14px/1 'ForkAwesome';
+  font: normal normal normal 14px/1 ForkAwesome;
   font-size: inherit;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1;
 }
 
-.fa-save:before         { content: '\f0c7'; }
-.fa-folder-open:before   { content: '\f07c'; }
-.fa-trash:before         { content: '\f1f8'; }
-.fa-download:before      { content: '\f019'; }
-.fa-bold:before          { content: '\f032'; }
-.fa-italic:before        { content: '\f033'; }
-.fa-underline:before     { content: '\f0cd'; }
+/* Toolbar icons */
+.fa-save:before { content: '\f0c7'; }
+.fa-folder-open:before { content: '\f07c'; }
+.fa-trash:before { content: '\f1f8'; }
+.fa-download:before { content: '\f019'; }
+.fa-bold:before { content: '\f032'; }
+.fa-italic:before { content: '\f033'; }
+.fa-underline:before { content: '\f0cd'; }
 .fa-strikethrough:before { content: '\f0cc'; }
-.fa-header:before        { content: '\f1dc'; }
-.fa-list-ul:before       { content: '\f0ca'; }
-.fa-list-ol:before       { content: '\f0cb'; }
-.fa-list:before          { content: '\f03a'; }
-.fa-bullseye:before      { content: '\f140'; }
-.fa-info-circle:before   { content: '\f05a'; }
-.fa-search:before        { content: '\f002'; }
-.fa-bar-chart:before     { content: '\f080'; }
-.fa-caret-down:before    { content: '\f0d7'; }
-.fa-font:before          { content: '\f031'; }
-.fa-pencil:before        { content: '\f040'; }
-.fa-undo:before          { content: '\f0e2'; }
-.fa-repeat:before        { content: '\f01e'; }
+.fa-header:before { content: '\f1dc'; }
+.fa-list-ul:before { content: '\f0ca'; }
+.fa-list-ol:before { content: '\f0cb'; }
+.fa-search:before { content: '\f002'; }
+.fa-bullseye:before { content: '\f140'; }
+.fa-info-circle:before { content: '\f05a'; }
+.fa-bar-chart:before { content: '\f080'; }
+.fa-pencil:before { content: '\f040'; }
+.fa-caret-down:before { content: '\f0d7'; }
+.fa-undo:before { content: '\f0e2'; }
+.fa-repeat:before { content: '\f01e'; }
+
+/* Context menu icons */
+.cm-icon {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.dropdown-arrow-icon {
+  margin-left: 2px;
+  font-size: 0.8em;
+  opacity: 0.6;
+}

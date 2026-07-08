@@ -1,7 +1,6 @@
 // ============================================
 // orOS — Core Functionality v0.5
 // Theme | Language | Zen Mode | Settings
-// Multi-language support (EN, EL, ES, IT, FR, DE)
 // ============================================
 
 (function() {
@@ -53,8 +52,6 @@
     initSettings();
     applyTranslationsOnInit();
     updateFooterCredits();
-    
-    // Theme is already applied by header.js, just initialize the button
     initThemeButtonOnly();
   });
 
@@ -68,29 +65,23 @@
     return t[key] || key;
   }
 
-  // ---------- Theme Button Only (theme already applied by header.js) ----------
   function initThemeButtonOnly() {
     var btn = document.getElementById('theme-toggle');
     if (!btn) return;
-    
     var currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'light';
     btn.innerHTML = currentTheme === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F';
-    
     btn.onclick = function() {
       var current = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'light';
       var next = current === 'dark' ? 'light' : 'dark';
-      
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('oros-theme', next);
       btn.innerHTML = next === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F';
-      
       var t = (translations[getLang()] || translations.en) || {};
       btn.title = next === 'dark' ? (t.theme_dark || 'Dark') : (t.theme_light || 'Light');
       btn.setAttribute('aria-label', next === 'dark' ? (t.theme_dark || 'Dark') : (t.theme_light || 'Light'));
     };
   }
 
-  // ---------- Language ----------
   function initLanguage() {
     var savedLang = localStorage.getItem(STORAGE_KEY.LANGUAGE);
     var currentLang;
@@ -110,10 +101,7 @@
     localStorage.setItem(STORAGE_KEY.LANGUAGE, lang);
     updateFooterCredits();
     updateSettingsModalLanguage(lang);
-    
-    // Re-render theme button with new language labels
     initThemeButtonOnly();
-    
     window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
   }
 
@@ -147,12 +135,9 @@
     if (!select) return;
     select.innerHTML = '';
     var opts = [
-      {value:'en',label:'EN'},
-      {value:'el',label:'EL'},
-      {value:'es',label:'ES'},
-      {value:'it',label:'IT'},
-      {value:'fr',label:'FR'},
-      {value:'de',label:'DE'}
+      {value:'en',label:'EN'},{value:'el',label:'EL'},
+      {value:'es',label:'ES'},{value:'it',label:'IT'},
+      {value:'fr',label:'FR'},{value:'de',label:'DE'}
     ];
     opts.forEach(function(opt) {
       var o = document.createElement('option');
@@ -164,7 +149,6 @@
     select.onchange = function(e) { applyLanguage(e.target.value); };
   }
 
-  // ---------- Footer Credits ----------
   function updateFooterCredits() {
     var trans = translations[getLang()] || translations.en;
     var creditEl = document.querySelector('.footer-credits');
@@ -174,7 +158,6 @@
     creditEl.innerHTML = '\u00A9 2026 <a href="https://koulaxizis.gr" target="_blank" rel="noopener" class="footer-link">' + linkText + '</a>' + suffix;
   }
 
-  // ---------- Back to Top ----------
   function initBackToTop() {
     var btn = document.getElementById('back-to-top');
     if (!btn) return;
@@ -184,7 +167,6 @@
     btn.onclick = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
   }
 
-  // ---------- Zen Mode ----------
   var zenActive = false;
 
   function initZenMode() {
@@ -240,7 +222,6 @@
     if (t) t.remove();
   }
 
-  // ---------- Settings Modal ----------
   function initSettings() {
     var btn = document.getElementById('btn-settings');
     if (!btn) return;
@@ -332,217 +313,256 @@
       var hideMetadataBtn = localStorage.getItem(STORAGE_KEY.HIDE_METADATA_BTN) === 'true';
       var hideFindBtn = localStorage.getItem(STORAGE_KEY.HIDE_FIND_BTN) === 'true';
       var hideWordFreqBtn = localStorage.getItem(STORAGE_KEY.HIDE_WORDFREQ_BTN) === 'true';
-      var hideSaveIndicator = localStorage.getItem(STORAGE_KEY.HIDE_SAVE_INDICATOR) === 'true';
+	        var hideSaveIndicator = localStorage.getItem(STORAGE_KEY.HIDE_SAVE_INDICATOR) === 'true';
 
-      var writerHtml = '' +
-        '<div class="toggles-container">' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_quick_toolbar') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-quick-tbar"' + (hideQuickTbar ? '' : ' checked') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_stats') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-stats"' + (hideStats ? '' : ' checked') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_focus_mode') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-focus-mode"' + (focusModeOn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_reading_progress') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-reading-progress"' + (readingProgressOn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_smart_typography') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-smart-typography"' + (smartTypographyOn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
+      var infoNote = getTrans('shortcuts_info_note');
+
+      panelsHtml +=
+        '<div class="tab-panel" id="panel-writer" style="display:none;">' +
+          '<div class="toggles-container">' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_quick_toolbar') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-quick-toolbar"' + (hideQuickTbar ? '' : ' checked') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_stats') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-stats-overlay"' + (hideStats ? '' : ' checked') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_focus_mode') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-focus-mode"' + (focusModeOn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_reading_progress') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-reading-progress"' + (readingProgressOn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_smart_typography') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-smart-typography"' + (smartTypographyOn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="settings-subdivider"></div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_goal_btn') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-goal"' + (hideGoalBtn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_outline_btn') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-outline"' + (hideOutlineBtn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_metadata_btn') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-metadata"' + (hideMetadataBtn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_find_btn') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-find"' + (hideFindBtn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_wordfreq_btn') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-wordfreq"' + (hideWordFreqBtn ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+            '<div class="toggle-row">' +
+              '<span class="toggle-label">' + getTrans('toggle_hide_save_indicator') + '</span>' +
+              '<label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"' + (hideSaveIndicator ? ' checked' : '') + '><span class="slider"></span></label>' +
+            '</div>' +
+          '</div>' +
           '<div class="settings-divider"></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_goal_btn') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"' + (hideGoalBtn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_outline_btn') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"' + (hideOutlineBtn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_metadata_btn') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"' + (hideMetadataBtn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_find_btn') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-find-btn"' + (hideFindBtn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_wordfreq_btn') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"' + (hideWordFreqBtn ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-          '<div class="toggle-row"><span class="toggle-label">' + getTrans('toggle_hide_save_indicator') + '</span>' +
-          '<label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"' + (hideSaveIndicator ? ' checked' : '') + '><span class="slider"></span></label></div>' +
-        '</div>' +
-        '<div class="settings-divider"></div>' +
-        '<table class="shortcut-table">' +
-          '<thead><tr><th>' + colActionLabel + '</th><th>' + colKey + '</th></tr></thead>' +
-          '<tbody>' + editorShortcutsHtml + '</tbody>' +
-        '</table>' +
-        '<p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.5rem;font-style:italic;">' + getTrans('shortcuts_info_note') + '</p>';
-
-      panelsHtml += '<div class="tab-panel" id="panel-writer" style="display:none;">' + writerHtml + '</div>';
+          '<table class="shortcut-table">' +
+            '<thead><tr><th>' + colActionLabel + '</th><th>' + colKey + '</th></tr></thead>' +
+            '<tbody>' + editorShortcutsHtml + '</tbody>' +
+          '</table>' +
+          '<p class="settings-note">' + infoNote + '</p>' +
+        '</div>';
     }
 
     var modal = document.createElement('div');
     modal.className = 'settings-modal';
     modal.innerHTML =
-      '<div class="modal-backdrop"></div>' +
-      '<div class="modal-content">' +
-        '<header class="modal-header">' +
+      '<div class="settings-modal-overlay"></div>' +
+      '<div class="settings-modal-content">' +
+        '<div class="settings-header">' +
           '<h2>' + getTrans('settings') + '</h2>' +
-          '<button class="close-btn">\u00D7</button>' +
-        '</header>' +
-        '<nav class="modal-nav">' + navHtml + '</nav>' +
-        panelsHtml +
+          '<button class="settings-close" id="settings-close">\u00D7</button>' +
+        '</div>' +
+        '<div class="settings-nav">' + navHtml + '</div>' +
+        '<div class="settings-body">' + panelsHtml + '</div>' +
       '</div>';
 
     document.body.appendChild(modal);
+    requestAnimationFrame(function() { modal.classList.add('visible'); });
 
-    var closeFn = function() { modal.remove(); };
-    modal.querySelector('.close-btn').onclick = closeFn;
-    modal.querySelector('.modal-backdrop').onclick = closeFn;
+    var closeBtn = modal.querySelector('#settings-close');
+    var overlay = modal.querySelector('.settings-modal-overlay');
+
+    function closeModal() {
+      modal.classList.remove('visible');
+      setTimeout(function() { modal.remove(); }, 300);
+    }
+    closeBtn.onclick = closeModal;
+    overlay.onclick = closeModal;
 
     var tabBtns = modal.querySelectorAll('.tab-btn');
     tabBtns.forEach(function(btn) {
       btn.onclick = function() {
         tabBtns.forEach(function(b) { b.classList.remove('active'); });
-        this.classList.add('active');
-        var tabName = this.dataset.tab;
-        var globalPanel = modal.querySelector('#panel-global');
-        var writerPanel = modal.querySelector('#panel-writer');
-        if (globalPanel) globalPanel.style.display = tabName === 'global' ? '' : 'none';
-        if (writerPanel) writerPanel.style.display = tabName === 'writer' ? '' : 'none';
+        btn.classList.add('active');
+        var tab = btn.getAttribute('data-tab');
+        modal.querySelectorAll('.tab-panel').forEach(function(panel) {
+          panel.style.display = panel.id === 'panel-' + tab ? 'block' : 'none';
+        });
       };
     });
 
-    attachToggleHandlers(modal);
-    setupInstallButton(modal);
-  }
-
-  function attachToggleHandlers(modal) {
+    // --- Global: Zen toggle ---
     var zenToggle = modal.querySelector('#toggle-zen');
     if (zenToggle) {
       zenToggle.onchange = function() {
-        var shouldBeZen = this.checked;
-        var isCurrentlyZen = localStorage.getItem('oros-zen') === 'true';
-        if (shouldBeZen !== isCurrentlyZen) { toggleZenMode(); }
+        if (zenToggle.checked) {
+          if (!localStorage.getItem('oros-zen')) toggleZenMode();
+        } else {
+          if (localStorage.getItem('oros-zen')) toggleZenMode();
+        }
       };
     }
 
-    var tbarToggle = modal.querySelector('#toggle-quick-tbar');
-    if (tbarToggle) {
-      tbarToggle.onchange = function() {
-        var hide = !this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_QUICK_TBAR, hide ? 'true' : 'false');
-        var qft = document.getElementById('quick-format-toolbar');
-        if (qft) qft.style.display = hide ? 'none' : '';
-      };
-    }
-
-    var statsToggle = modal.querySelector('#toggle-stats');
-    if (statsToggle) {
-      statsToggle.onchange = function() {
-        var hide = !this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_STATS, hide ? 'true' : 'false');
-        var so = document.getElementById('stats-overlay');
-        if (so) so.style.display = hide ? 'none' : '';
-      };
-    }
-
-    var focusToggle = modal.querySelector('#toggle-focus-mode');
-    if (focusToggle) {
-      focusToggle.onchange = function() {
-        var enabled = this.checked;
-        localStorage.setItem(STORAGE_KEY.FOCUS_MODE, enabled ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-focus-mode-changed', { detail: { enabled: enabled } }));
-      };
-    }
-
-    var progressToggle = modal.querySelector('#toggle-reading-progress');
-    if (progressToggle) {
-      progressToggle.onchange = function() {
-        var enabled = this.checked;
-        localStorage.setItem(STORAGE_KEY.READING_PROGRESS, enabled ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-reading-progress-changed', { detail: { enabled: enabled } }));
-      };
-    }
-
-    var smartTypeToggle = modal.querySelector('#toggle-smart-typography');
-    if (smartTypeToggle) {
-      smartTypeToggle.onchange = function() {
-        var enabled = this.checked;
-        localStorage.setItem(STORAGE_KEY.SMART_TYPOGRAPHY, enabled ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-smart-typography-changed', { detail: { enabled: enabled } }));
-      };
-    }
-
-    var hideGoalBtnToggle = modal.querySelector('#toggle-hide-goal-btn');
-    if (hideGoalBtnToggle) {
-      hideGoalBtnToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_GOAL_BTN, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-goal-btn-changed', { detail: { hidden: hidden } }));
-      };
-    }
-
-    var hideOutlineBtnToggle = modal.querySelector('#toggle-hide-outline-btn');
-    if (hideOutlineBtnToggle) {
-      hideOutlineBtnToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_OUTLINE_BTN, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-outline-btn-changed', { detail: { hidden: hidden } }));
-      };
-    }
-
-    var hideMetadataBtnToggle = modal.querySelector('#toggle-hide-metadata-btn');
-    if (hideMetadataBtnToggle) {
-      hideMetadataBtnToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_METADATA_BTN, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-metadata-btn-changed', { detail: { hidden: hidden } }));
-      };
-    }
-
-    var hideFindBtnToggle = modal.querySelector('#toggle-hide-find-btn');
-    if (hideFindBtnToggle) {
-      hideFindBtnToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_FIND_BTN, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-find-btn-changed', { detail: { hidden: hidden } }));
-      };
-    }
-
-    var hideWordFreqToggle = modal.querySelector('#toggle-hide-wordfreq-btn');
-    if (hideWordFreqToggle) {
-      hideWordFreqToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_WORDFREQ_BTN, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-wordfreq-btn-changed', { detail: { hidden: hidden } }));
-      };
-    }
-
-    var hideSaveIndicatorToggle = modal.querySelector('#toggle-hide-save-indicator');
-    if (hideSaveIndicatorToggle) {
-      hideSaveIndicatorToggle.onchange = function() {
-        var hidden = this.checked;
-        localStorage.setItem(STORAGE_KEY.HIDE_SAVE_INDICATOR, hidden ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-hide-save-indicator-changed', { detail: { hidden: hidden } }));
-      };
-    }
-  }
-
-  function setupInstallButton(modal) {
-    var installBtn = modal.querySelector('#btn-install-pwa');
-    if (!installBtn) return;
-    if (deferredPrompt) {
-      installBtn.onclick = async function() {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        installBtn.disabled = true;
-        installBtn.textContent = getTrans('install_installed');
-      };
-    } else {
-      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        installBtn.disabled = true;
-        installBtn.textContent = getTrans('install_already');
-      } else {
-        installBtn.disabled = true;
-        installBtn.textContent = getTrans('install_not_supported');
+    // --- Editor toggles ---
+    if (isEditor) {
+      var qtToggle = modal.querySelector('#toggle-quick-toolbar');
+      if (qtToggle) {
+        qtToggle.onchange = function() {
+          var hidden = !qtToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_QUICK_TBAR, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-quick-tbar-changed', { detail: { hidden: hidden } }));
+        };
       }
+
+      var statsToggle = modal.querySelector('#toggle-stats-overlay');
+      if (statsToggle) {
+        statsToggle.onchange = function() {
+          var hidden = !statsToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_STATS, hidden ? 'true' : 'false');
+          var so = document.getElementById('stats-overlay');
+          if (so) so.style.display = hidden ? 'none' : '';
+        };
+      }
+
+      var fmToggle = modal.querySelector('#toggle-focus-mode');
+      if (fmToggle) {
+        fmToggle.onchange = function() {
+          var enabled = fmToggle.checked;
+          localStorage.setItem(STORAGE_KEY.FOCUS_MODE, enabled ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-focus-mode-changed', { detail: { enabled: enabled } }));
+        };
+      }
+
+      var rpToggle = modal.querySelector('#toggle-reading-progress');
+      if (rpToggle) {
+        rpToggle.onchange = function() {
+          var enabled = rpToggle.checked;
+          localStorage.setItem(STORAGE_KEY.READING_PROGRESS, enabled ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-reading-progress-changed', { detail: { enabled: enabled } }));
+        };
+      }
+
+      var stToggle = modal.querySelector('#toggle-smart-typography');
+      if (stToggle) {
+        stToggle.onchange = function() {
+          var enabled = stToggle.checked;
+          localStorage.setItem(STORAGE_KEY.SMART_TYPOGRAPHY, enabled ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-smart-typography-changed', { detail: { enabled: enabled } }));
+        };
+      }
+
+      var hgToggle = modal.querySelector('#toggle-hide-goal');
+      if (hgToggle) {
+        hgToggle.onchange = function() {
+          var hidden = hgToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_GOAL_BTN, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-goal-btn-changed', { detail: { hidden: hidden } }));
+        };
+      }
+
+      var hoToggle = modal.querySelector('#toggle-hide-outline');
+      if (hoToggle) {
+        hoToggle.onchange = function() {
+          var hidden = hoToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_OUTLINE_BTN, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-outline-btn-changed', { detail: { hidden: hidden } }));
+        };
+      }
+
+      var hmToggle = modal.querySelector('#toggle-hide-metadata');
+      if (hmToggle) {
+        hmToggle.onchange = function() {
+          var hidden = hmToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_METADATA_BTN, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-metadata-btn-changed', { detail: { hidden: hidden } }));
+        };
+      }
+
+      var hfToggle = modal.querySelector('#toggle-hide-find');
+      if (hfToggle) {
+        hfToggle.onchange = function() {
+          var hidden = hfToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_FIND_BTN, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-find-btn-changed', { detail: { hidden: hidden } }));
+        };
+      }
+
+      var hwToggle = modal.querySelector('#toggle-hide-wordfreq');
+      if (hwToggle) {
+        hwToggle.onchange = function() {
+          var hidden = hwToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_WORDFREQ_BTN, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-wordfreq-btn-changed', { detail: { hidden: hidden } }));
+        };
+      }
+
+      var hsToggle = modal.querySelector('#toggle-hide-save-indicator');
+      if (hsToggle) {
+        hsToggle.onchange = function() {
+          var hidden = hsToggle.checked;
+          localStorage.setItem(STORAGE_KEY.HIDE_SAVE_INDICATOR, hidden ? 'true' : 'false');
+          window.dispatchEvent(new CustomEvent('oros-hide-save-indicator-changed', { detail: { hidden: hidden } }));
+        };
+      }
+    }
+
+    // --- Install PWA ---
+    var installBtn = modal.querySelector('#btn-install-pwa');
+    if (installBtn) {
+      installBtn.onclick = function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+              installBtn.textContent = '\u2713 ' + getTrans('install_installed');
+              installBtn.disabled = true;
+            }
+            deferredPrompt = null;
+          });
+        } else {
+          installBtn.textContent = getTrans('install_not_supported');
+          installBtn.disabled = true;
+        }
+      };
     }
   }
 
   function updateSettingsModalLanguage(lang) {
-    var existing = document.querySelector('.settings-modal');
-    if (existing) { existing.remove(); openSettingsModal(); }
+    var modal = document.querySelector('.settings-modal');
+    if (!modal) return;
+    var trans = translations[lang] || translations.en;
+    modal.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      if (trans[key]) el.textContent = trans[key];
+    });
   }
+
+  // Expose globally
+  window.getTrans = getTrans;
+  window.getLang = getLang;
+  window.applyLanguage = applyLanguage;
+  window.openSettingsModal = openSettingsModal;
 
 })();

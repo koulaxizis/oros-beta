@@ -10,10 +10,9 @@
     document.write('<base href="' + (window.OROS_CONFIG.baseHref || '/') + '">');
   </script>
   
-    <!-- favicon: στη ρίζα, όχι σε assets/img/ -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-
   <link rel="canonical" href="https://koulaxizis.github.io/oros-beta/editor.html">
+  <link rel="manifest" href="manifest.json">
 
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
@@ -24,11 +23,6 @@
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
 
-  <link rel="manifest" href="manifest.json">
-
-
-
-  <!-- JS components paths -->
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/editor.js" defer></script>
@@ -39,6 +33,10 @@
   <div id="oros-header"></div>
 
   <div id="editor-wrapper">
+
+    <div class="reading-progress-container">
+      <div class="reading-progress-bar" id="reading-progress-bar"></div>
+    </div>
 
     <div class="main-toolbar" id="main-toolbar">
       <div class="toolbar-group toolbar-left">
@@ -71,6 +69,13 @@
       </div>
 
       <div class="toolbar-group toolbar-right">
+        <button class="action-btn" id="btn-bullet" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
+          <i class="fa fa-list-ul"></i>
+        </button>
+        <button class="action-btn" id="btn-number" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
+          <i class="fa fa-list-ol"></i>
+        </button>
+        <span class="tb-separator"></span>
         <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
         </button>
@@ -83,7 +88,7 @@
         <button class="action-btn" id="btn-find" data-i18n-tooltip="tooltip_find" title="Find and replace (Ctrl+F)">
           <i class="fa fa-search"></i>
         </button>
-        <button class="action-btn" id="btn-wordfreq" data-i18n-tooltip="tooltip_find" title="Word frequency">
+        <button class="action-btn" id="btn-wordfreq" data-i18n-tooltip="tooltip_word_freq" title="Word frequency">
           <i class="fa fa-bar-chart"></i>
         </button>
         <button class="action-btn" id="btn-lorem" data-i18n-tooltip="tooltip_lorem_ipsum" title="Insert sample text">
@@ -118,8 +123,8 @@
         <span data-i18n="goal_lock_label">Lock</span>
       </label>
       <button class="mini-btn" id="btn-set-goal" data-i18n-tooltip="btn_set_goal_tt" title="Set goal">&#10003;</button>
-      <button class="mini-btn" id="btn-clear-goal" data-i18n-tooltip="btn_clear_goal_tt" title="Clear goal">&#10005;</button>
-      <button class="mini-btn" id="btn-close-goal" data-i18n-tooltip="btn_close_tt" title="Close">&#10005;</button>
+      <button class="mini-btn" id="btn-clear-goal" data-i18n-tooltip="btn_clear_goal_tt" title="Clear goal" onclick="clearGoal()">&#10005;</button>
+      <button class="mini-btn" id="btn-close-goal" data-i18n-tooltip="btn_close_tt" title="Close" onclick="document.getElementById('goal-bar').style.display='none'">&#10005;</button>
     </div>
 
     <div class="find-replace-bar" id="find-replace-bar" style="display:none;">
@@ -137,10 +142,6 @@
       <button class="fmt-btn" data-cmd="underline" title="Underline"><i class="fa fa-underline"></i></button>
     </div>
 
-    <div class="reading-progress-container">
-      <div class="reading-progress-bar" id="reading-progress-bar" style="display:none;"></div>
-    </div>
-
     <div class="rich-wrapper" id="rich-wrapper">
       <div
         class="rich-editor"
@@ -154,7 +155,7 @@
       <div class="save-indicator-overlay" id="save-indicator">&mdash;</div>
 
       <div class="stats-overlay" id="stats-overlay">
-        <span class="stats-default" id="stats-default">0 words &middot; 0 chars &#9662;</span>
+        <span class="stats-default" id="stats-default">0 words · 0 chars ▼</span>
         <span class="stats-goal" id="stats-goal" style="display:none;"></span>
         <div class="stats-detailed" id="stats-detailed" style="display:none;"></div>
       </div>
@@ -191,8 +192,8 @@
           <input type="text" id="meta-tags" data-i18n-placeholder="meta_placeholder_tags" placeholder="tag1, tag2, tag3...">
         </div>
         <div class="meta-dates">
-          <div class="meta-date-row" id="meta-created" data-i18n-prefix="meta_label_created">Created: &mdash;</div>
-          <div class="meta-date-row" id="meta-modified" data-i18n-prefix="meta_label_modified">Modified: &mdash;</div>
+          <div class="meta-date-row" id="meta-created" data-i18n-prefix="meta_label_created">Created: —</div>
+          <div class="meta-date-row" id="meta-modified" data-i18n-prefix="meta_label_modified">Modified: —</div>
         </div>
       </div>
     </div>
