@@ -3,7 +3,8 @@
     var footerEl = document.getElementById('oros-footer');
     if (!footerEl) return;
 
-    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.5-beta';
+    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.6.2';
+	var channel = (window.OROS_CONFIG && window.OROS_CONFIG.channel) || 'beta';
 
     footerEl.innerHTML =
       '<footer class="footer">' +
