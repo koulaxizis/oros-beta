@@ -38,7 +38,8 @@
       <div class="reading-progress-bar" id="reading-progress-bar"></div>
     </div>
 
-    <div class="main-toolbar" id="main-toolbar">
+        <div class="main-toolbar" id="main-toolbar">
+      <!-- GROUP 1: LEFT (File Actions) -->
       <div class="toolbar-group toolbar-left">
         <button class="action-btn" id="btn-save" data-i18n-tooltip="tooltip_save" title="Save (Ctrl+S)">
           <i class="fa fa-save"></i>
@@ -52,6 +53,7 @@
         </button>
       </div>
 
+      <!-- GROUP 2: CENTER (Formatting) -->
       <div class="toolbar-group toolbar-center">
         <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold">
           <i class="fa fa-bold"></i>
@@ -66,16 +68,17 @@
         <button class="fmt-text-btn" data-h="H1" data-block="h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
         <button class="fmt-text-btn" data-h="H2" data-block="h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
         <button class="fmt-text-btn" data-h="H3" data-block="h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
-      </div>
-
-      <div class="toolbar-group toolbar-right">
+        <span class="tb-separator"></span>
         <button class="action-btn" id="btn-bullet" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
           <i class="fa fa-list-ul"></i>
         </button>
         <button class="action-btn" id="btn-number" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
           <i class="fa fa-list-ol"></i>
         </button>
-        <span class="tb-separator"></span>
+      </div>
+
+      <!-- GROUP 3: RIGHT (Tools) -->
+      <div class="toolbar-group toolbar-right">
         <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
         </button>

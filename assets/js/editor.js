@@ -1,6 +1,6 @@
 // ============================================
 // orOS Writer — Unified Rich Text Editor v0.5
-// All fixes: Tooltips, Buttons, Quick Toolbar Toggle
+// All fixes: Tooltips, Buttons, Quick Toolbar Toggle, Bullet/Number placement
 // ============================================
 
 (function() {
@@ -123,7 +123,7 @@
           '<h2>Section Subheading</h2>' +
           '<blockquote>Art is a lie that makes us realize the truth. — Pablo Picasso</blockquote>' +
           '<p>The <em>final paragraph</em> wraps up the sample content. ' +
-          'Use this text to test your editor's formatting, exports, and statistics. ' +
+          'Use this text to test your editor\'s formatting, exports, and statistics. ' +
           'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>' +
           '<ol><li>First numbered step</li><li>Second numbered step</li><li>Third numbered step</li></ol>',
       el: '<h1>Τίτλος Εγγράφου</h1>' +
@@ -160,7 +160,7 @@
           'tutti funzionanti insieme. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
           '<ul><li>Primo elemento della lista</li><li>Secondo elemento della lista</li><li>Terzo elemento della lista</li></ul>' +
           '<h2>Sottotitolo della Sezione</h2>' +
-          '<blockquote>L'arte è una menzogna che ci fa capire la verità. — Pablo Picasso</blockquote>' +
+          '<blockquote>L\'arte è una menzogna che ci fa capire la verità. — Pablo Picasso</blockquote>' +
           '<p>Il <em>paragrafo finale</em> conclude il contenuto di esempio. ' +
           'Usa questo testo per provare la formattazione, le esportazioni e le statistiche del tuo editor.</p>' +
           '<ol><li>Primo passo numerato</li><li>Secondo passo numerato</li><li>Terzo passo numerato</li></ol>',
@@ -170,8 +170,8 @@
           'qui fonctionnent tous ensemble. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
           '<ul><li>Premier élément de la liste</li><li>Deuxième élément de la liste</li><li>Troisième élément de la liste</li></ul>' +
           '<h2>Sous-titre de Section</h2>' +
-          '<blockquote>L'art est un mensonge qui nous fait réaliser la vérité. — Pablo Picasso</blockquote>' +
-          '<p>Le <em>paragraphe final</em> conclut le contenu d'exemple. ' +
+          '<blockquote>L\'art est un mensonge qui nous fait réaliser la vérité. — Pablo Picasso</blockquote>' +
+          '<p>Le <em>paragraphe final</em> conclut le contenu d\'exemple. ' +
           'Utilisez ce texte pour tester la mise en forme, les exportations et les statistiques de votre éditeur.</p>' +
           '<ol><li>Première étape</li><li>Deuxième étape</li><li>Troisième étape</li></ol>',
       de: '<h1>Dokumenttitel</h1>' +
@@ -440,459 +440,6 @@
       statsDefaultEl.textContent = formatNumber(words) + ' ' + getTrans('text_words') +
         ' · ' + formatNumber(chars) + ' ' + getTrans('text_chars') + arrow;
     }
-
-    if (statsDetailed) {
-      var t = function(k) { return getTrans(k); };
-      statsDetailed.innerHTML =
-        '<div class="stat-row"><span>' + t('stats_chars_with_spaces') + '</span><span>' + chars.toLocaleString() + '</span></div>' +
-        '<div class="stat-row"><span>' + t('stats_chars_no_spaces// ============================================
-// orOS Writer — Unified Rich Text Editor v0.5
-// All fixes: Tooltips, Buttons, Quick Toolbar Toggle
-// ============================================
-
-(function() {
-  'use strict';
-
-  var STORAGE_KEY = 'oros_writer_content';
-  var STORAGE_HIDE_STATS = 'oros_hide_stats';
-  var STORAGE_HIDE_QUICK_TBAR = 'oros_hide_quick_tbar';
-  var STORAGE_FOCUS_MODE = 'oros_focus_mode';
-  var STORAGE_READING_PROGRESS = 'oros_reading_progress';
-  var STORAGE_SMART_TYPOGRAPHY = 'oros_smart_typography';
-  var STORAGE_LAST_SAVED = 'oros_writer_last_saved';
-  var STORAGE_GOAL_TARGET = 'oros_goal_target';
-  var STORAGE_GOAL_UNIT = 'oros_goal_unit';
-  var STORAGE_GOAL_LOCK = 'oros_goal_lock';
-  var STORAGE_HIDE_GOAL_BTN = 'oros_hide_goal_btn';
-  var STORAGE_HIDE_OUTLINE_BTN = 'oros_hide_outline_btn';
-  var STORAGE_HIDE_METADATA_BTN = 'oros_hide_metadata_btn';
-  var STORAGE_HIDE_FIND_BTN = 'oros_hide_find_btn';
-  var STORAGE_HIDE_WORDFREQ_BTN = 'oros_hide_wordfreq_btn';
-  var STORAGE_HIDE_SAVE_INDICATOR = 'oros_hide_save_indicator';
-  var STORAGE_METADATA = 'oros_writer_metadata';
-
-  var richEditor = document.getElementById('rich-editor');
-  var richWrapper = document.getElementById('rich-wrapper');
-  var findBar = document.getElementById('find-replace-bar');
-  var findInput = document.getElementById('find-find');
-  var replaceInput = document.getElementById('find-replace');
-  var frResults = document.getElementById('fr_results');
-  var btnSave = document.getElementById('btn-save');
-  var btnOpen = document.getElementById('btn-open');
-  var btnClear = document.getElementById('btn-clear');
-  var btnExport = document.getElementById('btn-export');
-  var btnLorem = document.getElementById('btn-lorem');
-  var exportDropdown = document.getElementById('export-dropdown');
-  var fileInput = document.getElementById('file-input');
-  var statsOverlay = document.getElementById('stats-overlay');
-  var statsDefaultEl = document.getElementById('stats-default');
-  var statsGoalEl = document.getElementById('stats-goal');
-  var statsDetailed = document.getElementById('stats-detailed');
-  var quickFormatToolbar = document.getElementById('quick-format-toolbar');
-  var outlinePanel = document.getElementById('outline-panel');
-  var outlineList = document.getElementById('outline-list');
-  var btnOutline = document.getElementById('btn-outline');
-  var btnCloseOutline = document.getElementById('btn-close-outline');
-  var progressBar = document.getElementById('reading-progress-bar');
-  var goalBar = document.getElementById('goal-bar');
-  var goalUnitSelect = document.getElementById('goal-unit');
-  var goalTargetInput = document.getElementById('goal-target-input');
-  var goalLockCheckbox = document.getElementById('goal-lock');
-  var btnGoal = document.getElementById('btn-goal');
-  var btnSetGoal = document.getElementById('btn-set-goal');
-  var btnClearGoal = document.getElementById('btn-clear-goal');
-  var btnCloseGoal = document.getElementById('btn-close-goal');
-  var btnFind = document.getElementById('btn-find');
-  var btnCloseFR = document.getElementById('btn-close-fr');
-  var metadataPanel = document.getElementById('metadata-panel');
-  var btnMetadata = document.getElementById('btn-metadata');
-  var btnCloseMetadata = document.getElementById('btn-close-metadata');
-  var metaTitle = document.getElementById('meta-title');
-  var metaAuthor = document.getElementById('meta-author');
-  var metaTags = document.getElementById('meta-tags');
-  var metaCategory = document.getElementById('meta-category');
-  var metaCreated = document.getElementById('meta-created');
-  var metaModified = document.getElementById('meta-modified');
-  var btnWordFreq = document.getElementById('btn-wordfreq');
-  var btnCloseWordFreq = document.getElementById('btn-close-wordfreq');
-  var wordFreqPanel = document.getElementById('wordfreq-panel');
-  var wordFreqSummary = document.getElementById('wordfreq-summary');
-  var wordFreqList = document.getElementById('wordfreq-list');
-  var saveIndicator = document.getElementById('save-indicator');
-
-  var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
-  var hideQuickTbar = localStorage.getItem(STORAGE_HIDE_QUICK_TBAR) === 'true';
-  var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
-  var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
-  var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
-  var lastSavedTime = parseInt(localStorage.getItem(STORAGE_LAST_SAVED)) || null;
-  var goalTarget = parseInt(localStorage.getItem(STORAGE_GOAL_TARGET)) || null;
-  var goalUnit = localStorage.getItem(STORAGE_GOAL_UNIT) || 'words';
-  var goalLockEnabled = localStorage.getItem(STORAGE_GOAL_LOCK) === 'true';
-  var hideGoalBtn = localStorage.getItem(STORAGE_HIDE_GOAL_BTN) === 'true';
-  var hideOutlineBtn = localStorage.getItem(STORAGE_HIDE_OUTLINE_BTN) === 'true';
-  var hideMetadataBtn = localStorage.getItem(STORAGE_HIDE_METADATA_BTN) === 'true';
-  var hideFindBtn = localStorage.getItem(STORAGE_HIDE_FIND_BTN) === 'true';
-  var hideWordFreqBtn = localStorage.getItem(STORAGE_HIDE_WORDFREQ_BTN) === 'true';
-  var hideSaveIndicator = localStorage.getItem(STORAGE_HIDE_SAVE_INDICATOR) === 'true';
-  var goalReachedShown = false;
-  var goalLockTriggered = false;
-  var currentMatchIndex = -1;
-  var matchRanges = [];
-  var statsExpanded = false;
-  var wordFreqDebounce = null;
-  var outlineDebounceTimer = null;
-
-  // ========== HELPERS ==========
-  function getCurrentLang() { return localStorage.getItem('oros-language') || 'en'; }
-  function getTrans(key) {
-    var lang = getCurrentLang();
-    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
-    return t[key] || key;
-  }
-  function formatNumber(num) {
-    return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString();
-  }
-  function getTextContent() {
-    var text = richEditor.innerText || '';
-    return text.replace(/\n$/, '');
-  }
-
-  // ========== LOREM IPSUM GENERATOR ==========
-  function generateLoremIpsum() {
-    var lang = getCurrentLang();
-    var templates = {
-      en: '<h1>Document Title</h1>' +
-          '<p>This is the <strong>first paragraph</strong> with various formatting options. ' +
-          'You can see <em>italic text</em>, <u>underlined text</u>, and <strong>bold text</strong> ' +
-          'all working together seamlessly. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>First bullet point item</li><li>Second bullet point item</li><li>Third bullet point item</li></ul>' +
-          '<h2>Section Subheading</h2>' +
-          '<blockquote>Art is a lie that makes us realize the truth. — Pablo Picasso</blockquote>' +
-          '<p>The <em>final paragraph</em> wraps up the sample content. ' +
-          'Use this text to test your editor's formatting, exports, and statistics. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>' +
-          '<ol><li>First numbered step</li><li>Second numbered step</li><li>Third numbered step</li></ol>',
-      el: '<h1>Τίτλος Εγγράφου</h1>' +
-          '<p>Αυτή είναι η <strong>πρώτη παράγραφος</strong> ' +
-          'με διάφορες επιλογές μορφοποίησης. ' +
-          'Μπορείς να δεις <em>πλάγιο κείμενο</em>, ' +
-          '<u>υπογεγραμμένο κείμενο</u>, ' +
-          'και <strong>έντονο κείμενο</strong> ' +
-          'όλα να λειτουργούν μαζί.</p>' +
-          '<ul><li>Πρώτο στοιχείο λίστας</li>' +
-          '<li>Δεύτερο στοιχείο λίστας</li>' +
-          '<li>Τρίτο στοιχείο λίστας</li></ul>' +
-          '<h2>Υπότιτλος Τμήματος</h2>' +
-          '<blockquote>Η τέχνη είναι ένα ψέμα που μας κάνει να συνειδητοποιούμε την αλήθεια.</blockquote>' +
-          '<p>Η <em>τελευταία παράγραφος</em> ' +
-          'κλείνει το δοκιμαστικό κείμενο. ' +
-          'Χρησιμοποίησε αυτό το κείμενο ' +
-          'για να δοκιμάσεις την μορφοποίηση, ' +
-          'τις εξάγωγες και τα στατιστικά.</p>' +
-          '<ol><li>Πρώτο βήμα</li><li>Δεύτερο βήμα</li><li>Τρίτο βήμα</li></ol>',
-      es: '<h1>Título del Documento</h1>' +
-          '<p>Este es el <strong>primer párrafo</strong> con varias opciones de formato. ' +
-          'Puedes ver <em>texto en cursiva</em>, <u>texto subrayado</u>, y <strong>texto en negrita</strong> ' +
-          'todos funcionando juntos. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Primer elemento de la lista</li><li>Segundo elemento de la lista</li><li>Tercer elemento de la lista</li></ul>' +
-          '<h2>Subtítulo de Sección</h2>' +
-          '<blockquote>El arte es una mentira que nos hace darnos cuenta de la verdad. — Pablo Picasso</blockquote>' +
-          '<p>El <em>párrafo final</em> concluye el contenido de ejemplo. ' +
-          'Usa este texto para probar el formato, las exportaciones y las estadísticas de tu editor.</p>' +
-          '<ol><li>Primer paso numerado</li><li>Segundo paso numerado</li><li>Tercer paso numerado</li></ol>',
-      it: '<h1>Titolo del Documento</h1>' +
-          '<p>Questo è il <strong>primo paragrafo</strong> con varie opzioni di formattazione. ' +
-          'Puoi vedere <em>testo in corsivo</em>, <u>testo sottolineato</u>, e <strong>testo in grassetto</strong> ' +
-          'tutti funzionanti insieme. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Primo elemento della lista</li><li>Secondo elemento della lista</li><li>Terzo elemento della lista</li></ul>' +
-          '<h2>Sottotitolo della Sezione</h2>' +
-          '<blockquote>L'arte è una menzogna che ci fa capire la verità. — Pablo Picasso</blockquote>' +
-          '<p>Il <em>paragrafo finale</em> conclude il contenuto di esempio. ' +
-          'Usa questo testo per provare la formattazione, le esportazioni e le statistiche del tuo editor.</p>' +
-          '<ol><li>Primo passo numerato</li><li>Secondo passo numerato</li><li>Terzo passo numerato</li></ol>',
-      fr: '<h1>Titre du Document</h1>' +
-          '<p>Ceci est le <strong>premier paragraphe</strong> avec diverses options de mise en forme. ' +
-          'Vous pouvez voir du <em>texte en italique</em>, du <u>texte souligné</u>, et du <strong>texte en gras</strong> ' +
-          'qui fonctionnent tous ensemble. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Premier élément de la liste</li><li>Deuxième élément de la liste</li><li>Troisième élément de la liste</li></ul>' +
-          '<h2>Sous-titre de Section</h2>' +
-          '<blockquote>L'art est un mensonge qui nous fait réaliser la vérité. — Pablo Picasso</blockquote>' +
-          '<p>Le <em>paragraphe final</em> conclut le contenu d'exemple. ' +
-          'Utilisez ce texte pour tester la mise en forme, les exportations et les statistiques de votre éditeur.</p>' +
-          '<ol><li>Première étape</li><li>Deuxième étape</li><li>Troisième étape</li></ol>',
-      de: '<h1>Dokumenttitel</h1>' +
-          '<p>Dies ist der <strong>erste Absatz</strong> mit verschiedenen Formatierungsoptionen. ' +
-          'Sie können <em>Kursivtext</em>, <u>unterstrichenen Text</u> und <strong>Fetttext</strong> ' +
-          'sehen, die alle zusammen funktionieren. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Erstes Listenelement</li><li>Zweites Listenelement</li><li>Drittes Listenelement</li></ul>' +
-          '<h2>Abschnittsüberschrift</h2>' +
-          '<blockquote>Kunst ist eine Lüge, die uns die Wahrheit erkennen lässt. — Pablo Picasso</blockquote>' +
-          '<p>Der <em>letzte Absatz</em> schließt den Beispielinhalt ab. ' +
-          'Verwenden Sie diesen Text, um die Formatierung, Exporte und Statistiken Ihres Editors zu testen.</p>' +
-          '<ol><li>Erster Schritt</li><li>Zweiter Schritt</li><li>Dritter Schritt</li></ol>'
-    };
-    return templates[lang] || templates.en;
-  }
-
-  function insertLoremIpsum() {
-    if (!richEditor) return;
-    var html = generateLoremIpsum();
-    richEditor.innerHTML = html;
-    saveContent();
-    updateStats();
-    showToast(getTrans('toast_lorem_inserted') || 'Sample text inserted');
-  }
-
-  // ========== SAVE INDICATOR UPDATE ==========
-  function updateSaveIndicator() {
-    if (!saveIndicator) return;
-    if (hideSaveIndicator) {
-      saveIndicator.style.visibility = 'hidden';
-      return;
-    }
-    saveIndicator.style.visibility = 'visible';
-    var trans = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[getCurrentLang()]) || {};
-    if (!lastSavedTime) {
-      saveIndicator.textContent = trans.text_not_saved || '—';
-      return;
-    }
-    var diff = Math.floor((Date.now() - lastSavedTime) / 1000);
-    if (diff < 60) {
-      saveIndicator.textContent = trans.text_saved_just_now || 'Saved just now';
-    } else if (diff < 3600) {
-      var mins = Math.floor(diff / 60);
-      saveIndicator.textContent = (trans.text_saved_minutes_ago || '{n}m ago').replace('{n}', mins);
-    } else {
-      var hours = Math.floor(diff / 3600);
-      saveIndicator.textContent = (trans.text_saved_hours_ago || '{n}h ago').replace('{n}', hours);
-    }
-  }
-
-  // ========== TOAST ==========
-  function showToast(message) {
-    var toast = document.getElementById('zen-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'zen-toast';
-      toast.className = 'zentool-toast';
-      document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.style.display = '';
-    toast.classList.add('visible');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(function() {
-      toast.classList.remove('visible');
-    }, 2500);
-  }
-
-  // ========== CONTENT PERSISTENCE ==========
-  function saveContent() {
-    localStorage.setItem(STORAGE_KEY, richEditor.innerHTML);
-    lastSavedTime = Date.now();
-    localStorage.setItem(STORAGE_LAST_SAVED, lastSavedTime.toString());
-    updateSaveIndicator();
-  }
-
-  function loadContent() {
-    var saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      richEditor.innerHTML = saved;
-    }
-    updateSaveIndicator();
-  }
-
-  if (richEditor) {
-    richEditor.addEventListener('input', function() {
-      saveContent();
-      updateStats();
-      if (outlinePanel && outlinePanel.style.display !== 'none') {
-        clearTimeout(outlineDebounceTimer);
-        outlineDebounceTimer = setTimeout(updateOutline, 300);
-      }
-      if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
-        clearTimeout(wordFreqDebounce);
-        wordFreqDebounce = setTimeout(updateWordFrequency, 800);
-      }
-    });
-  }
-
-  // ========== METADATA ==========
-  var metadata = loadMetadata();
-
-  function loadMetadata() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_METADATA)) || {}; }
-    catch(e) { return {}; }
-  }
-
-  function saveMetadata(triggerSaveIndicator) {
-    metadata.title = metaTitle ? metaTitle.value || '' : '';
-    metadata.author = metaAuthor ? metaAuthor.value || '' : '';
-    metadata.tags = metaTags ? metaTags.value || '' : '';
-    metadata.category = metaCategory ? metaCategory.value || '' : '';
-    if (!metadata.created) {
-      metadata.created = new Date().toISOString();
-    }
-    metadata.modified = new Date().toISOString();
-    localStorage.setItem(STORAGE_METADATA, JSON.stringify(metadata));
-    renderMetaDates();
-    if (triggerSaveIndicator) {
-      lastSavedTime = Date.now();
-      localStorage.setItem(STORAGE_LAST_SAVED, lastSavedTime.toString());
-      updateSaveIndicator();
-    }
-  }
-
-  function parseFrontmatter(content) {
-    var fmRegex = /^---\n([\s\S]*?)\n---\n/;
-    var match = content.match(fmRegex);
-    if (!match) return null;
-    var fmLines = match[1].split('\n');
-    var parsed = {};
-    for (var i = 0; i < fmLines.length; i++) {
-      var line = fmLines[i].trim();
-      if (!line) continue;
-      var colonIdx = line.indexOf(':');
-      if (colonIdx === -1) continue;
-      var key = line.substring(0, colonIdx).trim();
-      var value = line.substring(colonIdx + 1).trim();
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.substring(1, value.length - 1);
-      }
-      if (key === 'tags' && value.startsWith('[') && value.endsWith(']')) {
-        var tagStr = value.substring(1, value.length - 1);
-        var tags = tagStr.split(',').map(function(t) {
-          return t.trim().replace(/["']/g, '');
-        }).filter(Boolean);
-        value = tags.join(', ');
-      }
-      parsed[key] = value;
-    }
-    return parsed;
-  }
-
-  function importFrontmatter(content) {
-    var parsed = parseFrontmatter(content);
-    if (!parsed) return content;
-    if (parsed.title && metaTitle) metaTitle.value = parsed.title;
-    if (parsed.author && metaAuthor) metaAuthor.value = parsed.author;
-    if (parsed.tags && metaTags) metaTags.value = parsed.tags;
-    if (parsed.category && metaCategory) metaCategory.value = parsed.category;
-    if (parsed.created) metadata.created = parsed.created;
-    if (parsed.modified) metadata.modified = parsed.modified;
-    metadata.title = parsed.title || '';
-    metadata.author = parsed.author || '';
-    metadata.tags = parsed.tags || '';
-    metadata.category = parsed.category || '';
-    localStorage.setItem(STORAGE_METADATA, JSON.stringify(metadata));
-    renderMetaDates();
-    var fmRegex = /^---\n[\s\S]*?\n---\n/;
-    return content.replace(fmRegex, '');
-  }
-
-  function buildFrontmatter() {
-    var fm = '---\n';
-    if (metadata.title) fm += 'title: "' + metadata.title.replace(/"/g, '\\"') + '"\n';
-    if (metadata.author) fm += 'author: "' + metadata.author.replace(/"/g, '\\"') + '"\n';
-    if (metadata.tags) {
-      var tagArr = metadata.tags.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-      fm += 'tags: [' + tagArr.map(function(t) { return '"' + t + '"'; }).join(', ') + ']\n';
-    }
-    if (metadata.category) fm += 'category: "' + metadata.category.replace(/"/g, '\\"') + '"\n';
-    if (metadata.created) fm += 'created: ' + metadata.created + '\n';
-    if (metadata.modified) fm += 'modified: ' + metadata.modified + '\n';
-    fm += '---\n\n';
-    return fm;
-  }
-
-  function renderMetaDates() {
-    var createdLabel = getTrans('meta_label_created');
-    var modifiedLabel = getTrans('meta_label_modified');
-    if (metaCreated) {
-      if (metadata.created) {
-        metaCreated.textContent = createdLabel + ' ' + formatDate(new Date(metadata.created));
-      } else {
-        metaCreated.textContent = createdLabel + ' —';
-      }
-    }
-    if (metaModified) {
-      if (metadata.modified) {
-        metaModified.textContent = modifiedLabel + ' ' + formatDate(new Date(metadata.modified));
-      } else {
-        metaModified.textContent = modifiedLabel + ' —';
-      }
-    }
-  }
-
-  function formatDate(d) {
-    var day = String(d.getDate()).padStart(2, '0');
-    var month = String(d.getMonth() + 1).padStart(2, '0');
-    var year = d.getFullYear();
-    var time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    return day + '/' + month + '/' + year + ' ' + time;
-  }
-
-  function toggleMetadataPanel() {
-    if (!metadataPanel) return;
-    if (metadataPanel.style.display === 'none' || !metadataPanel.style.display) {
-      metadataPanel.style.display = 'flex';
-      metadataPanel.style.flexDirection = 'column';
-      if (metaTitle) metaTitle.value = metadata.title || '';
-      if (metaAuthor) metaAuthor.value = metadata.author || '';
-      if (metaTags) metaTags.value = metadata.tags || '';
-      if (metaCategory) metaCategory.value = metadata.category || '';
-      renderMetaDates();
-    } else {
-      saveMetadata(false);
-      metadataPanel.style.display = 'none';
-    }
-  }
-
-  function setupMetadataHandlers() {
-    var inputs = [metaTitle, metaAuthor, metaTags, metaCategory];
-    for (var i = 0; i < inputs.length; i++) {
-      (function(input) {
-        if (!input) return;
-        input.addEventListener('blur', function() { saveMetadata(true); });
-        input.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            saveMetadata(true);
-            if (input === metaTitle && metaAuthor) metaAuthor.focus();
-            else if (input === metaAuthor && metaCategory) metaCategory.focus();
-            else if (input === metaCategory && metaTags) metaTags.focus();
-            else if (input === metaTags && metaTitle) metaTitle.focus();
-          }
-        });
-      })(inputs[i]);
-    }
-  }
-
-  // ========== STATS ==========
-  function updateStats() {
-    if (!richEditor) return;
-    var text = getTextContent();
-    var chars = text.length;
-    var charsNoSpaces = text.replace(/\s/g, '').length;
-    var words = text.trim().split(/\s+/).filter(Boolean).length;
-    var sentences = text.split(/[.!?…]+(?:\s|$)/).filter(function(s) {
-      return s.trim().length > 0;
-    }).length;
-    var readMin = Math.ceil(words / 225) || 0;
-    var speakMin = Math.ceil(words / 140) || 0;
-
-    if (statsDefaultEl) {
-      var arrow = statsExpanded ? ' ▲' : ' ▼';
-      statsDefaultEl.textContent = formatNumber(words) + ' ' + getTrans('text_words') +
-        ' · ' + formatNumber(chars) + ' ' + getTrans('text_chars') + arrow;
-    }
-
-    if (statsDetailed) {
-      var t = function(k) { return getTrans(k); };
-      statsDetailed.innerHTML =
-        '<div class="stat-row"><span>' + t('stats_chars_with_spaces') + '</span><span>' + chars.toLocaleString() + '</span></div>' +
-        '<div class="stat-row"><span>' + t('stats_chars_no_spaces    }
 
     if (statsDetailed) {
       var t = function(k) { return getTrans(k); };
@@ -981,7 +528,7 @@
     goalReachedShown = false;
     goalLockTriggered = false;
     richEditor.contentEditable = 'true';
-    localStorage.setItem(STORAGE_GOAL_TARGET, goalTarget.toString());
+    localStorage.setItem(STORAGE_GOAL_TARGET, target.toString());
     localStorage.setItem(STORAGE_GOAL_UNIT, goalUnit);
     localStorage.setItem(STORAGE_GOAL_LOCK, goalLockEnabled ? 'true' : 'false');
     if (statsDefaultEl) statsDefaultEl.style.display = 'none';
@@ -1362,8 +909,6 @@
   // ========== QUICK FORMAT TOOLBAR (CONTROLS VISIBILITY) ==========
   function setupQuickFormatToolbar() {
     if (!quickFormatToolbar) return;
-    
-    // Apply visibility based on localStorage
     quickFormatToolbar.style.display = hideQuickTbar ? 'none' : '';
     
     var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
