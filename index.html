@@ -15,6 +15,7 @@
   <link rel="manifest" href="manifest.json">
 
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
@@ -30,29 +31,24 @@
 
   <div id="oros-header"></div>
 
-  <main class="hero-section">
-    <div class="hero-content">
-      <h1 class="hero-title">orOS</h1>
-      <p class="hero-tagline" data-i18n="site_tagline">The artist's operating system</p>
-      <p class="hero-intro" data-i18n="tools_intro">Select a tool below. All applications work offline and respect your personal data.</p>
-    </div>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <img src="favicon.svg" alt="orOS" class="hero-logo">
+        <h1>orOS</h1>
+        <p data-i18n="site_tagline">The artist's operating system</p>
+        <p data-i18n="tools_intro">Select a tool below. All applications work offline and respect your personal data.</p>
+      </div>
 
-    <div class="tool-grid">
-      <a href="editor.html" class="tool-card">
-        <div class="tool-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="4" width="36" height="40" rx="3" stroke="#c8a96e" stroke-width="2" fill="none"/>
-            <line x1="12" y1="14" x2="36" y2="14" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
-            <line x1="12" y1="20" x2="28" y2="20" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
-            <line x1="12" y1="26" x2="32" y2="26" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
-            <line x1="12" y1="32" x2="24" y2="32" stroke="#c8a96e" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
-        <p class="tool-desc" data-i18n="editor_desc">Simple text editor with autosave</p>
-      </a>
+      <div class="tools-grid">
+        <a href="editor.html" class="tool-card">
+          <div class="tool-icon">✍️</div>
+          <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
+          <p class="tool-desc" data-i18n="editor_desc">Simple text editor with autosave</p>
+        </a>
+      </div>
     </div>
-  </main>
+  </section>
 
   <div id="oros-footer"></div>
 
