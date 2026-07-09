@@ -854,18 +854,19 @@ body.landing-page {
 .settings-modal {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 10002;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  pointer-events: none;        /* ← ΑΥΤΟ ΕΙΝΑΙ ΚΡΙΣΙΜΟ */
+  pointer-events: none;
+  font-family: var(--font-primary);
   transition: opacity 0.2s ease;
 }
 
 .settings-modal.visible {
   opacity: 1;
-  pointer-events: auto;        /* ← ΑΥΤΟ ΕΙΝΑΙ ΚΡΙΣΙΜΟ */
+  pointer-events: auto;
 }
 
 .settings-modal-overlay {

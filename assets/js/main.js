@@ -65,6 +65,12 @@ document.addEventListener('DOMContentLoaded', function() {
       var key = el.getAttribute('data-i18n-aria');
       if (translations[key]) el.setAttribute('aria-label', translations[key]);
     });
+
+    // Placeholder translation (editor, inputs)
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-placeholder');
+      if (translations[key]) el.setAttribute('data-placeholder', translations[key]);
+    });
   }
 
   // Load translations
@@ -114,13 +120,19 @@ document.addEventListener('DOMContentLoaded', function() {
       settingsModal.classList.add('visible');
     });
 
-    settingsModal.querySelector('.settings-close').addEventListener('click', function() {
-      settingsModal.classList.remove('visible');
-    });
+    var closeBtn = settingsModal.querySelector('.settings-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        settingsModal.classList.remove('visible');
+      });
+    }
 
-    settingsModal.querySelector('.modal-backdrop').addEventListener('click', function() {
-      settingsModal.classList.remove('visible');
-    });
+    var backdrop = settingsModal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', function() {
+        settingsModal.classList.remove('visible');
+      });
+    }
 
     // Tab navigation
     var tabBtns = settingsModal.querySelectorAll('.tab-btn');
