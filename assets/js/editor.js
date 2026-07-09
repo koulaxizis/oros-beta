@@ -1372,4 +1372,4 @@
   updateGoalUnitLabels();
   updateReadingProgress();
 
-});
+})();
