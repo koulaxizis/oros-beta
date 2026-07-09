@@ -310,4 +310,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ========== INITIALIZE ==========
   translatePage();
-})();
+});
