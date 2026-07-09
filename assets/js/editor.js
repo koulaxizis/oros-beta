@@ -1309,6 +1309,58 @@
   // ========== SAVE INDICATOR LIVE TICK ==========
   setInterval(updateSaveIndicator, 30000);
 
+  // ========== ZEN MODE ENTRY NOTIFICATION ==========
+  window.addEventListener('oros-zen-mode-changed', function(e) {
+    if (e.detail.enabled) {
+      var toast = document.createElement('div');
+      toast.className = 'zentool-toast';
+      toast.textContent = getCurrentLang() === 'el' 
+        ? 'Zen Mode ενεργοποιήθηκε · Esc για έξοδο · F9 εναλλαγή'
+        : 'Zen Mode enabled · Esc to exit · F9 toggle';
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.classList.add('visible'); }, 10);
+      setTimeout(function() { 
+        toast.classList.remove('visible'); 
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 3000);
+    }
+  });
+
+  // ========== ESC KEY HANDLER ==========
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (metadataPanel && metadataPanel.style.display !== 'none') {
+        saveMetadata(false);
+        metadataPanel.style.display = 'none';
+      }
+      if (outlinePanel && outlinePanel.style.display !== 'none') {
+        outlinePanel.style.display = 'none';
+      }
+      if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
+        wordFreqPanel.style.display = 'none';
+      }
+      if (goalBar && goalBar.style.display === 'flex') {
+        goalBar.style.display = 'none';
+      }
+      if (findBar && findBar.style.display === 'flex') {
+        findBar.style.display = 'none';
+      }
+      if (statsExpanded) {
+        statsExpanded = false;
+        updateStats();
+      }
+      if (contextMenu) {
+        contextMenu.remove();
+        contextMenu = null;
+        removeCloseListeners();
+      }
+      var zenBtn = document.getElementById('btn-zen');
+      if (zenBtn && document.body.hasAttribute('data-zen')) {
+        zenBtn.click();
+      }
+    }
+  });
+
   // ========== INITIALIZE ==========
   loadContent();
   loadMetadata();
