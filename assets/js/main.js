@@ -1,12 +1,13 @@
 // ============================================
 // orOS Main Scripts — Global Components
 // Theme toggle, Language selector, Settings, PWA Install
+// FIXES: window dispatch, language event after load, backdrop selector
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
-  // ========== THEME TOGGLE (FIXED ICON SWITCHING) ==========
+  // ========== THEME TOGGLE ==========
   var themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
     themeToggle.addEventListener('click', function() {
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== LANGUAGE SELECTOR ==========
   var langSelect = document.getElementById('language-select');
   var storedLang = localStorage.getItem('oros-language') || 'el';
-  
+
   if (langSelect) {
     ['el', 'en', 'es', 'it', 'fr', 'de'].forEach(function(code) {
       var opt = document.createElement('option');
@@ -38,9 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
     langSelect.addEventListener('change', function() {
       var lang = this.value;
       localStorage.setItem('oros-language', lang);
-      
-      document.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
-      
+
+      window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
+
       translatePage();
     });
   }
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function translatePage() {
     var lang = localStorage.getItem('oros-language') || 'el';
     var translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang];
-    
+
     if (!translations) return;
 
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
@@ -66,19 +67,23 @@ document.addEventListener('DOMContentLoaded', function() {
       if (translations[key]) el.setAttribute('aria-label', translations[key]);
     });
 
-    // Placeholder translation (editor, inputs)
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
       if (translations[key]) el.setAttribute('data-placeholder', translations[key]);
     });
   }
 
-  // Load translations
+  // ========== LOAD TRANSLATIONS ==========
+  // CRITICAL: After translations load, dispatch language-changed event
+  // so editor.js re-renders stats (which ran before translations were ready)
   fetch('assets/js/translations.json')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       window.OROS_TRANSLATIONS = data;
       translatePage();
+      window.dispatchEvent(new CustomEvent('oros-language-changed', {
+        detail: { lang: localStorage.getItem('oros-language') || 'el' }
+      }));
     })
     .catch(function(e) { console.error('Failed to load translations:', e); });
 
@@ -88,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     zenBtn.addEventListener('click', function() {
       var body = document.body;
       var isZen = body.hasAttribute('data-zen');
-      
+
       if (isZen) {
         body.removeAttribute('data-zen');
       } else {
@@ -96,8 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       localStorage.setItem('oros-zen-mode', isZen ? 'false' : 'true');
-      
-      document.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
+
+      // FIX: window.dispatchEvent (not document) — editor.js listens on window
+      window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
         detail: { enabled: !isZen }
       }));
     });
@@ -114,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== SETTINGS MODAL ==========
   var settingsBtn = document.getElementById('btn-settings');
   var settingsModal = document.querySelector('.settings-modal');
-  
+
   if (settingsBtn && settingsModal) {
     settingsBtn.addEventListener('click', function() {
       settingsModal.classList.add('visible');
@@ -127,7 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    var backdrop = settingsModal.querySelector('.modal-backdrop');
+    // FIX: selector is .settings-modal-overlay (not .modal-backdrop)
+    var backdrop = settingsModal.querySelector('.settings-modal-overlay');
     if (backdrop) {
       backdrop.addEventListener('click', function() {
         settingsModal.classList.remove('visible');
@@ -142,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.addEventListener('click', function() {
         tabBtns.forEach(function(b) { b.classList.remove('active'); });
         tabPanels.forEach(function(p) { p.style.display = 'none'; });
-        
+
         this.classList.add('active');
         var panelId = this.getAttribute('data-tab');
         var panel = settingsModal.querySelector('#' + panelId);
@@ -152,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ========== SETTINGS TOGGLES ==========
-  
+
   // Reading Progress
   var readingProgressToggle = document.getElementById('toggle-reading-progress');
   if (readingProgressToggle) {
@@ -283,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Quick Format Toolbar (FIXED)
+  // Quick Format Toolbar
   var quickTbarToggle = document.getElementById('toggle-quick-tbar');
   if (quickTbarToggle) {
     quickTbarToggle.checked = localStorage.getItem('oros_hide_quick_tbar') === 'true';
@@ -309,12 +316,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (installBtn) {
     installBtn.addEventListener('click', function() {
       if (!deferredPrompt) return;
-      
+
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function(result) {
-        if (result.outcome === 'accepted') {
-          console.log('User accepted install');
-        }
         deferredPrompt = null;
       });
     });
