@@ -539,7 +539,7 @@ body.landing-page {
 
 /* ===== QUICK FORMAT TOOLBAR ===== */
 .quick-format-toolbar {
-  display: none !important;
+  display: none;
   justify-content: center;
   align-items: center;
   gap: 4px;

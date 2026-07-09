@@ -909,7 +909,7 @@
   // ========== QUICK FORMAT TOOLBAR (CONTROLS VISIBILITY) ==========
   function setupQuickFormatToolbar() {
     if (!quickFormatToolbar) return;
-    quickFormatToolbar.style.display = hideQuickTbar ? 'none' : '';
+    quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
     
     var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
     for (var i = 0; i < fmtBtns.length; i++) {
@@ -1194,7 +1194,7 @@
   });
   window.addEventListener('oros-hide-quick-tbar-changed', function(e) {
     hideQuickTbar = e.detail.hidden;
-    if (quickFormatToolbar) quickFormatToolbar.style.display = hideQuickTbar ? 'none' : '';
+    if (quickFormatToolbar) quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
   });
   window.addEventListener('oros-language-changed', function(e) {
     updateStats();
