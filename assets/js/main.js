@@ -3,7 +3,7 @@
 // Theme toggle, Language selector, Settings, PWA Install
 // ============================================
 
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
   // ========== THEME TOGGLE (FIXED ICON SWITCHING) ==========
