@@ -7,18 +7,14 @@
   <title>orOS Writer</title>
   <script src="config.js"></script>
   <script>
-    document.write('<base href="' + (window.OROS_CONFIG.baseHref || '/') + '">');
+    document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
+    var cLink = document.createElement('link');
+    cLink.rel = 'canonical';
+    cLink.href = OROS_CONFIG.domain + window.location.pathname;
+    document.head.appendChild(cLink);
   </script>
   
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<script src="config.js"></script>
-<script>
-  document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
-  var cLink = document.createElement('link');
-  cLink.rel = 'canonical';
-  cLink.href = OROS_CONFIG.domain + window.location.pathname;
-  document.head.appendChild(cLink);
-</script>
   <link rel="manifest" href="manifest.json">
 
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
@@ -130,9 +126,9 @@
 
     <div class="goal-bar" id="goal-bar">
       <select id="goal-unit">
-        <option value="words">Words</option>
-        <option value="chars">Characters</option>
-        <option value="paras">Paragraphs</option>
+        <option value="words" data-i18n="goal_unit_words">Words</option>
+        <option value="chars" data-i18n="goal_unit_chars">Characters</option>
+        <option value="paras" data-i18n="goal_unit_paras">Paragraphs</option>
       </select>
       <input type="number" id="goal-target-input" min="1" placeholder="Target" />
       <label class="goal-lock-label"><input type="checkbox" id="goal-lock"> Lock</label>
