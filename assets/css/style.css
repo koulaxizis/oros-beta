@@ -853,11 +853,13 @@ body.landing-page {
   align-items: center;
   justify-content: center;
   opacity: 0;
+  pointer-events: none;          /* ← ΠΡΟΣΘΕΣΕ ΑΥΤΟ */
   transition: opacity 0.2s ease;
 }
 
 .settings-modal.visible {
   opacity: 1;
+  pointer-events: auto;          /* ← ΠΡΟΣΘΕΣΕ ΑΥΤΟ */
 }
 
 .settings-modal-overlay {
