@@ -68,7 +68,7 @@
   }
 
   // Load translations
-  fetch('translations.json')
+  fetch('assets/js/translations.json')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       window.OROS_TRANSLATIONS = data;

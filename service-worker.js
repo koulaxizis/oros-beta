@@ -29,7 +29,7 @@ var SCRIPTS_TO_CACHE = [
   'assets/js/editor.js',
   'assets/js/components/header.js',
   'assets/js/components/footer.js',
-  'translations.json'
+  'assets/js/translations.json'
 ];
 
 // ============================================
