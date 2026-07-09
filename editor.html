@@ -76,6 +76,19 @@
         <button class="action-btn" id="btn-number" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
           <i class="fa fa-list-ol"></i>
         </button>
+        <span class="tb-separator"></span>
+        <button class="action-btn" data-cmd="justifyLeft" data-i18n-tooltip="toolbar_align_left" title="Align left">
+          <i class="fa fa-align-left"></i>
+        </button>
+        <button class="action-btn" data-cmd="justifyCenter" data-i18n-tooltip="toolbar_align_center" title="Align center">
+          <i class="fa fa-align-center"></i>
+        </button>
+        <button class="action-btn" data-cmd="justifyRight" data-i18n-tooltip="toolbar_align_right" title="Align right">
+          <i class="fa fa-align-right"></i>
+        </button>
+        <button class="action-btn" data-cmd="justifyFull" data-i18n-tooltip="toolbar_align_justify" title="Justify">
+          <i class="fa fa-align-justify"></i>
+        </button>
       </div>
 
       <div class="toolbar-group toolbar-right">
@@ -160,7 +173,7 @@
 
   <div class="side-panel" id="metadata-panel" style="display:none;">
     <div class="panel-header">
-      <span class="panel-title" data-i18n="panel_metadata">Document Info</span>
+      <span class="panel-title" data-i18n="meta_panel_title">Document Info</span>
       <button class="panel-close mini-btn" id="btn-close-metadata"><i class="fa fa-times"></i></button>
     </div>
     <div class="panel-body">
@@ -189,7 +202,7 @@
 
   <div class="side-panel" id="outline-panel" style="display:none;">
     <div class="panel-header">
-      <span class="panel-title" data-i18n="panel_outline">Document Outline</span>
+      <span class="panel-title" data-i18n="outline_title">Document Outline</span>
       <button class="panel-close mini-btn" id="btn-close-outline"><i class="fa fa-times"></i></button>
     </div>
     <div class="panel-body">
@@ -199,7 +212,7 @@
 
   <div class="side-panel" id="wordfreq-panel" style="display:none;">
     <div class="panel-header">
-      <span class="panel-title" data-i18n="panel_word_freq">Word Frequency</span>
+      <span class="panel-title" data-i18n="word_freq_title">Word Frequency</span>
       <button class="panel-close mini-btn" id="btn-close-wordfreq"><i class="fa fa-times"></i></button>
     </div>
     <div class="panel-body">
@@ -212,31 +225,31 @@
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
       <div class="settings-header">
-        <h2 data-i18n="settings_title">Settings</h2>
+        <h2 data-i18n="settings">Settings</h2>
         <button class="settings-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="settings-nav">
-        <button class="tab-btn active" data-tab="global-settings" data-i18n="settings_global">Global</button>
-        <button class="tab-btn" data-tab="writer-settings" data-i18n="settings_writer">Writer</button>
+        <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
+        <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
           <div class="toggles-container">
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_zen_mode">Zen Mode</span>
+              <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
               <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_install_pwa">Install as App</span>
-              <button class="btn-install" id="btn-install" disabled data-i18n="btn_install_app">Install</button>
+              <span class="toggle-label" data-i18n="install_app">Install as App</span>
+              <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
             </div>
             <div class="settings-divider"></div>
             <div class="beta-section">
-              <div class="beta-header" data-i18n="beta_channel_header">Beta Channel</div>
+              <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
               <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
               <div class="beta-links">
-                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" class="beta-btn" data-i18n="link_github_repo">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" class="beta-btn" data-i18n="beta_live_link">Live Beta</a>
+                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
+                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
               </div>
             </div>
           </div>
@@ -244,49 +257,57 @@
         <div class="tab-panel" id="writer-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_reading_progress">Reading Progress Bar</span>
+              <span class="toggle-label" data-i18n="toggle_reading_progress">Reading Progress Bar</span>
               <label class="switch"><input type="checkbox" id="toggle-reading-progress"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_smart_typography">Smart Typography</span>
+              <span class="toggle-label" data-i18n="toggle_smart_typography">Smart Typography</span>
               <label class="switch"><input type="checkbox" id="toggle-smart-typography"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_focus_mode">Focus Mode</span>
+              <span class="toggle-label" data-i18n="toggle_focus_mode">Focus Mode</span>
               <label class="switch"><input type="checkbox" id="toggle-focus-mode"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_quick_tbar">Quick Format Toolbar</span>
+              <span class="toggle-label" data-i18n="toggle_quick_toolbar">Quick Format Toolbar</span>
               <label class="switch"><input type="checkbox" id="toggle-quick-tbar"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="setting_typewriter_sound">Typewriter Sound</span>
+              <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_stats">Hide Stats Overlay</span>
+              <span class="toggle-label" data-i18n="toggle_stats">Hide Stats Overlay</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-stats"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_save_ind">Hide Save Indicator</span>
+              <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_goal_btn">Hide Goal Button</span>
+              <span class="toggle-label" data-i18n="toggle_hide_goal_btn">Hide Goal Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_outline_btn">Hide Outline Button</span>
+              <span class="toggle-label" data-i18n="toggle_hide_outline_btn">Hide Outline Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_metadata_btn">Hide Metadata Button</span>
+              <span class="toggle-label" data-i18n="toggle_hide_metadata_btn">Hide Metadata Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_find_btn">Hide Find Button</span>
+              <span class="toggle-label" data-i18n="toggle_hide_find_btn">Hide Find Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-find-btn"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_wordfreq_btn">Hide Word Frequency Button</span>
+              <span class="toggle-label" data-i18n="toggle_hide_wordfreq_btn">Hide Word Frequency Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
             <table class="shortcut-table">

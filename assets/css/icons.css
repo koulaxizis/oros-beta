@@ -65,3 +65,8 @@
 /* ===== CONTEXT MENU ===== */
 .fa-undo:before          { content: '\f0e2'; }
 .fa-repeat:before        { content: '\f01e'; }
+
+.fa-align-left:before { content: "\f036"; }
+.fa-align-center:before { content: "\f037"; }
+.fa-align-right:before { content: "\f038"; }
+.fa-align-justify:before { content: "\f03a"; }

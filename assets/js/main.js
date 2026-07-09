@@ -1,7 +1,6 @@
 // ============================================
 // orOS Main Scripts — Global Components
 // Theme toggle, Language selector, Settings, PWA Install
-// FIXES: window dispatch, language event after load, backdrop selector
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -74,8 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ========== LOAD TRANSLATIONS ==========
-  // CRITICAL: After translations load, dispatch language-changed event
-  // so editor.js re-renders stats (which ran before translations were ready)
   fetch('assets/js/translations.json')
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -102,14 +99,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       localStorage.setItem('oros-zen-mode', isZen ? 'false' : 'true');
 
-      // FIX: window.dispatchEvent (not document) — editor.js listens on window
       window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
         detail: { enabled: !isZen }
       }));
     });
   }
 
-  // Keyboard shortcut for Zen Mode
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9') {
       e.preventDefault();
@@ -133,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    // FIX: selector is .settings-modal-overlay (not .modal-backdrop)
     var backdrop = settingsModal.querySelector('.settings-modal-overlay');
     if (backdrop) {
       backdrop.addEventListener('click', function() {
@@ -141,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    // Tab navigation
     var tabBtns = settingsModal.querySelectorAll('.tab-btn');
     var tabPanels = settingsModal.querySelectorAll('.tab-panel');
 
@@ -286,6 +279,32 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('oros_hide_wordfreq_btn', hidden ? 'true' : 'false');
       window.dispatchEvent(new CustomEvent('oros-hide-wordfreq-btn-changed', {
         detail: { hidden: hidden }
+      }));
+    });
+  }
+
+  // Hide Lorem Ipsum Button
+  var hideLoremBtnToggle = document.getElementById('toggle-hide-lorem-btn');
+  if (hideLoremBtnToggle) {
+    hideLoremBtnToggle.checked = localStorage.getItem('oros_hide_lorem_btn') === 'true';
+    hideLoremBtnToggle.addEventListener('change', function() {
+      var hidden = this.checked;
+      localStorage.setItem('oros_hide_lorem_btn', hidden ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-lorem-btn-changed', {
+        detail: { hidden: hidden }
+      }));
+    });
+  }
+
+  // Typewriter Sound
+  var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
+  if (typewriterSoundToggle) {
+    typewriterSoundToggle.checked = localStorage.getItem('oros_typewriter_sound') === 'true';
+    typewriterSoundToggle.addEventListener('change', function() {
+      var enabled = this.checked;
+      localStorage.setItem('oros_typewriter_sound', enabled ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-typewriter-sound-changed', {
+        detail: { enabled: enabled }
       }));
     });
   }

@@ -1,6 +1,6 @@
 // ============================================
-// orOS Writer — Unified Rich Text Editor v0.5
-// All fixes: Tooltips, Buttons, Quick Toolbar Toggle, Bullet/Number placement
+// orOS Writer — Unified Rich Text Editor
+// Fixes: Alignment, Typewriter Sound, Focus Mode, Hide Stats, Main Toolbar Buttons
 // ============================================
 
 (function() {
@@ -22,6 +22,8 @@
   var STORAGE_HIDE_FIND_BTN = 'oros_hide_find_btn';
   var STORAGE_HIDE_WORDFREQ_BTN = 'oros_hide_wordfreq_btn';
   var STORAGE_HIDE_SAVE_INDICATOR = 'oros_hide_save_indicator';
+  var STORAGE_HIDE_LOREM_BTN = 'oros_hide_lorem_btn';
+  var STORAGE_TYPEWRITER_SOUND = 'oros_typewriter_sound';
   var STORAGE_METADATA = 'oros_writer_metadata';
 
   var richEditor = document.getElementById('rich-editor');
@@ -72,8 +74,7 @@
   var wordFreqSummary = document.getElementById('wordfreq-summary');
   var wordFreqList = document.getElementById('wordfreq-list');
   var saveIndicator = document.getElementById('save-indicator');
-
-  var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
+    var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
   var hideQuickTbar = localStorage.getItem(STORAGE_HIDE_QUICK_TBAR) === 'true';
   var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
   var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
@@ -88,6 +89,8 @@
   var hideFindBtn = localStorage.getItem(STORAGE_HIDE_FIND_BTN) === 'true';
   var hideWordFreqBtn = localStorage.getItem(STORAGE_HIDE_WORDFREQ_BTN) === 'true';
   var hideSaveIndicator = localStorage.getItem(STORAGE_HIDE_SAVE_INDICATOR) === 'true';
+  var hideLoremBtn = localStorage.getItem(STORAGE_HIDE_LOREM_BTN) === 'true';
+  var typewriterSoundEnabled = localStorage.getItem(STORAGE_TYPEWRITER_SOUND) === 'true';
   var goalReachedShown = false;
   var goalLockTriggered = false;
   var currentMatchIndex = -1;
@@ -95,6 +98,51 @@
   var statsExpanded = false;
   var wordFreqDebounce = null;
   var outlineDebounceTimer = null;
+
+  // ========== TYPEWRITER SOUND (base64 WAV) ==========
+  var typewriterAudioCtx = null;
+  var typewriterAudioBuffer = null;
+
+  function initTypewriterSound() {
+    try {
+      typewriterAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var sampleRate = typewriterAudioCtx.sampleRate;
+      var duration = 0.04;
+      var numSamples = Math.floor(sampleRate * duration);
+      var buffer = typewriterAudioCtx.createBuffer(1, numSamples, sampleRate);
+      var data = buffer.getChannelData(0);
+      for (var i = 0; i < numSamples; i++) {
+        var t = i / sampleRate;
+        var envelope = Math.exp(-t * 80);
+        var noise = (Math.random() * 2 - 1) * 0.3;
+        var click = Math.sin(2 * Math.PI * 2000 * t) * 0.15;
+        data[i] = (noise + click) * envelope * 0.5;
+      }
+      typewriterAudioBuffer = buffer;
+    } catch(e) {
+      typewriterAudioCtx = null;
+    }
+  }
+
+  function playTypewriterSound() {
+    if (!typewriterSoundEnabled || !typewriterAudioCtx || !typewriterAudioBuffer) return;
+    try {
+      var source = typewriterAudioCtx.createBufferSource();
+      source.buffer = typewriterAudioBuffer;
+      var gainNode = typewriterAudioCtx.createGain();
+      gainNode.gain.value = 0.08;
+      source.connect(gainNode);
+      gainNode.connect(typewriterAudioCtx.destination);
+      source.start(0);
+    } catch(e) {}
+  }
+
+  window.addEventListener('oros-typewriter-sound-changed', function(e) {
+    typewriterSoundEnabled = e.detail.enabled;
+    if (enabled && !typewriterAudioCtx) {
+      initTypewriterSound();
+    }
+  });
 
   // ========== HELPERS ==========
   function getCurrentLang() { return localStorage.getItem('oros-language') || 'el'; }
@@ -610,7 +658,7 @@
 
   // ========== READING PROGRESS ==========
   function updateReadingProgress() {
-    if (!progressBar || !readingProgressEnabled) return;
+    if (!progressBar) return;
     if (readingProgressEnabled) {
       progressBar.style.display = '';
       var max = richEditor.scrollHeight - richEditor.clientHeight;
@@ -762,18 +810,14 @@
     wordFreqList.innerHTML = listHtml;
   }
 
-  // ========== FOCUS MODE ==========
+  // ========== FOCUS MODE (FIXED — highlights current paragraph) ==========
   var focusDebounceTimer = null;
+
   function initFocusMode() {
-    if (!richEditor || !richWrapper) return;
+    if (!richEditor) return;
     document.addEventListener('selectionchange', handleSelectionChange);
     richEditor.addEventListener('scroll', function() {
       if (document.getElementById('focus-spotlight')) clearFocusMode();
-    });
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && document.getElementById('focus-spotlight')) {
-        clearFocusMode();
-      }
     });
     window.addEventListener('oros-focus-mode-changed', function(e) {
       focusModeEnabled = e.detail.enabled;
@@ -786,31 +830,29 @@
     clearTimeout(focusDebounceTimer);
     focusDebounceTimer = setTimeout(function() {
       var selection = window.getSelection();
-      if (!selection.rangeCount || selection.isCollapsed) {
-        clearFocusMode();
-        return;
-      }
+      if (!selection.rangeCount) { clearFocusMode(); return; }
       var range = selection.getRangeAt(0);
-      if (!richEditor.contains(range.commonAncestorContainer)) {
-        clearFocusMode();
-        return;
+      if (!richEditor.contains(range.commonAncestorContainer)) { clearFocusMode(); return; }
+
+      var node = range.startContainer;
+      while (node && node !== richEditor && node.parentNode !== richEditor) {
+        node = node.parentNode;
       }
-      var selRect = range.getBoundingClientRect();
-      if (selRect.width === 0 || selRect.height === 0) {
-        clearFocusMode();
-        return;
-      }
+      if (!node || node === richEditor) { clearFocusMode(); return; }
+
       clearFocusMode();
+      var rect = node.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       var wrapperRect = richWrapper.getBoundingClientRect();
       var spotlight = document.createElement('div');
       spotlight.id = 'focus-spotlight';
       spotlight.className = 'focus-spotlight';
-      spotlight.style.top = (selRect.top - wrapperRect.top) + 'px';
-      spotlight.style.left = (selRect.left - wrapperRect.left) + 'px';
-      spotlight.style.width = selRect.width + 'px';
-      spotlight.style.height = selRect.height + 'px';
+      spotlight.style.top = (rect.top - wrapperRect.top) + 'px';
+      spotlight.style.left = (rect.left - wrapperRect.left) + 'px';
+      spotlight.style.width = rect.width + 'px';
+      spotlight.style.height = rect.height + 'px';
       richWrapper.appendChild(spotlight);
-    }, 150);
+    }, 100);
   }
 
   function clearFocusMode() {
@@ -818,7 +860,7 @@
     if (spotlight) spotlight.remove();
   }
 
-  // ========== CONTEXT MENU (FIXED — stays open) ==========
+  // ========== CONTEXT MENU ==========
   var contextMenu = null;
 
   function showContextMenu(e) {
@@ -842,6 +884,11 @@
       '<div class="cm-item" data-cmd="formatBlock;H1"><i class="fa fa-header cm-icon"></i>H1</div>' +
       '<div class="cm-item" data-cmd="formatBlock;H2"><i class="fa fa-header cm-icon"></i>H2</div>' +
       '<div class="cm-item" data-cmd="formatBlock;H3"><i class="fa fa-header cm-icon"></i>H3</div>' +
+      '<div class="cm-divider"></div>' +
+      '<div class="cm-item" data-cmd="justifyLeft"><i class="fa fa-align-left cm-icon"></i>Align Left</div>' +
+      '<div class="cm-item" data-cmd="justifyCenter"><i class="fa fa-align-center cm-icon"></i>Align Center</div>' +
+      '<div class="cm-item" data-cmd="justifyRight"><i class="fa fa-align-right cm-icon"></i>Align Right</div>' +
+      '<div class="cm-item" data-cmd="justifyFull"><i class="fa fa-align-justify cm-icon"></i>Justify</div>' +
       '<div class="cm-divider"></div>' +
       '<div class="cm-item" data-cmd="insertUnorderedList"><i class="fa fa-list-ul cm-icon"></i>Bullets</div>' +
       '<div class="cm-item" data-cmd="insertOrderedList"><i class="fa fa-list-ol cm-icon"></i>Numbers</div>' +
@@ -906,11 +953,35 @@
     document.removeEventListener('keydown', closeOnKeydown);
   }
 
-  // ========== QUICK FORMAT TOOLBAR (CONTROLS VISIBILITY) ==========
+  // ========== MAIN TOOLBAR FORMATTING BUTTONS ==========
+  function setupMainToolbarButtons() {
+    if (!richEditor) return;
+    var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
+    for (var i = 0; i < fmtBtns.length; i++) {
+      (function(btn) {
+        if (!btn.getAttribute('data-cmd')) return;
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var cmd = btn.getAttribute('data-cmd');
+          var block = btn.getAttribute('data-block');
+          if (block) {
+            document.execCommand('formatBlock', false, block);
+          } else {
+            document.execCommand(cmd, false);
+          }
+          saveContent();
+          updateStats();
+          richEditor.focus();
+        });
+      })(fmtBtns[i]);
+    }
+  }
+
+  // ========== QUICK FORMAT TOOLBAR ==========
   function setupQuickFormatToolbar() {
     if (!quickFormatToolbar) return;
     quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
-    
+
     var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
     for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
@@ -1148,7 +1219,6 @@
         contextMenu = null;
         removeCloseListeners();
       }
-      // Exit Zen Mode on ESC
       var zenBtn = document.getElementById('btn-zen');
       if (zenBtn && document.body.hasAttribute('data-zen')) {
         zenBtn.click();
@@ -1166,8 +1236,13 @@
   if (hideFindBtn && btnFind) btnFind.style.display = 'none';
   if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
   if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
+  if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
 
   // ========== CUSTOM EVENTS ==========
+  window.addEventListener('oros-hide-stats-changed', function(e) {
+    hideStats = e.detail.hidden;
+    if (statsOverlay) statsOverlay.style.display = hideStats ? 'none' : '';
+  });
   window.addEventListener('oros-hide-goal-btn-changed', function(e) {
     hideGoalBtn = e.detail.hidden;
     if (btnGoal) btnGoal.style.display = hideGoalBtn ? 'none' : '';
@@ -1195,6 +1270,10 @@
   window.addEventListener('oros-hide-quick-tbar-changed', function(e) {
     hideQuickTbar = e.detail.hidden;
     if (quickFormatToolbar) quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
+  });
+  window.addEventListener('oros-hide-lorem-btn-changed', function(e) {
+    hideLoremBtn = e.detail.hidden;
+    if (btnLorem) btnLorem.style.display = hideLoremBtn ? 'none' : '';
   });
   window.addEventListener('oros-language-changed', function(e) {
     updateStats();
@@ -1307,7 +1386,10 @@
         showContextMenu(e);
       }
     });
-    richEditor.addEventListener('keyup', handleSmartTypography);
+    richEditor.addEventListener('keyup', function() {
+      handleSmartTypography();
+      playTypewriterSound();
+    });
     richEditor.addEventListener('paste', handleSmartPaste);
   }
 
@@ -1325,6 +1407,8 @@
   });
 
   // ========== INITIALIZE ==========
+  initTypewriterSound();
+  setupMainToolbarButtons();
   loadContent();
   loadMetadata();
   renderMetaDates();
