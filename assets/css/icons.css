@@ -7,9 +7,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url('../fonts/forkawesome-webfont.woff2') format('woff2'),
-       url('../fonts/forkawesome-webfont.woff') format('woff'),
-       url('../fonts/forkawesome-webfont.ttf') format('truetype');
+  src: url('../../fonts/forkawesome-webfont.woff2') format('woff2'),
+       url('../../fonts/forkawesome-webfont.woff') format('woff'),
+       url('../../fonts/forkawesome-webfont.ttf') format('truetype');
 }
 
 .fa {
@@ -66,7 +66,11 @@
 .fa-undo:before          { content: '\f0e2'; }
 .fa-repeat:before        { content: '\f01e'; }
 
+/* ===== ALIGNMENT ICONS ===== */
 .fa-align-left:before { content: "\f036"; }
 .fa-align-center:before { content: "\f037"; }
 .fa-align-right:before { content: "\f038"; }
-.fa-justify:before { content: "\f897"; }
+.fa-align-justify:before { content: "\f039"; }
+
+/* ===== BULLET LIST ICON ===== */
+.fa-bars:before { content: "\f0c9"; }
