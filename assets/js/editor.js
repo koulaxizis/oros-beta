@@ -1,6 +1,6 @@
 // ============================================
 // orOS Writer — Unified Rich Text Editor
-// v0.5-BETA | All Fixes: Focus Mode, Panel Positioning, Icons, Lorem Ipsum
+// v0.5-BETA | FINAL CORRECTED VERSION
 // ============================================
 
 (function() {
@@ -100,7 +100,6 @@
   var outlineDebounceTimer = null;
   var focusDebounceTimer = null;
 
-  // ========== TYPEWRITER SOUND (Web Audio API) ==========
   var typewriterAudioCtx = null;
   var typewriterAudioBuffer = null;
 
@@ -145,7 +144,6 @@
     }
   });
 
-  // ========== HELPERS ==========
   function getCurrentLang() { return localStorage.getItem('oros-language') || 'en'; }
   function getTrans(key) {
     var lang = getCurrentLang();
@@ -160,7 +158,6 @@
     return text.replace(/\n$/, '');
   }
 
-  // ========== PANE TOP OFFSET CALCULATION (FIXED) ==========
   function getPanelTopOffset() {
     var offset = 0;
     var headerInner = document.querySelector('.header');
@@ -173,691 +170,121 @@
     return offset + 'px';
   }
 
-  // ========== LOREM IPSUM GENERATOR (ALL UNICODE ESCAPED) ==========
   function generateLoremIpsum() {
     var lang = getCurrentLang();
-    var templates = {
-      en: '<h1>Document Title</h1>' +
-          '<p>Welcome to <strong>orOS Writer</strong>, a privacy-first rich text editor that works entirely offline. ' +
-          'This sample text demonstrates <em>various formatting options</em> available in the editor, ' +
-          'including <u>underlined text</u>, <strong>bold text</strong>, and <em>italic text</em>. ' +
-          'All content is saved locally in your browser \u2014 no account, no server, no tracking.</p>' +
-          '<ul><li>Bold, italic, and underline formatting</li>' +
-          '<li>Headings (H1, H2, H3) for document structure</li>' +
-          '<li>Bullet and numbered lists</li>' +
-          '<li>Text alignment: left, center, right, justify</li>' +
-          '<li>Blockquotes for emphasis</li></ul>' +
-          '<h2>Smart Typography</h2>' +
-          '<p>The editor features <strong>Smart Typography</strong>, which automatically converts common ' +
-          'shortcuts into proper typographic characters as you type:</p>' +
-          '<ul><li>Double hyphens (--) become an em dash (\u2014)</li>' +
-          '<li>Three dots (...) become an ellipsis (\u2026)</li>' +
-          '<li>Straight quotes become curly quotes (\u201C \u201D) and smart apostrophes (\u2018 \u2019)</li>' +
-          '<li>(c) becomes \u00A9, (r) becomes \u00AE, and (tm) becomes \u2122</li></ul>' +
-          '<p>Try typing these shortcuts yourself \u2014 just enable Smart Typography in Settings if it is not already on.</p>' +
-          '<blockquote>Writing is easy. All you do is stare at a blank sheet of paper until drops of blood form on your forehead. \u2014 Gene Fowler</blockquote>' +
-          '<h2>Editor Features</h2>' +
-          '<p>orOS Writer includes a range of tools designed for writers, journalists, and bloggers:</p>' +
-          '<ol><li>Automatic saving \u2014 your work is preserved after every keystroke</li>' +
-          '<li>Export to Markdown, Plain Text, RTF, Word, or PDF</li>' +
-          '<li>Document outline panel for navigating headings</li>' +
-          '<li>Word frequency analysis to spot repetition and overused words</li>' +
-          '<li>Document metadata for title, author, tags, and category</li>' +
-          '<li>Writing goals with optional lock when the target is reached</li>' +
-          '<li>Find and replace functionality</li>' +
-          '<li>Reading progress bar and detailed statistics</li></ol>' +
-          '<h2>Privacy First</h2>' +
-          '<p>Everything happens in your browser. Your text never leaves your device. ' +
-          'There are no analytics, no telemetry, no advertisements, and no accounts required. ' +
-          'This is open-source software built with respect for your personal data.</p>' +
-          '<h2>Offline Operation</h2>' +
-          '<p>Once loaded, orOS Writer continues to work even without an internet connection. ' +
-          'The application caches all resources using a service worker, enabling true offline capability. ' +
-          'You can install it as a Progressive Web App (PWA) for even better integration with your device.</p>' +
-          '<p>This is the <em>final paragraph</em> of the sample content. ' +
-          'You can clear it anytime with the trash button, or start editing right away. ' +
-          'The editor remembers your work between sessions, so feel free to close and return later. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      el: '<h1>\u03A4\u03AF\u03C4\u03BB\u03BF\u03C2 \u0395\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5</h1>' +
-          '<p>\u039A\u03B1\u03BB\u03CE\u03C2 \u03AE\u03C1\u03B8\u03B5\u03C2 \u03C3\u03C4\u03BF <strong>orOS Writer</strong>, ' +
-          '\u03AD\u03BD\u03B1\u03BD \u03B5\u03C0\u03B5\u03BE\u03B5\u03C1\u03B3\u03B1\u03C3\u03C4\u03AE \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5 \u03C0\u03BF\u03C5 \u03C3\u03B5\u03B2\u03B5\u03C4\u03B1\u03B9 \u03C4\u03BF \u03B1\u03C0\u03CC\u03C1\u03C1\u03B7\u03C4\u03BF ' +
-          '\u03BA\u03B1\u03B9 \u03BB\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03B5\u03AF \u03B5\u03BE \u03BF\u03BB\u03BF\u03BA\u03BB\u03AE\u03C1\u03BF\u03C5 offline. ' +
-          '\u0391\u03C5\u03C4\u03CC \u03C4\u03BF \u03B4\u03BF\u03BA\u03B9\u03BC\u03B1\u03C3\u03C4\u03B9\u03BA\u03CC \u03BA\u03B5\u03AF\u03BC\u03B5\u03BD\u03BF \u03B5\u03C0\u03B9\u03B4\u03B5\u03B9\u03BA\u03BD\u03CD\u03B5\u03B9 ' +
-          '<em>\u03B4\u03B9\u03AC\u03C6\u03BF\u03C1\u03B5\u03C2 \u03B5\u03C0\u03B9\u03BB\u03BF\u03B3\u03AD\u03C2 \u03BC\u03BF\u03C1\u03C6\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B7\u03C2</em> \u03C4\u03BF\u03C5 editor, ' +
-          '\u03C3\u03C5\u03BC\u03C0\u03B5\u03C1\u03B9\u03BB\u03B1\u03BC\u03B2\u03B1\u03BD\u03BF\u03BC\u03AD\u03BD\u03BF\u03C5 ' +
-          '<u>\u03C5\u03C0\u03BF\u03B3\u03B5\u03B3\u03C1\u03B1\u03BC\u03BC\u03AD\u03BD\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</u>, ' +
-          '<strong>\u03AD\u03BD\u03C4\u03BF\u03BD\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</strong>, ' +
-          '\u03BA\u03B1\u03B9 <em>\u03C0\u03BB\u03AC\u03B3\u03B9\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</em>. ' +
-          '\u038C\u03BB\u03BF \u03C4\u03BF \u03C0\u03B5\u03C1\u03B9\u03B5\u03C7\u03CC\u03BC\u03B5\u03BD\u03BF \u03B1\u03C0\u03BF\u03B8\u03B7\u03BA\u03B5\u03CD\u03B5\u03C4\u03B1\u03B9 \u03C4\u03BF\u03C0\u03B9\u03BA\u03AC \u03C3\u03C4\u03BF\u03BD browser \u2014 ' +
-          '\u03C7\u03C9\u03C1\u03AF\u03C2 \u03BB\u03BF\u03B3\u03B1\u03C1\u03B9\u03B1\u03C3\u03BC\u03CC, \u03C7\u03C9\u03C1\u03AF\u03C2 server, \u03C7\u03C9\u03C1\u03AF\u03C2 \u03C0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7.</p>' +
-          '<ul><li>\u039C\u03BF\u03C1\u03C6\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B7 \u03AD\u03BD\u03C4\u03BF\u03BD\u03B1, \u03C0\u03BB\u03AC\u03B3\u03B9\u03B1, \u03C5\u03C0\u03BF\u03B3\u03C1\u03AC\u03BC\u03BC\u03B9\u03C3\u03B7</li>' +
-          '<li>\u03A4\u03AF\u03C4\u03BB\u03BF\u03B9 (H1, H2, H3) \u03B3\u03B9\u03B1 \u03B4\u03BF\u03BC\u03AE \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5</li>' +
-          '<li>\u039B\u03AF\u03C3\u03C4\u03B5\u03C2 \u03BA\u03BF\u03C5\u03BA\u03BA\u03AF\u03B4\u03C9\u03BD \u03BA\u03B1\u03B9 \u03B1\u03C1\u03B9\u03B8\u03BC\u03B7\u03BC\u03AD\u03BD\u03B5\u03C2</li>' +
-          '<li>\u03A3\u03C4\u03BF\u03AF\u03C7\u03B9\u03C3\u03B7 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5: \u03B1\u03C1\u03B9\u03C3\u03C4\u03B5\u03C1\u03AC, \u03BA\u03AD\u03BD\u03C4\u03C1\u03BF, \u03B4\u03B5\u03BE\u03B9\u03AC, \u03C0\u03BB\u03B7\u03C1\u03AE\u03C2</li>' +
-          '<li>\u0391\u03C0\u03BF\u03C3\u03C0\u03AC\u03C3\u03BC\u03B1\u03C4\u03B1 \u03B3\u03B9\u03B1 \u03AD\u03BC\u03C6\u03B1\u03C3\u03B7</li></ul>' +
-          '<h2>\u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1</h2>' +
-          '<p>\u039F editor \u03B4\u03B9\u03B1\u03B8\u03AD\u03C4\u03B5\u03B9 <strong>\u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1</strong>, ' +
-          '\u03C0\u03BF\u03C5 \u03BC\u03B5\u03C4\u03B1\u03C4\u03C1\u03AD\u03C0\u03B5\u03B9 \u03B1\u03C5\u03C4\u03CC\u03BC\u03B1\u03C4\u03B1 ' +
-          '\u03C3\u03C5\u03BD\u03B7\u03B8\u03B9\u03C3\u03BC\u03AD\u03BD\u03B5\u03C2 \u03C3\u03C5\u03BD\u03C4\u03BF\u03BC\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B5\u03C2 \u03C3\u03B5 \u03C3\u03C9\u03C3\u03C4\u03BF\u03CD\u03C2 ' +
-          '\u03C4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03B9\u03BA\u03BF\u03CD\u03C2 \u03C7\u03B1\u03C1\u03B1\u03BA\u03C4\u03AE\u03C1\u03B5\u03C2 \u03BA\u03B1\u03B8\u03CE\u03C2 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03BF\u03B3\u03B5\u03AF\u03C2:</p>' +
-          '<ul><li>\u0394\u03B9\u03C0\u03BB\u03AD\u03C2 \u03C0\u03B1\u03CD\u03BB\u03B5\u03C2 (--) \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03BC\u03B1\u03BA\u03C1\u03AC \u03C0\u03B1\u03CD\u03BB\u03B1 (\u2014)</li>' +
-          '<li>\u03A4\u03C1\u03B5\u03B9\u03C2 \u03C4\u03B5\u03BB\u03B5\u03AF\u03B5\u03C2 (...) \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03B1\u03C0\u03BF\u03C3\u03B9\u03C9\u03C0\u03B7\u03C4\u03B9\u03BA\u03AC (\u2026)</li>' +
-          '<li>\u0391\u03C0\u03BB\u03AC \u03B5\u03B9\u03C3\u03B1\u03B3\u03C9\u03B3\u03B9\u03BA\u03AC \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03BA\u03B1\u03BC\u03C0\u03CD\u03BB\u03B1 \u03B5\u03B9\u03C3\u03B1\u03B3\u03C9\u03B3\u03B9\u03BA\u03AC (\u201C \u201D) ' +
-          '\u03BA\u03B1\u03B9 \u03AD\u03BE\u03C5\u03C0\u03BD\u03B1 \u03B1\u03C0\u03BF\u03C3\u03C4\u03CC\u03C6\u03B9\u03B1 (\u2018 \u2019)</li>' +
-          '<li>(c) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u00A9, (r) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u00AE, \u03BA\u03B1\u03B9 (tm) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u2122</li></ul>' +
-          '<p>\u0394\u03BF\u03BA\u03AF\u03BC\u03B1\u03C3\u03B5 \u03BD\u03B1 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03BF\u03B3\u03AE\u03C3\u03B5\u03B9\u03C2 \u03B1\u03C5\u03C4\u03AD\u03C2 \u03C4\u03B9\u03C2 \u03C3\u03C5\u03BD\u03C4\u03BF\u03BC\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B5\u03C2 \u03BC\u03CC\u03BD\u03BF\u03C2 \u03C3\u03BF\u03C5 \u2014 ' +
-          '\u03B1\u03C0\u03BB\u03AC \u03B5\u03BD\u03B5\u03C1\u03B3\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B5 \u03C4\u03B7\u03BD \u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1 \u03C3\u03C4\u03B9\u03C2 \u03A1\u03C5\u03B8\u03BC\u03AF\u03C3\u03B5\u03B9\u03C2 ' +
-          '\u03B1\u03BD \u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9 \u03AE\u03B4\u03B7 \u03B5\u03BD\u03B5\u03C1\u03B3\u03AE.</p>' +
-          '<blockquote>\u0397 \u03B3\u03C1\u03B1\u03C6\u03AE \u03B5\u03AF\u03BD\u03B1\u03B9 \u03B5\u03CD\u03BA\u03BF\u03BB\u03B7. \u0391\u03C0\u03BB\u03AC \u03BA\u03BF\u03B9\u03C4\u03AC\u03C2 \u03AD\u03BD\u03B1 ' +
-          '\u03BB\u03B5\u03C5\u03BA\u03CC \u03C6\u03CD\u03BB\u03BB\u03BF \u03C7\u03B1\u03C1\u03C4\u03B9\u03BF\u03CD \u03BC\u03AD\u03C7\u03C1\u03B9 \u03BD\u03B1 \u03C3\u03C4\u03B1\u03BB\u03AC\u03BE\u03B5\u03B9\u03C2 \u03C3\u03C4\u03B1\u03B3\u03CC\u03BD\u03B5\u03C2 ' +
-          '\u03B1\u03AF\u03BC\u03B1\u03C4\u03BF\u03C2 \u03C3\u03C4\u03BF \u03BC\u03AD\u03C4\u03C9\u03C0\u03CC \u03C3\u03BF\u03C5. \u2014 Gene Fowler</blockquote>' +
-          '<h2>\u039B\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03AF\u03B5\u03C2 Editor</h2>' +
-          '<p>\u039F orOS Writer \u03C0\u03B5\u03C1\u03B9\u03BB\u03B1\u03BC\u03B2\u03AC\u03BD\u03B5\u03B9 \u03BC\u03B9\u03B1 \u03C3\u03B5\u03B9\u03C1\u03AC \u03B5\u03C1\u03B3\u03B1\u03BB\u03B5\u03AF\u03C9\u03BD ' +
-          '\u03C3\u03C7\u03B5\u03B4\u03B9\u03B1\u03C3\u03BC\u03AD\u03BD\u03C9\u03BD \u03B3\u03B9\u03B1 \u03C3\u03C5\u03B3\u03B3\u03C1\u03B1\u03C6\u03B5\u03AF\u03C2, \u03B4\u03B7\u03BC\u03BF\u03C3\u03B9\u03BF\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5\u03C2 \u03BA\u03B1\u03B9 bloggers:</p>' +
-          '<ol><li>\u0391\u03C5\u03C4\u03CC\u03BC\u03B1\u03C4\u03B7 \u03B1\u03C0\u03BF\u03B8\u03AE\u03BA\u03B5\u03C5\u03C3\u03B7 \u2014 \u03B7 \u03B4\u03BF\u03C5\u03BB\u03B5\u03B9\u03AC \u03C3\u03BF\u03C5 ' +
-          '\u03C3\u03CE\u03B6\u03B5\u03C4\u03B1\u03B9 \u03BC\u03B5\u03C4\u03AC \u03B1\u03C0\u03CC \u03BA\u03AC\u03B8\u03B5 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03CC\u03B3\u03B7\u03C3\u03B7</li>' +
-          '<li>\u0395\u03BE\u03B1\u03B3\u03C9\u03B3\u03AE \u03C3\u03B5 Markdown, \u0391\u03C0\u03BB\u03CC \u039A\u03B5\u03AF\u03BC\u03B5\u03BD\u03BF, RTF, Word \u03AE PDF</li>' +
-          '<li>\u03A0\u03AF\u03BD\u03B1\u03BA\u03B1\u03C2 \u03B4\u03BF\u03BC\u03AE\u03C2 \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5 \u03B3\u03B9\u03B1 \u03C0\u03BB\u03BF\u03B9\u03B3\u03B7\u03C3\u03B7 \u03C3\u03C4\u03BF\u03C5\u03C2 \u03C4\u03AF\u03C4\u03BB\u03BF\u03C5\u03C2</li>' +
-          '<li>\u0391\u03BD\u03AC\u03BB\u03C5\u03C3\u03B7 \u03C3\u03C5\u03C7\u03BD\u03CC\u03C4\u03B7\u03C4\u03B1\u03C2 \u03BB\u03AD\u03BE\u03B5\u03C9\u03BD \u03B3\u03B9\u03B1 \u03B5\u03BD\u03C4\u03BF\u03C0\u03B9\u03C3\u03BC\u03CC \u03B5\u03C0\u03B1\u03BD\u03B1\u03BB\u03AE\u03C8\u03B5\u03C9\u03BD</li>' +
-          '<li>\u039C\u03B5\u03C4\u03B1\u03B4\u03B5\u03B4\u03BF\u03BC\u03AD\u03BD\u03B1 \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5 \u03B3\u03B9\u03B1 \u03C4\u03AF\u03C4\u03BB\u03BF, ' +
-          '\u03C3\u03C5\u03B3\u03B3\u03C1\u03B1\u03C6\u03AD\u03B1, \u03B5\u03C4\u03B9\u03BA\u03AD\u03C4\u03B5\u03C2 \u03BA\u03B1\u03B9 \u03BA\u03B1\u03C4\u03B7\u03B3\u03BF\u03C1\u03AF\u03B1</li>' +
-          '<li>\u03A3\u03C4\u03CC\u03C7\u03BF\u03B9 \u03B3\u03C1\u03B1\u03C6\u03AE\u03C2 \u03BC\u03B5 \u03C0\u03C1\u03BF\u03B1\u03B9\u03C1\u03B5\u03C4\u03B9\u03BA\u03CC \u03BA\u03BB\u03B5\u03AF\u03B4\u03C9\u03BC\u03B1 ' +
-          '\u03CC\u03C4\u03B1\u03BD \u03B5\u03C0\u03B9\u03C4\u03C5\u03B3\u03C7\u03AC\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9</li>' +
-          '<li>\u0395\u03CD\u03C1\u03B5\u03C3\u03B7 \u03BA\u03B1\u03B9 \u03B1\u03BD\u03C4\u03B9\u03BA\u03B1\u03C4\u03AC\u03C3\u03C4\u03B1\u03C3\u03B7 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</li>' +
-          '<li>\u039C\u03C0\u03AC\u03C1\u03B1 \u03C0\u03C1\u03BF\u03CC\u03B4\u03BF\u03C5 \u03B1\u03BD\u03AC\u03B3\u03BD\u03C9\u03C3\u03B7\u03C2 \u03BA\u03B1\u03B9 \u03B1\u03BD\u03B1\u03BB\u03C5\u03C4\u03B9\u03BA\u03AC \u03C3\u03C4\u03B1\u03C4\u03B9\u03C3\u03C4\u03B9\u03BA\u03AC</li></ol>' +
-          '<h2>\u0391\u03C0\u03CC\u03C1\u03C1\u03B7\u03C4\u03BF \u03A0\u03C1\u03CE\u03C4\u03B1</h2>' +
-          '<p>\u038C\u03BB\u03B1 \u03C3\u03C5\u03BC\u03B2\u03B1\u03AF\u03BD\u03BF\u03C5\u03BD \u03C3\u03C4\u03BF\u03BD browser \u03C3\u03BF\u03C5. \u03A4\u03BF \u03BA\u03B5\u03AF\u03BC\u03B5\u03BD\u03CC \u03C3\u03BF\u03C5 ' +
-          '\u03B4\u03B5\u03BD \u03C6\u03B5\u03CD\u03B3\u03B5\u03B9 \u03C0\u03BF\u03C4\u03AD \u03B1\u03C0\u03CC \u03C4\u03B7 \u03C3\u03C5\u03C3\u03BA\u03B5\u03C5\u03AE \u03C3\u03BF\u03C5. ' +
-          '\u0394\u03B5\u03BD \u03C5\u03C0\u03AC\u03C1\u03C7\u03BF\u03C5\u03BD \u03B1\u03BD\u03B1\u03BB\u03C5\u03C4\u03B9\u03BA\u03AC \u03C3\u03C4\u03BF\u03B9\u03C7\u03B5\u03AF\u03B1, \u03C4\u03B7\u03BB\u03B5\u03BC\u03B5\u03C4\u03C1\u03AF\u03B1, ' +
-          '\u03B4\u03B9\u03B1\u03C6\u03B7\u03BC\u03AF\u03C3\u03B5\u03B9\u03C2, \u03AE \u03BB\u03BF\u03B3\u03B1\u03C1\u03B9\u03B1\u03C3\u03BC\u03BF\u03AF. ' +
-          '\u0391\u03C5\u03C4\u03CC \u03B5\u03AF\u03BD\u03B1\u03B9 \u03BB\u03BF\u03B3\u03B9\u03C3\u03BC\u03B9\u03BA\u03CC \u03B1\u03BD\u03BF\u03B9\u03BA\u03C4\u03BF\u03CD \u03BA\u03CE\u03B4\u03B9\u03BA\u03B1, ' +
-          '\u03C6\u03C4\u03B9\u03B1\u03B3\u03BC\u03AD\u03BD\u03BF \u03BC\u03B5 \u03C3\u03B5\u03B2\u03B1\u03C3\u03BC\u03CC \u03B3\u03B9\u03B1 \u03C4\u03B1 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03AC \u03C3\u03BF\u03C5 \u03B4\u03B5\u03B4\u03BF\u03BC\u03AD\u03BD\u03B1.</p>' +
-          '<h2>\u039B\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03AF\u03B1 Offline</h2>' +
-          '<p>\u039C\u03CC\u03BB\u03B9\u03C2 \u03C6\u03BF\u03C1\u03C4\u03CE\u03C3\u03B5\u03B9, \u03BF orOS Writer \u03C3\u03C5\u03BD\u03B5\u03C7\u03AF\u03B6\u03B5\u03B9 \u03BD\u03B1 \u03BB\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03B5\u03AF ' +
-          '\u03B1\u03BA\u03CC\u03BC\u03B1 \u03BA\u03B1\u03B9 \u03C7\u03C9\u03C1\u03AF\u03C2 \u03C3\u03CD\u03BD\u03B4\u03B5\u03C3\u03B7 \u03C3\u03C4\u03BF \u03AF\u03BD\u03C4\u03B5\u03C1\u03BD\u03B5\u03C4. ' +
-          '\u0397 \u03B5\u03C6\u03B1\u03C1\u03BC\u03BF\u03B3\u03AE \u03B1\u03C0\u03BF\u03B8\u03B7\u03BA\u03B5\u03CD\u03B5\u03B9 \u03CC\u03BB\u03BF\u03C5\u03C2 \u03C4\u03BF\u03C5\u03C2 \u03C0\u03CC\u03C1\u03BF\u03C5\u03C2 ' +
-          '\u03C7\u03C1\u03B7\u03C3\u03B9\u03BC\u03BF\u03C0\u03BF\u03B9\u03CE\u03BD\u03C4\u03B1\u03C2 service worker, \u03B5\u03C0\u03B9\u03C4\u03C1\u03AD\u03C0\u03BF\u03BD\u03C4\u03B1\u03C2 ' +
-          '\u03C0\u03C1\u03B1\u03B3\u03BC\u03B1\u03C4\u03B9\u03BA\u03AE offline \u03B4\u03C5\u03BD\u03B1\u03C4\u03CC\u03C4\u03B7\u03C4\u03B1. ' +
-          '\u039C\u03C0\u03BF\u03C1\u03B5\u03AF\u03C2 \u03BD\u03B1 \u03C4\u03B7\u03BD \u03B5\u03B3\u03BA\u03B1\u03C4\u03B1\u03C3\u03C4\u03AE\u03C3\u03B5\u03B9\u03C2 \u03C9\u03C2 ' +
-          'Progressive Web App (PWA) \u03B3\u03B9\u03B1 \u03B1\u03BA\u03CC\u03BC\u03B1 \u03BA\u03B1\u03BB\u03CD\u03C4\u03B5\u03C1\u03B7 ' +
-          '\u03BF\u03BB\u03BF\u03BA\u03BB\u03AE\u03C1\u03C9\u03C3\u03B7 \u03BC\u03B5 \u03C4\u03B7 \u03C3\u03C5\u03C3\u03BA\u03B5\u03C5\u03AE \u03C3\u03BF\u03C5.</p>' +
-          '<p>\u0391\u03C5\u03C4\u03AE \u03B5\u03AF\u03BD\u03B1\u03B9 \u03B7 <em>\u03C4\u03B5\u03BB\u03B5\u03C5\u03C4\u03B1\u03AF\u03B1 \u03C0\u03B1\u03C1\u03AC\u03B3\u03C1\u03B1\u03C6\u03BF\u03C2</em> ' +
-          '\u03C4\u03BF\u03C5 \u03B4\u03BF\u03BA\u03B9\u03BC\u03B1\u03C3\u03C4\u03B9\u03BA\u03BF\u03CD \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5. ' +
-          '\u039C\u03C0\u03BF\u03C1\u03B5\u03B9\u03C2 \u03BD\u03B1 \u03C4\u03B7\u03BD \u03BA\u03B1\u03B8\u03B1\u03C1\u03AF\u03C3\u03B5\u03B9\u03C2 \u03B1\u03BD\u03AC \u03C0\u03AC\u03C3\u03B1 \u03C3\u03C4\u03B9\u03B3\u03BC\u03AE ' +
-          '\u03BC\u03B5 \u03C4\u03BF \u03BA\u03BF\u03C5\u03BC\u03C0\u03AF \u03B4\u03B9\u03B1\u03B3\u03C1\u03B1\u03C6\u03AE\u03C2, \u03AE \u03BD\u03B1 \u03BE\u03B5\u03BA\u03B9\u03BD\u03AE\u03C3\u03B5\u03B9\u03C2 ' +
-          '\u03BD\u03B1 \u03B5\u03C0\u03B5\u03BE\u03B5\u03C1\u03B3\u03AC\u03B6\u03B5\u03C3\u03B1\u03B9 \u03B1\u03BC\u03AD\u03C3\u03C9\u03C2. ' +
-          '\u039F editor \u03B8\u03C5\u03BC\u03AC\u03C4\u03B1\u03B9 \u03C4\u03B7 \u03B4\u03BF\u03C5\u03BB\u03B5\u03B9\u03AC \u03C3\u03BF\u03C5 \u03BC\u03B5\u03C4\u03B1\u03BE\u03CD \u03C4\u03C9\u03BD \u03C3\u03C5\u03BD\u03B5\u03B4\u03C1\u03B9\u03CE\u03BD, ' +
-          '\u03BF\u03C0\u03CC\u03C4\u03B5 \u039C\u03C0\u03BF\u03C1\u03B5\u03B9\u03C2 \u03BD\u03B1 \u03BA\u03BB\u03B5\u03AF\u03C3\u03B5\u03B9\u03C2 \u03BA\u03B1\u03B9 \u03BD\u03B1 \u03B5\u03C0\u03B9\u03C3\u03C4\u03C1\u03AD\u03C8\u03B5\u03B9\u03C2 \u03B1\u03C1\u03B3\u03CC\u03C4\u03B5\u03C1\u03B1. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      es: '<h1>T\u00edtulo del Documento</h1>' +
-          '<p>Bienvenido a <strong>orOS Writer</strong>, un editor de texto que respeta tu privacidad ' +
-          'y funciona completamente sin conexi\u00f3n. Este texto de muestra demuestra ' +
-          '<em>varias opciones de formato</em> disponibles en el editor, ' +
-          'incluyendo <u>texto subrayado</u>, <strong>texto en negrita</strong>, ' +
-          'y <em>texto en cursiva</em>. ' +
-          'Todo el contenido se guarda localmente en tu navegador \u2014 ' +
-          'sin cuenta, sin servidor, sin rastreo.</p>' +
+    
+    if (lang === 'el') {
+      return '<h1>Τίτλος Εγγράφου</h1>' +
+          '<p>Καλώς ήρθεις στο <strong>orOS Writer</strong>, έναν επεξεργαστή κειμένου που σέβεται το απόρρητο.</p>' +
+          '<p>Αυτό το δοκιμαστικό κείμενο επιδεικνύει διάφορες επιλογές μορφοποίησης του editor.</p>' +
+          '<ul><li>Μορφοποίηση έντονα, πλάγια, υπογράμμιση</li>' +
+          '<li>Τίτλοι (H1, H2, H3) για δομή εγγράφου</li>' +
+          '<li>Λίστες κουκκίδων και αριθμημένες</li></ul>' +
+          '<h2>Έξυπνη Τυπογραφία</h2>' +
+          '<p>Ο editor διαθέτει Έξυπνη Τυπογραφία για αυτόματες μετατροπές.</p>' +
+          '<blockquote>Η γραφή είναι εύκολη. — Gene Fowler</blockquote>' +
+          '<h2>Λειτουργίες Editor</h2>' +
+          '<p>Ο orOS Writer περιλαμβάνει εργαλεία για συγγραφείς και δημοσιογράφους.</p>' +
+          '<ol><li>Αυτόματη αποθήκευση</li>' +
+          '<li>Εξαγωγή σε Markdown, RTF, Word ή PDF</li>' +
+          '<li>Δομή εγγράφου και στατιστικά</li></ol>' +
+          '<p>Το περιεχόμενο αποθηκεύεται τοπικά στον browser χωρίς tracking.</p>' +
+          '<p>Αυτή είναι η τελευταία παράγραφος του δοκιμαστικού κειμένου.</p>';
+    }
+    
+    if (lang === 'es') {
+      return '<h1>Título del Documento</h1>' +
+          '<p>Bienvenido a <strong>orOS Writer</strong>, un editor que respeta tu privacidad.</p>' +
+          '<p>Este texto demuestra varias opciones de formato en el editor.</p>' +
           '<ul><li>Formato negrita, cursiva y subrayado</li>' +
           '<li>Encabezados (H1, H2, H3) para estructura</li>' +
-          '<li>Listas de vi\u00f1etas y numeradas</li>' +
-          '<li>Opciones de alineaci\u00f3n de texto</li>' +
-          '<li>Citas para \u00e9nfasis</li></ul>' +
-          '<h2>Tipograf\u00eda Inteligente</h2>' +
-          '<p>El editor incluye <strong>Tipograf\u00eda Inteligente</strong>, que convierte autom\u00e1ticamente ' +
-          'atajos comunes en caracteres tipogr\u00e1ficos correctos mientras escribes:</p>' +
-          '<ul><li>Dobles guiones (--) se convierten en guion largo (\u2014)</li>' +
-          '<li>Tres puntos (...) se convierten en puntos suspensivos (\u2026)</li>' +
-          '<li>Comillas rectas se convierten en comillas tipogr\u00e1ficas (\u201C \u201D) y ap\u00f3strofos inteligentes (\u2018 \u2019)</li>' +
-          '<li>(c) se convierte en \u00A9, (r) en \u00AE, y (tm) en \u2122</li></ul>' +
-          '<p>Prueba a escribir estos atajos t\u00fa mismo \u2014 solo activa la Tipograf\u00eda Inteligente en Configuraci\u00f3n si a\u00fan no est\u00e1 activada.</p>' +
-          '<blockquote>Escribir es f\u00e1cil. Solo miras una hoja de papel en blanco hasta que gotas de sangre se forman en tu frente. \u2014 Gene Fowler</blockquote>' +
+          '<li>Listas de viñetas y numeradas</li></ul>' +
+          '<h2>Tipografía Inteligente</h2>' +
+          '<p>Convierte atajos comunes en caracteres tipográficos correctos.</p>' +
+          '<blockquote>Escribir es fácil. — Gene Fowler</blockquote>' +
           '<h2>Funciones del Editor</h2>' +
-          '<p>orOS Writer incluye una gama de herramientas dise\u00f1adas para escritores, periodistas y bloggers:</p>' +
-          '<ol><li>Guardado autom\u00e1tico \u2014 tu trabajo se preserva tras cada pulsaci\u00f3n</li>' +
-          '<li>Exportar a Markdown, Texto Plano, RTF, Word o PDF</li>' +
-          '<li>Panel de esquema del documento para navegar por los encabezados</li>' +
-          '<li>An\u00e1lisis de frecuencia de palabras para detectar repeticiones</li>' +
-          '<li>Metadatos del documento para t\u00edtulo, autor, etiquetas y categor\u00eda</li>' +
-          '<li>Objetivos de escritura con bloqueo opcional al alcanzar la meta</li>' +
-          '<li>Funci\u00f3n de buscar y reemplazar</li>' +
-          '<li>Barra de progreso de lectura y estad\u00edsticas detalladas</li></ol>' +
-          '<h2>Privacidad Primero</h2>' +
-          '<p>Todo ocurre en tu navegador. Tu texto nunca sale de tu dispositivo. ' +
-          'No hay anal\u00edticas, ni telemetr\u00eda, ni anuncios, ni cuentas requeridas. ' +
-          'Esto es software de c\u00f3digo abierto, creado con respeto por tus datos personales.</p>' +
-          '<h2>Operaci\u00f3n Sin Conexi\u00f3n</h2>' +
-          '<p>Una vez cargado, orOS Writer sigue funcionando incluso sin conexi\u00f3n a Internet. ' +
-          'La aplicaci\u00f3n almacena todos los recursos usando un service worker, permitiendo verdadera capacidad offline. ' +
-          'Puedes instalarla como Progressive Web App (PWA) para mejor integraci\u00f3n con tu dispositivo.</p>' +
-          '<p>Este es el <em>p\u00e1rrafo final</em> del contenido de muestra. ' +
-          'Puedes borrarlo en cualquier momento con el bot\u00f3n de papelera, o empezar a editar de inmediato. ' +
-          'El editor recuerda tu trabajo entre sesiones, as\u00ed que si\u00e9ntete libre de cerrar y volver m\u00e1s tarde. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      it: '<h1>Titolo del Documento</h1>' +
-          '<p>Benvenuto in <strong>orOS Writer</strong>, un editor di testo che rispetta la tua privacy ' +
-          'e funziona completamente offline. Questo testo di esempio dimostra ' +
-          '<em>varie opzioni di formattazione</em> disponibili nell\'editor, ' +
-          'inclusi <u>testo sottolineato</u>, <strong>testo in grassetto</strong>, ' +
-          'e <em>testo in corsivo</em>. ' +
-          'Tutti i contenuti vengono salvati localmente nel tuo browser \u2014 ' +
-          'nessun account, nessun server, nessun tracciamento.</p>' +
-          '<ul><li>Formattazione grassetto, corsivo e sottolineato</li>' +
-          '<li>Intestazioni (H1, H2, H3) per la struttura</li>' +
-          '<li>Elenchi puntati e numerati</li>' +
-          '<li>Opzioni di allineamento del testo</li>' +
-          '<li>Citazioni per enfasi</li></ul>' +
-          '<h2>Tipografia Intelligente</h2>' +
-          '<p>L\'editor include la <strong>Tipografia Intelligente</strong>, che converte automaticamente ' +
-          'scorciatoie comuni in caratteri tipografici corretti mentre scrivi:</p>' +
-          '<ul><li>Doppi trattini (--) diventano un trattino lungo (\u2014)</li>' +
-          '<li>Tre punti (...) diventano puntini di sospensione (\u2026)</li>' +
-          '<li>Le virgolette dritte diventano virgolette tipografiche (\u201C \u201D) e apostrofi intelligenti (\u2018 \u2019)</li>' +
-          '<li>(c) diventa \u00A9, (r) diventa \u00AE, e (tm) diventa \u2122</li></ul>' +
-          '<p>Prova a digitare queste scorciatoie tu stesso \u2014 basta attivare la Tipografia Intelligente nelle Impostazioni se non \u00e8 gi\u00e0 attiva.</p>' +
-          '<blockquote>Scrivere \u00e8 facile. Devi solo fissare un foglio di carta bianca finch\u00e9 non ti si formano gocce di sangue sulla fronte. \u2014 Gene Fowler</blockquote>' +
-          '<h2>Funzioni dell\'Editor</h2>' +
-          '<p>orOS Writer include una gamma di strumenti progettati per scrittori, giornalisti e blogger:</p>' +
-          '<ol><li>Salvataggio automatico \u2014 il tuo lavoro viene preservato dopo ogni battitura</li>' +
-          '<li>Esportazione in Markdown, Testo Semplice, RTF, Word o PDF</li>' +
-          '<li>Pannello struttura del documento per navigare tra le intestazioni</li>' +
-          '<li>Analisi della frequenza delle parole per individuare ripetizioni</li>' +
-          '<li>Metadati del documento per titolo, autore, tag e categoria</li>' +
-          '<li>Obiettivi di scrittura con blocco opzionale al raggiungimento della meta</li>' +
-          '<li>Funzione di trova e sostituisci</li>' +
-          '<li>Barra di avanzamento della lettura e statistiche dettagliate</li></ol>' +
-          '<h2>Prima la Privacy</h2>' +
-          '<p>Tutto avviene nel tuo browser. Il tuo testo non lascia mai il tuo dispositivo. ' +
-          'Non ci sono analitiche, telemetria, pubblicit\u00e0, n\u00e9 account richiesti. ' +
-          'Questo \u00e8 software open source, creato con rispetto per i tuoi dati personali.</p>' +
-          '<h2>Operativit\u00e0 Offline</h2>' +
-          '<p>Una volta caricato, orOS Writer continua di funzionare anche senza connessione a Internet. ' +
-          'L\'applicazione memorizza tutte le risorse utilizzando un service worker, consentendo vera capacit\u00e0 offline. ' +
-          'Puoi installarla come Progressive Web App (PWA) per migliore integrazione con il tuo dispositivo.</p>' +
-          '<p>Questo \u00e8 il <em>paragrafo finale</em> del contenuto di esempio. ' +
-          'Puoi cancellarlo in qualsiasi momento con il pulsante del cestino, o iniziare a modificare subito. ' +
-          'L\'editor ricorda il tuo lavoro tra le sessioni, quindi sentiti libero di chiudere e tornare pi\u00f9 tardi. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      fr: '<h1>Titre du Document</h1>' +
-          '<p>Bienvenue dans <strong>orOS Writer</strong>, un \u00e9diteur de texte qui respecte votre vie priv\u00e9e ' +
-          'et fonctionne enti\u00e8rement hors ligne. Ce texte d\'exemple d\u00e9montre ' +
-          '<em>diverses options de mise en forme</em> disponibles dans l\'\u00e9diteur, ' +
-          'y compris du <u>texte soulign\u00e9</u>, du <strong>texte en gras</strong>, ' +
-          'et du <em>texte en italique</em>. ' +
-          'Tout le contenu est sauvegard\u00e9 localement dans votre navigateur \u2014 ' +
-          'sans compte, sans serveur, sans suivi.</p>' +
-          '<ul><li>Formatage gras, italique et soulign\u00e9</li>' +
-          '<li>Titres (H1, H2, H3) pour la structure</li>' +
-          '<li>Listes \u00e0 puces et num\u00e9rot\u00e9es</li>' +
-          '<li>Options d\'alignement du texte</li>' +
-          '<li>Citations pour mettre en \u00e9vidence// ============================================
-// orOS Writer — Unified Rich Text Editor
-// v0.5-BETA | All Fixes: Focus Mode, Panel Positioning, Icons, Lorem Ipsum
-// ============================================
-
-(function() {
-  'use strict';
-
-  var STORAGE_KEY = 'oros_writer_content';
-  var STORAGE_HIDE_STATS = 'oros_hide_stats';
-  var STORAGE_FOCUS_MODE = 'oros_focus_mode';
-  var STORAGE_READING_PROGRESS = 'oros_reading_progress';
-  var STORAGE_SMART_TYPOGRAPHY = 'oros_smart_typography';
-  var STORAGE_LAST_SAVED = 'oros_writer_last_saved';
-  var STORAGE_GOAL_TARGET = 'oros_goal_target';
-  var STORAGE_GOAL_UNIT = 'oros_goal_unit';
-  var STORAGE_GOAL_LOCK = 'oros_goal_lock';
-  var STORAGE_HIDE_GOAL_BTN = 'oros_hide_goal_btn';
-  var STORAGE_HIDE_OUTLINE_BTN = 'oros_hide_outline_btn';
-  var STORAGE_HIDE_METADATA_BTN = 'oros_hide_metadata_btn';
-  var STORAGE_HIDE_FIND_BTN = 'oros_hide_find_btn';
-  var STORAGE_HIDE_WORDFREQ_BTN = 'oros_hide_wordfreq_btn';
-  var STORAGE_HIDE_SAVE_INDICATOR = 'oros_hide_save_indicator';
-  var STORAGE_HIDE_LOREM_BTN = 'oros_hide_lorem_btn';
-  var STORAGE_TYPEWRITER_SOUND = 'oros_typewriter_sound';
-  var STORAGE_METADATA = 'oros_writer_metadata';
-
-  var richEditor = document.getElementById('rich-editor');
-  var richWrapper = document.getElementById('rich-wrapper');
-  var findBar = document.getElementById('find-replace-bar');
-  var findInput = document.getElementById('find-find');
-  var replaceInput = document.getElementById('find-replace');
-  var frResults = document.getElementById('fr_results');
-  var btnSave = document.getElementById('btn-save');
-  var btnOpen = document.getElementById('btn-open');
-  var btnClear = document.getElementById('btn-clear');
-  var btnExport = document.getElementById('btn-export');
-  var btnLorem = document.getElementById('btn-lorem');
-  var exportDropdown = document.getElementById('export-dropdown');
-  var fileInput = document.getElementById('file-input');
-  var statsOverlay = document.getElementById('stats-overlay');
-  var statsDefaultEl = document.getElementById('stats-default');
-  var statsGoalEl = document.getElementById('stats-goal');
-  var statsDetailed = document.getElementById('stats-detailed');
-  var toolbarCenter = document.querySelector('.toolbar-center');
-  var outlinePanel = document.getElementById('outline-panel');
-  var outlineList = document.getElementById('outline-list');
-  var btnOutline = document.getElementById('btn-outline');
-  var btnCloseOutline = document.getElementById('btn-close-outline');
-  var progressBar = document.getElementById('reading-progress-bar');
-  var goalBar = document.getElementById('goal-bar');
-  var goalUnitSelect = document.getElementById('goal-unit');
-  var goalTargetInput = document.getElementById('goal-target-input');
-  var goalLockCheckbox = document.getElementById('goal-lock');
-  var btnGoal = document.getElementById('btn-goal');
-  var btnSetGoal = document.getElementById('btn-set-goal');
-  var btnClearGoal = document.getElementById('btn-clear-goal');
-  var btnCloseGoal = document.getElementById('btn-close-goal');
-  var btnFind = document.getElementById('btn-find');
-  var btnCloseFR = document.getElementById('btn-close-fr');
-  var metadataPanel = document.getElementById('metadata-panel');
-  var btnMetadata = document.getElementById('btn-metadata');
-  var btnCloseMetadata = document.getElementById('btn-close-metadata');
-  var metaTitle = document.getElementById('meta-title');
-  var metaAuthor = document.getElementById('meta-author');
-  var metaTags = document.getElementById('meta-tags');
-  var metaCategory = document.getElementById('meta-category');
-  var metaCreated = document.getElementById('meta-created');
-  var metaModified = document.getElementById('meta-modified');
-  var btnWordFreq = document.getElementById('btn-wordfreq');
-  var btnCloseWordFreq = document.getElementById('btn-close-wordfreq');
-  var wordFreqPanel = document.getElementById('wordfreq-panel');
-  var wordFreqSummary = document.getElementById('wordfreq-summary');
-  var wordFreqList = document.getElementById('wordfreq-list');
-  var saveIndicator = document.getElementById('save-indicator');
-
-  var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
-  var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
-  var focusModeEnabled = (localStorage.getItem(STORAGE_FOCUS_MODE) === 'true');
-  var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
-  var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
-  var lastSavedTime = parseInt(localStorage.getItem(STORAGE_LAST_SAVED)) || null;
-  var goalTarget = parseInt(localStorage.getItem(STORAGE_GOAL_TARGET)) || null;
-  var goalUnit = localStorage.getItem(STORAGE_GOAL_UNIT) || 'words';
-  var goalLockEnabled = localStorage.getItem(STORAGE_GOAL_LOCK) === 'true';
-  var hideGoalBtn = localStorage.getItem(STORAGE_HIDE_GOAL_BTN) === 'true';
-  var hideOutlineBtn = localStorage.getItem(STORAGE_HIDE_OUTLINE_BTN) === 'true';
-  var hideMetadataBtn = localStorage.getItem(STORAGE_HIDE_METADATA_BTN) === 'true';
-  var hideFindBtn = localStorage.getItem(STORAGE_HIDE_FIND_BTN) === 'true';
-  var hideWordFreqBtn = localStorage.getItem(STORAGE_HIDE_WORDFREQ_BTN) === 'true';
-  var hideSaveIndicator = localStorage.getItem(STORAGE_HIDE_SAVE_INDICATOR) === 'true';
-  var hideLoremBtn = localStorage.getItem(STORAGE_HIDE_LOREM_BTN) === 'true';
-  var typewriterSoundEnabled = localStorage.getItem(STORAGE_TYPEWRITER_SOUND) === 'true';
-  var goalReachedShown = false;
-  var goalLockTriggered = false;
-  var currentMatchIndex = -1;
-  var matchRanges = [];
-  var statsExpanded = false;
-  var wordFreqDebounce = null;
-  var outlineDebounceTimer = null;
-  var focusDebounceTimer = null;
-
-  // ========== TYPEWRITER SOUND (Web Audio API) ==========
-  var typewriterAudioCtx = null;
-  var typewriterAudioBuffer = null;
-
-  function initTypewriterSound() {
-    try {
-      typewriterAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      var sampleRate = typewriterAudioCtx.sampleRate;
-      var duration = 0.04;
-      var numSamples = Math.floor(sampleRate * duration);
-      var buffer = typewriterAudioCtx.createBuffer(1, numSamples, sampleRate);
-      var data = buffer.getChannelData(0);
-      for (var i = 0; i < numSamples; i++) {
-        var t = i / sampleRate;
-        var envelope = Math.exp(-t * 80);
-        var noise = (Math.random() * 2 - 1) * 0.3;
-        var click = Math.sin(2 * Math.PI * 2000 * t) * 0.15;
-        data[i] = (noise + click) * envelope * 0.5;
-      }
-      typewriterAudioBuffer = buffer;
-    } catch(e) {
-      typewriterAudioCtx = null;
+          '<p>Incluye herramientas para escritores y periodistas.</p>' +
+          '<ol><li>Guardado automático</li>' +
+          '<li>Exportar a Markdown, RTF, Word o PDF</li>' +
+          '<li>Estadísticas y progreso de lectura</li></ol>' +
+          '<p>Todo se guarda localmente sin tracking.</p>' +
+          '<p>Este es el párrafo final del contenido de muestra.</p>';
     }
-  }
-
-  function playTypewriterSound() {
-    if (!typewriterSoundEnabled || !typewriterAudioCtx || !typewriterAudioBuffer) return;
-    try {
-      var source = typewriterAudioCtx.createBufferSource();
-      source.buffer = typewriterAudioBuffer;
-      var gainNode = typewriterAudioCtx.createGain();
-      gainNode.gain.value = 0.08;
-      source.connect(gainNode);
-      gainNode.connect(typewriterAudioCtx.destination);
-      source.start(0);
-    } catch(e) {}
-  }
-
-  window.addEventListener('oros-typewriter-sound-changed', function(e) {
-    typewriterSoundEnabled = e.detail.enabled;
-    if (typewriterSoundEnabled && !typewriterAudioCtx) {
-      initTypewriterSound();
-    }
-  });
-
-  // ========== HELPERS ==========
-  function getCurrentLang() { return localStorage.getItem('oros-language') || 'en'; }
-  function getTrans(key) {
-    var lang = getCurrentLang();
-    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
-    return t[key] || key;
-  }
-  function formatNumber(num) {
-    return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString();
-  }
-  function getTextContent() {
-    var text = richEditor.innerText || '';
-    return text.replace(/\n$/, '');
-  }
-
-  // ========== PANE TOP OFFSET CALCULATION (FIXED) ==========
-  function getPanelTopOffset() {
-    var offset = 0;
-    var headerInner = document.querySelector('.header');
-    if (headerInner) offset += headerInner.offsetHeight;
-    else offset += 56;
-    var toolbar = document.getElementById('main-toolbar');
-    if (toolbar) offset += toolbar.offsetHeight;
-    if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
-    if (findBar && findBar.style.display === 'flex') offset += findBar.offsetHeight;
-    return offset + 'px';
-  }
-
-  // ========== LOREM IPSUM GENERATOR (ALL UNICODE ESCAPED) ==========
-  function generateLoremIpsum() {
-    var lang = getCurrentLang();
-    var templates = {
-      en: '<h1>Document Title</h1>' +
-          '<p>Welcome to <strong>orOS Writer</strong>, a privacy-first rich text editor that works entirely offline. ' +
-          'This sample text demonstrates <em>various formatting options</em> available in the editor, ' +
-          'including <u>underlined text</u>, <strong>bold text</strong>, and <em>italic text</em>. ' +
-          'All content is saved locally in your browser \u2014 no account, no server, no tracking.</p>' +
-          '<ul><li>Bold, italic, and underline formatting</li>' +
-          '<li>Headings (H1, H2, H3) for document structure</li>' +
-          '<li>Bullet and numbered lists</li>' +
-          '<li>Text alignment: left, center, right, justify</li>' +
-          '<li>Blockquotes for emphasis</li></ul>' +
-          '<h2>Smart Typography</h2>' +
-          '<p>The editor features <strong>Smart Typography</strong>, which automatically converts common ' +
-          'shortcuts into proper typographic characters as you type:</p>' +
-          '<ul><li>Double hyphens (--) become an em dash (\u2014)</li>' +
-          '<li>Three dots (...) become an ellipsis (\u2026)</li>' +
-          '<li>Straight quotes become curly quotes (\u201C \u201D) and smart apostrophes (\u2018 \u2019)</li>' +
-          '<li>(c) becomes \u00A9, (r) becomes \u00AE, and (tm) becomes \u2122</li></ul>' +
-          '<p>Try typing these shortcuts yourself \u2014 just enable Smart Typography in Settings if it is not already on.</p>' +
-          '<blockquote>Writing is easy. All you do is stare at a blank sheet of paper until drops of blood form on your forehead. \u2014 Gene Fowler</blockquote>' +
-          '<h2>Editor Features</h2>' +
-          '<p>orOS Writer includes a range of tools designed for writers, journalists, and bloggers:</p>' +
-          '<ol><li>Automatic saving \u2014 your work is preserved after every keystroke</li>' +
-          '<li>Export to Markdown, Plain Text, RTF, Word, or PDF</li>' +
-          '<li>Document outline panel for navigating headings</li>' +
-          '<li>Word frequency analysis to spot repetition and overused words</li>' +
-          '<li>Document metadata for title, author, tags, and category</li>' +
-          '<li>Writing goals with optional lock when the target is reached</li>' +
-          '<li>Find and replace functionality</li>' +
-          '<li>Reading progress bar and detailed statistics</li></ol>' +
-          '<h2>Privacy First</h2>' +
-          '<p>Everything happens in your browser. Your text never leaves your device. ' +
-          'There are no analytics, no telemetry, no advertisements, and no accounts required. ' +
-          'This is open-source software built with respect for your personal data.</p>' +
-          '<h2>Offline Operation</h2>' +
-          '<p>Once loaded, orOS Writer continues to work even without an internet connection. ' +
-          'The application caches all resources using a service worker, enabling true offline capability. ' +
-          'You can install it as a Progressive Web App (PWA) for even better integration with your device.</p>' +
-          '<p>This is the <em>final paragraph</em> of the sample content. ' +
-          'You can clear it anytime with the trash button, or start editing right away. ' +
-          'The editor remembers your work between sessions, so feel free to close and return later. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      el: '<h1>\u03A4\u03AF\u03C4\u03BB\u03BF\u03C2 \u0395\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5</h1>' +
-          '<p>\u039A\u03B1\u03BB\u03CE\u03C2 \u03AE\u03C1\u03B8\u03B5\u03C2 \u03C3\u03C4\u03BF <strong>orOS Writer</strong>, ' +
-          '\u03AD\u03BD\u03B1\u03BD \u03B5\u03C0\u03B5\u03BE\u03B5\u03C1\u03B3\u03B1\u03C3\u03C4\u03AE \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5 \u03C0\u03BF\u03C5 \u03C3\u03B5\u03B2\u03B5\u03C4\u03B1\u03B9 \u03C4\u03BF \u03B1\u03C0\u03CC\u03C1\u03C1\u03B7\u03C4\u03BF ' +
-          '\u03BA\u03B1\u03B9 \u03BB\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03B5\u03AF \u03B5\u03BE \u03BF\u03BB\u03BF\u03BA\u03BB\u03AE\u03C1\u03BF\u03C5 offline. ' +
-          '\u0391\u03C5\u03C4\u03CC \u03C4\u03BF \u03B4\u03BF\u03BA\u03B9\u03BC\u03B1\u03C3\u03C4\u03B9\u03BA\u03CC \u03BA\u03B5\u03AF\u03BC\u03B5\u03BD\u03BF \u03B5\u03C0\u03B9\u03B4\u03B5\u03B9\u03BA\u03BD\u03CD\u03B5\u03B9 ' +
-          '<em>\u03B4\u03B9\u03AC\u03C6\u03BF\u03C1\u03B5\u03C2 \u03B5\u03C0\u03B9\u03BB\u03BF\u03B3\u03AD\u03C2 \u03BC\u03BF\u03C1\u03C6\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B7\u03C2</em> \u03C4\u03BF\u03C5 editor, ' +
-          '\u03C3\u03C5\u03BC\u03C0\u03B5\u03C1\u03B9\u03BB\u03B1\u03BC\u03B2\u03B1\u03BD\u03BF\u03BC\u03AD\u03BD\u03BF\u03C5 ' +
-          '<u>\u03C5\u03C0\u03BF\u03B3\u03B5\u03B3\u03C1\u03B1\u03BC\u03BC\u03AD\u03BD\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</u>, ' +
-          '<strong>\u03AD\u03BD\u03C4\u03BF\u03BD\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</strong>, ' +
-          '\u03BA\u03B1\u03B9 <em>\u03C0\u03BB\u03AC\u03B3\u03B9\u03BF\u03C5 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</em>. ' +
-          '\u038C\u03BB\u03BF \u03C4\u03BF \u03C0\u03B5\u03C1\u03B9\u03B5\u03C7\u03CC\u03BC\u03B5\u03BD\u03BF \u03B1\u03C0\u03BF\u03B8\u03B7\u03BA\u03B5\u03CD\u03B5\u03C4\u03B1\u03B9 \u03C4\u03BF\u03C0\u03B9\u03BA\u03AC \u03C3\u03C4\u03BF\u03BD browser \u2014 ' +
-          '\u03C7\u03C9\u03C1\u03AF\u03C2 \u03BB\u03BF\u03B3\u03B1\u03C1\u03B9\u03B1\u03C3\u03BC\u03CC, \u03C7\u03C9\u03C1\u03AF\u03C2 server, \u03C7\u03C9\u03C1\u03AF\u03C2 \u03C0\u03B1\u03C1\u03B1\u03BA\u03BF\u03BB\u03BF\u03CD\u03B8\u03B7\u03C3\u03B7.</p>' +
-          '<ul><li>\u039C\u03BF\u03C1\u03C6\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B7 \u03AD\u03BD\u03C4\u03BF\u03BD\u03B1, \u03C0\u03BB\u03AC\u03B3\u03B9\u03B1, \u03C5\u03C0\u03BF\u03B3\u03C1\u03AC\u03BC\u03BC\u03B9\u03C3\u03B7</li>' +
-          '<li>\u03A4\u03AF\u03C4\u03BB\u03BF\u03B9 (H1, H2, H3) \u03B3\u03B9\u03B1 \u03B4\u03BF\u03BC\u03AE \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5</li>' +
-          '<li>\u039B\u03AF\u03C3\u03C4\u03B5\u03C2 \u03BA\u03BF\u03C5\u03BA\u03BA\u03AF\u03B4\u03C9\u03BD \u03BA\u03B1\u03B9 \u03B1\u03C1\u03B9\u03B8\u03BC\u03B7\u03BC\u03AD\u03BD\u03B5\u03C2</li>' +
-          '<li>\u03A3\u03C4\u03BF\u03AF\u03C7\u03B9\u03C3\u03B7 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5: \u03B1\u03C1\u03B9\u03C3\u03C4\u03B5\u03C1\u03AC, \u03BA\u03AD\u03BD\u03C4\u03C1\u03BF, \u03B4\u03B5\u03BE\u03B9\u03AC, \u03C0\u03BB\u03B7\u03C1\u03AE\u03C2</li>' +
-          '<li>\u0391\u03C0\u03BF\u03C3\u03C0\u03AC\u03C3\u03BC\u03B1\u03C4\u03B1 \u03B3\u03B9\u03B1 \u03AD\u03BC\u03C6\u03B1\u03C3\u03B7</li></ul>' +
-          '<h2>\u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1</h2>' +
-          '<p>\u039F editor \u03B4\u03B9\u03B1\u03B8\u03AD\u03C4\u03B5\u03B9 <strong>\u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1</strong>, ' +
-          '\u03C0\u03BF\u03C5 \u03BC\u03B5\u03C4\u03B1\u03C4\u03C1\u03AD\u03C0\u03B5\u03B9 \u03B1\u03C5\u03C4\u03CC\u03BC\u03B1\u03C4\u03B1 ' +
-          '\u03C3\u03C5\u03BD\u03B7\u03B8\u03B9\u03C3\u03BC\u03AD\u03BD\u03B5\u03C2 \u03C3\u03C5\u03BD\u03C4\u03BF\u03BC\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B5\u03C2 \u03C3\u03B5 \u03C3\u03C9\u03C3\u03C4\u03BF\u03CD\u03C2 ' +
-          '\u03C4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03B9\u03BA\u03BF\u03CD\u03C2 \u03C7\u03B1\u03C1\u03B1\u03BA\u03C4\u03AE\u03C1\u03B5\u03C2 \u03BA\u03B1\u03B8\u03CE\u03C2 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03BF\u03B3\u03B5\u03AF\u03C2:</p>' +
-          '<ul><li>\u0394\u03B9\u03C0\u03BB\u03AD\u03C2 \u03C0\u03B1\u03CD\u03BB\u03B5\u03C2 (--) \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03BC\u03B1\u03BA\u03C1\u03AC \u03C0\u03B1\u03CD\u03BB\u03B1 (\u2014)</li>' +
-          '<li>\u03A4\u03C1\u03B5\u03B9\u03C2 \u03C4\u03B5\u03BB\u03B5\u03AF\u03B5\u03C2 (...) \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03B1\u03C0\u03BF\u03C3\u03B9\u03C9\u03C0\u03B7\u03C4\u03B9\u03BA\u03AC (\u2026)</li>' +
-          '<li>\u0391\u03C0\u03BB\u03AC \u03B5\u03B9\u03C3\u03B1\u03B3\u03C9\u03B3\u03B9\u03BA\u03AC \u03B3\u03AF\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9 \u03BA\u03B1\u03BC\u03C0\u03CD\u03BB\u03B1 \u03B5\u03B9\u03C3\u03B1\u03B3\u03C9\u03B3\u03B9\u03BA\u03AC (\u201C \u201D) ' +
-          '\u03BA\u03B1\u03B9 \u03AD\u03BE\u03C5\u03C0\u03BD\u03B1 \u03B1\u03C0\u03BF\u03C3\u03C4\u03CC\u03C6\u03B9\u03B1 (\u2018 \u2019)</li>' +
-          '<li>(c) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u00A9, (r) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u00AE, \u03BA\u03B1\u03B9 (tm) \u03B3\u03AF\u03BD\u03B5\u03C4\u03B1\u03B9 \u2122</li></ul>' +
-          '<p>\u0394\u03BF\u03BA\u03AF\u03BC\u03B1\u03C3\u03B5 \u03BD\u03B1 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03BF\u03B3\u03AE\u03C3\u03B5\u03B9\u03C2 \u03B1\u03C5\u03C4\u03AD\u03C2 \u03C4\u03B9\u03C2 \u03C3\u03C5\u03BD\u03C4\u03BF\u03BC\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B5\u03C2 \u03BC\u03CC\u03BD\u03BF\u03C2 \u03C3\u03BF\u03C5 \u2014 ' +
-          '\u03B1\u03C0\u03BB\u03AC \u03B5\u03BD\u03B5\u03C1\u03B3\u03BF\u03C0\u03BF\u03AF\u03B7\u03C3\u03B5 \u03C4\u03B7\u03BD \u0388\u03BE\u03C5\u03C0\u03BD\u03B7 \u03A4\u03C5\u03C0\u03BF\u03B3\u03C1\u03B1\u03C6\u03AF\u03B1 \u03C3\u03C4\u03B9\u03C2 \u03A1\u03C5\u03B8\u03BC\u03AF\u03C3\u03B5\u03B9\u03C2 ' +
-          '\u03B1\u03BD \u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9 \u03AE\u03B4\u03B7 \u03B5\u03BD\u03B5\u03C1\u03B3\u03AE.</p>' +
-          '<blockquote>\u0397 \u03B3\u03C1\u03B1\u03C6\u03AE \u03B5\u03AF\u03BD\u03B1\u03B9 \u03B5\u03CD\u03BA\u03BF\u03BB\u03B7. \u0391\u03C0\u03BB\u03AC \u03BA\u03BF\u03B9\u03C4\u03AC\u03C2 \u03AD\u03BD\u03B1 ' +
-          '\u03BB\u03B5\u03C5\u03BA\u03CC \u03C6\u03CD\u03BB\u03BB\u03BF \u03C7\u03B1\u03C1\u03C4\u03B9\u03BF\u03CD \u03BC\u03AD\u03C7\u03C1\u03B9 \u03BD\u03B1 \u03C3\u03C4\u03B1\u03BB\u03AC\u03BE\u03B5\u03B9\u03C2 \u03C3\u03C4\u03B1\u03B3\u03CC\u03BD\u03B5\u03C2 ' +
-          '\u03B1\u03AF\u03BC\u03B1\u03C4\u03BF\u03C2 \u03C3\u03C4\u03BF \u03BC\u03AD\u03C4\u03C9\u03C0\u03CC \u03C3\u03BF\u03C5. \u2014 Gene Fowler</blockquote>' +
-          '<h2>\u039B\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03AF\u03B5\u03C2 Editor</h2>' +
-          '<p>\u039F orOS Writer \u03C0\u03B5\u03C1\u03B9\u03BB\u03B1\u03BC\u03B2\u03AC\u03BD\u03B5\u03B9 \u03BC\u03B9\u03B1 \u03C3\u03B5\u03B9\u03C1\u03AC \u03B5\u03C1\u03B3\u03B1\u03BB\u03B5\u03AF\u03C9\u03BD ' +
-          '\u03C3\u03C7\u03B5\u03B4\u03B9\u03B1\u03C3\u03BC\u03AD\u03BD\u03C9\u03BD \u03B3\u03B9\u03B1 \u03C3\u03C5\u03B3\u03B3\u03C1\u03B1\u03C6\u03B5\u03AF\u03C2, \u03B4\u03B7\u03BC\u03BF\u03C3\u03B9\u03BF\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5\u03C2 \u03BA\u03B1\u03B9 bloggers:</p>' +
-          '<ol><li>\u0391\u03C5\u03C4\u03CC\u03BC\u03B1\u03C4\u03B7 \u03B1\u03C0\u03BF\u03B8\u03AE\u03BA\u03B5\u03C5\u03C3\u03B7 \u2014 \u03B7 \u03B4\u03BF\u03C5\u03BB\u03B5\u03B9\u03AC \u03C3\u03BF\u03C5 ' +
-          '\u03C3\u03CE\u03B6\u03B5\u03C4\u03B1\u03B9 \u03BC\u03B5\u03C4\u03AC \u03B1\u03C0\u03CC \u03BA\u03AC\u03B8\u03B5 \u03C0\u03BB\u03B7\u03BA\u03C4\u03C1\u03BF\u03BB\u03CC\u03B3\u03B7\u03C3\u03B7</li>' +
-          '<li>\u0395\u03BE\u03B1\u03B3\u03C9\u03B3\u03AE \u03C3\u03B5 Markdown, \u0391\u03C0\u03BB\u03CC \u039A\u03B5\u03AF\u03BC\u03B5\u03BD\u03BF, RTF, Word \u03AE PDF</li>' +
-          '<li>\u03A0\u03AF\u03BD\u03B1\u03BA\u03B1\u03C2 \u03B4\u03BF\u03BC\u03AE\u03C2 \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5 \u03B3\u03B9\u03B1 \u03C0\u03BB\u03BF\u03B9\u03B3\u03B7\u03C3\u03B7 \u03C3\u03C4\u03BF\u03C5\u03C2 \u03C4\u03AF\u03C4\u03BB\u03BF\u03C5\u03C2</li>' +
-          '<li>\u0391\u03BD\u03AC\u03BB\u03C5\u03C3\u03B7 \u03C3\u03C5\u03C7\u03BD\u03CC\u03C4\u03B7\u03C4\u03B1\u03C2 \u03BB\u03AD\u03BE\u03B5\u03C9\u03BD \u03B3\u03B9\u03B1 \u03B5\u03BD\u03C4\u03BF\u03C0\u03B9\u03C3\u03BC\u03CC \u03B5\u03C0\u03B1\u03BD\u03B1\u03BB\u03AE\u03C8\u03B5\u03C9\u03BD</li>' +
-          '<li>\u039C\u03B5\u03C4\u03B1\u03B4\u03B5\u03B4\u03BF\u03BC\u03AD\u03BD\u03B1 \u03B5\u03B3\u03B3\u03C1\u03AC\u03C6\u03BF\u03C5 \u03B3\u03B9\u03B1 \u03C4\u03AF\u03C4\u03BB\u03BF, ' +
-          '\u03C3\u03C5\u03B3\u03B3\u03C1\u03B1\u03C6\u03AD\u03B1, \u03B5\u03C4\u03B9\u03BA\u03AD\u03C4\u03B5\u03C2 \u03BA\u03B1\u03B9 \u03BA\u03B1\u03C4\u03B7\u03B3\u03BF\u03C1\u03AF\u03B1</li>' +
-          '<li>\u03A3\u03C4\u03CC\u03C7\u03BF\u03B9 \u03B3\u03C1\u03B1\u03C6\u03AE\u03C2 \u03BC\u03B5 \u03C0\u03C1\u03BF\u03B1\u03B9\u03C1\u03B5\u03C4\u03B9\u03BA\u03CC \u03BA\u03BB\u03B5\u03AF\u03B4\u03C9\u03BC\u03B1 ' +
-          '\u03CC\u03C4\u03B1\u03BD \u03B5\u03C0\u03B9\u03C4\u03C5\u03B3\u03C7\u03AC\u03BD\u03BF\u03BD\u03C4\u03B1\u03B9</li>' +
-          '<li>\u0395\u03CD\u03C1\u03B5\u03C3\u03B7 \u03BA\u03B1\u03B9 \u03B1\u03BD\u03C4\u03B9\u03BA\u03B1\u03C4\u03AC\u03C3\u03C4\u03B1\u03C3\u03B7 \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5</li>' +
-          '<li>\u039C\u03C0\u03AC\u03C1\u03B1 \u03C0\u03C1\u03BF\u03CC\u03B4\u03BF\u03C5 \u03B1\u03BD\u03AC\u03B3\u03BD\u03C9\u03C3\u03B7\u03C2 \u03BA\u03B1\u03B9 \u03B1\u03BD\u03B1\u03BB\u03C5\u03C4\u03B9\u03BA\u03AC \u03C3\u03C4\u03B1\u03C4\u03B9\u03C3\u03C4\u03B9\u03BA\u03AC</li></ol>' +
-          '<h2>\u0391\u03C0\u03CC\u03C1\u03C1\u03B7\u03C4\u03BF \u03A0\u03C1\u03CE\u03C4\u03B1</h2>' +
-          '<p>\u038C\u03BB\u03B1 \u03C3\u03C5\u03BC\u03B2\u03B1\u03AF\u03BD\u03BF\u03C5\u03BD \u03C3\u03C4\u03BF\u03BD browser \u03C3\u03BF\u03C5. \u03A4\u03BF \u03BA\u03B5\u03AF\u03BC\u03B5\u03BD\u03CC \u03C3\u03BF\u03C5 ' +
-          '\u03B4\u03B5\u03BD \u03C6\u03B5\u03CD\u03B3\u03B5\u03B9 \u03C0\u03BF\u03C4\u03AD \u03B1\u03C0\u03CC \u03C4\u03B7 \u03C3\u03C5\u03C3\u03BA\u03B5\u03C5\u03AE \u03C3\u03BF\u03C5. ' +
-          '\u0394\u03B5\u03BD \u03C5\u03C0\u03AC\u03C1\u03C7\u03BF\u03C5\u03BD \u03B1\u03BD\u03B1\u03BB\u03C5\u03C4\u03B9\u03BA\u03AC \u03C3\u03C4\u03BF\u03B9\u03C7\u03B5\u03AF\u03B1, \u03C4\u03B7\u03BB\u03B5\u03BC\u03B5\u03C4\u03C1\u03AF\u03B1, ' +
-          '\u03B4\u03B9\u03B1\u03C6\u03B7\u03BC\u03AF\u03C3\u03B5\u03B9\u03C2, \u03AE \u03BB\u03BF\u03B3\u03B1\u03C1\u03B9\u03B1\u03C3\u03BC\u03BF\u03AF. ' +
-          '\u0391\u03C5\u03C4\u03CC \u03B5\u03AF\u03BD\u03B1\u03B9 \u03BB\u03BF\u03B3\u03B9\u03C3\u03BC\u03B9\u03BA\u03CC \u03B1\u03BD\u03BF\u03B9\u03BA\u03C4\u03BF\u03CD \u03BA\u03CE\u03B4\u03B9\u03BA\u03B1, ' +
-          '\u03C6\u03C4\u03B9\u03B1\u03B3\u03BC\u03AD\u03BD\u03BF \u03BC\u03B5 \u03C3\u03B5\u03B2\u03B1\u03C3\u03BC\u03CC \u03B3\u03B9\u03B1 \u03C4\u03B1 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03AC \u03C3\u03BF\u03C5 \u03B4\u03B5\u03B4\u03BF\u03BC\u03AD\u03BD\u03B1.</p>' +
-          '<h2>\u039B\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03AF\u03B1 Offline</h2>' +
-          '<p>\u039C\u03CC\u03BB\u03B9\u03C2 \u03C6\u03BF\u03C1\u03C4\u03CE\u03C3\u03B5\u03B9, \u03BF orOS Writer \u03C3\u03C5\u03BD\u03B5\u03C7\u03AF\u03B6\u03B5\u03B9 \u03BD\u03B1 \u03BB\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03B5\u03AF ' +
-          '\u03B1\u03BA\u03CC\u03BC\u03B1 \u03BA\u03B1\u03B9 \u03C7\u03C9\u03C1\u03AF\u03C2 \u03C3\u03CD\u03BD\u03B4\u03B5\u03C3\u03B7 \u03C3\u03C4\u03BF \u03AF\u03BD\u03C4\u03B5\u03C1\u03BD\u03B5\u03C4. ' +
-          '\u0397 \u03B5\u03C6\u03B1\u03C1\u03BC\u03BF\u03B3\u03AE \u03B1\u03C0\u03BF\u03B8\u03B7\u03BA\u03B5\u03CD\u03B5\u03B9 \u03CC\u03BB\u03BF\u03C5\u03C2 \u03C4\u03BF\u03C5\u03C2 \u03C0\u03CC\u03C1\u03BF\u03C5\u03C2 ' +
-          '\u03C7\u03C1\u03B7\u03C3\u03B9\u03BC\u03BF\u03C0\u03BF\u03B9\u03CE\u03BD\u03C4\u03B1\u03C2 service worker, \u03B5\u03C0\u03B9\u03C4\u03C1\u03AD\u03C0\u03BF\u03BD\u03C4\u03B1\u03C2 ' +
-          '\u03C0\u03C1\u03B1\u03B3\u03BC\u03B1\u03C4\u03B9\u03BA\u03AE offline \u03B4\u03C5\u03BD\u03B1\u03C4\u03CC\u03C4\u03B7\u03C4\u03B1. ' +
-          '\u039C\u03C0\u03BF\u03C1\u03B5\u03AF\u03C2 \u03BD\u03B1 \u03C4\u03B7\u03BD \u03B5\u03B3\u03BA\u03B1\u03C4\u03B1\u03C3\u03C4\u03AE\u03C3\u03B5\u03B9\u03C2 \u03C9\u03C2 ' +
-          'Progressive Web App (PWA) \u03B3\u03B9\u03B1 \u03B1\u03BA\u03CC\u03BC\u03B1 \u03BA\u03B1\u03BB\u03CD\u03C4\u03B5\u03C1\u03B7 ' +
-          '\u03BF\u03BB\u03BF\u03BA\u03BB\u03AE\u03C1\u03C9\u03C3\u03B7 \u03BC\u03B5 \u03C4\u03B7 \u03C3\u03C5\u03C3\u03BA\u03B5\u03C5\u03AE \u03C3\u03BF\u03C5.</p>' +
-          '<p>\u0391\u03C5\u03C4\u03AE \u03B5\u03AF\u03BD\u03B1\u03B9 \u03B7 <em>\u03C4\u03B5\u03BB\u03B5\u03C5\u03C4\u03B1\u03AF\u03B1 \u03C0\u03B1\u03C1\u03AC\u03B3\u03C1\u03B1\u03C6\u03BF\u03C2</em> ' +
-          '\u03C4\u03BF\u03C5 \u03B4\u03BF\u03BA\u03B9\u03BC\u03B1\u03C3\u03C4\u03B9\u03BA\u03BF\u03CD \u03BA\u03B5\u03B9\u03BC\u03AD\u03BD\u03BF\u03C5. ' +
-          '\u039C\u03C0\u03BF\u03C1\u03B5\u03B9\u03C2 \u03BD\u03B1 \u03C4\u03B7\u03BD \u03BA\u03B1\u03B8\u03B1\u03C1\u03AF\u03C3\u03B5\u03B9\u03C2 \u03B1\u03BD\u03AC \u03C0\u03AC\u03C3\u03B1 \u03C3\u03C4\u03B9\u03B3\u03BC\u03AE ' +
-          '\u03BC\u03B5 \u03C4\u03BF \u03BA\u03BF\u03C5\u03BC\u03C0\u03AF \u03B4\u03B9\u03B1\u03B3\u03C1\u03B1\u03C6\u03AE\u03C2, \u03AE \u03BD\u03B1 \u03BE\u03B5\u03BA\u03B9\u03BD\u03AE\u03C3\u03B5\u03B9\u03C2 ' +
-          '\u03BD\u03B1 \u03B5\u03C0\u03B5\u03BE\u03B5\u03C1\u03B3\u03AC\u03B6\u03B5\u03C3\u03B1\u03B9 \u03B1\u03BC\u03AD\u03C3\u03C9\u03C2. ' +
-          '\u039F editor \u03B8\u03C5\u03BC\u03AC\u03C4\u03B1\u03B9 \u03C4\u03B7 \u03B4\u03BF\u03C5\u03BB\u03B5\u03B9\u03AC \u03C3\u03BF\u03C5 \u03BC\u03B5\u03C4\u03B1\u03BE\u03CD \u03C4\u03C9\u03BD \u03C3\u03C5\u03BD\u03B5\u03B4\u03C1\u03B9\u03CE\u03BD, ' +
-          '\u03BF\u03C0\u03CC\u03C4\u03B5 \u039C\u03C0\u03BF\u03C1\u03B5\u03B9\u03C2 \u03BD\u03B1 \u03BA\u03BB\u03B5\u03AF\u03C3\u03B5\u03B9\u03C2 \u03BA\u03B1\u03B9 \u03BD\u03B1 \u03B5\u03C0\u03B9\u03C3\u03C4\u03C1\u03AD\u03C8\u03B5\u03B9\u03C2 \u03B1\u03C1\u03B3\u03CC\u03C4\u03B5\u03C1\u03B1. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      es: '<h1>T\u00edtulo del Documento</h1>' +
-          '<p>Bienvenido a <strong>orOS Writer</strong>, un editor de texto que respeta tu privacidad ' +
-          'y funciona completamente sin conexi\u00f3n. Este texto de muestra demuestra ' +
-          '<em>varias opciones de formato</em> disponibles en el editor, ' +
-          'incluyendo <u>texto subrayado</u>, <strong>texto en negrita</strong>, ' +
-          'y <em>texto en cursiva</em>. ' +
-          'Todo el contenido se guarda localmente en tu navegador \u2014 ' +
-          'sin cuenta, sin servidor, sin rastreo.</p>' +
-          '<ul><li>Formato negrita, cursiva y subrayado</li>' +
-          '<li>Encabezados (H1, H2, H3) para estructura</li>' +
-          '<li>Listas de vi\u00f1etas y numeradas</li>' +
-          '<li>Opciones de alineaci\u00f3n de texto</li>' +
-          '<li>Citas para \u00e9nfasis</li></ul>' +
-          '<h2>Tipograf\u00eda Inteligente</h2>' +
-          '<p>El editor incluye <strong>Tipograf\u00eda Inteligente</strong>, que convierte autom\u00e1ticamente ' +
-          'atajos comunes en caracteres tipogr\u00e1ficos correctos mientras escribes:</p>' +
-          '<ul><li>Dobles guiones (--) se convierten en guion largo (\u2014)</li>' +
-          '<li>Tres puntos (...) se convierten en puntos suspensivos (\u2026)</li>' +
-          '<li>Comillas rectas se convierten en comillas tipogr\u00e1ficas (\u201C \u201D) y ap\u00f3strofos inteligentes (\u2018 \u2019)</li>' +
-          '<li>(c) se convierte en \u00A9, (r) en \u00AE, y (tm) en \u2122</li></ul>' +
-          '<p>Prueba a escribir estos atajos t\u00fa mismo \u2014 solo activa la Tipograf\u00eda Inteligente en Configuraci\u00f3n si a\u00fan no est\u00e1 activada.</p>' +
-          '<blockquote>Escribir es f\u00e1cil. Solo miras una hoja de papel en blanco hasta que gotas de sangre se forman en tu frente. \u2014 Gene Fowler</blockquote>' +
-          '<h2>Funciones del Editor</h2>' +
-          '<p>orOS Writer incluye una gama de herramientas dise\u00f1adas para escritores, periodistas y bloggers:</p>' +
-          '<ol><li>Guardado autom\u00e1tico \u2014 tu trabajo se preserva tras cada pulsaci\u00f3n</li>' +
-          '<li>Exportar a Markdown, Texto Plano, RTF, Word o PDF</li>' +
-          '<li>Panel de esquema del documento para navegar por los encabezados</li>' +
-          '<li>An\u00e1lisis de frecuencia de palabras para detectar repeticiones</li>' +
-          '<li>Metadatos del documento para t\u00edtulo, autor, etiquetas y categor\u00eda</li>' +
-          '<li>Objetivos de escritura con bloqueo opcional al alcanzar la meta</li>' +
-          '<li>Funci\u00f3n de buscar y reemplazar</li>' +
-          '<li>Barra de progreso de lectura y estad\u00edsticas detalladas</li></ol>' +
-          '<h2>Privacidad Primero</h2>' +
-          '<p>Todo ocurre en tu navegador. Tu texto nunca sale de tu dispositivo. ' +
-          'No hay anal\u00edticas, ni telemetr\u00eda, ni anuncios, ni cuentas requeridas. ' +
-          'Esto es software de c\u00f3digo abierto, creado con respeto por tus datos personales.</p>' +
-          '<h2>Operaci\u00f3n Sin Conexi\u00f3n</h2>' +
-          '<p>Una vez cargado, orOS Writer sigue funcionando incluso sin conexi\u00f3n a Internet. ' +
-          'La aplicaci\u00f3n almacena todos los recursos usando un service worker, permitiendo verdadera capacidad offline. ' +
-          'Puedes instalarla como Progressive Web App (PWA) para mejor integraci\u00f3n con tu dispositivo.</p>' +
-          '<p>Este es el <em>p\u00e1rrafo final</em> del contenido de muestra. ' +
-          'Puedes borrarlo en cualquier momento con el bot\u00f3n de papelera, o empezar a editar de inmediato. ' +
-          'El editor recuerda tu trabajo entre sesiones, as\u00ed que si\u00e9ntete libre de cerrar y volver m\u00e1s tarde. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      it: '<h1>Titolo del Documento</h1>' +
-          '<p>Benvenuto in <strong>orOS Writer</strong>, un editor di testo che rispetta la tua privacy ' +
-          'e funziona completamente offline. Questo testo di esempio dimostra ' +
-          '<em>varie opzioni di formattazione</em> disponibili nell\'editor, ' +
-          'inclusi <u>testo sottolineato</u>, <strong>testo in grassetto</strong>, ' +
-          'e <em>testo in corsivo</em>. ' +
-          'Tutti i contenuti vengono salvati localmente nel tuo browser \u2014 ' +
-          'nessun account, nessun server, nessun tracciamento.</p>' +
+    
+    if (lang === 'it') {
+      return '<h1>Titolo del Documento</h1>' +
+          '<p>Benvenuto in <strong>orOS Writer</strong>, un editor che rispetta la tua privacy.</p>' +
+          '<p>Questo testo dimostra varie opzioni di formattazione.</p>' +
           '<ul><li>Formattazione grassetto, corsivo e sottolineato</li>' +
-          '<li>Intestazioni (H1, H2, H3) per la struttura</li>' +
-          '<li>Elenchi puntati e numerati</li>' +
-          '<li>Opzioni di allineamento del testo</li>' +
-          '<li>Citazioni per enfasi</li></ul>' +
+          '<li>Intestazioni (H1, H2, H3) per struttura</li>' +
+          '<li>Elenchi puntati e numerati</li></ul>' +
           '<h2>Tipografia Intelligente</h2>' +
-          '<p>L\'editor include la <strong>Tipografia Intelligente</strong>, che converte automaticamente ' +
-          'scorciatoie comuni in caratteri tipografici corretti mentre scrivi:</p>' +
-          '<ul><li>Doppi trattini (--) diventano un trattino lungo (\u2014)</li>' +
-          '<li>Tre punti (...) diventano puntini di sospensione (\u2026)</li>' +
-          '<li>Le virgolette dritte diventano virgolette tipografiche (\u201C \u201D) e apostrofi intelligenti (\u2018 \u2019)</li>' +
-          '<li>(c) diventa \u00A9, (r) diventa \u00AE, e (tm) diventa \u2122</li></ul>' +
-          '<p>Prova a digitare queste scorciatoie tu stesso \u2014 basta attivare la Tipografia Intelligente nelle Impostazioni se non \u00e8 gi\u00e0 attiva.</p>' +
-          '<blockquote>Scrivere \u00e8 facile. Devi solo fissare un foglio di carta bianca finch\u00e9 non ti si formano gocce di sangue sulla fronte. \u2014 Gene Fowler</blockquote>' +
+          '<p>Converte scorciatoie in caratteri tipografici corretti.</p>' +
+          '<blockquote>Scrivere è facile. — Gene Fowler</blockquote>' +
           '<h2>Funzioni dell\'Editor</h2>' +
-          '<p>orOS Writer include una gamma di strumenti progettati per scrittori, giornalisti e blogger:</p>' +
-          '<ol><li>Salvataggio automatico \u2014 il tuo lavoro viene preservato dopo ogni battitura</li>' +
-          '<li>Esportazione in Markdown, Testo Semplice, RTF, Word o PDF</li>' +
-          '<li>Pannello struttura del documento per navigare tra le intestazioni</li>' +
-          '<li>Analisi della frequenza delle parole per individuare ripetizioni</li>' +
-          '<li>Metadati del documento per titolo, autore, tag e categoria</li>' +
-          '<li>Obiettivi di scrittura con blocco opzionale al raggiungimento della meta</li>' +
-          '<li>Funzione di trova e sostituisci</li>' +
-          '<li>Barra di avanzamento della lettura e statistiche dettagliate</li></ol>' +
-          '<h2>Prima la Privacy</h2>' +
-          '<p>Tutto avviene nel tuo browser. Il tuo testo non lascia mai il tuo dispositivo. ' +
-          'Non ci sono analitiche, telemetria, pubblicit\u00e0, n\u00e9 account richiesti. ' +
-          'Questo \u00e8 software open source, creato con rispetto per i tuoi dati personali.</p>' +
-          '<h2>Operativit\u00e0 Offline</h2>' +
-          '<p>Una volta caricato, orOS Writer continua di funzionare anche senza connessione a Internet. ' +
-          'L\'applicazione memorizza tutte le risorse utilizzando un service worker, consentendo vera capacit\u00e0 offline. ' +
-          'Puoi installarla come Progressive Web App (PWA) per migliore integrazione con il tuo dispositivo.</p>' +
-          '<p>Questo \u00e8 il <em>paragrafo finale</em> del contenuto di esempio. ' +
-          'Puoi cancellarlo in qualsiasi momento con il pulsante del cestino, o iniziare a modificare subito. ' +
-          'L\'editor ricorda il tuo lavoro tra le sessioni, quindi sentiti libero di chiudere e tornare pi\u00f9 tardi. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      fr: '<h1>Titre du Document</h1>' +
-          '<p>Bienvenue dans <strong>orOS Writer</strong>, un \u00e9diteur de texte qui respecte votre vie priv\u00e9e ' +
-          'et fonctionne enti\u00e8rement hors ligne. Ce texte d\'exemple d\u00e9montre ' +
-          '<em>diverses options de mise en forme</em> disponibles dans l\'\u00e9diteur, ' +
-          'y compris du <u>texte soulign\u00e9</u>, du <strong>texte en gras</strong>, ' +
-          'et du <em>texte en italique</em>. ' +
-          'Tout le contenu est sauvegard\u00e9 localement dans votre navigateur \u2014 ' +
-          'sans compte, sans serveur, sans suivi.</p>' +
-          '<ul><li>Formatage gras, italique et soulign\u00e9</li>' +
-          '<li>Titres (H1, H2, H3) pour la structure</li>' +
-          '<li>Listes \u00e0 puces et num\u00e9rot\u00e9es</li>' +
-          '<li>Options d\'alignement du texte</li>' +
-          '<li>Citations pour mettre en \u00e9vidence          '</li></ul>' +
+          '<p>Includes strumenti per scrittori e giornalisti.</p>' +
+          '<ol><li>Salvataggio automatico</li>' +
+          '<li>Esportazione in Markdown, RTF, Word o PDF</li>' +
+          '<li>Statistiche e progresso lettura</li></ol>' +
+          '<p>Tutto si salva localmente senza tracking.</p>' +
+          '<p>Questo è il paragrafo finale del contenuto di esempio.</p>';
+    }
+    
+    if (lang === 'fr') {
+      return '<h1>Titre du Document</h1>' +
+          '<p>Bienvenue dans <strong>orOS Writer</strong>, un éditeur respectueux de votre vie privée.</p>' +
+          '<p>Ce texte démontre diverses options de mise en forme.</p>' +
+          '<ul><li>Formatage gras, italique et souligné</li>' +
+          '<li>Titres (H1, H2, H3) pour structure</li>' +
+          '<li>Listes à puces et numérotées</li></ul>' +
           '<h2>Typographie Intelligente</h2>' +
-          '<p>L\'\u00e9diteur inclut la <strong>Typographie Intelligente</strong>, qui convertit automatiquement ' +
-          'les raccourcis courants en caract\u00e8res typographiques corrects pendant que vous tapez :</p>' +
-          '<ul><li>Les doubles tirets (--) deviennent un tiret long (\u2014)</li>' +
-          '<li>Trois points (...) deviennent des points de suspension (\u2026)</li>' +
-          '<li>Les guillemets droits deviennent des guillemets typographiques (\u201C \u201D) et apostrophes intelligentes (\u2018 \u2019)</li>' +
-          '<li>(c) devient \u00A9, (r) devient \u00AE, et (tm) devient \u2122</li></ul>' +
-          '<p>Essayez de taper ces raccourcis vous-m\u00eame \u2014 activez simplement la Typographie Intelligente dans les Param\u00e8tres si elle n\'est pas d\u00e9j\u00e0 activ\u00e9e.</p>' +
-          '<blockquote>\u00c9crire est facile. Vous fixez simplement une feuille de papier blanc jusqu\'\u00e0 ce que des gouttes de sang se forment sur votre front. \u2014 Gene Fowler</blockquote>' +
-          '<h2>Fonctions de l\'\u00c9diteur</h2>' +
-          '<p>orOS Writer comprend une gamme d\'outils con\u00e7us pour les \u00e9crivains, journalistes et blogueurs :</p>' +
-          '<ol><li>Sauvegarde automatique \u2014 votre travail est pr\u00e9serv\u00e9 apr\u00e8s chaque frappe</li>' +
-          '<li>Exportation en Markdown, Texte Brut, RTF, Word ou PDF</li>' +
-          '<li>Panneau de plan du document pour naviguer entre les titres</li>' +
-          '<li>Analyse de fr\u00e9quence des mots pour rep\u00e9rer les r\u00e9p\u00e9titions</li>' +
-          '<li>M\u00e9tadonn\u00e9es du document pour titre, auteur, tags et cat\u00e9gorie</li>' +
-          '<li>Objectifs d\'\u00e9criture avec verrouillage facultatif \u00e0 l\'atteinte de l\'objectif</li>' +
-          '<li>Fonction de recherche et remplacement</li>' +
-          '<li>Barre de progression de lecture et statistiques d\u00e9taill\u00e9es</li></ol>' +
-          '<h2>Vie Priv\u00e9e D\'abord</h2>' +
-          '<p>Tout se passe dans votre navigateur. Votre texte ne quitte jamais votre appareil. ' +
-          'Il n\'y a pas d\'analytique, ni t\u00e9l\u00e9m\u00e9trie, ni publicit\u00e9s, ni comptes requis. ' +
-          'Ceci est un logiciel open source, cr\u00e9\u00e9 dans le respect de vos donn\u00e9es personnelles.</p>' +
-          '<h2>Fonctionnement Hors Ligne</h2>' +
-          '<p>Une fois charg\u00e9, orOS Writer continue de fonctionner m\u00eame sans connexion Internet. ' +
-          'L\'application met en cache toutes les ressources en utilisant un service worker, permettant une v\u00e9ritable capacit\u00e9 hors ligne. ' +
-          'Vous pouvez l\'installer comme Progressive Web App (PWA) pour une meilleure int\u00e9gration avec votre appareil.</p>' +
-          '<p>Ceci est le <em>paragraphe final</em> du contenu d\'exemple. ' +
-          'Vous pouvez l\'effacer \u00e0 tout moment avec le bouton de corbeille, ou commencer \u00e0 \u00e9diter imm\u00e9diatement. ' +
-          'L\'\u00e9diteur se souvient de votre travail entre les sessions, donc n\'h\u00e9sitez pas \u00e0 fermer et revenir plus tard. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
-      de: '<h1>Dokumenttitel</h1>' +
-          '<p>Willkommen bei <strong>orOS Writer</strong>, einem Texteditor, der Ihre Privatsph\u00e4re respektiert ' +
-          'und vollst\u00e4ndig offline funktioniert. Dieser Beispieltext demonstriert ' +
-          '<em>verschiedene Formatierungsoptionen</em> im Editor, ' +
-          'einschlie\u00dflich <u>unterstrichenem Text</u>, <strong>Fetttext</strong>, ' +
-          'und <em>Kursivtext</em>. ' +
-          'Alle Inhalte werden lokal in Ihrem Browser gespeichert \u2014 ' +
-          'kein Konto, kein Server, kein Tracking.</p>' +
+          '<p>Convertit les raccourcis en caractères typographiques corrects.</p>' +
+          '<blockquote>Écrire est facile. — Gene Fowler</blockquote>' +
+          '<h2>Fonctions de l\'Éditeur</h2>' +
+          '<p>Inclut des outils pour écrivains et journalistes.</p>' +
+          '<ol><li>Sauvegarde automatique</li>' +
+          '<li>Export vers Markdown, RTF, Word ou PDF</li>' +
+          '<li>Statistiques et progression de lecture</li></ol>' +
+          '<p>Tout se sauvegarde localement sans tracking.</p>' +
+          '<p>Ceci est le paragraphe final du contenu d\'exemple.</p>';
+    }
+    
+    if (lang === 'de') {
+      return '<h1>Dokumenttitel</h1>' +
+          '<p>Willkommen bei <strong>orOS Writer</strong>, einem Datenschutz-respektierenden Editor.</p>' +
+          '<p>Dieser Text demonstriert verschiedene Formatierungsoptionen.</p>' +
           '<ul><li>Formatierung Fett, Kursiv und Unterstrichen</li>' +
-          '<li>\u00dcberschriften (H1, H2, H3) f\u00fcr Struktur</li>' +
-          '<li>Aufz\u00e4hlungslisten und nummerierte Listen</li>' +
-          '<li>Textausrichtungsoptionen</li>' +
-          '<li>Zitate zur Hervorhebung</li></ul>' +
+          '<li>Überschriften (H1, H2, H3) für Struktur</li>' +
+          '<li>Aufzählungslisten und nummerierte Listen</li></ul>' +
           '<h2>Intelligente Typografie</h2>' +
-          '<p>Der Editor bietet <strong>Intelligente Typografie</strong>, die h\u00e4ufige Tastenk\u00fcrzel ' +
-          'automatisch in korrekte typografische Zeichen umwandelt, w\u00e4hrend Sie tippen:</p>' +
-          '<ul><li>Doppelte Bindestriche (--) werden zu Gedankenstrich (\u2014)</li>' +
-          '<li>Drei Punkte (...) werden zu Auslassungspunkten (\u2026)</li>' +
-          '<li>Gerade Anf\u00fchrungszeichen werden zu typografischen Anf\u00fchrungszeichen (\u201C \u201D) und intelligenten Apostrophen (\u2018 \u2019)</li>' +
-          '<li>(c) wird zu \u00A9, (r) wird zu \u00AE, und (tm) wird zu \u2122</li></ul>' +
-          '<p>Versuchen Sie, diese K\u00fcrzel selbst einzugeben \u2014 aktivieren Sie einfach die Intelligente Typografie in den Einstellungen, falls sie noch nicht aktiv ist.</p>' +
-          '<blockquote>Schreiben ist einfach. Sie starren nur auf ein leeres Blatt Papier, bis sich Blutstropfen auf Ihrer Stirn bilden. \u2014 Gene Fowler</blockquote>' +
+          '<p>Wandelt Kürzel in korrekte typografische Zeichen um.</p>' +
+          '<blockquote>Schreiben ist einfach. — Gene Fowler</blockquote>' +
           '<h2>Editor-Funktionen</h2>' +
-          '<p>orOS Writer umfasst eine Reihe von Werkzeugen, die f\u00fcr Schriftsteller, Journalisten und Blogger entwickelt wurden:</p>' +
-          '<ol><li>Automatisches Speichern \u2014 Ihre Arbeit wird nach jedem Tastenanschlag gespeichert</li>' +
-          '<li>Export als Markdown, Klartext, RTF, Word oder PDF</li>' +
-          '<li>Dokumentgliederungspanel zur Navigation zwischen \u00dcberschriften</li>' +
-          '<li>Worth\u00e4ufigkeitsanalyse zur Erkennung von Wiederholungen</li>' +
-          '<li>Dokumentmetadaten f\u00fcr Titel, Autor, Tags und Kategorie</li>' +
-          '<li>Schreibziele mit optionaler Sperre beim Erreichen des Ziels</li>' +
-          '<li>Suchen-und-Ersetzen-Funktion</li>' +
-          '<li>Lese-Fortschrittsbalken und detaillierte Statistiken</li></ol>' +
-          '<h2>Datenschutz Zuerst</h2>' +
-          '<p>Alles passiert in Ihrem Browser. Ihr Text verl\u00e4sst nie Ihr Ger\u00e4t. ' +
-          'Es gibt keine Analytik, keine Telemetrie, keine Werbung und keine Kontopflicht. ' +
-          'Dies ist Open-Source-Software, die mit Respekt f\u00fcr Ihre pers\u00f6nlichen Daten erstellt wurde.</p>' +
-          '<h2>Offline-Betrieb</h2>' +
-          '<p>Sobald geladen, funktioniert orOS Writer auch ohne Internetverbindung weiter. ' +
-          'Die Anwendung cacht alle Ressourcen \u00fcber einen Service Worker, was echte Offline-F\u00e4higkeit erm\u00f6glicht. ' +
-          'Sie k\u00f6nnen es als Progressive Web App (PWA) installieren f\u00fcr bessere Integration mit Ihrem Ger\u00e4t.</p>' +
-          '<p>Dies ist der <em>letzte Absatz</em> des Beispielinhalts. ' +
-          'Sie k\u00f6nnen ihn jederzeit mit dem M\u00fclleimer-Button l\u00f6schen oder sofort mit dem Bearbeiten beginnen. ' +
-          'Der Editor merkt sich Ihre Arbeit zwischen den Sitzungen, also z\u00f6gern Sie nicht, zu schlie\u00dfen und sp\u00e4ter zur\u00fcckzukehren. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>'
-    };
-    return templates[lang] || templates.en;
+          '<p>Beinhaltet Werkzeuge für Schriftsteller und Journalisten.</p>' +
+          '<ol><li>Automatisches Speichern</li>' +
+          '<li>Export als Markdown, RTF, Word oder PDF</li>' +
+          '<li>Statistiken und Lesefortschritt</li></ol>' +
+          '<p>Alles wird lokal gespeichert ohne Tracking.</p>' +
+          '<p>Dies ist der letzte Absatz des Beispielinhalts.</p>';
+    }
+    
+    // Default English
+    return '<h1>Document Title</h1>' +
+        '<p>Welcome to <strong>orOS Writer</strong>, a privacy-first rich text editor.</p>' +
+        '<p>This sample text demonstrates various formatting options in the editor.</p>' +
+        '<ul><li>Bold, italic, and underline formatting</li>' +
+        '<li>Headings (H1, H2, H3) for document structure</li>' +
+        '<li>Bullet and numbered lists</li></ul>' +
+        '<h2>Smart Typography</h2>' +
+        '<p>Automatically converts common shortcuts to proper typographic characters.</p>' +
+        '<blockquote>Writing is easy. — Gene Fowler</blockquote>' +
+        '<h2>Editor Features</h2>' +
+        '<p>Includes tools for writers, journalists, and bloggers.</p>' +
+        '<ol><li>Automatic saving after every keystroke</li>' +
+        '<li>Export to Markdown, RTF, Word, or PDF</li>' +
+        '<li>Statistics and reading progress</li></ol>' +
+        '<p>All content is saved locally without tracking.</p>' +
+        '<p>This is the final paragraph of the sample content.</p>';
   }
 
   function insertLoremIpsum() {
@@ -869,7 +296,6 @@
     showToast(getTrans('toast_lorem_inserted') || 'Sample text inserted');
   }
 
-  // ========== SAVE INDICATOR UPDATE ==========
   function updateSaveIndicator() {
     if (!saveIndicator) return;
     if (hideSaveIndicator) {
@@ -879,7 +305,7 @@
     saveIndicator.style.visibility = 'visible';
     var trans = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[getCurrentLang()]) || {};
     if (!lastSavedTime) {
-      saveIndicator.textContent = trans.text_not_saved || '\u2014';
+      saveIndicator.textContent = trans.text_not_saved || '—';
       return;
     }
     var diff = Math.floor((Date.now() - lastSavedTime) / 1000);
@@ -894,7 +320,6 @@
     }
   }
 
-  // ========== TOAST ==========
   function showToast(message) {
     var toast = document.getElementById('zen-toast');
     if (!toast) {
@@ -912,7 +337,6 @@
     }, 3000);
   }
 
-  // ========== CONTENT PERSISTENCE ==========
   function saveContent() {
     localStorage.setItem(STORAGE_KEY, richEditor.innerHTML);
     lastSavedTime = Date.now();
@@ -943,7 +367,6 @@
     });
   }
 
-  // ========== METADATA ==========
   var metadata = loadMetadata();
 
   function loadMetadata() {
@@ -1038,14 +461,14 @@
       if (metadata.created) {
         metaCreated.textContent = createdLabel + ' ' + formatDate(new Date(metadata.created));
       } else {
-        metaCreated.textContent = createdLabel + ' \u2014';
+        metaCreated.textContent = createdLabel + ' —';
       }
     }
     if (metaModified) {
       if (metadata.modified) {
         metaModified.textContent = modifiedLabel + ' ' + formatDate(new Date(metadata.modified));
       } else {
-        metaModified.textContent = modifiedLabel + ' \u2014';
+        metaModified.textContent = modifiedLabel + ' —';
       }
     }
   }
@@ -1069,7 +492,6 @@
     }
   }
 
-  // ========== PANEL FUNCTIONS WITH MAXHEIGHT FIX ==========
   function toggleMetadataPanel() {
     if (!metadataPanel) return;
     if (metadataPanel.style.display === 'none' || !metadataPanel.style.display) {
@@ -1120,23 +542,22 @@
     }
   }
 
-  // ========== STATS ==========
   function updateStats() {
     if (!richEditor) return;
     var text = getTextContent();
     var chars = text.length;
     var charsNoSpaces = text.replace(/\s/g, '').length;
     var words = text.trim().split(/\s+/).filter(Boolean).length;
-    var sentences = text.split(/[.!?..]+(?:\s|$)/).filter(function(s) {
+    var sentences = text.split(/[.!?]+(?:\s|$)/).filter(function(s) {
       return s.trim().length > 0;
     }).length;
     var readMin = Math.ceil(words / 225) || 0;
     var speakMin = Math.ceil(words / 140) || 0;
 
     if (statsDefaultEl) {
-      var arrow = statsExpanded ? ' \u25B2' : ' \u25BC';
+      var arrow = statsExpanded ? ' ▲' : ' ▼';
       statsDefaultEl.textContent = formatNumber(words) + ' ' + getTrans('text_words') +
-        ' \u00B7 ' + formatNumber(chars) + ' ' + getTrans('text_chars') + arrow;
+        ' · ' + formatNumber(chars) + ' ' + getTrans('text_chars') + arrow;
     }
 
     if (statsDetailed) {
@@ -1161,7 +582,6 @@
     if (goalTarget) updateGoalProgress();
   }
 
-  // ========== GOAL TRACKER ==========
   function getParagraphCount() {
     var text = richEditor.innerText.trim();
     if (!text) return 0;
@@ -1186,7 +606,7 @@
     var count = getGoalCount();
     var pct = Math.min(100, Math.round((count / goalTarget) * 100));
     statsGoalEl.textContent = formatNumber(count) + ' / ' + formatNumber(goalTarget) +
-      ' ' + getGoalUnitLabel() + ' \u00B7 ' + pct + '%';
+      ' ' + getGoalUnitLabel() + ' · ' + pct + '%';
     if (count >= goalTarget && !goalReachedShown) {
       goalReachedShown = true;
       var msg = getTrans('text_goal_reached');
@@ -1270,7 +690,6 @@
     }
   }
 
-  // ========== DOCUMENT OUTLINE ==========
   function updateOutline() {
     if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none') return;
     var headings = richEditor.querySelectorAll('h1, h2, h3');
@@ -1295,7 +714,6 @@
     }
   }
 
-  // ========== READING PROGRESS ==========
   function updateReadingProgress() {
     if (!progressBar) return;
     if (readingProgressEnabled) {
@@ -1316,7 +734,6 @@
     updateReadingProgress();
   });
 
-  // ========== SMART TYPOGRAPHY ==========
   var isReplacing = false;
   function handleSmartTypography() {
     if (!smartTypographyEnabled || isReplacing || goalLockTriggered) return;
@@ -1359,7 +776,6 @@
   }
   window.addEventListener('oros-smart-typography-changed', function(e) { smartTypographyEnabled = e.detail.enabled; });
 
-  // ========== SMART PASTE ==========
   function handleSmartPaste(e) {
     e.preventDefault();
     var clipboardData = e.clipboardData || window.clipboardData;
@@ -1393,7 +809,6 @@
     updateStats();
   }
 
-  // ========== WORD FREQUENCY ==========
   function updateWordFrequency() {
     if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
     var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
@@ -1438,7 +853,6 @@
     wordFreqList.innerHTML = listHtml;
   }
 
-  // ========== FOCUS MODE ==========
   var focusDebounceTimer = null;
 
   function initFocusMode() {
@@ -1498,7 +912,6 @@
     }
   });
 
-  // ========== CONTEXT MENU ==========
   var contextMenu = null;
 
   function showContextMenu(e) {
@@ -1591,7 +1004,6 @@
     document.removeEventListener('keydown', closeOnKeydown);
   }
 
-  // ========== MAIN TOOLBAR FORMATTING BUTTONS ==========
   function setupMainToolbarButtons() {
     if (!richEditor) return;
     var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
@@ -1615,7 +1027,6 @@
     }
   }
 
-  // ========== FILE OPEN ==========
   function openFile(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -1632,7 +1043,6 @@
     reader.readAsText(file);
   }
 
-  // ========== EXPORT ==========
   function downloadFile(format) {
     var content = richEditor.innerHTML;
     var textContent = richEditor.innerText;
@@ -1741,7 +1151,6 @@
     URL.revokeObjectURL(url);
   }
 
-  // ========== FIND & REPLACE ==========
   function toggleFindBar() {
     if (!findBar || !findInput) return;
     if (findBar.style.display === 'flex') {
@@ -1792,7 +1201,6 @@
     showToast(getTrans('text_saved'));
   }
 
-  // ========== KEYBOARD SHORTCUTS ==========
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -1837,7 +1245,6 @@
     }
   });
 
-  // ========== VISIBILITY INIT ==========
   if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
   if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
   if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
@@ -1849,7 +1256,6 @@
   if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
   if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
 
-  // ========== CUSTOM EVENTS ==========
   window.addEventListener('oros-hide-stats-changed', function(e) {
     hideStats = e.detail.hidden;
     if (statsOverlay) statsOverlay.style.display = hideStats ? 'none' : '';
@@ -1893,7 +1299,6 @@
     updateSaveIndicator();
   });
 
-  // ========== EVENT LISTENERS ==========
   if (btnSave) btnSave.addEventListener('click', function() {
     saveContent();
     saveMetadata(true);
@@ -1951,7 +1356,7 @@
 
   if (btnClear) btnClear.addEventListener('click', function() {
     var msg = getCurrentLang() === 'el'
-      ? '\u03A3\u03AF\u03B3\u03BF\u03C5\u03C1\u03B1; \u038C\u03BB\u03BF \u03C4\u03BF \u03C0\u03B5\u03C1\u03B9\u03B5\u03C7\u03CC\u03BC\u03B5\u03BD\u03BF \u03B8\u03B1 \u03C7\u03B1\u03B8\u03B5\u03AF.'
+      ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
       : 'Are you sure? All content will be lost.';
     if (confirm(msg)) {
       richEditor.innerHTML = '';
@@ -2004,10 +1409,8 @@
     richEditor.addEventListener('paste', handleSmartPaste);
   }
 
-  // ========== SAVE INDICATOR LIVE TICK ==========
   setInterval(updateSaveIndicator, 30000);
 
-  // ========== INITIALIZE ==========
   initTypewriterSound();
   setupMainToolbarButtons();
   loadContent();
