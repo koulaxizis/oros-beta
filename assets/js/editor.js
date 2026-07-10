@@ -1589,5 +1589,8 @@
   updateStats();
   updateGoalUnitLabels();
   updateReadingProgress();
+  
+  console.log('[FOCUS DEBUG] focusModeEnabled:', focusModeEnabled);
+console.log('[FOCUS DEBUG] richEditor exists:', !!richEditor);
 
 })();

@@ -73,4 +73,4 @@
 .fa-align-justify:before { content: "\f039"; }
 
 /* ===== BULLET LIST ICON ===== */
-.fa-bars:before { content: "\f0c9"; }
+.fa-list-ul:before { content: '\f03a'; }
