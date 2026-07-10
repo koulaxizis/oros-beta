@@ -2,6 +2,8 @@
 // orOS Writer — Unified Rich Text Editor
 // Fixes: Alignment, Typewriter Sound, Focus Mode, Hide Stats, Main Toolbar Buttons
 // Quick Format Toolbar toggle controls .toolbar-center
+// Lorem Ipsum expanded with detailed feature descriptions
+// Panel positioning adjusted for bars overlay
 // ============================================
 
 (function() {
@@ -160,8 +162,20 @@
     return text.replace(/\n$/, '');
   }
 
+  // ========== PANE TOP OFFSET CALCULATION ==========
+  function getPanelTopOffset() {
+    var offset = 0;
+    var header = document.getElementById('oros-header');
+    if (header) offset += header.offsetHeight;
+    var toolbar = document.getElementById('main-toolbar');
+    if (toolbar) offset += toolbar.offsetHeight;
+    if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
+    if (findBar && findBar.style.display === 'flex') offset += findBar.offsetHeight;
+    return offset + 'px';
+  }
+
   // ========== LOREM IPSUM GENERATOR ==========
-    function generateLoremIpsum() {
+  function generateLoremIpsum() {
     var lang = getCurrentLang();
     var templates = {
       en: '<h1>Document Title</h1>' +
@@ -197,6 +211,10 @@
           '<p>Everything happens in your browser. Your text never leaves your device. ' +
           'There are no analytics, no telemetry, no advertisements, and no accounts required. ' +
           'This is open-source software built with respect for your personal data.</p>' +
+          '<h2>Offline Operation</h2>' +
+          '<p>Once loaded, orOS Writer continues to work even without an internet connection. ' +
+          'The application caches all resources using a service worker, enabling true offline capability. ' +
+          'You can install it as a Progressive Web App (PWA) for even better integration with your device.</p>' +
           '<p>This is the <em>final paragraph</em> of the sample content. ' +
           'You can clear it anytime with the trash button, or start editing right away. ' +
           'The editor remembers your work between sessions, so feel free to close and return later. ' +
@@ -237,6 +255,10 @@
           '<p>Όλα συμβαίνουν στον browser σου. Το κείμενό σου δεν φεύγει ποτέ από τη συσκευή σου. ' +
           'Δεν υπάρχουν αναλυτικά στοιχεία, τηλεμετρία, διαφημίσεις, ή λογαριασμοί. ' +
           'Αυτό είναι λογισμικό ανοιχτού κώδικα, φτιαγμένο με σεβασμό για τα προσωπικά σου δεδομένα.</p>' +
+          '<h2>Λειτουργία Offline</h2>' +
+          '<p>Μόλις φορτώσει, ο orOS Writer συνεχίζει να λειτουργεί ακόμα και χωρίς σύνδεση στο ίντερνετ. ' +
+          'Η εφαρμογή αποθηκεύει όλους τους πόρους χρησιμοποιώντας service worker, επιτρέποντας πραγματική offline δυνατότητα. ' +
+          'Μπορείς να την εγκαταστήσεις ως Progressive Web App (PWA) για ακόμα καλύτερη ολοκλήρωση με τη συσκευή σου.</p>' +
           '<p>Αυτή είναι η <em>τελευταία παράγραφος</em> του δοκιμαστικού κειμένου. ' +
           'Μπορείς να την καθαρίσεις ανά πάσα στιγμή με το κουμπί διαγραφής, ή να ξεκινήσεις να επεξεργάζεσαι αμέσως. ' +
           'Ο editor θυμάται τη δουλειά σου μεταξύ των συνεδριών, οπότε μπορείς να κλείσεις και να επιστρέψεις αργότερα. ' +
@@ -274,6 +296,10 @@
           '<p>Todo ocurre en tu navegador. Tu texto nunca sale de tu dispositivo. ' +
           'No hay analíticas, ni telemetría, ni anuncios, ni cuentas requeridas. ' +
           'Esto es software de código abierto, creado con respeto por tus datos personales.</p>' +
+          '<h2>Operación Sin Conexión</h2>' +
+          '<p>Una vez cargado, orOS Writer sigue funcionando incluso sin conexión a Internet. ' +
+          'La aplicación almacena todos los recursos usando un service worker, permitiendo verdadera capacidad offline. ' +
+          'Puedes instalarla como Progressive Web App (PWA) para mejor integración con tu dispositivo.</p>' +
           '<p>Este es el <em>párrafo final</em> del contenido de muestra. ' +
           'Puedes borrarlo en cualquier momento con el botón de papelera, o empezar a editar de inmediato. ' +
           'El editor recuerda tu trabajo entre sesiones, así que siéntete libre de cerrar y volver más tarde. ' +
@@ -311,6 +337,10 @@
           '<p>Tutto avviene nel tuo browser. Il tuo testo non lascia mai il tuo dispositivo. ' +
           'Non ci sono analitiche, telemetria, pubblicità, né account richiesti. ' +
           'Questo è software open source, creato con rispetto per i tuoi dati personali.</p>' +
+          '<h2>Operatività Offline</h2>' +
+          '<p>Una volta caricato, orOS Writer continua a funzionare anche senza connessione a Internet. ' +
+          'L\'applicazione memorizza tutte le risorse utilizzando un service worker, consentendo vera capacità offline. ' +
+          'Puoi installarla come Progressive Web App (PWA) per migliore integrazione con il tuo dispositivo.</p>' +
           '<p>Questo è il <em>paragrafo finale</em> del contenuto di esempio. ' +
           'Puoi cancellarlo in qualsiasi momento con il pulsante del cestino, o iniziare a modificare subito. ' +
           'L\'editor ricorda il tuo lavoro tra le sessioni, quindi sentiti libero di chiudere e tornare più tardi. ' +
@@ -348,6 +378,10 @@
           '<p>Tout se passe dans votre navigateur. Votre texte ne quitte jamais votre appareil. ' +
           'Il n\'y a pas d\'analytique, ni télémétrie, ni publicités, ni comptes requis. ' +
           'Ceci est un logiciel open source, créé dans le respect de vos données personnelles.</p>' +
+          '<h2>Fonctionnement Hors Ligne</h2>' +
+          '<p>Une fois chargé, orOS Writer continue de fonctionner même sans connexion Internet. ' +
+          'L\'application met en cache toutes les ressources en utilisant un service worker, permettant une véritable capacité hors ligne. ' +
+          'Vous pouvez l\'installer comme Progressive Web App (PWA) pour une meilleure intégration avec votre appareil.</p>' +
           '<p>Ceci est le <em>paragraphe final</em> du contenu d\'exemple. ' +
           'Vous pouvez l\'effacer à tout moment avec le bouton de corbeille, ou commencer à éditer immédiatement. ' +
           'L\'éditeur se souvient de votre travail entre les sessions, donc n\'hésitez pas à fermer et revenir plus tard. ' +
@@ -385,6 +419,10 @@
           '<p>Alles passiert in Ihrem Browser. Ihr Text verlässt nie Ihr Gerät. ' +
           'Es gibt keine Analytik, keine Telemetrie, keine Werbung und keine Kontopflicht. ' +
           'Dies ist Open-Source-Software, die mit Respekt für Ihre persönlichen Daten erstellt wurde.</p>' +
+          '<h2>Offline-Betrieb</h2>' +
+          '<p>Sobald geladen, funktioniert orOS Writer auch ohne Internetverbindung weiter. ' +
+          'Die Anwendung cacht alle Ressourcen über einen Service Worker, was echte Offline-Fähigkeit ermöglicht. ' +
+          'Sie können es als Progressive Web App (PWA) installieren für bessere Integration mit Ihrem Gerät.</p>' +
           '<p>Dies ist der <em>letzte Absatz</em> des Beispielinhalts. ' +
           'Sie können ihn jederzeit mit dem Mülleimer-Button löschen oder sofort mit dem Bearbeiten beginnen. ' +
           'Der Editor merkt sich Ihre Arbeit zwischen den Sitzungen, also zögern Sie nicht, zu schließen und später zurückzukehren. ' +
@@ -596,6 +634,7 @@
     if (metadataPanel.style.display === 'none' || !metadataPanel.style.display) {
       metadataPanel.style.display = 'flex';
       metadataPanel.style.flexDirection = 'column';
+      metadataPanel.style.top = getPanelTopOffset();
       if (metaTitle) metaTitle.value = metadata.title || '';
       if (metaAuthor) metaAuthor.value = metadata.author || '';
       if (metaTags) metaTags.value = metadata.tags || '';
@@ -778,23 +817,12 @@
   }
 
   // ========== DOCUMENT OUTLINE ==========
-  
-    function getPanelTopOffset() {
-    var offset = 0;
-    var header = document.getElementById('oros-header');
-    if (header) offset += header.offsetHeight;
-    var toolbar = document.getElementById('main-toolbar');
-    if (toolbar) offset += toolbar.offsetHeight;
-    if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
-    if (findBar && findBar.style.display === 'flex') offset += findBar.offsetHeight;
-    return offset + 'px';
-  }
-  
   function toggleOutline() {
     if (!outlinePanel) return;
     if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
       outlinePanel.style.display = 'flex';
       outlinePanel.style.flexDirection = 'column';
+      outlinePanel.style.top = getPanelTopOffset();
       updateOutline();
     } else {
       outlinePanel.style.display = 'none';
@@ -929,6 +957,7 @@
     if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
       wordFreqPanel.style.display = 'flex';
       wordFreqPanel.style.flexDirection = 'column';
+      wordFreqPanel.style.top = getPanelTopOffset();
       updateWordFrequency();
     } else {
       wordFreqPanel.style.display = 'none';
@@ -1126,7 +1155,7 @@
   function setupMainToolbarButtons() {
     if (!richEditor) return;
     var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
-    for (var i = 0; i < fmtBtns.length; i++) {
+        for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
         if (!btn.getAttribute('data-cmd')) return;
         btn.addEventListener('click', function(e) {
