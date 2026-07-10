@@ -1013,20 +1013,15 @@
 
   function initFocusMode() {
     if (!richEditor) return;
-    document.addEventListener('selectionchange', handleSelectionChange);
-    richEditor.addEventListener('scroll', function() {
-      if (document.getElementById('focus-spotlight')) clearFocusMode();
-    });
-        window.addEventListener('oros-focus-mode-changed', function(e) {
-      focusModeEnabled = e.detail.enabled;
-      if (focusModeEnabled) {
-        initFocusMode();
-      } else {
-        clearFocusMode();
-      }
-    });
+    if (focusModeEnabled) {
+      document.addEventListener('selectionchange', handleSelectionChange);
+      richEditor.addEventListener('scroll', function() {
+        if (document.getElementById('focus-spotlight')) clearFocusMode();
+      });
+    }
+  }
 
-    function handleSelectionChange() {
+  function handleSelectionChange() {
     if (!focusModeEnabled) {
       clearFocusMode();
       return;
@@ -1039,10 +1034,6 @@
       if (!richEditor.contains(range.commonAncestorContainer)) { clearFocusMode(); return; }
 
       var node = range.startContainer;
-      while (node && node !== richEditor && node.parentNode !== richEditor) {
-        node = node.parentNode;
-      }
-      
       // Try to find a text node or paragraph
       if (node.nodeType === 3) node = node.parentNode;
       if (node === richEditor) { clearFocusMode(); return; }
@@ -1068,6 +1059,15 @@
     var spotlight = document.getElementById('focus-spotlight');
     if (spotlight) spotlight.remove();
   }
+
+  window.addEventListener('oros-focus-mode-changed', function(e) {
+    focusModeEnabled = e.detail.enabled;
+    if (focusModeEnabled) {
+      initFocusMode();
+    } else {
+      clearFocusMode();
+    }
+  });
 
   // ========== CONTEXT MENU ==========
   var contextMenu = null;
@@ -1099,7 +1099,7 @@
       '<div class="cm-item" data-cmd="justifyRight"><i class="fa fa-align-right cm-icon"></i>Align Right</div>' +
       '<div class="cm-item" data-cmd="justifyFull"><i class="fa fa-align-justify cm-icon"></i>Justify</div>' +
       '<div class="cm-divider"></div>' +
-      '<div class="cm-item" data-cmd="insertUnorderedList"><i class="fa fa-list-ul cm-icon"></i>Bullets</div>' +
+      '<div class="cm-item" data-cmd="insertUnorderedList"><i class="fa fa-bars cm-icon"></i>Bullets</div>' +
       '<div class="cm-item" data-cmd="insertOrderedList"><i class="fa fa-list-ol cm-icon"></i>Numbers</div>' +
       '<div class="cm-divider"></div>' +
       '<div class="cm-item" data-cmd="undo"><i class="fa fa-undo cm-icon"></i>Undo</div>' +
@@ -1110,8 +1110,8 @@
     menu.style.top = e.clientY + 'px';
 
     menu.addEventListener('click', function(ev) { ev.stopPropagation(); });
-    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation(); });
-    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
+    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation();
+	    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
 
     var items = menu.querySelectorAll('.cm-item');
     for (var i = 0; i < items.length; i++) {
@@ -1166,7 +1166,7 @@
   function setupMainToolbarButtons() {
     if (!richEditor) return;
     var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
-        for (var i = 0; i < fmtBtns.length; i++) {
+    for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
         if (!btn.getAttribute('data-cmd')) return;
         btn.addEventListener('click', function(e) {
