@@ -1,4 +1,6 @@
-<!-- storyboard.html — Νέο αρχείο στη ρίζα του repo -->
+<!-- ============================================================================
+     storyboard.html — ΔΙΟΡΘΩΜΕΝΟ (CSS path διορθωμένο)
+     ============================================================================ -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -16,7 +18,7 @@
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/icons.css">
-  <link rel="stylesheet" href="assets/style-storyboard.css">
+  <link rel="stylesheet" href="./assets/css/style-storyboard.css">
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
 </head>
@@ -33,7 +35,6 @@
 
       <div class="storyboard-editor">
 
-        <!-- TOP TOOLBAR -->
         <div class="sb-toolbar">
           <div class="sb-tools-left">
             <button id="sb-tool-brush" class="sb-tool-btn active" data-tool="brush" title="Brush">
@@ -67,24 +68,21 @@
             <button id="sb-delete-frame" class="sb-action-btn" title="Delete Current Frame">
               <i class="fa fa-minus"></i>
             </button>
-            <button id="sb-export-png" class="sb-action-btn sb-btn-primary" title="Export All as ZIP">
+            <button id="sb-export-png" class="sb-action-btn sb-btn-primary" title="Export All as PNG">
               <i class="fa fa-download"></i>
             </button>
           </div>
         </div>
 
-        <!-- CANVAS AREA -->
         <div class="sb-canvas-container">
           <canvas id="sb-canvas" width="800" height="450"></canvas>
           <div id="sb-canvas-overlay" class="sb-canvas-overlay"></div>
         </div>
 
-        <!-- ANNOTATION INPUT -->
         <div class="sb-annotation-area">
           <textarea id="sb-annotation-input" class="sb-annotation-input" rows="2" data-i18n-placeholder="storyboard_annotation_placeholder" placeholder="Add notes for this frame..."></textarea>
         </div>
 
-        <!-- FRAMES THUMBNAIL STRIP -->
         <div class="sb-frames-strip">
           <div id="sb-frames-container" class="sb-frames-container"></div>
         </div>
@@ -95,6 +93,6 @@
 
   <div id="oros-footer"></div>
 
-  <script src="assets/js/storyboard.js"></script>
+  <script src="assets/js/components/storyboard.js"></script>
 </body>
 </html>

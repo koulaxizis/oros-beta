@@ -1,4 +1,6 @@
-// storyboard.js — Αρχείο: assets/js/components/storyboard.js
+// ============================================================================
+// storyboard.js — ΔΙΟΡΘΩΜΕΝΗ (fetch path με baseHref + willReadFrequently)
+// ============================================================================
 
 (function() {
   'use strict';
@@ -26,7 +28,8 @@
   if (['el','en','es','it','fr','de'].indexOf(currentLang) === -1) currentLang = 'en';
 
   function loadTranslations() {
-    fetch('translations.json')
+    var baseUrl = window.OROS_CONFIG ? window.OROS_CONFIG.baseHref : '/';
+    fetch(baseUrl + 'translations.json')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         translations = data;
@@ -40,7 +43,12 @@
 
   function t(key) {
     var langData = translations[currentLang] || translations['en'] || {};
-    return langData[key] || key;
+    if (typeof langData[key] !== 'string') return key;
+    var val = langData[key];
+    if (key === 'storyboard_frames_counter') {
+      val = val.replace('{count}', frames.length);
+    }
+    return val || key;
   }
 
   function applyTranslations() {
@@ -64,15 +72,13 @@
 
   function initCanvas() {
     canvas = document.getElementById('sb-canvas');
-    ctx = canvas.getContext('2d');
+    ctx = canvas.getContext('2d', { willReadFrequently: true });
     canvasOverlay = document.getElementById('sb-canvas-overlay');
     canvasRect = canvas.getBoundingClientRect();
 
-    // Set up canvas styling
     ctx.fillStyle = '#1b1a18';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Initialize first frame
     saveCurrentState();
 
     renderFramesStrip();
@@ -147,7 +153,6 @@
   function loadFrame(index) {
     if (index < 0 || index >= frames.length) return;
 
-    // Save current before switching
     saveCurrentState();
 
     currentFrameIndex = index;
@@ -220,11 +225,9 @@
       thumbnail.height = 90;
       var tCtx = thumbnail.getContext('2d');
 
-      // Draw background
       tCtx.fillStyle = '#1b1a18';
       tCtx.fillRect(0, 0, thumbnail.width, thumbnail.height);
 
-      // Draw frame image (scaled down)
       if (frame.imageData) {
         var tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvas.width;
@@ -234,7 +237,6 @@
         tCtx.drawImage(tempCanvas, 0, 0, thumbnail.width, thumbnail.height);
       }
 
-      // Frame number badge
       var numBadge = document.createElement('span');
       numBadge.className = 'sb-frame-number';
       numBadge.textContent = idx + 1;
@@ -256,7 +258,6 @@
       container.appendChild(thumbWrapper);
     });
 
-    // Update frame count display in title
     updateFrameCount();
   }
 
@@ -275,14 +276,13 @@
   function updateFrameCount() {
     var title = document.querySelector('.sb-frames-strip .sb-frames-counter');
     if (title) {
-      title.textContent = t('storyboard_frames_counter', { count: frames.length }).replace('{count}', frames.length);
+      title.textContent = t('storyboard_frames_counter');
     }
   }
 
   /* ===== EXPORT FUNCTIONALITY ===== */
 
   function exportAsPNG() {
-    // Create a combined canvas with all frames in a grid
     var cols = 4;
     var rows = Math.ceil(frames.length / cols);
     var thumbW = 200;
@@ -314,12 +314,10 @@
         eCtx.drawImage(tempCanvas, x, y, thumbW, thumbH);
       }
 
-      // Frame number
       eCtx.fillStyle = '#c8a96e';
       eCtx.font = 'bold 12px Nunito, sans-serif';
       eCtx.fillText((idx + 1).toString(), x + 8, y + 18);
 
-      // Annotation if exists
       if (frame.annotation && frame.annotation.trim()) {
         var words = wrapText(eCtx, frame.annotation, thumbW - 16, 12);
         eCtx.fillStyle = '#e8e6e3';
@@ -330,7 +328,6 @@
       }
     });
 
-    // Download
     var link = document.createElement('a');
     link.download = 'orOS-storyboard-' + Date.now() + '.png';
     link.href = exportCanvas.toDataURL('image/png');
@@ -448,13 +445,11 @@
   /* ===== EVENT LISTENERS ===== */
 
   function setupListeners() {
-    // Drawing events
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseout', stopDrawing);
 
-    // Touch support
     canvas.addEventListener('touchstart', function(e) {
       e.preventDefault();
       var touch = e.touches[0];
@@ -481,7 +476,6 @@
       canvas.dispatchEvent(mouseEvent);
     });
 
-    // Tool buttons
     var toolBtns = document.querySelectorAll('.sb-tool-btn');
     toolBtns.forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -491,7 +485,6 @@
       });
     });
 
-    // Brush size
     var sizeSlider = document.getElementById('sb-brush-size');
     var sizeDisplay = document.getElementById('sb-size-value');
     if (sizeSlider) {
@@ -501,7 +494,6 @@
       });
     }
 
-    // Color picker
     var colorPicker = document.getElementById('sb-brush-color');
     if (colorPicker) {
       colorPicker.addEventListener('input', function(e) {
@@ -509,7 +501,6 @@
       });
     }
 
-    // Action buttons
     var clearBtn = document.getElementById('sb-clear-canvas');
     if (clearBtn) {
       clearBtn.addEventListener('click', function() {
@@ -535,14 +526,12 @@
       exportBtn.addEventListener('click', exportAsPNG);
     }
 
-    // Annotation saves on change
     var annInput = document.getElementById('sb-annotation-input');
     if (annInput) {
       annInput.addEventListener('change', saveCurrentState);
       annInput.addEventListener('blur', saveCurrentState);
     }
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 's') {
@@ -567,7 +556,6 @@
       }
     });
 
-    // Auto-save interval
     setInterval(saveToStorage, 5000);
   }
 
@@ -578,7 +566,6 @@
     initCanvas();
     setupListeners();
 
-    // Try to restore previous session
     if (!localStorage.getItem('oros-storyboard-data')) {
       saveCurrentState();
     } else {

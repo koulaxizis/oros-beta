@@ -1,4 +1,6 @@
-// color-lab.js — Αρχείο: assets/js/components/color-lab.js
+// ============================================================================
+// color-lab.js — ΔΙΟΡΘΩΜΕΝΗ (fetch path με baseHref)
+// ============================================================================
 
 (function() {
   'use strict';
@@ -15,7 +17,8 @@
   if (['el','en','es','it','fr','de'].indexOf(currentLang) === -1) currentLang = 'en';
 
   function loadTranslations() {
-    fetch('translations.json')
+    var baseUrl = window.OROS_CONFIG ? window.OROS_CONFIG.baseHref : '/';
+    fetch(baseUrl + 'translations.json')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         translations = data;

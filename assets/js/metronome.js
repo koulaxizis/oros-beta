@@ -1,4 +1,6 @@
-// metronome.js — Αρχείο: assets/js/components/metronome.js
+// ============================================================================
+// metronome.js — ΔΙΟΡΘΩΜΕΝΗ (fetch path με baseHref)
+// ============================================================================
 
 (function() {
   'use strict';
@@ -6,7 +8,7 @@
   /* ===== STATE ===== */
   var bpm = 120;
   var isPlaying = false;
-  var timeSignature = '4/4'; // 4/4, 3/4, 6/8
+  var timeSignature = '4/4';
   var beatInBar = 0;
   var tapTimes = [];
   var tapTimer = null;
@@ -24,7 +26,8 @@
   if (['el','en','es','it','fr','de'].indexOf(currentLang) === -1) currentLang = 'en';
 
   function loadTranslations() {
-    fetch('translations.json')
+    var baseUrl = window.OROS_CONFIG ? window.OROS_CONFIG.baseHref : '/';
+    fetch(baseUrl + 'translations.json')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         translations = data;
@@ -74,18 +77,16 @@
 
     var now = audioContext.currentTime;
 
-    // First beat is higher pitch and louder
     if (beatNumber === 0) {
-      osc.frequency.setValueAtTime(880, now); // A5
+      osc.frequency.setValueAtTime(880, now);
       gainNode.gain.setValueAtTime(volume, now);
     } else {
-      osc.frequency.setValueAtTime(440, now); // A4
+      osc.frequency.setValueAtTime(440, now);
       gainNode.gain.setValueAtTime(volume * 0.6, now);
     }
 
     osc.start(now);
 
-    // Envelope for short beep
     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.stop(now + 0.1);
   }
@@ -120,10 +121,8 @@
   var timerID = null;
 
   function scheduleNote(beatNumber, time) {
-    // Schedule audio
     playTone(beatNumber, getTotalBeatsPerBar());
 
-    // Schedule visual update
     var drawTime = (time - audioContext.currentTime) * 1000;
     setTimeout(function() {
       updateVisualBeat(beatNumber);
@@ -134,16 +133,12 @@
     var display = document.getElementById('metro-beat-display');
     if (!display) return;
 
-    var totalBeats = getTotalBeatsPerBar();
-
-    // Strong beats are larger/highlighted
     if (beatNumber === 0) {
       display.innerHTML = '<span class="metro-beat-strong">●</span>';
     } else {
       display.innerHTML = '<span class="metro-beat-weak">○</span>';
     }
 
-    // Animation reset
     display.classList.remove('metro-beat-active');
     void display.offsetWidth;
     display.classList.add('metro-beat-active');
@@ -189,8 +184,6 @@
   function countdownAndStart() {
     isPlaying = true;
     var display = document.getElementById('metro-beat-display');
-    var btn = document.getElementById('metro-toggle');
-
     var countdown = 4;
     currentBeat = -1;
 
@@ -268,14 +261,12 @@
     var volumeSlider = document.getElementById('metro-volume');
     var countdownChk = document.getElementById('metro-countdown');
 
-    // BPM Slider
     if (bpmSlider) {
       bpmSlider.addEventListener('input', function(e) {
         setBPM(parseInt(e.target.value));
       });
     }
 
-    // BPM Decrease/Increase
     if (decreaseBtn) {
       decreaseBtn.addEventListener('click', function() {
         setBPM(Math.max(30, bpm - 1));
@@ -288,21 +279,18 @@
       });
     }
 
-    // Toggle Play/Stop
     if (toggleBtn) {
       toggleBtn.addEventListener('click', function() {
         toggleMetronome();
       });
     }
 
-    // Tap Tempo
     if (tapBtn) {
       tapBtn.addEventListener('click', function() {
         recordTap();
       });
     }
 
-    // Time Signature Buttons
     for (var i = 0; i < tsButtons.length; i++) {
       tsButtons[i].addEventListener('click', function(e) {
         for (var j = 0; j < tsButtons.length; j++) {
@@ -314,21 +302,18 @@
       });
     }
 
-    // Volume Slider
     if (volumeSlider) {
       volumeSlider.addEventListener('input', function(e) {
         volume = parseInt(e.target.value) / 100;
       });
     }
 
-    // Countdown Toggle
     if (countdownChk) {
       countdownChk.addEventListener('change', function(e) {
         countdownEnabled = e.target.checked;
       });
     }
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
       if (e.code === 'Space') {
         e.preventDefault();
@@ -350,17 +335,14 @@
     var now = Date.now();
     tapTimes.push(now);
 
-    // Keep only taps from last 2 seconds
     tapTimes = tapTimes.filter(function(t) {
       return (now - t) < 2000;
     });
 
-    // Need at least 2 taps
     if (tapTimes.length < 2) {
       return;
     }
 
-    // Calculate average interval
     var intervals = [];
     for (var i = 1; i < tapTimes.length; i++) {
       intervals.push(tapTimes[i] - tapTimes[i - 1]);
@@ -369,15 +351,12 @@
     var totalInterval = intervals.reduce(function(a, b) { return a + b; }, 0);
     var avgInterval = totalInterval / intervals.length;
 
-    // Convert ms to BPM (60000ms / avgInterval = BPM)
     var calculatedBPM = Math.round(60000 / avgInterval);
 
-    // Limit range
     calculatedBPM = Math.max(30, Math.min(240, calculatedBPM));
 
     setBPM(calculatedBPM);
 
-    // Reset after 1 second of inactivity
     clearTimeout(tapTimer);
     tapTimer = setTimeout(function() {
       tapTimes = [];
