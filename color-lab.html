@@ -1,0 +1,82 @@
+<!-- color-lab.html — Νέο αρχείο στη ρίζα του repo -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="orOS Color Lab — Generate and explore color palettes. Privacy-first, works offline.">
+  <title>orOS — Color Lab</title>
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (window.OROS_CONFIG ? window.OROS_CONFIG.baseHref : '/') + '">');
+  </script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+</head>
+<body>
+  <div id="oros-header"></div>
+
+  <div class="tool-page">
+    <div class="tool-page-container">
+
+      <div class="tool-page-header">
+        <h1 class="tool-page-title" data-i18n="colorlab_name">Color Lab</h1>
+        <p class="tool-page-subtitle" data-i18n="colorlab_subtitle">Generate and explore color palettes</p>
+      </div>
+
+      <div class="color-lab">
+
+        <!-- LEFT: Controls -->
+        <div class="cl-controls">
+
+          <div class="cl-picker-area">
+            <input type="color" id="cl-base-color" value="#c8a96e" class="cl-color-input">
+            <div class="cl-hex-row">
+              <label for="cl-hex-input" class="cl-label">HEX</label>
+              <input type="text" id="cl-hex-input" value="#c8a96e" maxlength="7" class="cl-hex-input">
+            </div>
+          </div>
+
+          <div class="cl-harmony-section">
+            <label class="cl-label" data-i18n="colorlab_harmony">Harmony</label>
+            <div class="cl-harmony-buttons">
+              <button class="cl-harmony-btn active" data-harmony="complementary" data-i18n="colorlab_complementary">Complementary</button>
+              <button class="cl-harmony-btn" data-harmony="analogous" data-i18n="colorlab_analogous">Analogous</button>
+              <button class="cl-harmony-btn" data-harmony="triadic" data-i18n="colorlab_triadic">Triadic</button>
+              <button class="cl-harmony-btn" data-harmony="tetradic" data-i18n="colorlab_tetradic">Tetradic</button>
+              <button class="cl-harmony-btn" data-harmony="monochromatic" data-i18n="colorlab_monochromatic">Monochromatic</button>
+            </div>
+          </div>
+
+          <div class="cl-actions">
+            <button id="cl-random" class="cl-action-btn">
+              <i class="fa fa-random"></i>
+              <span data-i18n="colorlab_random">Random</span>
+            </button>
+            <button id="cl-export" class="cl-action-btn">
+              <i class="fa fa-download"></i>
+              <span data-i18n="colorlab_export">Export JSON</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Palette Display -->
+        <div class="cl-palette" id="cl-palette"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="oros-footer"></div>
+
+  <script src="assets/js/color-lab.js"></script>
+</body>
+</html>

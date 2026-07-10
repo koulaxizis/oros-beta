@@ -1,0 +1,99 @@
+<!-- metronome.html — Νέο αρχείο στη ρίζα του repo -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="orOS Metronome — Precision timing for musicians. Privacy-first, works offline.">
+  <title>orOS — Metronome</title>
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (window.OROS_CONFIG ? window.OROS_CONFIG.baseHref : '/') + '">');
+  </script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+</head>
+<body>
+  <div id="oros-header"></div>
+
+  <div class="tool-page">
+    <div class="tool-page-container">
+
+      <div class="tool-page-header">
+        <h1 class="tool-page-title" data-i18n="metronome_name">Metronome</h1>
+        <p class="tool-page-subtitle" data-i18n="metronome_subtitle">Precision timing for musicians</p>
+      </div>
+
+      <div class="metronome">
+
+        <!-- TOP: BPM Display & Controls -->
+        <div class="metronome-top">
+          <div class="metro-beat-display" id="metro-beat-display">●</div>
+          <div class="metro-bpm-display" id="metro-bpm-display">120 BPM</div>
+        </div>
+
+        <!-- MIDDLE: Tap Tempo Area -->
+        <div class="metro-tap-area">
+          <button id="metro-tap-btn" class="metro-tap-btn" data-i18n="metronome_tap">Tap Tempo</button>
+        </div>
+
+        <!-- BOTTOM: Controls Row -->
+        <div class="metro-controls">
+
+          <div class="metro-time-signature">
+            <label class="metro-label" data-i18n="metronome_time_sig">Time Signature</label>
+            <div class="metro-ts-buttons">
+              <button class="metro-ts-btn active" data-ts="4/4">4/4</button>
+              <button class="metro-ts-btn" data-ts="3/4">3/4</button>
+              <button class="metro-ts-btn" data-ts="6/8">6/8</button>
+            </div>
+          </div>
+
+          <div class="metro-bpm-adjust">
+            <button id="metro-decrease" class="metro-adjust-btn">
+              <i class="fa fa-minus"></i>
+            </button>
+            <div class="metro-bpm-slider-wrapper">
+              <input type="range" id="metro-bpm-slider" class="metro-bpm-slider" min="30" max="240" value="120">
+            </div>
+            <button id="metro-increase" class="metro-adjust-btn">
+              <i class="fa fa-plus"></i>
+            </button>
+          </div>
+
+          <button id="metro-toggle" class="metro-play-btn">
+            <i class="fa fa-play" id="metro-play-icon"></i>
+            <span data-i18n="metronome_start">Start</span>
+          </button>
+
+        </div>
+
+        <!-- SETTINGS PANEL -->
+        <div class="metro-settings">
+          <label class="metro-setting-row">
+            <span class="metro-setting-label" data-i18n="metronome_sound_volume">Volume</span>
+            <input type="range" id="metro-volume" class="metro-volume-slider" min="0" max="100" value="70">
+          </label>
+
+          <label class="metro-setting-row">
+            <span class="metro-setting-label" data-i18n="metronome_beat_countdown">Countdown</span>
+            <input type="checkbox" id="metro-countdown" class="metro-checkbox" checked>
+          </label>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="oros-footer"></div>
+
+  <script src="assets/js/metronome.js"></script>
+</body>
+</html>

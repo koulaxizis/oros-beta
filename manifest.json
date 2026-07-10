@@ -1,13 +1,13 @@
 {
-  "name": "orOS Writer",
+  "name": "orOS — Artist's Operating System",
   "short_name": "orOS",
-  "description": "Privacy-first rich text editor. Works offline. No tracking.",
-  "start_url": "editor.html",
-  "scope": ".",
+  "description": "Privacy-first creative toolkit. Works offline.",
+  "start_url": "/oros-beta/",
+  "scope": "/oros-beta/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#1b1a18",
-  "theme_color": "#c8a96e",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "favicon.svg",
@@ -15,8 +15,5 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["productivity", "utilities"],
-  "lang": "en",
-  "dir": "ltr"
+  ]
 }
