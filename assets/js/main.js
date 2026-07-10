@@ -20,6 +20,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   window.orosShowToast = showToast;
 
+  // ========== SYSTEM LANGUAGE DETECTION ==========
+  function detectLanguage() {
+    var stored = localStorage.getItem('oros-language');
+    if (stored) return stored;
+    var navLang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
+    var supported = ['el', 'en', 'es', 'it', 'fr', 'de'];
+    return supported.indexOf(navLang) !== -1 ? navLang : 'en';
+  }
+
+  var currentLang = detectLanguage();
+  localStorage.setItem('oros-language', currentLang);
+
   // ========== THEME TOGGLE ==========
   var themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
@@ -38,14 +50,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ========== LANGUAGE SELECTOR ==========
   var langSelect = document.getElementById('language-select');
-  var storedLang = localStorage.getItem('oros-language') || 'el';
 
   if (langSelect) {
     ['el', 'en', 'es', 'it', 'fr', 'de'].forEach(function(code) {
       var opt = document.createElement('option');
       opt.value = code;
       opt.textContent = code.toUpperCase();
-      if (code === storedLang) opt.selected = true;
+      if (code === currentLang) opt.selected = true;
       langSelect.appendChild(opt);
     });
 
@@ -60,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function translatePage() {
-    var lang = localStorage.getItem('oros-language') || 'el';
+    var lang = localStorage.getItem('oros-language') || 'en';
     var translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang];
 
     if (!translations) return;
@@ -93,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
       window.OROS_TRANSLATIONS = data;
       translatePage();
       window.dispatchEvent(new CustomEvent('oros-language-changed', {
-        detail: { lang: localStorage.getItem('oros-language') || 'el' }
+        detail: { lang: localStorage.getItem('oros-language') || 'en' }
       }));
     })
     .catch(function(e) { console.error('Failed to load translations:', e); });
@@ -119,21 +130,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // ========== ZEN MODE TOAST (all pages) ==========
+  window.addEventListener('oros-zen-mode-changed', function(e) {
+    if (e.detail.enabled) {
+      var lang = localStorage.getItem('oros-language') || 'en';
+      var msg = lang === 'el'
+        ? 'Zen Mode · Esc για έξοδο · F9 εναλλαγή'
+        : 'Zen Mode · Esc to exit · F9 toggle';
+      showToast(msg);
+    }
+  });
+
+  // ========== KEYBOARD SHORTCUTS ==========
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9') {
       e.preventDefault();
       if (zenBtn) zenBtn.click();
     }
-  });
-
-  // ========== ZEN MODE TOAST (works on all pages) ==========
-  window.addEventListener('oros-zen-mode-changed', function(e) {
-    if (e.detail.enabled) {
-      var lang = localStorage.getItem('oros-language') || 'el';
-      var msg = lang === 'el'
-        ? 'Zen Mode · Esc για έξοδο · F9 εναλλαγή'
-        : 'Zen Mode · Esc to exit · F9 toggle';
-      showToast(msg);
+    if (e.key === 'Escape') {
+      if (document.body.hasAttribute('data-zen')) {
+        if (zenBtn) zenBtn.click();
+      }
     }
   });
 
@@ -322,10 +339,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Quick Format Toolbar — checked = SHOW, default unchecked (hidden)
+  // Quick Format Toolbar — checked = SHOW, default checked (visible)
   var quickTbarToggle = document.getElementById('toggle-quick-tbar');
   if (quickTbarToggle) {
-    quickTbarToggle.checked = localStorage.getItem('oros_quick_tbar_show') === 'true';
+    quickTbarToggle.checked = localStorage.getItem('oros_quick_tbar_show') !== 'false';
     quickTbarToggle.addEventListener('change', function() {
       var show = this.checked;
       localStorage.setItem('oros_quick_tbar_show', show ? 'true' : 'false');

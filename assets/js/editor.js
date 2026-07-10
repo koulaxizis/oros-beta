@@ -1,6 +1,7 @@
 // ============================================
 // orOS Writer — Unified Rich Text Editor
 // Fixes: Alignment, Typewriter Sound, Focus Mode, Hide Stats, Main Toolbar Buttons
+// Quick Format Toolbar toggle controls .toolbar-center
 // ============================================
 
 (function() {
@@ -8,7 +9,6 @@
 
   var STORAGE_KEY = 'oros_writer_content';
   var STORAGE_HIDE_STATS = 'oros_hide_stats';
-  var STORAGE_HIDE_QUICK_TBAR = 'oros_hide_quick_tbar';
   var STORAGE_FOCUS_MODE = 'oros_focus_mode';
   var STORAGE_READING_PROGRESS = 'oros_reading_progress';
   var STORAGE_SMART_TYPOGRAPHY = 'oros_smart_typography';
@@ -43,7 +43,7 @@
   var statsDefaultEl = document.getElementById('stats-default');
   var statsGoalEl = document.getElementById('stats-goal');
   var statsDetailed = document.getElementById('stats-detailed');
-  var quickFormatToolbar = document.getElementById('quick-format-toolbar');
+  var toolbarCenter = document.querySelector('.toolbar-center');
   var outlinePanel = document.getElementById('outline-panel');
   var outlineList = document.getElementById('outline-list');
   var btnOutline = document.getElementById('btn-outline');
@@ -74,8 +74,9 @@
   var wordFreqSummary = document.getElementById('wordfreq-summary');
   var wordFreqList = document.getElementById('wordfreq-list');
   var saveIndicator = document.getElementById('save-indicator');
-    var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
-    var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') === 'true';
+
+  var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
+  var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
   var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
   var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
   var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
@@ -99,7 +100,7 @@
   var wordFreqDebounce = null;
   var outlineDebounceTimer = null;
 
-  // ========== TYPEWRITER SOUND (base64 WAV) ==========
+  // ========== TYPEWRITER SOUND (Web Audio API) ==========
   var typewriterAudioCtx = null;
   var typewriterAudioBuffer = null;
 
@@ -139,13 +140,13 @@
 
   window.addEventListener('oros-typewriter-sound-changed', function(e) {
     typewriterSoundEnabled = e.detail.enabled;
-    if (enabled && !typewriterAudioCtx) {
+    if (typewriterSoundEnabled && !typewriterAudioCtx) {
       initTypewriterSound();
     }
   });
 
   // ========== HELPERS ==========
-  function getCurrentLang() { return localStorage.getItem('oros-language') || 'el'; }
+  function getCurrentLang() { return localStorage.getItem('oros-language') || 'en'; }
   function getTrans(key) {
     var lang = getCurrentLang();
     var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
@@ -810,7 +811,7 @@
     wordFreqList.innerHTML = listHtml;
   }
 
-  // ========== FOCUS MODE (FIXED — highlights current paragraph) ==========
+  // ========== FOCUS MODE (highlights current paragraph) ==========
   var focusDebounceTimer = null;
 
   function initFocusMode() {
@@ -973,29 +974,6 @@
           updateStats();
           richEditor.focus();
         });
-      })(fmtBtns[i]);
-    }
-  }
-
-  // ========== QUICK FORMAT TOOLBAR ==========
-  function setupQuickFormatToolbar() {
-    if (!quickFormatToolbar) return;
-        quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
-
-    var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
-    for (var i = 0; i < fmtBtns.length; i++) {
-      (function(btn) {
-        btn.onclick = function() {
-          var cmd = btn.getAttribute('data-cmd');
-          var block = btn.getAttribute('data-block');
-          if (block) {
-            document.execCommand('formatBlock', false, block);
-          } else if (cmd) {
-            document.execCommand(cmd, false);
-          }
-          saveContent();
-          updateStats();
-        };
       })(fmtBtns[i]);
     }
   }
@@ -1219,16 +1197,12 @@
         contextMenu = null;
         removeCloseListeners();
       }
-      var zenBtn = document.getElementById('btn-zen');
-      if (zenBtn && document.body.hasAttribute('data-zen')) {
-        zenBtn.click();
-      }
     }
   });
 
   // ========== VISIBILITY INIT ==========
   if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
-    if (quickFormatToolbar) quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
+  if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
   if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
   if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
   if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
@@ -1267,9 +1241,9 @@
     hideSaveIndicator = e.detail.hidden;
     updateSaveIndicator();
   });
-    window.addEventListener('oros-quick-tbar-changed', function(e) {
+  window.addEventListener('oros-quick-tbar-changed', function(e) {
     quickTbarShow = e.detail.show;
-    if (quickFormatToolbar) quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
+    if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
   });
   window.addEventListener('oros-hide-lorem-btn-changed', function(e) {
     hideLoremBtn = e.detail.hidden;
@@ -1403,7 +1377,6 @@
   loadMetadata();
   renderMetaDates();
   setupMetadataHandlers();
-  setupQuickFormatToolbar();
   initFocusMode();
   updateStats();
   updateGoalUnitLabels();
