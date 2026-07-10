@@ -1,10 +1,24 @@
-// ============================================
-// orOS Main Scripts — Global Components
-// Theme toggle, Language selector, Settings, PWA Install
-// ============================================
-
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
+
+  // ========== TOAST ==========
+  function showToast(message) {
+    var toast = document.getElementById('zen-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'zen-toast';
+      toast.className = 'zentool-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.display = '';
+    toast.classList.add('visible');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() {
+      toast.classList.remove('visible');
+    }, 3000);
+  }
+  window.orosShowToast = showToast;
 
   // ========== THEME TOGGLE ==========
   var themeToggle = document.getElementById('theme-toggle');
@@ -112,6 +126,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // ========== ZEN MODE TOAST (works on all pages) ==========
+  window.addEventListener('oros-zen-mode-changed', function(e) {
+    if (e.detail.enabled) {
+      var lang = localStorage.getItem('oros-language') || 'el';
+      var msg = lang === 'el'
+        ? 'Zen Mode · Esc για έξοδο · F9 εναλλαγή'
+        : 'Zen Mode · Esc to exit · F9 toggle';
+      showToast(msg);
+    }
+  });
+
   // ========== SETTINGS MODAL ==========
   var settingsBtn = document.getElementById('btn-settings');
   var settingsModal = document.querySelector('.settings-modal');
@@ -153,7 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ========== SETTINGS TOGGLES ==========
 
-  // Reading Progress
   var readingProgressToggle = document.getElementById('toggle-reading-progress');
   if (readingProgressToggle) {
     readingProgressToggle.checked = localStorage.getItem('oros_reading_progress') !== 'false';
@@ -166,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Smart Typography
   var smartTypoToggle = document.getElementById('toggle-smart-typography');
   if (smartTypoToggle) {
     smartTypoToggle.checked = localStorage.getItem('oros_smart_typography') !== 'false';
@@ -179,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Focus Mode
   var focusModeToggle = document.getElementById('toggle-focus-mode');
   if (focusModeToggle) {
     focusModeToggle.checked = localStorage.getItem('oros_focus_mode') !== 'false';
@@ -192,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Stats
   var hideStatsToggle = document.getElementById('toggle-hide-stats');
   if (hideStatsToggle) {
     hideStatsToggle.checked = localStorage.getItem('oros_hide_stats') === 'true';
@@ -205,7 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Save Indicator
   var hideSaveIndicatorToggle = document.getElementById('toggle-hide-save-indicator');
   if (hideSaveIndicatorToggle) {
     hideSaveIndicatorToggle.checked = localStorage.getItem('oros_hide_save_indicator') === 'true';
@@ -218,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Goal Button
   var hideGoalBtnToggle = document.getElementById('toggle-hide-goal-btn');
   if (hideGoalBtnToggle) {
     hideGoalBtnToggle.checked = localStorage.getItem('oros_hide_goal_btn') === 'true';
@@ -231,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Outline Button
   var hideOutlineBtnToggle = document.getElementById('toggle-hide-outline-btn');
   if (hideOutlineBtnToggle) {
     hideOutlineBtnToggle.checked = localStorage.getItem('oros_hide_outline_btn') === 'true';
@@ -244,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Metadata Button
   var hideMetadataBtnToggle = document.getElementById('toggle-hide-metadata-btn');
   if (hideMetadataBtnToggle) {
     hideMetadataBtnToggle.checked = localStorage.getItem('oros_hide_metadata_btn') === 'true';
@@ -257,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Find Button
   var hideFindBtnToggle = document.getElementById('toggle-hide-find-btn');
   if (hideFindBtnToggle) {
     hideFindBtnToggle.checked = localStorage.getItem('oros_hide_find_btn') === 'true';
@@ -270,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Word Frequency Button
   var hideWordFreqBtnToggle = document.getElementById('toggle-hide-wordfreq-btn');
   if (hideWordFreqBtnToggle) {
     hideWordFreqBtnToggle.checked = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
@@ -283,7 +298,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Hide Lorem Ipsum Button
   var hideLoremBtnToggle = document.getElementById('toggle-hide-lorem-btn');
   if (hideLoremBtnToggle) {
     hideLoremBtnToggle.checked = localStorage.getItem('oros_hide_lorem_btn') === 'true';
@@ -296,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Typewriter Sound
   var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
   if (typewriterSoundToggle) {
     typewriterSoundToggle.checked = localStorage.getItem('oros_typewriter_sound') === 'true';
@@ -309,15 +322,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Quick Format Toolbar
+  // Quick Format Toolbar — checked = SHOW, default unchecked (hidden)
   var quickTbarToggle = document.getElementById('toggle-quick-tbar');
   if (quickTbarToggle) {
-    quickTbarToggle.checked = localStorage.getItem('oros_hide_quick_tbar') === 'true';
+    quickTbarToggle.checked = localStorage.getItem('oros_quick_tbar_show') === 'true';
     quickTbarToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_quick_tbar', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-quick-tbar-changed', {
-        detail: { hidden: hidden }
+      var show = this.checked;
+      localStorage.setItem('oros_quick_tbar_show', show ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-quick-tbar-changed', {
+        detail: { show: show }
       }));
     });
   }
@@ -335,7 +348,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (installBtn) {
     installBtn.addEventListener('click', function() {
       if (!deferredPrompt) return;
-
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function(result) {
         deferredPrompt = null;

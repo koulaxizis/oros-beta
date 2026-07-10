@@ -75,7 +75,7 @@
   var wordFreqList = document.getElementById('wordfreq-list');
   var saveIndicator = document.getElementById('save-indicator');
     var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
-  var hideQuickTbar = localStorage.getItem(STORAGE_HIDE_QUICK_TBAR) === 'true';
+    var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') === 'true';
   var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
   var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
   var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
@@ -980,7 +980,7 @@
   // ========== QUICK FORMAT TOOLBAR ==========
   function setupQuickFormatToolbar() {
     if (!quickFormatToolbar) return;
-    quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
+        quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
 
     var fmtBtns = quickFormatToolbar.querySelectorAll('.fmt-btn');
     for (var i = 0; i < fmtBtns.length; i++) {
@@ -1228,7 +1228,7 @@
 
   // ========== VISIBILITY INIT ==========
   if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
-  if (hideQuickTbar && quickFormatToolbar) quickFormatToolbar.style.display = 'none';
+    if (quickFormatToolbar) quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
   if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
   if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
   if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
@@ -1267,9 +1267,9 @@
     hideSaveIndicator = e.detail.hidden;
     updateSaveIndicator();
   });
-  window.addEventListener('oros-hide-quick-tbar-changed', function(e) {
-    hideQuickTbar = e.detail.hidden;
-    if (quickFormatToolbar) quickFormatToolbar.style.display = hideQuickTbar ? 'none' : 'flex';
+    window.addEventListener('oros-quick-tbar-changed', function(e) {
+    quickTbarShow = e.detail.show;
+    if (quickFormatToolbar) quickFormatToolbar.style.display = quickTbarShow ? 'flex' : 'none';
   });
   window.addEventListener('oros-hide-lorem-btn-changed', function(e) {
     hideLoremBtn = e.detail.hidden;
@@ -1395,16 +1395,6 @@
 
   // ========== SAVE INDICATOR LIVE TICK ==========
   setInterval(updateSaveIndicator, 30000);
-
-  // ========== ZEN MODE TOAST ==========
-  window.addEventListener('oros-zen-mode-changed', function(e) {
-    if (e.detail.enabled) {
-      var msg = getCurrentLang() === 'el'
-        ? 'Zen Mode · Esc για έξοδο · F9 εναλλαγή'
-        : 'Zen Mode · Esc to exit · F9 toggle';
-      showToast(msg);
-    }
-  });
 
   // ========== INITIALIZE ==========
   initTypewriterSound();
