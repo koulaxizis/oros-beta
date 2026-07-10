@@ -79,7 +79,7 @@
 
   var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
   var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
-  var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
+  var focusModeEnabled = (localStorage.getItem(STORAGE_FOCUS_MODE) === 'true');
   var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
   var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
   var lastSavedTime = parseInt(localStorage.getItem(STORAGE_LAST_SAVED)) || null;
@@ -1017,14 +1017,20 @@
     richEditor.addEventListener('scroll', function() {
       if (document.getElementById('focus-spotlight')) clearFocusMode();
     });
-    window.addEventListener('oros-focus-mode-changed', function(e) {
+        window.addEventListener('oros-focus-mode-changed', function(e) {
       focusModeEnabled = e.detail.enabled;
-      if (!focusModeEnabled) clearFocusMode();
+      if (focusModeEnabled) {
+        initFocusMode();
+      } else {
+        clearFocusMode();
+      }
     });
-  }
 
-  function handleSelectionChange() {
-    if (!focusModeEnabled) return;
+    function handleSelectionChange() {
+    if (!focusModeEnabled) {
+      clearFocusMode();
+      return;
+    }
     clearTimeout(focusDebounceTimer);
     focusDebounceTimer = setTimeout(function() {
       var selection = window.getSelection();
@@ -1036,11 +1042,16 @@
       while (node && node !== richEditor && node.parentNode !== richEditor) {
         node = node.parentNode;
       }
-      if (!node || node === richEditor) { clearFocusMode(); return; }
+      
+      // Try to find a text node or paragraph
+      if (node.nodeType === 3) node = node.parentNode;
+      if (node === richEditor) { clearFocusMode(); return; }
+      if (!node || !richEditor.contains(node)) { clearFocusMode(); return; }
 
       clearFocusMode();
       var rect = node.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
+      if (rect.width === 0 || rect.height === 0) { clearFocusMode(); return; }
+      
       var wrapperRect = richWrapper.getBoundingClientRect();
       var spotlight = document.createElement('div');
       spotlight.id = 'focus-spotlight';
@@ -1050,7 +1061,7 @@
       spotlight.style.width = rect.width + 'px';
       spotlight.style.height = rect.height + 'px';
       richWrapper.appendChild(spotlight);
-    }, 100);
+    }, 150);
   }
 
   function clearFocusMode() {
