@@ -1110,8 +1110,8 @@
     menu.style.top = e.clientY + 'px';
 
     menu.addEventListener('click', function(ev) { ev.stopPropagation(); });
-    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation();
-	    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
+    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation(); });
+    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
 
     var items = menu.querySelectorAll('.cm-item');
     for (var i = 0; i < items.length; i++) {
