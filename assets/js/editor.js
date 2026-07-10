@@ -1116,21 +1116,27 @@
     document.removeEventListener('keydown', closeOnKeydown, true);
   }
 
-  function setupMainToolbarButtons() {
+    function setupMainToolbarButtons() {
     if (!richEditor) return;
     var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
     for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
-        if (!btn.getAttribute('data-cmd')) return;
+        var cmd = btn.getAttribute('data-cmd');
+        var block = btn.getAttribute('data-block');
+        
+        if (!cmd && !block) return; // Skip buttons without data
+        
         btn.addEventListener('click', function(e) {
           e.preventDefault();
-          var cmd = btn.getAttribute('data-cmd');
-          var block = btn.getAttribute('data-block');
+          
           if (block) {
+            // H1, H2, H3 buttons use formatBlock
             document.execCommand('formatBlock', false, block);
-          } else {
+          } else if (cmd) {
+            // Other buttons use regular commands
             document.execCommand(cmd, false);
           }
+          
           saveContent();
           updateStats();
           richEditor.focus();
@@ -1194,6 +1200,67 @@
     var blob = new Blob([data], { type: mime });
     triggerDownload(blob, filenamePrefix + ext);
     showToast(getTrans('toast_downloaded'));
+  }
+
+  function setupDragAndDrop() {
+    if (!richEditor) return;
+    
+    // Prevent default drag behaviors
+    richEditor.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    richEditor.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    richEditor.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    // Handle drop
+    richEditor.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        var file = e.dataTransfer.files[0];
+        openFile(file);
+      }
+    });
+  }
+  
+  function setupDragAndDropForWrapper() {
+    if (!richWrapper) return;
+    
+    // Also allow dropping on the wrapper area around editor
+    richWrapper.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    richWrapper.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    richWrapper.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    richWrapper.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        var file = e.dataTransfer.files[0];
+        openFile(file);
+      }
+    });
   }
 
   function convertHTMLtoMarkdown(html) {
@@ -1533,5 +1600,7 @@
   updateStats();
   updateGoalUnitLabels();
   updateReadingProgress();
+  setupDragAndDrop();         // ← ADD THIS LINE
+  setupDragAndDropForWrapper(); // ← ADD THIS LINE
 
 })();
