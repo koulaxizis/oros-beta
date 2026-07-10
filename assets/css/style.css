@@ -714,6 +714,7 @@ body.landing-page {
   transition: all 0.15s ease-out;
   background: transparent;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  /* PROS THEXI GIA NAI PREPEI NA EINAI OLOKLERO TO BOX-SHADOW */
 }
 
 [data-theme="light"] .focus-spotlight {

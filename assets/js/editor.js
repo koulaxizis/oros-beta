@@ -940,7 +940,7 @@
     clearFocusMode();
   }
 
-  function handleSelectionChange() {
+    function handleSelectionChange() {
     if (!focusModeEnabled || !richWrapper || !richEditor) {
       clearFocusMode();
       return;
@@ -960,36 +960,32 @@
         return;
       }
       
-      var node = range.startContainer;
-      if (node.nodeType === 3) node = node.parentNode;
+      clearFocusMode();
       
-      while (node && node !== richEditor && node.nodeName !== 'P' && 
-             !/^H[1-6]$/.test(node.nodeName) && node.nodeName !== 'DIV' &&
-             node.nodeName !== 'BLOCKQUOTE' && node.nodeName !== 'UL' && 
-             node.nodeName !== 'OL' && node.nodeName !== 'LI') {
-        node = node.parentNode;
-      }
+      // Get the bounding rect of the ACTUAL selected text (not parent node)
+      var selectedRect = range.getBoundingClientRect();
+      var wrapperRect = richWrapper.getBoundingClientRect();
       
-      if (!node || node === richEditor) {
+      // Check if selection is valid
+      if (selectedRect.width === 0 || selectedRect.height === 0) {
         clearFocusMode();
         return;
       }
       
-      clearFocusMode();
-      var nodeRect = node.getBoundingClientRect();
-      var wrapperRect = richWrapper.getBoundingClientRect();
-      
+      // Calculate position relative to wrapper (accounting for scroll)
       var scrollTop = richWrapper.scrollTop || richEditor.scrollTop || 0;
-      var topPos = (nodeRect.top - wrapperRect.top) + scrollTop;
+      var topPos = (selectedRect.top - wrapperRect.top) + scrollTop;
+      var leftPos = (selectedRect.left - wrapperRect.left);
       
+      // Create spotlight for exact selected area
       currentSpotlight = document.createElement('div');
       currentSpotlight.id = 'focus-spotlight';
       currentSpotlight.className = 'focus-spotlight';
       currentSpotlight.style.position = 'absolute';
       currentSpotlight.style.top = topPos + 'px';
-      currentSpotlight.style.left = '0px';
-      currentSpotlight.style.right = '0px';
-      currentSpotlight.style.height = nodeRect.height + 'px';
+      currentSpotlight.style.left = leftPos + 'px';
+      currentSpotlight.style.width = selectedRect.width + 'px';
+      currentSpotlight.style.height = selectedRect.height + 'px';
       currentSpotlight.style.pointerEvents = 'none';
       currentSpotlight.style.zIndex = '1';
       
