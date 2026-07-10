@@ -7,9 +7,9 @@
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url('../../fonts/forkawesome-webfont.woff2') format('woff2'),
-       url('../../fonts/forkawesome-webfont.woff') format('woff'),
-       url('../../fonts/forkawesome-webfont.ttf') format('truetype');
+  src: url('../fonts/forkawesome-webfont.woff2') format('woff2'),
+       url('../fonts/forkawesome-webfont.woff') format('woff'),
+       url('../fonts/forkawesome-webfont.ttf') format('truetype');
 }
 
 .fa {

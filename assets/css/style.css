@@ -705,8 +705,21 @@ body.landing-page {
 .wordfreq-item.overused .wf-word { color: var(--accent-gold-light); }
 .wordfreq-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 8px; text-align: center; }
 
-/* ===== FOCUS MODE SPOTLIGHT ===== */
-.focus-spotlight { position: absolute; border: 2px solid var(--accent-gold); border-radius: 2px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.4); pointer-events: none; z-index: 5; transition: all 100ms ease; }
+/* ===== FOCUS MODE ===== */
+.focus-spotlight {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 4px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease-out;
+  background: transparent;
+}
+
+.dark-theme .focus-spotlight,
+:focus ~ .focus-spotlight {
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+}
 
 /* ===== CONTEXT MENU ===== */
 .context-menu { position: fixed; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 10000; min-width: 160px; overflow: hidden; padding: 4px 0; }
