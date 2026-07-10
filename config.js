@@ -4,10 +4,10 @@
 
 var OROS_CONFIG = {
   baseHref: '/oros-beta/',
-  version: '0.6.4',
+  version: '0.7.1',
   channel: 'beta',
   domain: 'https://koulaxizis.github.io/oros-beta',
-  cacheName: 'oros-v0.6.4'
+  cacheName: 'oros-v0.7.1'
 };
 
 if (typeof window !== 'undefined') {

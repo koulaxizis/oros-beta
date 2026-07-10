@@ -351,6 +351,15 @@ document.addEventListener('DOMContentLoaded', function() {
       }));
     });
   }
+  
+    // ========== ZEN MODE TOGGLE (Settings) ==========
+  var zenToggle = document.getElementById('toggle-zen-mode');
+  if (zenToggle) {
+    zenToggle.checked = document.body.hasAttribute('data-zen');
+    zenToggle.addEventListener('change', function() {
+      if (zenBtn) zenBtn.click();
+    });
+  }
 
   // ========== PWA INSTALL PROMPT ==========
   var installBtn = document.getElementById('btn-install');

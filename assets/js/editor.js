@@ -161,78 +161,234 @@
   }
 
   // ========== LOREM IPSUM GENERATOR ==========
-  function generateLoremIpsum() {
+    function generateLoremIpsum() {
     var lang = getCurrentLang();
     var templates = {
       en: '<h1>Document Title</h1>' +
-          '<p>This is the <strong>first paragraph</strong> with various formatting options. ' +
-          'You can see <em>italic text</em>, <u>underlined text</u>, and <strong>bold text</strong> ' +
-          'all working together seamlessly. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>First bullet point item</li><li>Second bullet point item</li><li>Third bullet point item</li></ul>' +
-          '<h2>Section Subheading</h2>' +
-          '<blockquote>Art is a lie that makes us realize the truth. — Pablo Picasso</blockquote>' +
-          '<p>The <em>final paragraph</em> wraps up the sample content. ' +
-          'Use this text to test your editor\'s formatting, exports, and statistics. ' +
-          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>' +
-          '<ol><li>First numbered step</li><li>Second numbered step</li><li>Third numbered step</li></ol>',
+          '<p>Welcome to <strong>orOS Writer</strong>, a privacy-first rich text editor that works entirely offline. ' +
+          'This sample text demonstrates <em>various formatting options</em> available in the editor, ' +
+          'including <u>underlined text</u>, <strong>bold text</strong>, and <em>italic text</em>. ' +
+          'All content is saved locally in your browser — no account, no server, no tracking.</p>' +
+          '<ul><li>Bold, italic, and underline formatting</li>' +
+          '<li>Headings (H1, H2, H3) for document structure</li>' +
+          '<li>Bullet and numbered lists</li>' +
+          '<li>Text alignment: left, center, right, justify</li>' +
+          '<li>Blockquotes for emphasis</li></ul>' +
+          '<h2>Smart Typography</h2>' +
+          '<p>The editor features <strong>Smart Typography</strong>, which automatically converts common ' +
+          'shortcuts into proper typographic characters as you type:</p>' +
+          '<ul><li>Double hyphens (--) become an em dash (\u2014)</li>' +
+          '<li>Three dots (...) become an ellipsis (\u2026)</li>' +
+          '<li>Straight quotes become curly quotes (\u201C \u201D) and smart apostrophes (\u2018 \u2019)</li>' +
+          '<li>(c) becomes \u00A9, (r) becomes \u00AE, and (tm) becomes \u2122</li></ul>' +
+          '<p>Try typing these shortcuts yourself — just enable Smart Typography in Settings if it is not already on.</p>' +
+          '<blockquote>Writing is easy. All you do is stare at a blank sheet of paper until drops of blood form on your forehead. — Gene Fowler</blockquote>' +
+          '<h2>Editor Features</h2>' +
+          '<p>orOS Writer includes a range of tools designed for writers, journalists, and bloggers:</p>' +
+          '<ol><li>Automatic saving — your work is preserved after every keystroke</li>' +
+          '<li>Export to Markdown, Plain Text, RTF, Word, or PDF</li>' +
+          '<li>Document outline panel for navigating headings</li>' +
+          '<li>Word frequency analysis to spot repetition and overused words</li>' +
+          '<li>Document metadata for title, author, tags, and category</li>' +
+          '<li>Writing goals with optional lock when the target is reached</li>' +
+          '<li>Find and replace functionality</li>' +
+          '<li>Reading progress bar and detailed statistics</li></ol>' +
+          '<h2>Privacy First</h2>' +
+          '<p>Everything happens in your browser. Your text never leaves your device. ' +
+          'There are no analytics, no telemetry, no advertisements, and no accounts required. ' +
+          'This is open-source software built with respect for your personal data.</p>' +
+          '<p>This is the <em>final paragraph</em> of the sample content. ' +
+          'You can clear it anytime with the trash button, or start editing right away. ' +
+          'The editor remembers your work between sessions, so feel free to close and return later. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       el: '<h1>Τίτλος Εγγράφου</h1>' +
-          '<p>Αυτή είναι η <strong>πρώτη παράγραφος</strong> ' +
-          'με διάφορες επιλογές μορφοποίησης. ' +
-          'Μπορείς να δεις <em>πλάγιο κείμενο</em>, ' +
-          '<u>υπογεγραμμένο κείμενο</u>, ' +
-          'και <strong>έντονο κείμενο</strong> ' +
-          'όλα να λειτουργούν μαζί.</p>' +
-          '<ul><li>Πρώτο στοιχείο λίστας</li>' +
-          '<li>Δεύτερο στοιχείο λίστας</li>' +
-          '<li>Τρίτο στοιχείο λίστας</li></ul>' +
-          '<h2>Υπότιτλος Τμήματος</h2>' +
-          '<blockquote>Η τέχνη είναι ένα ψέμα που μας κάνει να συνειδητοποιούμε την αλήθεια.</blockquote>' +
-          '<p>Η <em>τελευταία παράγραφος</em> ' +
-          'κλείνει το δοκιμαστικό κείμενο. ' +
-          'Χρησιμοποίησε αυτό το κείμενο ' +
-          'για να δοκιμάσεις την μορφοποίηση, ' +
-          'τις εξάγωγες και τα στατιστικά.</p>' +
-          '<ol><li>Πρώτο βήμα</li><li>Δεύτερο βήμα</li><li>Τρίτο βήμα</li></ol>',
+          '<p>Καλώς ήρθες στο <strong>orOS Writer</strong>, έναν επεξεργαστή κειμένου που σέβεται το απόρρητο ' +
+          'και λειτουργεί εξ ολοκλήρου offline. Αυτό το δοκιμαστικό κείμενο επιδεικνύει ' +
+          '<em>διάφορες επιλογές μορφοποίησης</em> του editor, συμπεριλαμβανομένου ' +
+          '<u>υπογεγραμμένου κειμένου</u>, <strong>έντονου κειμένου</strong>, ' +
+          'και <em>πλάγιου κειμένου</em>. ' +
+          'Όλο το περιεχόμενο αποθηκεύεται τοπικά στον browser — χωρίς λογαριασμό, χωρίς server, χωρίς παρακολούθηση.</p>' +
+          '<ul><li>Μορφοποίηση έντονα, πλάγια, υπογράμμιση</li>' +
+          '<li>Τίτλοι (H1, H2, H3) για δομή εγγράφου</li>' +
+          '<li>Λίστες κουκκίδων και αριθμημένες</li>' +
+          '<li>Στοίχιση κειμένου: αριστερά, κέντρο, δεξιά, πλήρης</li>' +
+          '<li>Αποσπάσματα για έμφαση</li></ul>' +
+          '<h2>Έξυπνη Τυπογραφία</h2>' +
+          '<p>Ο editor διαθέτει <strong>Έξυπνη Τυπογραφία</strong>, που μετατρέπει αυτόματα ' +
+          'συνηθισμένες συντομογραφίες σε σωστούς τυπογραφικούς χαρακτήρες καθώς πληκτρολογείς:</p>' +
+          '<ul><li>Διπλές παύλες (--) γίνονται μακρά παύλα (\u2014)</li>' +
+          '<li>Τρεις τελείες (...) γίνονται αποσιωπητικά (\u2026)</li>' +
+          '<li>Απλά εισαγωγικά γίνονται καμπύλα εισαγωγικά (\u201C \u201D) και έξυπνα αποστόφια (\u2018 \u2019)</li>' +
+          '<li>(c) γίνεται \u00A9, (r) γίνεται \u00AE, και (tm) γίνεται \u2122</li></ul>' +
+          '<p>Δοκίμασε να πληκτρολογήσεις αυτές τις συντομογραφίες μόνος σου — ' +
+          'απλά ενεργοποίησε την Έξυπνη Τυπογραφία στις Ρυθμίσεις αν δεν είναι ήδη ενεργή.</p>' +
+          '<blockquote>Η γραφή είναι εύκολη. Απλά κοιτάς ένα λευκό φύλλο χαρτιού μέχρι να σταλάξεις σταγόνες αίματος στο μέτωπό σου. — Gene Fowler</blockquote>' +
+          '<h2>Λειτουργίες Editor</h2>' +
+          '<p>Ο orOS Writer περιλαμβάνει μια σειρά εργαλείων σχεδιασμένων για συγγραφείς, δημοσιογράφους και bloggers:</p>' +
+          '<ol><li>Αυτόματη αποθήκευση — η δουλειά σου σώζεται μετά από κάθε πληκτρολόγηση</li>' +
+          '<li>Εξαγωγή σε Markdown, Απλό Κείμενο, RTF, Word ή PDF</li>' +
+          '<li>Πίνακας δομής εγγράφου για πλοήγηση στους τίτλους</li>' +
+          '<li>Ανάλυση συχνότητας λέξεων για εντοπισμό επαναλήψεων</li>' +
+          '<li>Μεταδεδομένα εγγράφου για τίτλο, συγγραφέα, ετικέτες και κατηγορία</li>' +
+          '<li>Στόχοι γραφής με προαιρετικό κλείδωμα όταν επιτυγχάνονται</li>' +
+          '<li>Εύρεση και αντικατάσταση κειμένου</li>' +
+          '<li>Μπάρα προόδου ανάγνωσης και αναλυτικά στατιστικά</li></ol>' +
+          '<h2>Απόρρητο Πρώτα</h2>' +
+          '<p>Όλα συμβαίνουν στον browser σου. Το κείμενό σου δεν φεύγει ποτέ από τη συσκευή σου. ' +
+          'Δεν υπάρχουν αναλυτικά στοιχεία, τηλεμετρία, διαφημίσεις, ή λογαριασμοί. ' +
+          'Αυτό είναι λογισμικό ανοιχτού κώδικα, φτιαγμένο με σεβασμό για τα προσωπικά σου δεδομένα.</p>' +
+          '<p>Αυτή είναι η <em>τελευταία παράγραφος</em> του δοκιμαστικού κειμένου. ' +
+          'Μπορείς να την καθαρίσεις ανά πάσα στιγμή με το κουμπί διαγραφής, ή να ξεκινήσεις να επεξεργάζεσαι αμέσως. ' +
+          'Ο editor θυμάται τη δουλειά σου μεταξύ των συνεδριών, οπότε μπορείς να κλείσεις και να επιστρέψεις αργότερα. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       es: '<h1>Título del Documento</h1>' +
-          '<p>Este es el <strong>primer párrafo</strong> con varias opciones de formato. ' +
-          'Puedes ver <em>texto en cursiva</em>, <u>texto subrayado</u>, y <strong>texto en negrita</strong> ' +
-          'todos funcionando juntos. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Primer elemento de la lista</li><li>Segundo elemento de la lista</li><li>Tercer elemento de la lista</li></ul>' +
-          '<h2>Subtítulo de Sección</h2>' +
-          '<blockquote>El arte es una mentira que nos hace darnos cuenta de la verdad. — Pablo Picasso</blockquote>' +
-          '<p>El <em>párrafo final</em> concluye el contenido de ejemplo. ' +
-          'Usa este texto para probar el formato, las exportaciones y las estadísticas de tu editor.</p>' +
-          '<ol><li>Primer paso numerado</li><li>Segundo paso numerado</li><li>Tercer paso numerado</li></ol>',
+          '<p>Bienvenido a <strong>orOS Writer</strong>, un editor de texto que respeta tu privacidad y funciona completamente sin conexión. ' +
+          'Este texto de muestra demuestra <em>varias opciones de formato</em> disponibles en el editor, ' +
+          'incluyendo <u>texto subrayado</u>, <strong>texto en negrita</strong>, y <em>texto en cursiva</em>. ' +
+          'Todo el contenido se guarda localmente en tu navegador — sin cuenta, sin servidor, sin rastreo.</p>' +
+          '<ul><li>Formato negrita, cursiva y subrayado</li>' +
+          '<li>Encabezados (H1, H2, H3) para estructura</li>' +
+          '<li>Listas de viñetas y numeradas</li>' +
+          '<li>Opciones de alineación de texto</li>' +
+          '<li>Citas para énfasis</li></ul>' +
+          '<h2>Tipografía Inteligente</h2>' +
+          '<p>El editor incluye <strong>Tipografía Inteligente</strong>, que convierte automáticamente ' +
+          'atajos comunes en caracteres tipográficos correctos mientras escribes:</p>' +
+          '<ul><li>Dobles guiones (--) se convierten en guion largo (\u2014)</li>' +
+          '<li>Tres puntos (...) se convierten en puntos suspensivos (\u2026)</li>' +
+          '<li>Comillas rectas se convierten en comillas tipográficas (\u201C \u201D) y apóstrofos inteligentes (\u2018 \u2019)</li>' +
+          '<li>(c) se convierte en \u00A9, (r) en \u00AE, y (tm) en \u2122</li></ul>' +
+          '<p>Prueba a escribir estos atajos tú mismo — solo activa la Tipografía Inteligente en Configuración si aún no está activada.</p>' +
+          '<blockquote>Escribir es fácil. Solo miras una hoja de papel en blanco hasta que gotas de sangre se forman en tu frente. — Gene Fowler</blockquote>' +
+          '<h2>Funciones del Editor</h2>' +
+          '<p>orOS Writer incluye una gama de herramientas diseñadas para escritores, periodistas y bloggers:</p>' +
+          '<ol><li>Guardado automático — tu trabajo se preserva tras cada pulsación</li>' +
+          '<li>Exportar a Markdown, Texto Plano, RTF, Word o PDF</li>' +
+          '<li>Panel de esquema del documento para navegar por los encabezados</li>' +
+          '<li>Análisis de frecuencia de palabras para detectar repeticiones</li>' +
+          '<li>Metadatos del documento para título, autor, etiquetas y categoría</li>' +
+          '<li>Objetivos de escritura con bloqueo opcional al alcanzar la meta</li>' +
+          '<li>Función de buscar y reemplazar</li>' +
+          '<li>Barra de progreso de lectura y estadísticas detalladas</li></ol>' +
+          '<h2>Privacidad Primero</h2>' +
+          '<p>Todo ocurre en tu navegador. Tu texto nunca sale de tu dispositivo. ' +
+          'No hay analíticas, ni telemetría, ni anuncios, ni cuentas requeridas. ' +
+          'Esto es software de código abierto, creado con respeto por tus datos personales.</p>' +
+          '<p>Este es el <em>párrafo final</em> del contenido de muestra. ' +
+          'Puedes borrarlo en cualquier momento con el botón de papelera, o empezar a editar de inmediato. ' +
+          'El editor recuerda tu trabajo entre sesiones, así que siéntete libre de cerrar y volver más tarde. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       it: '<h1>Titolo del Documento</h1>' +
-          '<p>Questo è il <strong>primo paragrafo</strong> con varie opzioni di formattazione. ' +
-          'Puoi vedere <em>testo in corsivo</em>, <u>testo sottolineato</u>, e <strong>testo in grassetto</strong> ' +
-          'tutti funzionanti insieme. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Primo elemento della lista</li><li>Secondo elemento della lista</li><li>Terzo elemento della lista</li></ul>' +
-          '<h2>Sottotitolo della Sezione</h2>' +
-          '<blockquote>L\'arte è una menzogna che ci fa capire la verità. — Pablo Picasso</blockquote>' +
-          '<p>Il <em>paragrafo finale</em> conclude il contenuto di esempio. ' +
-          'Usa questo testo per provare la formattazione, le esportazioni e le statistiche del tuo editor.</p>' +
-          '<ol><li>Primo passo numerato</li><li>Secondo passo numerato</li><li>Terzo passo numerato</li></ol>',
+          '<p>Benvenuto in <strong>orOS Writer</strong>, un editor di testo che rispetta la tua privacy e funziona completamente offline. ' +
+          'Questo testo di esempio dimostra <em>varie opzioni di formattazione</em> disponibili nell\'editor, ' +
+          'inclusi <u>testo sottolineato</u>, <strong>testo in grassetto</strong>, e <em>testo in corsivo</em>. ' +
+          'Tutti i contenuti vengono salvati localmente nel tuo browser — nessun account, nessun server, nessun tracciamento.</p>' +
+          '<ul><li>Formattazione grassetto, corsivo e sottolineato</li>' +
+          '<li>Intestazioni (H1, H2, H3) per la struttura</li>' +
+          '<li>Elenchi puntati e numerati</li>' +
+          '<li>Opzioni di allineamento del testo</li>' +
+          '<li>Citazioni per enfasi</li></ul>' +
+          '<h2>Tipografia Intelligente</h2>' +
+          '<p>L\'editor include la <strong>Tipografia Intelligente</strong>, che converte automaticamente ' +
+          'scorciatoie comuni in caratteri tipografici corretti mentre scrivi:</p>' +
+          '<ul><li>Doppi trattini (--) diventano un trattino lungo (\u2014)</li>' +
+          '<li>Tre punti (...) diventano puntini di sospensione (\u2026)</li>' +
+          '<li>Le virgolette dritte diventano virgolette tipografiche (\u201C \u201D) e apostrofi intelligenti (\u2018 \u2019)</li>' +
+          '<li>(c) diventa \u00A9, (r) diventa \u00AE, e (tm) diventa \u2122</li></ul>' +
+          '<p>Prova a digitare queste scorciatoie tu stesso — basta attivare la Tipografia Intelligente nelle Impostazioni se non è già attiva.</p>' +
+          '<blockquote>Scrivere è facile. Devi solo fissare un foglio di carta bianca finché non ti si formano gocce di sangue sulla fronte. — Gene Fowler</blockquote>' +
+          '<h2>Funzioni dell\'Editor</h2>' +
+          '<p>orOS Writer include una gamma di strumenti progettati per scrittori, giornalisti e blogger:</p>' +
+          '<ol><li>Salvataggio automatico — il tuo lavoro viene preservato dopo ogni battitura</li>' +
+          '<li>Esportazione in Markdown, Testo Semplice, RTF, Word o PDF</li>' +
+          '<li>Pannello struttura del documento per navigare tra le intestazioni</li>' +
+          '<li>Analisi della frequenza delle parole per individuare ripetizioni</li>' +
+          '<li>Metadati del documento per titolo, autore, tag e categoria</li>' +
+          '<li>Obiettivi di scrittura con blocco opzionale al raggiungimento della meta</li>' +
+          '<li>Funzione di trova e sostituisci</li>' +
+          '<li>Barra di avanzamento della lettura e statistiche dettagliate</li></ol>' +
+          '<h2>Prima la Privacy</h2>' +
+          '<p>Tutto avviene nel tuo browser. Il tuo testo non lascia mai il tuo dispositivo. ' +
+          'Non ci sono analitiche, telemetria, pubblicità, né account richiesti. ' +
+          'Questo è software open source, creato con rispetto per i tuoi dati personali.</p>' +
+          '<p>Questo è il <em>paragrafo finale</em> del contenuto di esempio. ' +
+          'Puoi cancellarlo in qualsiasi momento con il pulsante del cestino, o iniziare a modificare subito. ' +
+          'L\'editor ricorda il tuo lavoro tra le sessioni, quindi sentiti libero di chiudere e tornare più tardi. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       fr: '<h1>Titre du Document</h1>' +
-          '<p>Ceci est le <strong>premier paragraphe</strong> avec diverses options de mise en forme. ' +
-          'Vous pouvez voir du <em>texte en italique</em>, du <u>texte souligné</u>, et du <strong>texte en gras</strong> ' +
-          'qui fonctionnent tous ensemble. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Premier élément de la liste</li><li>Deuxième élément de la liste</li><li>Troisième élément de la liste</li></ul>' +
-          '<h2>Sous-titre de Section</h2>' +
-          '<blockquote>L\'art est un mensonge qui nous fait réaliser la vérité. — Pablo Picasso</blockquote>' +
-          '<p>Le <em>paragraphe final</em> conclut le contenu d\'exemple. ' +
-          'Utilisez ce texte pour tester la mise en forme, les exportations et les statistiques de votre éditeur.</p>' +
-          '<ol><li>Première étape</li><li>Deuxième étape</li><li>Troisième étape</li></ol>',
+          '<p>Bienvenue dans <strong>orOS Writer</strong>, un éditeur de texte qui respecte votre vie privée et fonctionne entièrement hors ligne. ' +
+          'Ce texte d\'exemple démontre <em>diverses options de mise en forme</em> disponibles dans l\'éditeur, ' +
+          'y compris du <u>texte souligné</u>, du <strong>texte en gras</strong>, et du <em>texte en italique</em>. ' +
+          'Tout le contenu est sauvegardé localement dans votre navigateur — sans compte, sans serveur, sans suivi.</p>' +
+          '<ul><li>Formatage gras, italique et souligné</li>' +
+          '<li>Titres (H1, H2, H3) pour la structure</li>' +
+          '<li>Listes à puces et numérotées</li>' +
+          '<li>Options d\'alignement du texte</li>' +
+          '<li>Citations pour mettre en évidence</li></ul>' +
+          '<h2>Typographie Intelligente</h2>' +
+          '<p>L\'éditeur inclut la <strong>Typographie Intelligente</strong>, qui convertit automatiquement ' +
+          'les raccourcis courants en caractères typographiques corrects pendant que vous tapez :</p>' +
+          '<ul><li>Les doubles tirets (--) deviennent un tiret long (\u2014)</li>' +
+          '<li>Trois points (...) deviennent des points de suspension (\u2026)</li>' +
+          '<li>Les guillemets droits deviennent des guillemets typographiques (\u201C \u201D) et apostrophes intelligentes (\u2018 \u2019)</li>' +
+          '<li>(c) devient \u00A9, (r) devient \u00AE, et (tm) devient \u2122</li></ul>' +
+          '<p>Essayez de taper ces raccourcis vous-même — activez simplement la Typographie Intelligente dans les Paramètres si elle n\'est pas déjà activée.</p>' +
+          '<blockquote>Écrire est facile. Vous fixez simplement une feuille de papier blanc jusqu\'à ce que des gouttes de sang se forment sur votre front. — Gene Fowler</blockquote>' +
+          '<h2>Fonctions de l\'Éditeur</h2>' +
+          '<p>orOS Writer comprend une gamme d\'outils conçus pour les écrivains, journalistes et blogueurs :</p>' +
+          '<ol><li>Sauvegarde automatique — votre travail est préservé après chaque frappe</li>' +
+          '<li>Exportation en Markdown, Texte Brut, RTF, Word ou PDF</li>' +
+          '<li>Panneau de plan du document pour naviguer entre les titres</li>' +
+          '<li>Analyse de fréquence des mots pour repérer les répétitions</li>' +
+          '<li>Métadonnées du document pour titre, auteur, tags et catégorie</li>' +
+          '<li>Objectifs d\'écriture avec verrouillage facultatif à l\'atteinte de l\'objectif</li>' +
+          '<li>Fonction de recherche et remplacement</li>' +
+          '<li>Barre de progression de lecture et statistiques détaillées</li></ol>' +
+          '<h2>Vie Privée D\'abord</h2>' +
+          '<p>Tout se passe dans votre navigateur. Votre texte ne quitte jamais votre appareil. ' +
+          'Il n\'y a pas d\'analytique, ni télémétrie, ni publicités, ni comptes requis. ' +
+          'Ceci est un logiciel open source, créé dans le respect de vos données personnelles.</p>' +
+          '<p>Ceci est le <em>paragraphe final</em> du contenu d\'exemple. ' +
+          'Vous pouvez l\'effacer à tout moment avec le bouton de corbeille, ou commencer à éditer immédiatement. ' +
+          'L\'éditeur se souvient de votre travail entre les sessions, donc n\'hésitez pas à fermer et revenir plus tard. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       de: '<h1>Dokumenttitel</h1>' +
-          '<p>Dies ist der <strong>erste Absatz</strong> mit verschiedenen Formatierungsoptionen. ' +
-          'Sie können <em>Kursivtext</em>, <u>unterstrichenen Text</u> und <strong>Fetttext</strong> ' +
-          'sehen, die alle zusammen funktionieren. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
-          '<ul><li>Erstes Listenelement</li><li>Zweites Listenelement</li><li>Drittes Listenelement</li></ul>' +
-          '<h2>Abschnittsüberschrift</h2>' +
-          '<blockquote>Kunst ist eine Lüge, die uns die Wahrheit erkennen lässt. — Pablo Picasso</blockquote>' +
-          '<p>Der <em>letzte Absatz</em> schließt den Beispielinhalt ab. ' +
-          'Verwenden Sie diesen Text, um die Formatierung, Exporte und Statistiken Ihres Editors zu testen.</p>' +
-          '<ol><li>Erster Schritt</li><li>Zweiter Schritt</li><li>Dritter Schritt</li></ol>'
+          '<p>Willkommen bei <strong>orOS Writer</strong>, einem Texteditor, der Ihre Privatsphäre respektiert und vollständig offline funktioniert. ' +
+          'Dieser Beispieltext demonstriert <em>verschiedene Formatierungsoptionen</em> im Editor, ' +
+          'einschließlich <u>unterstrichenem Text</u>, <strong>Fetttext</strong>, und <em>Kursivtext</em>. ' +
+          'Alle Inhalte werden lokal in Ihrem Browser gespeichert — kein Konto, kein Server, kein Tracking.</p>' +
+          '<ul><li>Formatierung Fett, Kursiv und Unterstrichen</li>' +
+          '<li>Überschriften (H1, H2, H3) für Struktur</li>' +
+          '<li>Aufzählungslisten und nummerierte Listen</li>' +
+          '<li>Textausrichtungsoptionen</li>' +
+          '<li>Zitate zur Hervorhebung</li></ul>' +
+          '<h2>Intelligente Typografie</h2>' +
+          '<p>Der Editor bietet <strong>Intelligente Typografie</strong>, die häufige Tastenkürzel ' +
+          'automatisch in korrekte typografische Zeichen umwandelt, während Sie tippen:</p>' +
+          '<ul><li>Doppelte Bindestriche (--) werden zu Gedankenstrich (\u2014)</li>' +
+          '<li>Drei Punkte (...) werden zu Auslassungspunkten (\u2026)</li>' +
+          '<li>Gerade Anführungszeichen werden zu typografischen Anführungszeichen (\u201C \u201D) und intelligenten Apostrophen (\u2018 \u2019)</li>' +
+          '<li>(c) wird zu \u00A9, (r) wird zu \u00AE, und (tm) wird zu \u2122</li></ul>' +
+          '<p>Versuchen Sie, diese Kürzel selbst einzugeben — aktivieren Sie einfach die Intelligente Typografie in den Einstellungen, falls sie noch nicht aktiv ist.</p>' +
+          '<blockquote>Schreiben ist einfach. Sie starren nur auf ein leeres Blatt Papier, bis sich Blutstropfen auf Ihrer Stirn bilden. — Gene Fowler</blockquote>' +
+          '<h2>Editor-Funktionen</h2>' +
+          '<p>orOS Writer umfasst eine Reihe von Werkzeugen, die für Schriftsteller, Journalisten und Blogger entwickelt wurden:</p>' +
+          '<ol><li>Automatisches Speichern — Ihre Arbeit wird nach jedem Tastenanschlag gespeichert</li>' +
+          '<li>Export als Markdown, Klartext, RTF, Word oder PDF</li>' +
+          '<li>Dokumentgliederungspanel zur Navigation zwischen Überschriften</li>' +
+          '<li>Worthäufigkeitsanalyse zur Erkennung von Wiederholungen</li>' +
+          '<li>Dokumentmetadaten für Titel, Autor, Tags und Kategorie</li>' +
+          '<li>Schreibziele mit optionaler Sperre beim Erreichen des Ziels</li>' +
+          '<li>Suchen-und-Ersetzen-Funktion</li>' +
+          '<li>Lese fortschrittsbalken und detaillierte Statistiken</li></ol>' +
+          '<h2>Datenschutz Zuerst</h2>' +
+          '<p>Alles passiert in Ihrem Browser. Ihr Text verlässt nie Ihr Gerät. ' +
+          'Es gibt keine Analytik, keine Telemetrie, keine Werbung und keine Kontopflicht. ' +
+          'Dies ist Open-Source-Software, die mit Respekt für Ihre persönlichen Daten erstellt wurde.</p>' +
+          '<p>Dies ist der <em>letzte Absatz</em> des Beispielinhalts. ' +
+          'Sie können ihn jederzeit mit dem Mülleimer-Button löschen oder sofort mit dem Bearbeiten beginnen. ' +
+          'Der Editor merkt sich Ihre Arbeit zwischen den Sitzungen, also zögern Sie nicht, zu schließen und später zurückzukehren. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>'
     };
     return templates[lang] || templates.en;
   }
@@ -622,6 +778,18 @@
   }
 
   // ========== DOCUMENT OUTLINE ==========
+  
+    function getPanelTopOffset() {
+    var offset = 0;
+    var header = document.getElementById('oros-header');
+    if (header) offset += header.offsetHeight;
+    var toolbar = document.getElementById('main-toolbar');
+    if (toolbar) offset += toolbar.offsetHeight;
+    if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
+    if (findBar && findBar.style.display === 'flex') offset += findBar.offsetHeight;
+    return offset + 'px';
+  }
+  
   function toggleOutline() {
     if (!outlinePanel) return;
     if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
