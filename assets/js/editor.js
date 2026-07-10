@@ -1,9 +1,6 @@
 // ============================================
 // orOS Writer — Unified Rich Text Editor
-// Fixes: Alignment, Typewriter Sound, Focus Mode, Hide Stats, Main Toolbar Buttons
-// Quick Format Toolbar toggle controls .toolbar-center
-// Lorem Ipsum expanded with detailed feature descriptions
-// Panel positioning adjusted for bars overlay
+// v0.5-BETA | All Fixes: Focus Mode, Panel Positioning, Icons
 // ============================================
 
 (function() {
@@ -162,11 +159,12 @@
     return text.replace(/\n$/, '');
   }
 
-  // ========== PANE TOP OFFSET CALCULATION ==========
+  // ========== PANE TOP OFFSET CALCULATION (FIXED) ==========
   function getPanelTopOffset() {
     var offset = 0;
-    var header = document.getElementById('oros-header');
-    if (header) offset += header.offsetHeight;
+    var headerInner = document.querySelector('.header');
+    if (headerInner) offset += headerInner.offsetHeight;
+    else offset += 56;
     var toolbar = document.getElementById('main-toolbar');
     if (toolbar) offset += toolbar.offsetHeight;
     if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
@@ -191,10 +189,10 @@
           '<h2>Smart Typography</h2>' +
           '<p>The editor features <strong>Smart Typography</strong>, which automatically converts common ' +
           'shortcuts into proper typographic characters as you type:</p>' +
-          '<ul><li>Double hyphens (--) become an em dash (\u2014)</li>' +
-          '<li>Three dots (...) become an ellipsis (\u2026)</li>' +
-          '<li>Straight quotes become curly quotes (\u201C \u201D) and smart apostrophes (\u2018 \u2019)</li>' +
-          '<li>(c) becomes \u00A9, (r) becomes \u00AE, and (tm) becomes \u2122</li></ul>' +
+          '<ul><li>Double hyphens (--) become an em dash (—)</li>' +
+          '<li>Three dots (...) become an ellipsis (…) </li>' +
+          '<li>Straight quotes become curly quotes (" ") and smart apostrophes (' ')</li>' +
+          '<li>(c) becomes ©, (r) becomes ®, and (tm) becomes ™</li></ul>' +
           '<p>Try typing these shortcuts yourself — just enable Smart Typography in Settings if it is not already on.</p>' +
           '<blockquote>Writing is easy. All you do is stare at a blank sheet of paper until drops of blood form on your forehead. — Gene Fowler</blockquote>' +
           '<h2>Editor Features</h2>' +
@@ -220,7 +218,7 @@
           'The editor remembers your work between sessions, so feel free to close and return later. ' +
           'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>',
       el: '<h1>Τίτλος Εγγράφου</h1>' +
-          '<p>Καλώς ήρθες στο <strong>orOS Writer</strong>, έναν επεξεργαστή κειμένου που σέβεται το απόρρητο ' +
+          '<p>Καλώς ήρθεις στο <strong>orOS Writer</strong>, έναν επεξεργαστή κειμένου που σέβεται το απόρρητο ' +
           'και λειτουργεί εξ ολοκλήρου offline. Αυτό το δοκιμαστικό κείμενο επιδεικνύει ' +
           '<em>διάφορες επιλογές μορφοποίησης</em> του editor, συμπεριλαμβανομένου ' +
           '<u>υπογεγραμμένου κειμένου</u>, <strong>έντονου κειμένου</strong>, ' +
@@ -234,10 +232,10 @@
           '<h2>Έξυπνη Τυπογραφία</h2>' +
           '<p>Ο editor διαθέτει <strong>Έξυπνη Τυπογραφία</strong>, που μετατρέπει αυτόματα ' +
           'συνηθισμένες συντομογραφίες σε σωστούς τυπογραφικούς χαρακτήρες καθώς πληκτρολογείς:</p>' +
-          '<ul><li>Διπλές παύλες (--) γίνονται μακρά παύλα (\u2014)</li>' +
-          '<li>Τρεις τελείες (...) γίνονται αποσιωπητικά (\u2026)</li>' +
-          '<li>Απλά εισαγωγικά γίνονται καμπύλα εισαγωγικά (\u201C \u201D) και έξυπνα αποστόφια (\u2018 \u2019)</li>' +
-          '<li>(c) γίνεται \u00A9, (r) γίνεται \u00AE, και (tm) γίνεται \u2122</li></ul>' +
+          '<ul><li>Διπλές παύλες (--) γίνονται μακρά παύλα (—)</li>' +
+          '<li>Τρεις τελείες (...) γίνονται αποσιωπητικά (…)</li>' +
+          '<li>Απλά εισαγωγικά γίνονται καμπύλα εισαγωγικά (" ") και έξυπνα αποστόφια (' ')</li>' +
+          '<li>(c) γίνεται ©, (r) γίνεται ®, και (tm) γίνεται ™</li></ul>' +
           '<p>Δοκίμασε να πληκτρολογήσεις αυτές τις συντομογραφίες μόνος σου — ' +
           'απλά ενεργοποίησε την Έξυπνη Τυπογραφία στις Ρυθμίσεις αν δεν είναι ήδη ενεργή.</p>' +
           '<blockquote>Η γραφή είναι εύκολη. Απλά κοιτάς ένα λευκό φύλλο χαρτιού μέχρι να σταλάξεις σταγόνες αίματος στο μέτωπό σου. — Gene Fowler</blockquote>' +
@@ -276,10 +274,10 @@
           '<h2>Tipografía Inteligente</h2>' +
           '<p>El editor incluye <strong>Tipografía Inteligente</strong>, que convierte automáticamente ' +
           'atajos comunes en caracteres tipográficos correctos mientras escribes:</p>' +
-          '<ul><li>Dobles guiones (--) se convierten en guion largo (\u2014)</li>' +
-          '<li>Tres puntos (...) se convierten en puntos suspensivos (\u2026)</li>' +
-          '<li>Comillas rectas se convierten en comillas tipográficas (\u201C \u201D) y apóstrofos inteligentes (\u2018 \u2019)</li>' +
-          '<li>(c) se convierte en \u00A9, (r) en \u00AE, y (tm) en \u2122</li></ul>' +
+          '<ul><li>Dobles guiones (--) se convierten en guion largo (—)</li>' +
+          '<li>Tres puntos (...) se convierten en puntos suspensivos (…)</li>' +
+          '<li>Comillas rectas se convierten en comillas tipográficas (" ") y apóstrofos inteligentes (' ')</li>' +
+          '<li>(c) se convierte en ©, (r) en ®, y (tm) en ™</li></ul>' +
           '<p>Prueba a escribir estos atajos tú mismo — solo activa la Tipografía Inteligente en Configuración si aún no está activada.</p>' +
           '<blockquote>Escribir es fácil. Solo miras una hoja de papel en blanco hasta que gotas de sangre se forman en tu frente. — Gene Fowler</blockquote>' +
           '<h2>Funciones del Editor</h2>' +
@@ -317,10 +315,10 @@
           '<h2>Tipografia Intelligente</h2>' +
           '<p>L\'editor include la <strong>Tipografia Intelligente</strong>, che converte automaticamente ' +
           'scorciatoie comuni in caratteri tipografici corretti mentre scrivi:</p>' +
-          '<ul><li>Doppi trattini (--) diventano un trattino lungo (\u2014)</li>' +
-          '<li>Tre punti (...) diventano puntini di sospensione (\u2026)</li>' +
-          '<li>Le virgolette dritte diventano virgolette tipografiche (\u201C \u201D) e apostrofi intelligenti (\u2018 \u2019)</li>' +
-          '<li>(c) diventa \u00A9, (r) diventa \u00AE, e (tm) diventa \u2122</li></ul>' +
+          '<ul><li>Doppi trattini (--) diventano un trattino lungo (—)</li>' +
+          '<li>Tre punti (...) diventano puntini di sospensione (…)</li>' +
+          '<li>Le virgolette dritte diventano virgolette tipografiche (" ") e apostrofi intelligenti (' ')</li>' +
+          '<li>(c) diventa ©, (r) diventa ®, e (tm) diventa ™</li></ul>' +
           '<p>Prova a digitare queste scorciatoie tu stesso — basta attivare la Tipografia Intelligente nelle Impostazioni se non è già attiva.</p>' +
           '<blockquote>Scrivere è facile. Devi solo fissare un foglio di carta bianca finché non ti si formano gocce di sangue sulla fronte. — Gene Fowler</blockquote>' +
           '<h2>Funzioni dell\'Editor</h2>' +
@@ -358,10 +356,10 @@
           '<h2>Typographie Intelligente</h2>' +
           '<p>L\'éditeur inclut la <strong>Typographie Intelligente</strong>, qui convertit automatiquement ' +
           'les raccourcis courants en caractères typographiques corrects pendant que vous tapez :</p>' +
-          '<ul><li>Les doubles tirets (--) deviennent un tiret long (\u2014)</li>' +
-          '<li>Trois points (...) deviennent des points de suspension (\u2026)</li>' +
-          '<li>Les guillemets droits deviennent des guillemets typographiques (\u201C \u201D) et apostrophes intelligentes (\u2018 \u2019)</li>' +
-          '<li>(c) devient \u00A9, (r) devient \u00AE, et (tm) devient \u2122</li></ul>' +
+          '<ul><li>Les doubles tirets (--) deviennent un tiret long (—)</li>' +
+          '<li>Trois points (...) deviennent des points de suspension (…)</li>' +
+          '<li>Les guillemets droits deviennent des guillemets typographiques (" ") et apostrophes intelligentes (' ')</li>' +
+          '<li>(c) devient ©, (r) devient ®, et (tm) devient ™</li></ul>' +
           '<p>Essayez de taper ces raccourcis vous-même — activez simplement la Typographie Intelligente dans les Paramètres si elle n\'est pas déjà activée.</p>' +
           '<blockquote>Écrire est facile. Vous fixez simplement une feuille de papier blanc jusqu\'à ce que des gouttes de sang se forment sur votre front. — Gene Fowler</blockquote>' +
           '<h2>Fonctions de l\'Éditeur</h2>' +
@@ -399,10 +397,10 @@
           '<h2>Intelligente Typografie</h2>' +
           '<p>Der Editor bietet <strong>Intelligente Typografie</strong>, die häufige Tastenkürzel ' +
           'automatisch in korrekte typografische Zeichen umwandelt, während Sie tippen:</p>' +
-          '<ul><li>Doppelte Bindestriche (--) werden zu Gedankenstrich (\u2014)</li>' +
-          '<li>Drei Punkte (...) werden zu Auslassungspunkten (\u2026)</li>' +
-          '<li>Gerade Anführungszeichen werden zu typografischen Anführungszeichen (\u201C \u201D) und intelligenten Apostrophen (\u2018 \u2019)</li>' +
-          '<li>(c) wird zu \u00A9, (r) wird zu \u00AE, und (tm) wird zu \u2122</li></ul>' +
+          '<ul><li>Doppelte Bindestriche (--) werden zu Gedankenstrich (—)</li>' +
+          '<li>Drei Punkte (...) werden zu Auslassungspunkten (…)</li>' +
+          '<li>Gerade Anführungszeichen werden zu typografischen Anführungszeichen (" ") und intelligenten Apostrophen (' ')</li>' +
+          '<li>(c) wird zu ©, (r) wird zu ®, und (tm) wird zu ™</li></ul>' +
           '<p>Versuchen Sie, diese Kürzel selbst einzugeben — aktivieren Sie einfach die Intelligente Typografie in den Einstellungen, falls sie noch nicht aktiv ist.</p>' +
           '<blockquote>Schreiben ist einfach. Sie starren nur auf ein leeres Blatt Papier, bis sich Blutstropfen auf Ihrer Stirn bilden. — Gene Fowler</blockquote>' +
           '<h2>Editor-Funktionen</h2>' +
@@ -629,12 +627,16 @@
     return day + '/' + month + '/' + year + ' ' + time;
   }
 
+  // ========== PANEL FUNCTIONS WITH MAXHEIGHT FIX ==========
   function toggleMetadataPanel() {
     if (!metadataPanel) return;
     if (metadataPanel.style.display === 'none' || !metadataPanel.style.display) {
       metadataPanel.style.display = 'flex';
       metadataPanel.style.flexDirection = 'column';
-      metadataPanel.style.top = getPanelTopOffset();
+      var topPx = getPanelTopOffset();
+      var topNum = parseInt(topPx);
+      metadataPanel.style.top = topPx;
+      metadataPanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
       if (metaTitle) metaTitle.value = metadata.title || '';
       if (metaAuthor) metaAuthor.value = metadata.author || '';
       if (metaTags) metaTags.value = metadata.tags || '';
@@ -646,23 +648,33 @@
     }
   }
 
-  function setupMetadataHandlers() {
-    var inputs = [metaTitle, metaAuthor, metaTags, metaCategory];
-    for (var i = 0; i < inputs.length; i++) {
-      (function(input) {
-        if (!input) return;
-        input.addEventListener('blur', function() { saveMetadata(true); });
-        input.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            saveMetadata(true);
-            if (input === metaTitle && metaAuthor) metaAuthor.focus();
-            else if (input === metaAuthor && metaCategory) metaCategory.focus();
-            else if (input === metaCategory && metaTags) metaTags.focus();
-            else if (input === metaTags && metaTitle) metaTitle.focus();
-          }
-        });
-      })(inputs[i]);
+  function toggleOutline() {
+    if (!outlinePanel) return;
+    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
+      outlinePanel.style.display = 'flex';
+      outlinePanel.style.flexDirection = 'column';
+      var topPx = getPanelTopOffset();
+      var topNum = parseInt(topPx);
+      outlinePanel.style.top = topPx;
+      outlinePanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
+      updateOutline();
+    } else {
+      outlinePanel.style.display = 'none';
+    }
+  }
+
+  function toggleWordFreqPanel() {
+    if (!wordFreqPanel) return;
+    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
+      wordFreqPanel.style.display = 'flex';
+      wordFreqPanel.style.flexDirection = 'column';
+      var topPx = getPanelTopOffset();
+      var topNum = parseInt(topPx);
+      wordFreqPanel.style.top = topPx;
+      wordFreqPanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
+      updateWordFrequency();
+    } else {
+      wordFreqPanel.style.display = 'none';
     }
   }
 
@@ -817,18 +829,6 @@
   }
 
   // ========== DOCUMENT OUTLINE ==========
-  function toggleOutline() {
-    if (!outlinePanel) return;
-    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
-      outlinePanel.style.display = 'flex';
-      outlinePanel.style.flexDirection = 'column';
-      outlinePanel.style.top = getPanelTopOffset();
-      updateOutline();
-    } else {
-      outlinePanel.style.display = 'none';
-    }
-  }
-
   function updateOutline() {
     if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none') return;
     var headings = richEditor.querySelectorAll('h1, h2, h3');
@@ -952,18 +952,6 @@
   }
 
   // ========== WORD FREQUENCY ==========
-  function toggleWordFreqPanel() {
-    if (!wordFreqPanel) return;
-    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
-      wordFreqPanel.style.display = 'flex';
-      wordFreqPanel.style.flexDirection = 'column';
-      wordFreqPanel.style.top = getPanelTopOffset();
-      updateWordFrequency();
-    } else {
-      wordFreqPanel.style.display = 'none';
-    }
-  }
-
   function updateWordFrequency() {
     if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
     var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
@@ -1012,7 +1000,7 @@
   var focusDebounceTimer = null;
 
   function initFocusMode() {
-    if (!richEditor) return;
+    if (!richEditor || !richWrapper) return;
     if (focusModeEnabled) {
       document.addEventListener('selectionchange', handleSelectionChange);
       richEditor.addEventListener('scroll', function() {
@@ -1022,7 +1010,7 @@
   }
 
   function handleSelectionChange() {
-    if (!focusModeEnabled) {
+    if (!focusModeEnabled || !richWrapper) {
       clearFocusMode();
       return;
     }
@@ -1185,7 +1173,8 @@
       })(fmtBtns[i]);
     }
   }
-
+  
+  
   // ========== FILE OPEN ==========
   function openFile(file) {
     var reader = new FileReader();
@@ -1589,8 +1578,5 @@
   updateStats();
   updateGoalUnitLabels();
   updateReadingProgress();
-  
-  console.log('[FOCUS DEBUG] focusModeEnabled:', focusModeEnabled);
-console.log('[FOCUS DEBUG] richEditor exists:', !!richEditor);
 
 })();
