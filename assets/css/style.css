@@ -1,6 +1,6 @@
 /* ============================================
-   orOS Writer — style.css (FINAL v0.5-beta)
-   All fixes: Background, Header, Footer, Settings Modal, Icons
+   orOS Writer — style.css (FINAL v0.6-beta)
+   All fixes: Focus Mode, Context Menu, Panel Positioning, Background, Header, Footer, Settings Modal, Icons
    ============================================ */
 
 /* ===== FONTS ===== */
@@ -705,32 +705,87 @@ body.landing-page {
 .wordfreq-item.overused .wf-word { color: var(--accent-gold-light); }
 .wordfreq-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 8px; text-align: center; }
 
-/* ===== FOCUS MODE ===== */
+/* ===== FOCUS MODE (CORRECTED) ===== */
 .focus-spotlight {
   position: absolute;
   pointer-events: none;
   z-index: 1;
   border-radius: 4px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
   transition: all 0.15s ease-out;
   background: transparent;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
 }
 
-.dark-theme .focus-spotlight,
-:focus ~ .focus-spotlight {
-  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+[data-theme="light"] .focus-spotlight {
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.15);
 }
 
-/* ===== CONTEXT MENU ===== */
-.context-menu { position: fixed; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 10000; min-width: 160px; overflow: hidden; padding: 4px 0; }
-.cm-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; color: var(--text-secondary); font-size: 13px; transition: background var(--transition), color var(--transition); }
-.cm-item:hover { background: var(--bg-hover); color: var(--accent-gold-light); }
-.cm-icon { width: 16px; text-align: center; font-size: 12px; }
-.cm-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+/* ===== CONTEXT MENU (CORRECTED) ===== */
+.context-menu {
+  position: fixed;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 10000;
+  min-width: 180px;
+  overflow: hidden;
+  padding: 4px 0;
+  font-family: var(--font-primary);
+}
+
+.cm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: background var(--transition), color var(--transition);
+}
+
+.cm-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent-gold-light);
+}
+
+.cm-icon {
+  width: 16px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.cm-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
 
 /* ===== TOAST ===== */
-.zentool-toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 20px; border-radius: var(--radius-md); font-family: var(--font-primary); font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 10001; opacity: 0; transition: opacity var(--transition), transform var(--transition); pointer-events: none; }
-.zentool-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.zentool-toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  z-index: 10001;
+  opacity: 0;
+  transition: opacity var(--transition), transform var(--transition);
+  pointer-events: none;
+}
+
+.zentool-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 /* ===== ZEN MODE ===== */
 [data-zen="true"] .header,
@@ -797,7 +852,6 @@ body.landing-page {
 }
 
 [data-theme="light"] .rich-editor { background: transparent; caret-color: var(--accent-gold); }
-[data-theme="light"] .focus-spotlight { box-shadow: 0 0 0 9999px rgba(0,0,0,0.15); }
 
 @media print { [data-theme="light"] .rich-editor { background: #fff; color: #000; } }
 
@@ -978,11 +1032,14 @@ body.landing-page {
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
+  gap: 16px;
 }
 
 .toggle-label {
   font-size: 14px;
   color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
 }
 
 .switch {
@@ -1141,7 +1198,6 @@ body.landing-page {
   background: var(--accent-gold-dim);
 }
 
-/* Fix: settings modal content not filling width */
 .settings-modal-content .settings-body,
 .settings-modal-content .tab-panel,
 .settings-modal-content .toggles-container {
@@ -1149,16 +1205,6 @@ body.landing-page {
   box-sizing: border-box;
 }
 
-/* Fix: toggle label crowding the switch */
-.toggle-row {
-  gap: 16px;
-}
-.toggle-label {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Fix: tool icon sizing for Fork Awesome on index */
 .tool-icon .fa {
   font-size: 2rem;
 }
