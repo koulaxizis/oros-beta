@@ -72,7 +72,8 @@
 
   function loadAllSettings() {
     // Theme & display
-    SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen-mode') === 'true';
+    // FIXED: Consistent zen_mode key
+    SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen_mode') === 'true';
     SETTINGS.readingProgressEnabled = localStorage.getItem(STORAGE_PREFIX + 'reading_progress') !== 'false';
     SETTINGS.focusModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'focus_mode') !== 'false';
     SETTINGS.quickTbarShow = localStorage.getItem(STORAGE_PREFIX + 'quick_tbar_show') !== 'false';
@@ -111,7 +112,8 @@
 
       // Update our in-memory state
       switch(key) {
-        case STORAGE_PREFIX + 'zen-mode':
+        // FIXED: Consistent zen_mode key
+        case STORAGE_PREFIX + 'zen_mode':
           SETTINGS.zenModeEnabled = value === 'true';
           break;
         case STORAGE_PREFIX + 'hide_goal_btn':

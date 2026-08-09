@@ -4,6 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS — The artist's operating system. Privacy-first creative toolkit. Works offline. No tracking.">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="theme-color" content="#c8a96e">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/">
+  <meta property="og:title" content="orOS — The Artist's Operating System">
+  <meta property="og:description" content="Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/">
+  <meta name="twitter:title" content="orOS — The Artist's Operating System">
+  <meta name="twitter:description" content="Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+  
+  <!-- Additional SEO -->
+  <meta name="keywords" content="text editor, case converter, privacy, offline, writer, open source, Greek, orOS">
+  <meta name="distribution" content="global">
+  <meta name="rating" content="general">
+  
+  <!-- Resource Hints -->
+  <link rel="preconnect" href="https://koulaxizis.github.io">
+  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
+  <link rel="prefetch" href="assets/js/editor.js" as="script">
+  <link rel="prefetch" href="assets/js/converter.js" as="script">
+  
+  <!-- hreflang for multi-language -->
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/index.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/index.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/index.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/index.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/index.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/index.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/index.html">
+  
+  <!-- Canonical -->
+  <link rel="canonical" href="https://koulaxizis.github.io/oros-beta/index.html">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "orOS",
+    "url": "https://koulaxizis.github.io/oros-beta/",
+    "author": {
+      "@type": "Person",
+      "name": "Christos Koulaxizis",
+      "url": "https://koulaxizis.gr"
+    },
+    "description": "Privacy-first creative toolkit. Writer, Case Converter, and more.",
+    "inLanguage": ["en", "el", "es", "it", "fr", "de"],
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://koulaxizis.github.io/oros-beta/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
   <title>orOS — The Artist's Operating System</title>
   <script src="config.js"></script>
   <script>
@@ -27,30 +97,36 @@
   <link rel="stylesheet" href="assets/css/style.css">
 
   <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
-<body class="landing-page">
+<body class="landing-page noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS to function. Please enable JavaScript to use this application.</div>
+  </noscript>
 
   <div id="oros-header"></div>
 
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <img src="favicon.svg" alt="orOS" class="hero-logo">
+        <img src="favicon.svg" alt="orOS Logo" class="hero-logo" loading="eager">
         <h1>orOS</h1>
         <p data-i18n="site_tagline">The artist's operating system</p>
         <p data-i18n="tools_intro">Select a tool below. All applications work offline and respect your personal data.</p>
       </div>
 
       <div class="tools-grid">
-        <a href="editor.html" class="tool-card">
+        <a href="editor.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
           <div class="tool-icon"><i class="fa fa-pencil"></i></div>
           <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
           <p class="tool-desc" data-i18n="editor_desc">Simple text editor with autosave</p>
         </a>
-        <a href="converter.html" class="tool-card">
+        <a href="converter.html" class="tool-card" aria-label="Open Case Converter — text transformation tool">
           <div class="tool-icon"><i class="fa fa-text-width"></i></div>
           <h2 class="tool-name" data-i18n="converter_name">Case Converter</h2>
           <p class="tool-desc" data-i18n="converter_desc">Transform text case with advanced options</p>
@@ -64,9 +140,9 @@
     <div class="settings-modal-content">
       <div class="settings-header">
         <h2 data-i18n="settings">Settings</h2>
-        <button class="settings-close"><i class="fa fa-times"></i></button>
+        <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
-      <div class="settings-nav">
+            <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
@@ -87,8 +163,8 @@
               <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
               <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
               <div class="beta-links">
-                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
+                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
+                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
               </div>
             </div>
           </div>
@@ -204,13 +280,13 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
-                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
                 <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
                 <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
                 <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
                 <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
                 <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>

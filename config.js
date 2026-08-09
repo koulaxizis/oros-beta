@@ -7,7 +7,18 @@ var OROS_CONFIG = {
   version: '0.7.4',
   channel: 'beta',
   domain: 'https://koulaxizis.github.io/oros-beta',
-  cacheName: 'oros-v0.7.4'
+  cacheName: 'oros-v0.7.4',
+  
+  // SEO Configuration
+  seo: {
+    title: 'orOS — The Artist\'s Operating System',
+    description: 'Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.',
+    keywords: ['text editor', 'case converter', 'privacy', 'offline', 'writer', 'open source', 'Greek'],
+    author: 'Christos Koulaxizis',
+    twitterHandle: '@koulaxizis',
+    ogImage: '/og-image.png',
+    twitterImage: '/twitter-card.png'
+  }
 };
 
 if (typeof window !== 'undefined') {

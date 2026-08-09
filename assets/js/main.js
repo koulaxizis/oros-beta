@@ -1,3 +1,4 @@
+// Fixed: zen-mode key consistency (oros_zen_mode throughout)
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
@@ -122,7 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
         body.setAttribute('data-zen', 'true');
       }
 
-      localStorage.setItem('oros-zen-mode', isZen ? 'false' : 'true');
+      // FIXED: Using oros_zen_mode consistently
+      localStorage.setItem('oros_zen_mode', isZen ? 'false' : 'true');
 
       window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
         detail: { enabled: !isZen }
@@ -387,10 +389,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== ZEN MODE TOGGLE FROM SETTINGS ==========
   var zenModeToggle = document.getElementById('toggle-zen-mode');
   if (zenModeToggle) {
-    zenModeToggle.checked = localStorage.getItem('oros-zen-mode') === 'true';
+    // FIXED: Using oros_zen_mode consistently
+    zenModeToggle.checked = localStorage.getItem('oros_zen_mode') === 'true';
     zenModeToggle.addEventListener('change', function() {
       var enabled = this.checked;
-      localStorage.setItem('oros-zen-mode', enabled ? 'true' : 'false');
+      // FIXED: Using oros_zen_mode consistently
+      localStorage.setItem('oros_zen_mode', enabled ? 'true' : 'false');
       if (enabled) {
         document.body.setAttribute('data-zen', 'true');
       } else {
@@ -423,7 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ========== APPLY ZEN MODE ON LOAD ==========
-  if (localStorage.getItem('oros-zen-mode') === 'true') {
+  // FIXED: Using oros_zen_mode consistently
+  if (localStorage.getItem('oros_zen_mode') === 'true') {
     document.body.setAttribute('data-zen', 'true');
   }
 

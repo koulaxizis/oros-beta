@@ -3,7 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS Case Converter — Privacy-first text transformation tool. Works offline. No tracking.">
+  <meta name="description" content="orOS Case Converter — Privacy-first text transformation tool with 10 case modes and Greek accent stripping. Works offline. No tracking.">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="theme-color" content="#c8a96e">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/converter.html">
+  <meta property="og:title" content="orOS Case Converter — Privacy-First Text Transformation">
+  <meta property="og:description" content="Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/converter.html">
+  <meta name="twitter:title" content="orOS Case Converter — Privacy-First Text Transformation">
+  <meta name="twitter:description" content="Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+  
+  <!-- Additional SEO -->
+  <meta name="keywords" content="case converter, text transformation, uppercase, lowercase, title case, camelCase, snake_case, kebab-case, Greek accents, Markdown, privacy, offline">
+  
+  <!-- Resource Hints -->
+  <link rel="preconnect" href="https://koulaxizis.github.io">
+  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
+  
+  <!-- hreflang -->
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/converter.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/converter.html">
+  
   <title>orOS Case Converter</title>
   <script src="config.js"></script>
   <script>
@@ -29,13 +69,19 @@
 
   <!-- Global settings manager (SHARED with Editor) -->
   <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
   
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/converter.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
-<body>
+<body class="noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS Case Converter to function. Please enable JavaScript.</div>
+  </noscript>
 
   <div id="oros-header"></div>
 
@@ -73,7 +119,7 @@
         <button class="mode-btn" data-mode="lowercase" data-i18n="mode_lowercase" title="lowercase">lowercase</button>
         <button class="mode-btn" data-mode="title" data-i18n="mode_title" title="Title Case">Title Case</button>
         <button class="mode-btn" data-mode="sentence" data-i18n="mode_sentence" title="Sentence case">Sentence case</button>
-        <button class="mode-btn" data-mode="toggle" data-i18n="mode_toggle" title="tOGGGLE cASE">tOGGLE</button>
+        <button class="mode-btn" data-mode="toggle" data-i18n="mode_toggle" title="tOGGLE cASE">tOGGLE</button>
         <span class="tb-separator"></span>
         <button class="mode-btn" data-mode="camel" data-i18n="mode_camel" title="camelCase">camelCase</button>
         <button class="mode-btn" data-mode="pascal" data-i18n="mode_pascal" title="PascalCase">PascalCase</button>
@@ -186,13 +232,13 @@
 
   </div>
 
-  <!-- SHARED SETTINGS MODAL (same as Editor) -->
+  <!-- SHARED SETTINGS MODAL -->
   <div class="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
       <div class="settings-header">
         <h2 data-i18n="settings">Settings</h2>
-        <button class="settings-close"><i class="fa fa-times"></i></button>
+        <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
       <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
@@ -215,8 +261,8 @@
               <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
               <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
               <div class="beta-links">
-                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
+                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
+                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
               </div>
             </div>
           </div>
