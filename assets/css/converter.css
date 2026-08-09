@@ -1,6 +1,6 @@
 /* ============================================
    orOS Case Converter — Style Overrides
-   v2.1 — Fixed stats spacing, Zen mode support
+   v2.2 — Fixed stats panel layout completely
    ============================================ */
 
 #converter-wrapper {
@@ -138,7 +138,7 @@
   position: relative;
 }
 
-/* ===== STATS PANEL — FULL FIX ===== */
+/* ===== STATS PANEL — COMPLETE REWRITE ===== */
 .stats-panel {
   position: absolute;
   bottom: 12px;
@@ -146,47 +146,74 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  padding: 12px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
   z-index: 10;
-  min-width: 220px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .stats-panel .stat-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 4px 0;
   gap: 12px;
-}
-
-.stats-panel .stat-item:first-child {
-  padding-top: 0;
-}
-
-.stats-panel .stat-item:last-child {
-  padding-bottom: 0;
 }
 
 .stats-panel .stat-label {
   font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
-  flex-shrink: 0;
   font-weight: 500;
-  min-width: 75px;
+  flex-shrink: 0;
+  min-width: auto;
 }
 
 .stats-panel .stat-value {
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-grow: 0;
+  margin-left: auto;
+}
+
+/* Alternative: Horizontal stats strip (more compact) */
+.stats-panel-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.stats-panel-horizontal .stat-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.stats-panel-horizontal .stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.stats-panel-horizontal .stat-value {
+  font-size: 14px;
   color: var(--text-primary);
   font-weight: 600;
-  text-align: right;
   font-variant-numeric: tabular-nums;
-  flex: 1;
-  min-width: 25px;
 }
 
 /* ===== DROPDOWN ===== */
@@ -289,11 +316,19 @@
     left: 4px;
     right: 4px;
     min-width: unset;
-    padding: 8px 10px;
+    padding: 10px 12px;
+    min-width: 240px;
   }
 
   .stats-panel .stat-label {
-    min-width: 60px;
+    min-width: 80px;
+  }
+
+  /* Switch to horizontal on very small screens */
+  .stats-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
   }
 }
 
