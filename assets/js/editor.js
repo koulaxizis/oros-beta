@@ -1,6 +1,7 @@
 // ============================================
 // orOS Writer — Unified Rich Text Editor
-// v0.6-BETA — ALL CORRECTIONS APPLIED
+// Fixes: Alignment, Typewriter Sound, Focus Mode, Hide Stats, Main Toolbar Buttons
+// Quick Format Toolbar toggle controls .toolbar-center
 // ============================================
 
 (function() {
@@ -76,7 +77,7 @@
 
   var hideStats = localStorage.getItem(STORAGE_HIDE_STATS) === 'true';
   var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
-  var focusModeEnabled = (localStorage.getItem(STORAGE_FOCUS_MODE) === 'true');
+  var focusModeEnabled = localStorage.getItem(STORAGE_FOCUS_MODE) !== 'false';
   var readingProgressEnabled = localStorage.getItem(STORAGE_READING_PROGRESS) !== 'false';
   var smartTypographyEnabled = localStorage.getItem(STORAGE_SMART_TYPOGRAPHY) !== 'false';
   var lastSavedTime = parseInt(localStorage.getItem(STORAGE_LAST_SAVED)) || null;
@@ -98,10 +99,8 @@
   var statsExpanded = false;
   var wordFreqDebounce = null;
   var outlineDebounceTimer = null;
-  var focusDebounceTimer = null;
-  var currentSpotlight = null;
-  var contextMenu = null;
 
+  // ========== TYPEWRITER SOUND (Web Audio API) ==========
   var typewriterAudioCtx = null;
   var typewriterAudioBuffer = null;
 
@@ -146,6 +145,7 @@
     }
   });
 
+  // ========== HELPERS ==========
   function getCurrentLang() { return localStorage.getItem('oros-language') || 'en'; }
   function getTrans(key) {
     var lang = getCurrentLang();
@@ -160,202 +160,81 @@
     return text.replace(/\n$/, '');
   }
 
-  // FIXED: Panel offset calculation includes BOTH goal bar AND find bar
-  function getPanelTopOffset() {
-    var offset = 0;
-    var headerInner = document.querySelector('.header');
-    if (headerInner) offset += headerInner.offsetHeight;
-    else offset += 56;
-    var toolbar = document.getElementById('main-toolbar');
-    if (toolbar) offset += toolbar.offsetHeight;
-    // Include BOTH bars independently
-    if (goalBar && goalBar.style.display === 'flex') offset += goalBar.offsetHeight;
-    if (findBar && findBar.style.display === 'flex') offset += findBar.offsetHeight;
-    return offset + 'px';
-  }
-  
-    // CORRECTED: Extended Lorem Ipsum with 2-3 extra paragraphs in each language
+  // ========== LOREM IPSUM GENERATOR ==========
   function generateLoremIpsum() {
     var lang = getCurrentLang();
-    
-    if (lang === 'el') {
-      return '<h1>Τίτλος Εγγράφου</h1>' +
-          '<p>Καλώς ήρθεις στο <strong>orOS Writer</strong>, έναν επεξεργαστή κειμένου που σέβεται το απόρρητό σου και λειτουργεί πλήρως offline.</p>' +
-          '<p>Αυτό το δοκιμαστικό κείμενο επιδεικνύει διάφορες επιλογές μορφοποίησης του editor, συμπεριλαμβανομένων έντονου, πλάγιου, υπογραμμισμένου κειμένου, τίτλων (H1, H2, H3), λιστών με κουκκίδες και αριθμημένων λιστών.</p>' +
-          '<p>Με το orOS Writer μπορείς να γράψεις άνετα χωρίς φόβο απώλειας δεδομένων, καθώς η αυτόματη αποθήκευση ενεργοποιείται μετά από κάθε πληκτρολόγηση. Όλο το περιεχόμενο αποθηκεύεται τοπικά στον browser σου, χωρίς server, χωρίς tracking, χωρίς λογαριασμό.</p>' +
-          '<p>Ο editor διαθέτει Έξυπνη Τυπογραφία για αυτόματες μετατροπές συμβόλων κατά τη διάρκεια της πληκτρολόγησης, καθώς και έξυπνη επικόλληση που διατηρεί μόνο τις βασικές μορφοποιήσεις.</p>' +
-          '<ul><li>Μορφοποίηση: έντονα, πλάγια, υπογράμμιση, διέγραψε</li>' +
-          '<li>Τίτλοι (H1, H2, H3) για δομή εγγράφου</li>' +
-          '<li>Λίστες με κουκκίδες και αριθμημένες λίστες</li>' +
-          '<li>Εναρμόνιση κειμένου (αριστερά, κέντρο, δεξιά, justify)</li>' +
-          '<li>Παράθεση για σημαντικές παραγράφους</li></ul>' +
-          '<h2>Λειτουργίες & Εργαλεία</h2>' +
-          '<p>Ο orOS Writer περιλαμβάνει ένα ευρύ φάσμα εργαλείων σχεδιασμένα για συγγραφείς, δημοσιογράφους, bloggers και καλλιτέχνες.</p>' +
-          '<ol><li>Αυτόματη αποθήκευση μετά από κάθε πληκτρολόγηση</li>' +
-          '<li>Εξαγωγή σε Markdown, Κείμενο, RTF, Word ή PDF</li>' +
-          '<li>Πάνελ δομής εγγράφου για πλοήγηση μεταξύ τίτλων</li>' +
-          '<li>Ανάλυση συχνότητας λέξεων για εντοπισμό επαναλήψεων</li>' +
-          '<li>Μεταδεδομένα εγγράφου για τίτλο, συγγραφέα, tags, κατηγορία</li>' +
-          '<li>Στόχοι γραφής με προαιρετικό κλείδωμα κατά επίτευξη</li>' +
-          '<li>Λειτουργία εύρεσης και αντικατάστασης</li>' +
-          '<li>Μπάρα προόδου ανάγνωσης και λεπτομερή στατιστικά</li></ol>' +
-          '<h2>Δοκίμασε Τώρα</h2>' +
-          '<p>Αυτό το κείμενο είναι αρκετά μεγάλο ώστε να επιδεικνύει τη μπάρα προόδου ανάγνωσης στην κορυφή, ειδικά σε μεγάλες οθόνες όπου μπορείς να scrollάρεις.</p>' +
-          '<p>Χρησιμοποίησε το μενού εξαγωγής για να κατεβάσεις το έργο σου σε διάφορες μορφές, ή ξεκίνα με καθαρό έλεγχο πατώντας το κουμπί καθαρισμού.</p>' +
-          '<p>Το orOS Writer είναι ανοικτού κώδικα, φτιαγμένο με σεβασμό στα προσωπικά σου δεδομένα. Δεν υπάρχουν διαφημίσεις, δεν υπάρχει telemetria, δεν απαιτείται εγγραφή.</p>' +
-          '<p>Μπορείς να το εγκαταστήσεις ως Progressive Web App (PWA) για καλύτερη ενσωμάτωση με τη συσκευή σου.</p>' +
-          '<blockquote>«Η γραφή είναι εύκολη. Αρκεί να κοιτάς αδιάκοπα μια λευκή σελίδα μέχρι να εμφανιστούν σταγόνες αίματος στο μέτωπό σου.» — Gene Fowler</blockquote>' +
-          '<p>Αυτή είναι η τελευταία παράγραφος του δοκιμαστικού κειμένου. Μπορείς να το διαγράψεις οποιαδήποτε στιγμή ή να αρχίσεις να γράφεις το δικό σου περιεχόμενο αμέσως.</p>';
-    }
-    
-    if (lang === 'es') {
-      return '<h1>Título del Documento</h1>' +
-          '<p>Bienvenido a <strong>orOS Writer</strong>, un editor que respeta tu privacidad y funciona completamente offline.</p>' +
-          '<p>Este texto demuestra varias opciones de formato en el editor, incluyendo negrita, cursiva, subrayado, títulos (H1, H2, H3), listas con viñetas y numeradas.</p>' +
-          '<p>Con orOS Writer puedes escribir sin miedo de pérdida de datos, ya que el guardado automático se activa después de cada tecleo. Todo el contenido se almacena localmente en tu navegador, sin servidor, sin tracking, sin cuenta.</p>' +
-          '<p>El editor incluye Tipografía Inteligente para conversión automática de símbolos mientras escribes, así como pegado inteligente que preserva solo formateo esencial.</p>' +
-          '<ul><li>Formateo: negrita, cursiva, subrayado, tachado</li>' +
-          '<li>Títulos (H1, H2, H3) para estructura del documento</li>' +
-          '<li>Listas con viñetas y listas numeradas</li>' +
-          '<li>Alineación de texto (izquierda, centro, derecha, justificado)</li>' +
-          '<li>Citas para pasajes importantes</li></ul>' +
-          '<h2>Características & Herramientas</h2>' +
-          '<p>orOS Writer incluye una amplia gama de herramientas diseñadas para escritores, periodistas, bloggers y artistas.</p>' +
-          '<ol><li>Guardado automático después de cada tecleo</li>' +
-          '<li>Exportar a Markdown, Texto Plano, RTF, Word o PDF</li>' +
-          '<li>Panel de esquema del documento para navegar entre títulos</li>' +
-          '<li>Análisis de frecuencia de palabras para detectar repeticiones</li>' +
-          '<li>Metadatos del documento para título, autor, etiquetas, categoría</li>' +
-          '<li>Objetivos de escritura con bloqueo opcional al alcanzar objetivo</li>' +
-          '<li>Funcionalidad Buscar y Reemplazar</li>' +
-          '<li>Barra de progreso de lectura y estadísticas detalladas</li></ol>' +
-          '<h2>Pruébalo Ahora</h2>' +
-          '<p>Este texto es lo suficientemente grande para demostrar la barra de progreso de lectura en la parte superior, especialmente en pantallas grandes donde puedes hacer scroll.</p>' +
-          '<p>Usa el menú de exportación para descargar tu trabajo en varios formatos, o comienza fresco presionando el botón borrar.</p>' +
-          '<p>orOS Writer es código abierto, construido con respeto por tus datos personales. No hay anuncios, no hay telemetría, no se requiere cuenta.</p>' +
-          '<p>Puedes instalarlo como Progressive Web App (PWA) para mejor integración con tu dispositivo.</p>' +
-          '<blockquote>"Escribir es fácil. Solo mira fijamente una hoja en blanco hasta que gotas de sangre se formen en tu frente." — Gene Fowler</blockquote>' +
-          '<p>Este es el último párrafo del contenido de muestra. Puedes eliminarlo cualquier momento o comenzar a escribir tu propio contenido inmediatamente.</p>';
-    }
-    
-    if (lang === 'it') {
-      return '<h1>Titolo del Documento</h1>' +
-          '<p>Benvenuto in <strong>orOS Writer</strong>, un editor che rispetta la tua privacy e funziona completamente offline.</p>' +
-          '<p>Questo testo dimostra varie opzioni di formattazione nell\'editor, incluso grassetto, corsivo, sottolineato, titoli (H1, H2, H3), liste puntata e numerata.</p>' +
-          '<p>Con orOS Writer puoi scrivere senza paura di perdere dati, poiché il salvataggio automatico si attiva dopo ogni digitazione. Tutto il contenuto viene memorizzato localmente nel tuo browser, senza server, senza tracciamento, senza account.</p>' +
-          '<p>L\'editor include Tipografia Intelligente per conversione automatica dei simboli mentre scrivi, nonché incollaggio intelligente che preserva solo formattazione essenziale.</p>' +
-          '<ul><li>Formattazione: grassetto, corsivo, sottolineato, barrato</li>' +
-          '<li>Intestazioni (H1, H2, H3) per struttura del documento</li>' +
-          '<li>Elenco puntato ed elenco numerato</li>' +
-          '<li>Allineamento del testo (sinistra, centro, destra, giustificato)</li>' +
-          '<li>Citazioni per passaggi importanti</li></ul>' +
-          '<h2>Funzionalità & Strumenti</h2>' +
-          '<p>orOS Writer include una vasta gamma di strumenti progettati per scrittori, giornalisti, blogger e artisti.</p>' +
-          '<ol><li>Salvataggio automatico dopo ogni digitazione</li>' +
-          '<li>Esporta in Markdown, Testo Semplice, RTF, Word o PDF</li>' +
-          '<li>Pannello schema del documento per navigare tra le intestazioni</li>' +
-          '<li>Analisi frequenza parole per individuare ripetizioni</li>' +
-          '<li>Metadati del documento per titolo, autore, tag, categoria</li>' +
-          '<li>Obiettivi di scrittura con blocco opzionale al raggiungimento dell\'obiettivo</li>' +
-          '<li>Funzione Trova e Sostituisci</li>' +
-          '<li>Barra di avanzamento lettura e statistiche dettagliate</li></ol>' +
-          '<h2>Provalo Ora</h2>' +
-          '<p>Questo testo è abbastanza grande da mostrare la barra di avanzamento della lettura nella parte superiore, specialmente su schermi grandi dove puoi scorrere.</p>' +
-          '<p>Usa il menu esportazione per scaricare il tuo lavoro in vari formati, oppure inizia pulito premendo il pulsante cancella.</p>' +
-          '<p>orOS Writer è open source, costruito con rispetto per i tuoi dati personali. Non ci sono pubblicità, nessuna telemetria, nessun account richiesto.</p>' +
-          '<p>Puoi installarlo come Progressive Web App (PWA) per migliore integrazione con il tuo dispositivo.</p>' +
-          '<blockquote>"Scrivere è facile. Basta fissare un foglio bianco finché non si formano gocce di sangue sulla fronte." — Gene Fowler</blockquote>' +
-          '<p>Questo è il paragrafo finale del contenuto di esempio. Puoi cancellarlo in qualsiasi momento o iniziare a scrivere il tuo contenuto immediatamente.</p>';
-    }
-    
-    if (lang === 'fr') {
-      return '<h1>Titre du Document</h1>' +
-          '<p>Bienvenue dans <strong>orOS Writer</strong>, un éditeur respectueux de votre vie privée qui fonctionne entièrement hors ligne.</p>' +
-          '<p>Ce texte démontre diverses options de mise en forme dans l\'éditeur, y compris gras, italique, souligné, titres (H1, H2, H3), listes à puces et numérotées.</p>' +
-          '<p>Avec orOS Writer, vous pouvez écrire sans crainte de perte de données, car la sauvegarde automatique se déclenche après chaque frappe. Tout le contenu est stocké localement dans votre navigateur, sans serveur, sans suivi, sans compte.</p>' +
-          '<p>L\'éditeur comprend la Typographie Intelligente pour la conversion automatique des symboles pendant la frappe, ainsi qu\'un collage intelligent qui préserve uniquement la mise en forme essentielle.</p>' +
-          '<ul><li>Mise en forme: gras, italique, souligné, barré</li>' +
-          '<li>Titres (H1, H2, H3) pour la structure du document</li>' +
-          '<li>Listes à puces et listes numérotées</li>' +
-          '<li>Alignement du texte (gauche, centre, droite, justifié)</li>' +
-          '<li>Citations pour les passages importants</li></ul>' +
-          '<h2>Fonctionnalités & Outils</h2>' +
-          '<p>orOS Writer comprend un large éventail d\'outils conçus pour les écrivains, journalistes, bloggers et artistes.</p>' +
-          '<ol><li>Sauvegarde automatique après chaque frappe</li>' +
-          '<li>Exporter vers Markdown, Texte Brut, RTF, Word ou PDF</li>' +
-          '<li>Plan du document pour naviguer entre les titres</li>' +
-          '<li>Analyse de fréquence des mots pour repérer les répétitions</li>' +
-          '<li>Métadonnées du document pour titre, auteur, tags, catégorie</li>' +
-          '<li>Objectifs d\'écriture avec verrouillage facultatif à l\'atteinte de l\'objectif</li>' +
-          '<li>Fonction Rechercher et Remplacer</li>' +
-          '<li>Barre de progression de lecture et statistiques détaillées</li></ol>' +
-          '<h2>Essayez-le Maintenant</h2>' +
-          '<p>Ce texte est suffisamment grand pour démontrer la barre de progression de lecture en haut, surtout sur grands écrans où vous pouvez faire défiler.</p>' +
-          '<p>Utilisez le menu d\'exportation pour télécharger votre travail dans divers formats, ou commencez frais en appuyant sur le bouton effacer.</p>' +
-          '<p>orOS Writer est open source, créé avec respect pour vos données personnelles. Pas de publicité, pas de télémétrie, pas de compte requis.</p>' +
-          '<p>Vous pouvez l\'installer comme Progressive Web App (PWA) pour une meilleure intégration avec votre appareil.</p>' +
-          '<blockquote>"Écrire est facile. Il suffit de fixer une feuille de papier blanc jusqu\'à ce que des gouttes de sang se forment sur votre front." — Gene Fowler</blockquote>' +
-          '<p>Ceci est le dernier paragraphe du contenu d\'exemple. Vous pouvez le supprimer à tout moment ou commencer à écrire votre propre contenu immédiatement.</p>';
-    }
-    
-    if (lang === 'de') {
-      return '<h1>Dokumenttitel</h1>' +
-          '<p>Willkommen bei <strong>orOS Writer</strong>, einem datenschutzfreundlichen Editor, der vollständig offline funktioniert.</p>' +
-          '<p>Dieser Text demonstriert verschiedene Formatierungsoptionen im Editor, einschließlich Fettdruck, Kursivschrift, Unterstrichen, Überschriften (H1, H2, H3), Aufzählungslisten und nummerierten Listen.</p>' +
-          '<p>Mit orOS Writer können Sie schreiben ohne Angst vor Datenverlust, da automatische Speicherung nach jeder Eingabe ausgelöst wird. Alle Inhalte werden lokal in Ihrem Browser gespeichert, ohne Server, ohne Tracking, ohne Konto.</p>' +
-          '<p>Der Editor bietet Intelligente Typografie zur automatischen Zeichenumwandlung während des Tippens sowie intelligentes Einfügen, das nur wesentliche Formatierung bewahrt.</p>' +
-          '<ul><li>Formatierung: fett, kursiv, unterstrichen, durchgestrichen</li>' +
-          '<li>Überschriften (H1, H2, H3) für Dokumentstruktur</li>' +
-          '<li>Aufzählungslisten und nummerierte Listen</li>' +
-          '<li>Textausrichtung (links, zentriert, rechts, Blocksatz)</li>' +
-          '<li>Zitate für wichtige Abschnitte</li></ul>' +
-          '<h2>Features & Werkzeuge</h2>' +
-          '<p>orOS Writer enthält eine Vielzahl von Werkzeugen für Schriftsteller, Journalisten, Blogger und Künstler.</p>' +
-          '<ol><li>Automatische Speicherung nach jeder Eingabe</li>' +
-          '<li>Export nach Markdown, Klartext, RTF, Word oder PDF</li>' +
-          '<li>Dokumentskelett zum Navigieren zwischen Überschriften</li>' +
-          '<li>Wortfrequenzanalyse zur Erkennung von Wiederholungen</li>' +
-          '<li>Dokumentmetadaten für Titel, Autor, Tags, Kategorie</li>' +
-          '<li>Schreibziele mit optionalem Sperrmodus beim Erreichen des Ziels</li>' +
-          '<li>Suchen-und-Ersetzen-Funktionalität</li>' +
-          '<li>Lese-Fortschrittsbalken und detaillierte Statistiken</li></ol>' +
-          '<h2>Probieren Sie es aus</h2>' +
-          '<p>Dieser Text ist groß genug, um den Lesefortschrittsbalken oben zu zeigen, besonders auf großen Bildschirmen, wo Sie scrollen können.</p>' +
-          '<p>Verwenden Sie das Exportmenü, um Ihre Arbeit in verschiedenen Formaten herunterzuladen, oder starten Sie frisch, indem Sie auf die Löschen-Taste drücken.</p>' +
-          '<p>orOS Writer ist Open Source, erstellt mit Respekt für Ihre persönlichen Daten. Keine Werbung, keine Fernwartung, kein Konto erforderlich.</p>' +
-          '<p>Sie können es als Progressive Web App (PWA) installieren für bessere Integration mit Ihrem Gerät.</p>' +
-          '<blockquote>"Schreiben ist leicht. Man muss nur auf ein weißes Blatt Papier starren, bis Blutstropfen auf der Stirn erscheinen." — Gene Fowler</blockquote>' +
-          '<p>Dies ist der letzte Absatz des Beispielinhalts. Sie können ihn jederzeit löschen oder sofort mit dem Schreiben Ihres eigenen Inhalts beginnen.</p>';
-    }
-    
-    // Default English with extended content
-    return '<h1>Document Title</h1>' +
-        '<p>Welcome to <strong>orOS Writer</strong>, a privacy-first rich text editor that respects your privacy and works fully offline.</p>' +
-        '<p>This sample text demonstrates various formatting options in the editor, including bold, italic, underline, strikethrough, headings (H1, H2, H3), bullet lists, and numbered lists.</p>' +
-        '<p>With orOS Writer you can write without fear of data loss, as auto-save triggers after every keystroke. All content is stored locally in your browser, without servers, without tracking, without accounts.</p>' +
-        '<p>The editor includes Smart Typography for automatic symbol conversion while typing, as well as smart paste that preserves only essential formatting.</p>' +
-        '<ul><li>Formatting: bold, italic, underline, strikethrough</li>' +
-        '<li>Headings (H1, H2, H3) for document structure</li>' +
-        '<li>Bullet lists and numbered lists</li>' +
-        '<li>Text alignment (left, center, right, justify)</li>' +
-        '<li>Blockquotes for important passages</li></ul>' +
-        '<h2>Features & Tools</h2>' +
-        '<p>orOS Writer includes a wide range of tools designed for writers, journalists, bloggers, and artists.</p>' +
-        '<ol><li>Auto-save after every keystroke</li>' +
-        '<li>Export to Markdown, Plain Text, RTF, Word, or PDF</li>' +
-        '<li>Document outline panel for navigating between headings</li>' +
-        '<li>Word frequency analysis to spot repetitions</li>' +
-        '<li>Document metadata for title, author, tags, category</li>' +
-        '<li>Writing goals with optional lock upon reaching target</li>' +
-        '<li>Find and Replace functionality</li>' +
-        '<li>Reading progress bar and detailed statistics</li></ol>' +
-        '<h2>Try It Now</h2>' +
-        '<p>This text is large enough to demonstrate the reading progress bar at the top, especially on large screens where you can scroll.</p>' +
-        '<p>Use the export menu to download your work in various formats, or start fresh by pressing the clear button.</p>' +
-        '<p>orOS Writer is open source, built with respect for your personal data. There are no ads, no telemetry, no account required.</p>' +
-        '<p>You can install it as a Progressive Web App (PWA) for better integration with your device.</p>' +
-        '<blockquote>"Writing is easy. Just stare at a blank sheet of paper until drops of blood form on your forehead." — Gene Fowler</blockquote>' +
-        '<p>This is the final paragraph of the sample content. You can delete it anytime or begin writing your own content immediately.</p>';
+    var templates = {
+      en: '<h1>Document Title</h1>' +
+          '<p>This is the <strong>first paragraph</strong> with various formatting options. ' +
+          'You can see <em>italic text</em>, <u>underlined text</u>, and <strong>bold text</strong> ' +
+          'all working together seamlessly. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
+          '<ul><li>First bullet point item</li><li>Second bullet point item</li><li>Third bullet point item</li></ul>' +
+          '<h2>Section Subheading</h2>' +
+          '<blockquote>Art is a lie that makes us realize the truth. — Pablo Picasso</blockquote>' +
+          '<p>The <em>final paragraph</em> wraps up the sample content. ' +
+          'Use this text to test your editor\'s formatting, exports, and statistics. ' +
+          'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>' +
+          '<ol><li>First numbered step</li><li>Second numbered step</li><li>Third numbered step</li></ol>',
+      el: '<h1>Τίτλος Εγγράφου</h1>' +
+          '<p>Αυτή είναι η <strong>πρώτη παράγραφος</strong> ' +
+          'με διάφορες επιλογές μορφοποίησης. ' +
+          'Μπορείς να δεις <em>πλάγιο κείμενο</em>, ' +
+          '<u>υπογεγραμμένο κείμενο</u>, ' +
+          'και <strong>έντονο κείμενο</strong> ' +
+          'όλα να λειτουργούν μαζί.</p>' +
+          '<ul><li>Πρώτο στοιχείο λίστας</li>' +
+          '<li>Δεύτερο στοιχείο λίστας</li>' +
+          '<li>Τρίτο στοιχείο λίστας</li></ul>' +
+          '<h2>Υπότιτλος Τμήματος</h2>' +
+          '<blockquote>Η τέχνη είναι ένα ψέμα που μας κάνει να συνειδητοποιούμε την αλήθεια.</blockquote>' +
+          '<p>Η <em>τελευταία παράγραφος</em> ' +
+          'κλείνει το δοκιμαστικό κείμενο. ' +
+          'Χρησιμοποίησε αυτό το κείμενο ' +
+          'για να δοκιμάσεις την μορφοποίηση, ' +
+          'τις εξάγωγες και τα στατιστικά.</p>' +
+          '<ol><li>Πρώτο βήμα</li><li>Δεύτερο βήμα</li><li>Τρίτο βήμα</li></ol>',
+      es: '<h1>Título del Documento</h1>' +
+          '<p>Este es el <strong>primer párrafo</strong> con varias opciones de formato. ' +
+          'Puedes ver <em>texto en cursiva</em>, <u>texto subrayado</u>, y <strong>texto en negrita</strong> ' +
+          'todos funcionando juntos. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
+          '<ul><li>Primer elemento de la lista</li><li>Segundo elemento de la lista</li><li>Tercer elemento de la lista</li></ul>' +
+          '<h2>Subtítulo de Sección</h2>' +
+          '<blockquote>El arte es una mentira que nos hace darnos cuenta de la verdad. — Pablo Picasso</blockquote>' +
+          '<p>El <em>párrafo final</em> concluye el contenido de ejemplo. ' +
+          'Usa este texto para probar el formato, las exportaciones y las estadísticas de tu editor.</p>' +
+          '<ol><li>Primer paso numerado</li><li>Segundo paso numerado</li><li>Tercer paso numerado</li></ol>',
+      it: '<h1>Titolo del Documento</h1>' +
+          '<p>Questo è il <strong>primo paragrafo</strong> con varie opzioni di formattazione. ' +
+          'Puoi vedere <em>testo in corsivo</em>, <u>testo sottolineato</u>, e <strong>testo in grassetto</strong> ' +
+          'tutti funzionanti insieme. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
+          '<ul><li>Primo elemento della lista</li><li>Secondo elemento della lista</li><li>Terzo elemento della lista</li></ul>' +
+          '<h2>Sottotitolo della Sezione</h2>' +
+          '<blockquote>L\'arte è una menzogna che ci fa capire la verità. — Pablo Picasso</blockquote>' +
+          '<p>Il <em>paragrafo finale</em> conclude il contenuto di esempio. ' +
+          'Usa questo testo per provare la formattazione, le esportazioni e le statistiche del tuo editor.</p>' +
+          '<ol><li>Primo passo numerato</li><li>Secondo passo numerato</li><li>Terzo passo numerato</li></ol>',
+      fr: '<h1>Titre du Document</h1>' +
+          '<p>Ceci est le <strong>premier paragraphe</strong> avec diverses options de mise en forme. ' +
+          'Vous pouvez voir du <em>texte en italique</em>, du <u>texte souligné</u>, et du <strong>texte en gras</strong> ' +
+          'qui fonctionnent tous ensemble. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
+          '<ul><li>Premier élément de la liste</li><li>Deuxième élément de la liste</li><li>Troisième élément de la liste</li></ul>' +
+          '<h2>Sous-titre de Section</h2>' +
+          '<blockquote>L\'art est un mensonge qui nous fait réaliser la vérité. — Pablo Picasso</blockquote>' +
+          '<p>Le <em>paragraphe final</em> conclut le contenu d\'exemple. ' +
+          'Utilisez ce texte pour tester la mise en forme, les exportations et les statistiques de votre éditeur.</p>' +
+          '<ol><li>Première étape</li><li>Deuxième étape</li><li>Troisième étape</li></ol>',
+      de: '<h1>Dokumenttitel</h1>' +
+          '<p>Dies ist der <strong>erste Absatz</strong> mit verschiedenen Formatierungsoptionen. ' +
+          'Sie können <em>Kursivtext</em>, <u>unterstrichenen Text</u> und <strong>Fetttext</strong> ' +
+          'sehen, die alle zusammen funktionieren. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>' +
+          '<ul><li>Erstes Listenelement</li><li>Zweites Listenelement</li><li>Drittes Listenelement</li></ul>' +
+          '<h2>Abschnittsüberschrift</h2>' +
+          '<blockquote>Kunst ist eine Lüge, die uns die Wahrheit erkennen lässt. — Pablo Picasso</blockquote>' +
+          '<p>Der <em>letzte Absatz</em> schließt den Beispielinhalt ab. ' +
+          'Verwenden Sie diesen Text, um die Formatierung, Exporte und Statistiken Ihres Editors zu testen.</p>' +
+          '<ol><li>Erster Schritt</li><li>Zweiter Schritt</li><li>Dritter Schritt</li></ol>'
+    };
+    return templates[lang] || templates.en;
   }
 
   function insertLoremIpsum() {
@@ -366,8 +245,9 @@
     updateStats();
     showToast(getTrans('toast_lorem_inserted') || 'Sample text inserted');
   }
-  
-    function updateSaveIndicator() {
+
+  // ========== SAVE INDICATOR UPDATE ==========
+  function updateSaveIndicator() {
     if (!saveIndicator) return;
     if (hideSaveIndicator) {
       saveIndicator.style.visibility = 'hidden';
@@ -391,6 +271,7 @@
     }
   }
 
+  // ========== TOAST ==========
   function showToast(message) {
     var toast = document.getElementById('zen-toast');
     if (!toast) {
@@ -408,6 +289,7 @@
     }, 3000);
   }
 
+  // ========== CONTENT PERSISTENCE ==========
   function saveContent() {
     localStorage.setItem(STORAGE_KEY, richEditor.innerHTML);
     lastSavedTime = Date.now();
@@ -438,6 +320,7 @@
     });
   }
 
+  // ========== METADATA ==========
   var metadata = loadMetadata();
 
   function loadMetadata() {
@@ -552,26 +435,11 @@
     return day + '/' + month + '/' + year + ' ' + time;
   }
 
-  function setupMetadataHandlers() {
-    var inputs = [metaTitle, metaAuthor, metaTags, metaCategory];
-    for (var i = 0; i < inputs.length; i++) {
-      if (inputs[i]) {
-        inputs[i].addEventListener('input', function() {
-          saveMetadata(false);
-        });
-      }
-    }
-  }
-
   function toggleMetadataPanel() {
     if (!metadataPanel) return;
     if (metadataPanel.style.display === 'none' || !metadataPanel.style.display) {
       metadataPanel.style.display = 'flex';
       metadataPanel.style.flexDirection = 'column';
-      var topPx = getPanelTopOffset();
-      var topNum = parseInt(topPx);
-      metadataPanel.style.top = topPx;
-      metadataPanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
       if (metaTitle) metaTitle.value = metadata.title || '';
       if (metaAuthor) metaAuthor.value = metadata.author || '';
       if (metaTags) metaTags.value = metadata.tags || '';
@@ -583,43 +451,34 @@
     }
   }
 
-  function toggleOutline() {
-    if (!outlinePanel) return;
-    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
-      outlinePanel.style.display = 'flex';
-      outlinePanel.style.flexDirection = 'column';
-      var topPx = getPanelTopOffset();
-      var topNum = parseInt(topPx);
-      outlinePanel.style.top = topPx;
-      outlinePanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
-      updateOutline();
-    } else {
-      outlinePanel.style.display = 'none';
+  function setupMetadataHandlers() {
+    var inputs = [metaTitle, metaAuthor, metaTags, metaCategory];
+    for (var i = 0; i < inputs.length; i++) {
+      (function(input) {
+        if (!input) return;
+        input.addEventListener('blur', function() { saveMetadata(true); });
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveMetadata(true);
+            if (input === metaTitle && metaAuthor) metaAuthor.focus();
+            else if (input === metaAuthor && metaCategory) metaCategory.focus();
+            else if (input === metaCategory && metaTags) metaTags.focus();
+            else if (input === metaTags && metaTitle) metaTitle.focus();
+          }
+        });
+      })(inputs[i]);
     }
   }
 
-  function toggleWordFreqPanel() {
-    if (!wordFreqPanel) return;
-    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
-      wordFreqPanel.style.display = 'flex';
-      wordFreqPanel.style.flexDirection = 'column';
-      var topPx = getPanelTopOffset();
-      var topNum = parseInt(topPx);
-      wordFreqPanel.style.top = topPx;
-      wordFreqPanel.style.maxHeight = 'calc(100vh - ' + (topNum + 56) + 'px)';
-      updateWordFrequency();
-    } else {
-      wordFreqPanel.style.display = 'none';
-    }
-  }
-
+  // ========== STATS ==========
   function updateStats() {
     if (!richEditor) return;
     var text = getTextContent();
     var chars = text.length;
     var charsNoSpaces = text.replace(/\s/g, '').length;
     var words = text.trim().split(/\s+/).filter(Boolean).length;
-    var sentences = text.split(/[.!?]+(?:\s|$)/).filter(function(s) {
+    var sentences = text.split(/[.!?…]+(?:\s|$)/).filter(function(s) {
       return s.trim().length > 0;
     }).length;
     var readMin = Math.ceil(words / 225) || 0;
@@ -652,8 +511,9 @@
 
     if (goalTarget) updateGoalProgress();
   }
-  
-    function getParagraphCount() {
+
+  // ========== GOAL TRACKER ==========
+  function getParagraphCount() {
     var text = richEditor.innerText.trim();
     if (!text) return 0;
     return text.split(/\n/).filter(function(l) { return l.trim(); }).length;
@@ -761,6 +621,18 @@
     }
   }
 
+  // ========== DOCUMENT OUTLINE ==========
+  function toggleOutline() {
+    if (!outlinePanel) return;
+    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
+      outlinePanel.style.display = 'flex';
+      outlinePanel.style.flexDirection = 'column';
+      updateOutline();
+    } else {
+      outlinePanel.style.display = 'none';
+    }
+  }
+
   function updateOutline() {
     if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none') return;
     var headings = richEditor.querySelectorAll('h1, h2, h3');
@@ -785,6 +657,7 @@
     }
   }
 
+  // ========== READING PROGRESS ==========
   function updateReadingProgress() {
     if (!progressBar) return;
     if (readingProgressEnabled) {
@@ -805,6 +678,7 @@
     updateReadingProgress();
   });
 
+  // ========== SMART TYPOGRAPHY ==========
   var isReplacing = false;
   function handleSmartTypography() {
     if (!smartTypographyEnabled || isReplacing || goalLockTriggered) return;
@@ -847,6 +721,7 @@
   }
   window.addEventListener('oros-smart-typography-changed', function(e) { smartTypographyEnabled = e.detail.enabled; });
 
+  // ========== SMART PASTE ==========
   function handleSmartPaste(e) {
     e.preventDefault();
     var clipboardData = e.clipboardData || window.clipboardData;
@@ -878,6 +753,18 @@
     }
     saveContent();
     updateStats();
+  }
+
+  // ========== WORD FREQUENCY ==========
+  function toggleWordFreqPanel() {
+    if (!wordFreqPanel) return;
+    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
+      wordFreqPanel.style.display = 'flex';
+      wordFreqPanel.style.flexDirection = 'column';
+      updateWordFrequency();
+    } else {
+      wordFreqPanel.style.display = 'none';
+    }
   }
 
   function updateWordFrequency() {
@@ -924,106 +811,69 @@
     wordFreqList.innerHTML = listHtml;
   }
 
-  // CORRECTED: Focus Mode with proper positioning relative to wrapper
+  // ========== FOCUS MODE (highlights current paragraph) ==========
+  var focusDebounceTimer = null;
+
   function initFocusMode() {
-    if (!richEditor || !richWrapper) return;
-    if (focusModeEnabled) {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-      richEditor.removeEventListener('scroll', handleScrollForFocus);
-      document.addEventListener('selectionchange', handleSelectionChange);
-      richEditor.addEventListener('scroll', handleScrollForFocus);
-    }
+    if (!richEditor) return;
+    document.addEventListener('selectionchange', handleSelectionChange);
+    richEditor.addEventListener('scroll', function() {
+      if (document.getElementById('focus-spotlight')) clearFocusMode();
+    });
+    window.addEventListener('oros-focus-mode-changed', function(e) {
+      focusModeEnabled = e.detail.enabled;
+      if (!focusModeEnabled) clearFocusMode();
+    });
   }
 
-  function handleScrollForFocus() {
+  function handleSelectionChange() {
     if (!focusModeEnabled) return;
-    clearFocusMode();
-  }
-
-    function handleSelectionChange() {
-    if (!focusModeEnabled || !richWrapper || !richEditor) {
-      clearFocusMode();
-      return;
-    }
-    
     clearTimeout(focusDebounceTimer);
     focusDebounceTimer = setTimeout(function() {
       var selection = window.getSelection();
-      if (!selection.rangeCount || selection.isCollapsed) {
-        clearFocusMode();
-        return;
-      }
-      
+      if (!selection.rangeCount) { clearFocusMode(); return; }
       var range = selection.getRangeAt(0);
-      if (!richEditor.contains(range.commonAncestorContainer)) {
-        clearFocusMode();
-        return;
+      if (!richEditor.contains(range.commonAncestorContainer)) { clearFocusMode(); return; }
+
+      var node = range.startContainer;
+      while (node && node !== richEditor && node.parentNode !== richEditor) {
+        node = node.parentNode;
       }
-      
+      if (!node || node === richEditor) { clearFocusMode(); return; }
+
       clearFocusMode();
-      
-      // Get the bounding rect of the ACTUAL selected text (not parent node)
-      var selectedRect = range.getBoundingClientRect();
+      var rect = node.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       var wrapperRect = richWrapper.getBoundingClientRect();
-      
-      // Check if selection is valid
-      if (selectedRect.width === 0 || selectedRect.height === 0) {
-        clearFocusMode();
-        return;
-      }
-      
-      // Calculate position relative to wrapper (accounting for scroll)
-      var scrollTop = richWrapper.scrollTop || richEditor.scrollTop || 0;
-      var topPos = (selectedRect.top - wrapperRect.top) + scrollTop;
-      var leftPos = (selectedRect.left - wrapperRect.left);
-      
-      // Create spotlight for exact selected area
-      currentSpotlight = document.createElement('div');
-      currentSpotlight.id = 'focus-spotlight';
-      currentSpotlight.className = 'focus-spotlight';
-      currentSpotlight.style.position = 'absolute';
-      currentSpotlight.style.top = topPos + 'px';
-      currentSpotlight.style.left = leftPos + 'px';
-      currentSpotlight.style.width = selectedRect.width + 'px';
-      currentSpotlight.style.height = selectedRect.height + 'px';
-      currentSpotlight.style.pointerEvents = 'none';
-      currentSpotlight.style.zIndex = '1';
-      
-      richWrapper.insertBefore(currentSpotlight, richEditor);
-      
+      var spotlight = document.createElement('div');
+      spotlight.id = 'focus-spotlight';
+      spotlight.className = 'focus-spotlight';
+      spotlight.style.top = (rect.top - wrapperRect.top) + 'px';
+      spotlight.style.left = (rect.left - wrapperRect.left) + 'px';
+      spotlight.style.width = rect.width + 'px';
+      spotlight.style.height = rect.height + 'px';
+      richWrapper.appendChild(spotlight);
     }, 100);
   }
 
   function clearFocusMode() {
-    if (currentSpotlight) {
-      currentSpotlight.remove();
-      currentSpotlight = null;
-    }
+    var spotlight = document.getElementById('focus-spotlight');
+    if (spotlight) spotlight.remove();
   }
 
-  window.addEventListener('oros-focus-mode-changed', function(e) {
-    focusModeEnabled = e.detail.enabled;
-    if (focusModeEnabled) {
-      initFocusMode();
-      handleSelectionChange();
-    } else {
-      clearFocusMode();
-      document.removeEventListener('selectionchange', handleSelectionChange);
-      richEditor.removeEventListener('scroll', handleScrollForFocus);
-    }
-  });
-  
-    // CORRECTED: Context Menu with capture phase listeners and zIndex
+  // ========== CONTEXT MENU ==========
+  var contextMenu = null;
+
   function showContextMenu(e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-    
+
     if (contextMenu) {
       contextMenu.remove();
       contextMenu = null;
     }
-    
+
     var menu = document.createElement('div');
     menu.className = 'context-menu';
     menu.innerHTML = '' +
@@ -1046,16 +896,15 @@
       '<div class="cm-divider"></div>' +
       '<div class="cm-item" data-cmd="undo"><i class="fa fa-undo cm-icon"></i>Undo</div>' +
       '<div class="cm-item" data-cmd="redo"><i class="fa fa-repeat cm-icon"></i>Redo</div>';
-    
+
     menu.style.position = 'fixed';
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
-    menu.style.zIndex = '9999';
-    
-    menu.addEventListener('click', function(ev) { ev.stopPropagation(); }, true);
-    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation(); }, true);
-    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); }, true);
-    
+
+    menu.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    menu.addEventListener('contextmenu', function(ev) { ev.preventDefault(); ev.stopPropagation(); });
+    menu.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
+
     var items = menu.querySelectorAll('.cm-item');
     for (var i = 0; i < items.length; i++) {
       (function(item) {
@@ -1074,15 +923,14 @@
         };
       })(items[i]);
     }
-    
+
     document.body.appendChild(menu);
     contextMenu = menu;
-    
+
     setTimeout(function() {
-      document.addEventListener('mousedown', closeOnOutsideClick, true);
-      document.addEventListener('contextmenu', closeOnContext, true);
-      document.addEventListener('keydown', closeOnKeydown, true);
-    }, 10);
+      document.addEventListener('mousedown', closeOnOutsideClick);
+      document.addEventListener('keydown', closeOnKeydown);
+    }, 0);
   }
 
   function closeOnOutsideClick(ev) {
@@ -1090,15 +938,6 @@
       contextMenu.remove();
       contextMenu = null;
       removeCloseListeners();
-    }
-  }
-
-  function closeOnContext(ev) {
-    if (contextMenu) {
-      contextMenu.remove();
-      contextMenu = null;
-      removeCloseListeners();
-      ev.preventDefault();
     }
   }
 
@@ -1111,32 +950,26 @@
   }
 
   function removeCloseListeners() {
-    document.removeEventListener('mousedown', closeOnOutsideClick, true);
-    document.removeEventListener('contextmenu', closeOnContext, true);
-    document.removeEventListener('keydown', closeOnKeydown, true);
+    document.removeEventListener('mousedown', closeOnOutsideClick);
+    document.removeEventListener('keydown', closeOnKeydown);
   }
 
-    function setupMainToolbarButtons() {
+  // ========== MAIN TOOLBAR FORMATTING BUTTONS ==========
+  function setupMainToolbarButtons() {
     if (!richEditor) return;
     var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
     for (var i = 0; i < fmtBtns.length; i++) {
       (function(btn) {
-        var cmd = btn.getAttribute('data-cmd');
-        var block = btn.getAttribute('data-block');
-        
-        if (!cmd && !block) return; // Skip buttons without data
-        
+        if (!btn.getAttribute('data-cmd')) return;
         btn.addEventListener('click', function(e) {
           e.preventDefault();
-          
+          var cmd = btn.getAttribute('data-cmd');
+          var block = btn.getAttribute('data-block');
           if (block) {
-            // H1, H2, H3 buttons use formatBlock
             document.execCommand('formatBlock', false, block);
-          } else if (cmd) {
-            // Other buttons use regular commands
+          } else {
             document.execCommand(cmd, false);
           }
-          
           saveContent();
           updateStats();
           richEditor.focus();
@@ -1145,6 +978,7 @@
     }
   }
 
+  // ========== FILE OPEN ==========
   function openFile(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -1161,6 +995,7 @@
     reader.readAsText(file);
   }
 
+  // ========== EXPORT ==========
   function downloadFile(format) {
     var content = richEditor.innerHTML;
     var textContent = richEditor.innerText;
@@ -1202,67 +1037,6 @@
     showToast(getTrans('toast_downloaded'));
   }
 
-  function setupDragAndDrop() {
-    if (!richEditor) return;
-    
-    // Prevent default drag behaviors
-    richEditor.addEventListener('dragenter', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    richEditor.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    richEditor.addEventListener('dragleave', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    // Handle drop
-    richEditor.addEventListener('drop', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        var file = e.dataTransfer.files[0];
-        openFile(file);
-      }
-    });
-  }
-  
-  function setupDragAndDropForWrapper() {
-    if (!richWrapper) return;
-    
-    // Also allow dropping on the wrapper area around editor
-    richWrapper.addEventListener('dragenter', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    richWrapper.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    richWrapper.addEventListener('dragleave', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    richWrapper.addEventListener('drop', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        var file = e.dataTransfer.files[0];
-        openFile(file);
-      }
-    });
-  }
-
   function convertHTMLtoMarkdown(html) {
     var temp = document.createElement('div');
     temp.innerHTML = html;
@@ -1291,7 +1065,7 @@
           case 'em': case 'i': md += '*' + htmlToMd(child) + '*'; break;
           case 'u': md += '__' + htmlToMd(child) + '__'; break;
           case 'code': md += '`' + child.textContent + '`'; break;
-          case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n';           break;
+          case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n'; break;
           case 'blockquote': md += '\n> ' + htmlToMd(child).replace(/\n/g, '\n> ') + '\n\n'; break;
           case 'ul':
             var ulItems = child.querySelectorAll(':scope > li');
@@ -1330,6 +1104,7 @@
     URL.revokeObjectURL(url);
   }
 
+  // ========== FIND & REPLACE ==========
   function toggleFindBar() {
     if (!findBar || !findInput) return;
     if (findBar.style.display === 'flex') {
@@ -1380,6 +1155,7 @@
     showToast(getTrans('text_saved'));
   }
 
+  // ========== KEYBOARD SHORTCUTS ==========
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -1424,6 +1200,7 @@
     }
   });
 
+  // ========== VISIBILITY INIT ==========
   if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
   if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
   if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
@@ -1435,6 +1212,7 @@
   if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
   if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
 
+  // ========== CUSTOM EVENTS ==========
   window.addEventListener('oros-hide-stats-changed', function(e) {
     hideStats = e.detail.hidden;
     if (statsOverlay) statsOverlay.style.display = hideStats ? 'none' : '';
@@ -1443,7 +1221,7 @@
     hideGoalBtn = e.detail.hidden;
     if (btnGoal) btnGoal.style.display = hideGoalBtn ? 'none' : '';
   });
-  window.addEventListener('oros-hide-outline-changed', function(e) {
+  window.addEventListener('oros-hide-outline-btn-changed', function(e) {
     hideOutlineBtn = e.detail.hidden;
     if (btnOutline) btnOutline.style.display = hideOutlineBtn ? 'none' : '';
   });
@@ -1471,13 +1249,14 @@
     hideLoremBtn = e.detail.hidden;
     if (btnLorem) btnLorem.style.display = hideLoremBtn ? 'none' : '';
   });
-  window.addEventListener('oros-language-changed', function() {
+  window.addEventListener('oros-language-changed', function(e) {
     updateStats();
     renderMetaDates();
     updateGoalUnitLabels();
     updateSaveIndicator();
   });
 
+  // ========== EVENT LISTENERS ==========
   if (btnSave) btnSave.addEventListener('click', function() {
     saveContent();
     saveMetadata(true);
@@ -1569,7 +1348,7 @@
   }
 
   if (richEditor) {
-    richEditor.addEventListener('click', function() {
+    richEditor.addEventListener('click', function(e) {
       if (contextMenu) {
         contextMenu.remove();
         contextMenu = null;
@@ -1588,8 +1367,10 @@
     richEditor.addEventListener('paste', handleSmartPaste);
   }
 
+  // ========== SAVE INDICATOR LIVE TICK ==========
   setInterval(updateSaveIndicator, 30000);
 
+  // ========== INITIALIZE ==========
   initTypewriterSound();
   setupMainToolbarButtons();
   loadContent();
@@ -1600,7 +1381,5 @@
   updateStats();
   updateGoalUnitLabels();
   updateReadingProgress();
-  setupDragAndDrop();         // ← ADD THIS LINE
-  setupDragAndDropForWrapper(); // ← ADD THIS LINE
 
 })();

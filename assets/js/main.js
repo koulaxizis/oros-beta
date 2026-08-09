@@ -219,16 +219,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  var toggleFocus = document.getElementById('toggle-focus-mode');
-if (toggleFocus) {
-  toggleFocus.checked = localStorage.getItem('oros_focus_mode') === 'true';
-  toggleFocus.addEventListener('change', function() {
-    localStorage.setItem('oros_focus_mode', this.checked ? 'true' : 'false');
-    window.dispatchEvent(new CustomEvent('oros-focus-mode-changed', {
-      detail: { enabled: this.checked }
-    }));
-  });
-}
+  var focusModeToggle = document.getElementById('toggle-focus-mode');
+  if (focusModeToggle) {
+    focusModeToggle.checked = localStorage.getItem('oros_focus_mode') !== 'false';
+    focusModeToggle.addEventListener('change', function() {
+      var enabled = this.checked;
+      localStorage.setItem('oros_focus_mode', enabled ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-focus-mode-changed', {
+        detail: { enabled: enabled }
+      }));
+    });
+  }
 
   var hideStatsToggle = document.getElementById('toggle-hide-stats');
   if (hideStatsToggle) {
@@ -348,15 +349,6 @@ if (toggleFocus) {
       window.dispatchEvent(new CustomEvent('oros-quick-tbar-changed', {
         detail: { show: show }
       }));
-    });
-  }
-  
-    // ========== ZEN MODE TOGGLE (Settings) ==========
-  var zenToggle = document.getElementById('toggle-zen-mode');
-  if (zenToggle) {
-    zenToggle.checked = document.body.hasAttribute('data-zen');
-    zenToggle.addEventListener('change', function() {
-      if (zenBtn) zenBtn.click();
     });
   }
 
