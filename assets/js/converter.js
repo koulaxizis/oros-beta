@@ -1,6 +1,7 @@
 // ============================================
 // orOS Case Converter — Full Implementation
-// All 27 Features — Offline, Privacy-First
+// v2 — Added: strip accents, strip formatting,
+// fixed restore original, fixed stats i18n
 // ============================================
 
 (function() {
@@ -32,21 +33,10 @@
     trim: false,
     collapse: false,
     removelinebreaks: false,
-    removechars: false
+    removechars: false,
+    stripaccents: false,
+    stripformatting: false
   };
-
-  // Greek letters map for proper case conversion
-  var greekLowerToUpper = {
-    'α': 'Α', 'β': 'Β', 'γ': 'Γ', 'δ': 'Δ', 'ε': 'Ε', 'ζ': 'Ζ', 'η': 'Η', 'θ': 'Θ',
-    'ι': 'Ι', 'κ': 'Κ', 'λ': 'Λ', 'μ': 'Μ', 'ν': 'Ν', 'ξ': 'Ξ', 'ο': 'Ο', 'π': 'Π',
-    'ρ': 'Ρ', 'σ': 'Σ', 'τ': 'Τ', 'υ': 'Υ', 'φ': 'Φ', 'χ': 'Χ', 'ψ': 'Ψ', 'ω': 'Ω',
-    'α': 'Ά', 'έ': 'Έ', 'ή': 'Ή', 'ί': 'Ί', 'ό': 'Ό', 'ύ': 'Ύ', 'ώ': 'Ώ'
-  };
-
-  var greekToned = { 'ά': 'Ά', 'έ': 'Έ', 'ή': 'Ή', 'ί': 'Ί', 'ύ': 'Ϋ', 'ό': 'Ό', 'ώ': 'Ώ' };
-
-  // Roman numeral patterns
-  var romanNumerals = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
 
   // ========== HELPER FUNCTIONS ==========
 
@@ -77,6 +67,8 @@
     }, 3000);
   }
 
+  // ========== HISTORY (UNDO/REDO) ==========
+
   function saveState() {
     if (historyIndex < history.length - 1) {
       history = history.slice(0, historyIndex + 1);
@@ -102,41 +94,52 @@
     } catch(e) { history = []; historyIndex = -1; }
   }
 
-  function canUndo() { return historyIndex >= 0; }
-  function canRedo() { return historyIndex < history.length - 1; }
-
   function undo() {
-    if (!canUndo()) return;
-    var state = history[historyIndex--];
+    if (historyIndex <= 0) return;
+    var state = history[--historyIndex];
     inputArea.value = state.input;
     outputArea.value = state.output;
     updateStats();
   }
 
   function redo() {
-    if (!canRedo()) return;
+    if (historyIndex >= history.length - 1) return;
     var state = history[++historyIndex];
     inputArea.value = state.input;
     outputArea.value = state.output;
     updateStats();
   }
 
-  // ========== OPTIONS LOADING ==========
+  // ========== OPTIONS ==========
 
   function loadOptions() {
     try {
       var saved = localStorage.getItem(STORAGE_OPTIONS);
-      if (saved) options = JSON.parse(saved);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        for (var key in parsed) {
+          if (options.hasOwnProperty(key)) options[key] = parsed[key];
+        }
+      }
     } catch(e) {}
-    
-    document.getElementById('opt-sentence-preserve').checked = options.sentencePreserve;
-    document.getElementById('opt-word-preserve').checked = options.wordPreserve;
-    document.getElementById('opt-acronyms').checked = options.acronyms;
-    document.getElementById('opt-roman').checked = options.roman;
-    document.getElementById('opt-trim').checked = options.trim;
-    document.getElementById('opt-collapse').checked = options.collapse;
-    document.getElementById('opt-removelinebreaks').checked = options.removelinebreaks;
-    document.getElementById('opt-removechars').checked = options.removechars;
+
+    var optMap = {
+      'opt-sentence-preserve': 'sentencePreserve',
+      'opt-word-preserve': 'wordPreserve',
+      'opt-acronyms': 'acronyms',
+      'opt-roman': 'roman',
+      'opt-trim': 'trim',
+      'opt-collapse': 'collapse',
+      'opt-removelinebreaks': 'removelinebreaks',
+      'opt-removechars': 'removechars',
+      'opt-stripaccents': 'stripaccents',
+      'opt-stripformatting': 'stripformatting'
+    };
+
+    for (var id in optMap) {
+      var el = document.getElementById(id);
+      if (el) el.checked = options[optMap[id]];
+    }
   }
 
   function saveOptions() {
@@ -144,27 +147,98 @@
   }
 
   function setupOptionListeners() {
-    var opts = ['sentence-preserve', 'word-preserve', 'acronyms', 'roman', 'trim', 'collapse', 'removelinebreaks', 'removechars'];
-    opts.forEach(function(id) {
-      var el = document.getElementById('opt-' + id);
-      if (el) {
-        el.addEventListener('change', function() {
-          options[id] = this.checked;
-          saveOptions();
-          if (inputArea.value) processConversion(getCurrentMode());
-        });
-      }
-    });
+    var optMap = {
+      'opt-sentence-preserve': 'sentencePreserve',
+      'opt-word-preserve': 'wordPreserve',
+      'opt-acronyms': 'acronyms',
+      'opt-roman': 'roman',
+      'opt-trim': 'trim',
+      'opt-collapse': 'collapse',
+      'opt-removelinebreaks': 'removelinebreaks',
+      'opt-removechars': 'removechars',
+      'opt-stripaccents': 'stripaccents',
+      'opt-stripformatting': 'stripformatting'
+    };
+
+    for (var id in optMap) {
+      (function(elId, optKey) {
+        var el = document.getElementById(elId);
+        if (el) {
+          el.addEventListener('change', function() {
+            options[optKey] = this.checked;
+            saveOptions();
+            if (inputArea.value) processConversion(currentMode);
+          });
+        }
+      })(id, optMap[id]);
+    }
   }
 
-  // ========== TEXT PROCESSING PRE-FILTERS ==========
+  // ========== GREEK ACCENT STRIPPING ==========
+
+  function stripGreekAccents(text) {
+    return text
+      .replace(/Ά/g, 'Α').replace(/ά/g, 'α')
+      .replace(/Έ/g, 'Ε').replace(/έ/g, 'ε')
+      .replace(/Ή/g, 'Η').replace(/ή/g, 'η')
+      .replace(/Ί/g, 'Ι').replace(/ί/g, 'ι')
+      .replace(/Ϊ/g, 'Ι').replace(/ϊ/g, 'ι')
+      .replace(/ΐ/g, 'ι')
+      .replace(/Ό/g, 'Ο').replace(/ό/g, 'ο')
+      .replace(/Ύ/g, 'Υ').replace(/ύ/g, 'υ')
+      .replace(/Ϋ/g, 'Υ').replace(/ϋ/g, 'υ')
+      .replace(/ΰ/g, 'υ')
+      .replace(/Ώ/g, 'Ω').replace(/ώ/g, 'ω')
+      .replace(/[\u0300-\u036f]/g, ''); // combining diacritical marks
+  }
+
+  // ========== FORMAT STRIPPING ==========
+
+  function stripFormatting(text) {
+    var result = text;
+    // Remove HTML tags
+    result = result.replace(/<[^>]+>/g, '');
+    // Remove markdown bold/italic markers
+    result = result.replace(/\*\*(.+?)\*\*/g, '$1');
+    result = result.replace(/__(.+?)__/g, '$1');
+    result = result.replace(/\*(.+?)\*/g, '$1');
+    result = result.replace(/_(.+?)_/g, '$1');
+    // Remove markdown headings
+    result = result.replace(/^#{1,6}\s+/gm, '');
+    // Remove markdown code blocks (keep content)
+    result = result.replace(/```[\s\S]*?```/g, function(m) {
+      return m.replace(/```/g, '').trim();
+    });
+    // Remove inline code markers
+    result = result.replace(/`(.+?)`/g, '$1');
+    // Remove markdown links [text](url) -> text
+    result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    // Remove markdown images ![alt](url) -> alt
+    result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
+    // Remove markdown blockquote markers
+    result = result.replace(/^>\s+/gm, '');
+    // Remove markdown horizontal rules
+    result = result.replace(/^[-*_]{3,}\s*$/gm, '');
+    // Remove YAML frontmatter
+    result = result.replace(/^---[\s\S]*?---\n?/, '');
+    return result;
+  }
+
+  // ========== PRE-PROCESSING ==========
 
   function preProcess(text) {
     if (!text) return '';
     var processed = text;
 
+    // Strip formatting first (before any other processing)
+    if (options.stripformatting) {
+      processed = stripFormatting(processed);
+    }
+
     if (options.trim) {
-      processed = processed.split('\n').map(function(line) { return line.trim(); }).join('\n');
+      processed = processed.split('\n').map(function(line) {
+        return line.trim();
+      }).join('\n');
     }
 
     if (options.collapse) {
@@ -172,24 +246,44 @@
     }
 
     if (options.removelinebreaks) {
-      processed = processed.replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+      processed = processed.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
     if (options.removechars) {
-      processed = processed.replace(/[^a-zA-Z0-9\u0370-\u03FF\s]/g, '');
+      processed = processed.replace(/[^\w\s\u0370-\u03FF\u0300-\u036f]/g, '');
     }
 
     return processed;
   }
 
-  // ========== CASE CONVERSION FUNCTIONS ==========
+  // ========== POST-PROCESSING ==========
+
+  function postProcess(text) {
+    if (!text) return '';
+    var result = text;
+
+    // Strip accents after conversion (useful for uppercase)
+    if (options.stripaccents) {
+      result = stripGreekAccents(result);
+    }
+
+    return result;
+  }
+
+  // ========== GREEK HELPERS ==========
 
   function isGreekLetter(char) {
     return /[\u0370-\u03FF]/.test(char);
   }
 
   function toGreekUpper(char) {
-    if (greekToned[char]) return greekToned[char];
+    // Handle toned vowels: map to accented uppercase
+    var tonedToUpper = {
+      'ά': 'Ά', 'έ': 'Έ', 'ή': 'Ή', 'ί': 'Ί',
+      'ό': 'Ό', 'ύ': 'Ύ', 'ώ': 'Ώ',
+      'ϊ': 'Ϊ', 'ϋ': 'Ϋ', 'ΐ': 'Ϊ', 'ΰ': 'Ϋ'
+    };
+    if (tonedToUpper[char]) return tonedToUpper[char];
     return char.toUpperCase();
   }
 
@@ -201,24 +295,14 @@
 
   function isAcronym(word) {
     if (word.length < 2) return false;
-    var hasGreek = /[α-ωΑ-Ω]/i.test(word);
-    if (hasGreek) return /^[α-ωΑ-Ω]+$/.test(word);
+    // Pure uppercase Latin letters/numbers (no lowercase mixed)
     return /^[A-Z0-9]+$/.test(word);
   }
 
+  // ========== CASE CONVERSION FUNCTIONS ==========
+
   function uppercase(text) {
     var processed = preProcess(text);
-    if (options.acronyms) {
-      return processed.split(/\b/).map(function(part) {
-        if (isAcronym(part)) return part;
-        if (isGreekLetter(part[0])) {
-          return part.split('').map(function(c) {
-            return isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase();
-          }).join('');
-        }
-        return part.toUpperCase();
-      }).join('');
-    }
     return processed.split('').map(function(c) {
       return isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase();
     }).join('');
@@ -227,11 +311,16 @@
   function lowercase(text) {
     var processed = preProcess(text);
     if (options.sentencePreserve) {
-      return processed.replace(/(^|[.!?…\s])([a-zA-Z\u0370-\u03FF])/g, function(m, sep, c) {
-        return sep + c;
-      });
+      // Keep first letter of each sentence capitalized
+      return processed.replace(/(^[a-zA-Z\u0370-\u03FF])|([.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g,
+        function(m, first, sep, after) {
+          if (first) return first;
+          return sep + after;
+        }
+      );
     }
     if (options.wordPreserve) {
+      // Keep first letter of each word capitalized
       return processed.replace(/\b([a-zA-Z\u0370-\u03FF])/g, function(m, c) {
         return c;
       });
@@ -244,9 +333,9 @@
     var words = processed.split(/(\s+)/);
     return words.map(function(word) {
       if (/^\s+$/.test(word)) return word;
+      if (!word) return word;
       if (options.acronyms && isAcronym(word)) return word;
       if (options.roman && isRomanNumeral(word)) return word;
-      if (!word) return word;
       var first = word.charAt(0);
       var rest = word.slice(1);
       return (isGreekLetter(first) ? toGreekUpper(first) : first.toUpperCase()) + rest.toLowerCase();
@@ -255,11 +344,12 @@
 
   function sentenceCase(text) {
     var processed = preProcess(text);
-    return processed.replace(/([.!?…]?\s*)([a-zA-Z\u0370-\u03FF])/g, function(m, sep, c) {
-      return sep + (isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase());
-    }).replace(/^([a-zA-Z\u0370-\u03FF])/g, function(m, c) {
-      return isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase();
-    });
+    // Capitalize first letter and first letter after sentence endings
+    return processed.replace(/(^|[.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g,
+      function(m, prefix, letter) {
+        return prefix + (isGreekLetter(letter) ? toGreekUpper(letter) : letter.toUpperCase());
+      }
+    );
   }
 
   function toggleCase(text) {
@@ -267,11 +357,10 @@
     return processed.split('').map(function(c) {
       if (c === c.toUpperCase() && c !== c.toLowerCase()) {
         return c.toLowerCase();
-      } else if (isGreekLetter(c) && c === c.toLowerCase()) {
-        return toGreekUpper(c);
-      } else {
-        return c.toUpperCase();
+      } else if (c === c.toLowerCase() && c !== c.toUpperCase()) {
+        return isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase();
       }
+      return c;
     }).join('');
   }
 
@@ -291,16 +380,13 @@
     var processed = preProcess(text);
     var words = splitWords(processed);
     if (words.length === 0) return '';
-    return words.reduce(function(acc, word, i) {
+    return words.map(function(word, i) {
       var lower = word.toLowerCase();
       var first = lower.charAt(0);
       var rest = lower.slice(1);
-      if (i === 0) {
-        return acc + first.toLowerCase() + rest;
-      } else {
-        return acc + (isGreekLetter(first) ? toGreekUpper(first) : first.toUpperCase()) + rest;
-      }
-    }, '');
+      if (i === 0) return first + rest;
+      return (isGreekLetter(first) ? toGreekUpper(first) : first.toUpperCase()) + rest;
+    }).join('');
   }
 
   function pascalCase(text) {
@@ -338,10 +424,6 @@
 
   var currentMode = 'uppercase';
 
-  function getCurrentMode() {
-    return currentMode;
-  }
-
   function processConversion(mode) {
     var text = inputArea.value;
     var result = '';
@@ -360,24 +442,33 @@
       default: result = text;
     }
 
+    // Post-process (strip accents after conversion)
+    result = postProcess(result);
+
     outputArea.value = result;
     saveState();
   }
 
   function setCurrentMode(mode) {
     currentMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
+    var modeBtns = document.querySelectorAll('.mode-btn');
+    for (var i = 0; i < modeBtns.length; i++) {
+      if (modeBtns[i].dataset.mode === mode) {
+        modeBtns[i].classList.add('active');
+      } else {
+        modeBtns[i].classList.remove('active');
+      }
+    }
     if (inputArea.value) processConversion(mode);
   }
 
   function setupModeButtons() {
-    document.querySelectorAll('.mode-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
+    var modeBtns = document.querySelectorAll('.mode-btn');
+    for (var i = 0; i < modeBtns.length; i++) {
+      modeBtns[i].addEventListener('click', function() {
         setCurrentMode(this.dataset.mode);
       });
-    });
+    }
     setCurrentMode('uppercase');
   }
 
@@ -387,17 +478,26 @@
     var text = outputArea.value;
     var chars = text.length;
     var words = text.trim().split(/\s+/).filter(Boolean).length;
-    var lines = text.split('\n').length;
-    var sentences = text.split(/[.!?…]+/).filter(function(s) { return s.trim(); }).length;
+    var lines = text ? text.split('\n').length : 0;
+    var sentences = text.split(/[.!?…]+/).filter(function(s) {
+      return s.trim().length > 0;
+    }).length;
 
-    document.getElementById('stat-chars').textContent = chars.toLocaleString();
-    document.getElementById('stat-words').textContent = words.toLocaleString();
-    document.getElementById('stat-lines').textContent = lines.toLocaleString();
-    document.getElementById('stat-sentences').textContent = sentences.toLocaleString();
+    var el;
+    el = document.getElementById('stat-chars');
+    if (el) el.textContent = chars.toLocaleString();
+    el = document.getElementById('stat-words');
+    if (el) el.textContent = words.toLocaleString();
+    el = document.getElementById('stat-lines');
+    if (el) el.textContent = lines.toLocaleString();
+    el = document.getElementById('stat-sentences');
+    if (el) el.textContent = sentences.toLocaleString();
   }
 
   function toggleStats() {
-    statsPanel.style.display = statsPanel.style.display === 'none' ? 'flex' : 'none';
+    if (statsPanel) {
+      statsPanel.style.display = statsPanel.style.display === 'none' ? 'flex' : 'none';
+    }
   }
 
   // ========== FILE OPERATIONS ==========
@@ -408,13 +508,13 @@
       inputArea.value = e.target.result;
       processConversion(currentMode);
       showToast(getTrans('toast_opened'));
-      saveState();
     };
     reader.readAsText(file);
   }
 
   function saveFile() {
     var text = outputArea.value;
+    if (!text) return;
     var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -428,6 +528,7 @@
   }
 
   function copyToClipboard() {
+    if (!outputArea.value) return;
     outputArea.select();
     document.execCommand('copy');
     window.getSelection().removeAllRanges();
@@ -436,7 +537,9 @@
 
   function clearAll() {
     var lang = getCurrentLang();
-    var msg = lang === 'el' ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.' : 'Are you sure? All content will be lost.';
+    var msg = lang === 'el'
+      ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
+      : 'Are you sure? All content will be lost.';
     if (confirm(msg)) {
       inputArea.value = '';
       outputArea.value = '';
@@ -451,35 +554,36 @@
     }
   }
 
+  // ========== RESTORE ORIGINAL ==========
+  // Copies the raw input text to output, bypassing all conversions.
+  // This lets the user see the unmodified text in the output area.
+
   function resetOriginal() {
-    if (history.length > 0) {
-      var original = history[0];
-      inputArea.value = original.input;
-      outputArea.value = original.output;
-      processConversion(currentMode);
-      showToast(getTrans('toast_reset'));
-    }
+    if (!inputArea.value) return;
+    outputArea.value = inputArea.value;
+    saveState();
+    showToast(getTrans('toast_reset'));
   }
 
   // ========== KEYBOARD SHORTCUTS ==========
 
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
+      // Don't interfere when typing in inputs
+      var activeTag = document.activeElement ? document.activeElement.tagName : '';
+      var inModal = document.querySelector('.settings-modal.visible');
+
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         saveFile();
-      } else if (e.ctrlKey && e.key === 'c' && document.activeElement === outputArea) {
-        e.preventDefault();
-        copyToClipboard();
       } else if (e.ctrlKey && e.key === 'z') {
+        if (inModal) return;
         e.preventDefault();
         undo();
       } else if (e.ctrlKey && e.key === 'y') {
+        if (inModal) return;
         e.preventDefault();
         redo();
-      } else if (e.ctrlKey && e.key === 'Delete') {
-        e.preventDefault();
-        clearAll();
       } else if (e.ctrlKey && e.shiftKey && (e.key === 'U' || e.key === 'u')) {
         e.preventDefault();
         setCurrentMode('uppercase');
@@ -493,12 +597,11 @@
     });
   }
 
-  // ========== DROPDOWN HANDLING ==========
+  // ========== DROPDOWN ==========
 
   function setupDropdown() {
     var btnOptions = document.getElementById('btn-options');
     var dropdown = document.getElementById('options-dropdown');
-    var container = document.getElementById('options-dropdown-container');
 
     if (btnOptions && dropdown) {
       btnOptions.addEventListener('click', function(e) {
@@ -509,10 +612,15 @@
       document.addEventListener('click', function() {
         dropdown.classList.remove('visible');
       });
+
+      // Prevent clicks inside the dropdown from closing it
+      dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
     }
   }
 
-  // ========== INPUT HANDLING ==========
+  // ========== INPUT HANDLER ==========
 
   function setupInputHandler() {
     if (inputArea) {
@@ -522,7 +630,7 @@
     }
   }
 
-  // ========== INITIALIZATION ==========
+  // ========== INIT ==========
 
   function loadSavedContent() {
     var savedInput = localStorage.getItem(STORAGE_INPUT);
@@ -535,20 +643,20 @@
   function init() {
     loadHistory();
     loadOptions();
-    loadSavedContent();
-    setupModeButtons();
     setupOptionListeners();
     setupDropdown();
     setupInputHandler();
     setupKeyboardShortcuts();
+    setupModeButtons();
+    loadSavedContent();
     updateStats();
 
-    // File input handlers
+    // File input
     var btnOpen = document.getElementById('btn-open');
     var fileInput = document.getElementById('file-input');
     if (btnOpen && fileInput) {
       btnOpen.addEventListener('click', function() { fileInput.click(); });
-      fileInput.addEventListener('change', function() {
+            fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
           openFile(this.files[0]);
           this.value = '';
@@ -557,21 +665,26 @@
     }
 
     // Toolbar buttons
-    var btnSave = document.getElementById('btn-save');
     var btnCopy = document.getElementById('btn-copy');
+    var btnSave = document.getElementById('btn-save');
     var btnClear = document.getElementById('btn-clear');
     var btnUndo = document.getElementById('btn-undo');
     var btnRedo = document.getElementById('btn-redo');
     var btnReset = document.getElementById('btn-reset');
     var btnStats = document.getElementById('btn-stats');
 
-    if (btnSave) btnSave.addEventListener('click', saveFile);
     if (btnCopy) btnCopy.addEventListener('click', copyToClipboard);
+    if (btnSave) btnSave.addEventListener('click', saveFile);
     if (btnClear) btnClear.addEventListener('click', clearAll);
     if (btnUndo) btnUndo.addEventListener('click', undo);
     if (btnRedo) btnRedo.addEventListener('click', redo);
     if (btnReset) btnReset.addEventListener('click', resetOriginal);
     if (btnStats) btnStats.addEventListener('click', toggleStats);
+
+    // Re-process when language changes (for toast messages)
+    window.addEventListener('oros-language-changed', function() {
+      if (inputArea.value) processConversion(currentMode);
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);
