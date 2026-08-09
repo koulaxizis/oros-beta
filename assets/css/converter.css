@@ -1,6 +1,6 @@
 /* ============================================
    orOS Case Converter — Style Overrides
-   v2 — Fixed: stats spacing, dropdown stability
+   v2.1 — Fixed stats spacing, Zen mode support
    ============================================ */
 
 #converter-wrapper {
@@ -138,7 +138,7 @@
   position: relative;
 }
 
-/* ===== STATS PANEL — FIXED SPACING ===== */
+/* ===== STATS PANEL — FULL FIX ===== */
 .stats-panel {
   position: absolute;
   bottom: 12px;
@@ -149,7 +149,7 @@
   padding: 10px 14px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   z-index: 10;
-  min-width: 200px;
+  min-width: 220px;
 }
 
 .stats-panel .stat-item {
@@ -157,14 +157,26 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
-  gap: 16px;
+  gap: 12px;
+}
+
+.stats-panel .stat-item:first-child {
+  padding-top: 0;
+}
+
+.stats-panel .stat-item:last-child {
+  padding-bottom: 0;
 }
 
 .stats-panel .stat-label {
   font-size: 11px;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   white-space: nowrap;
   flex-shrink: 0;
+  font-weight: 500;
+  min-width: 75px;
 }
 
 .stats-panel .stat-value {
@@ -173,9 +185,11 @@
   font-weight: 600;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  flex: 1;
+  min-width: 25px;
 }
 
-/* ===== OPTIONS DROPDOWN ===== */
+/* ===== DROPDOWN ===== */
 .options-dropdown {
   position: relative;
   display: inline-flex;
@@ -252,6 +266,12 @@
   .arrow-indicator {
     transform: rotate(90deg);
   }
+
+  .stats-panel {
+    left: 8px;
+    right: 8px;
+    min-width: unset;
+  }
 }
 
 @media (max-width: 480px) {
@@ -266,10 +286,35 @@
   }
 
   .stats-panel {
-    left: 12px;
-    right: 12px;
+    left: 4px;
+    right: 4px;
     min-width: unset;
+    padding: 8px 10px;
   }
+
+  .stats-panel .stat-label {
+    min-width: 60px;
+  }
+}
+
+/* ===== ZEN MODE ===== */
+[data-zen="true"] .converter-toolbar {
+  display: none !important;
+}
+
+[data-zen="true"] #converter-wrapper {
+  height: 100vh;
+  margin-top: 0;
+}
+
+[data-zen="true"] #input-area {
+  font-size: 18px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+[data-zen="true"] #output-area {
+  font-size: 18px;
 }
 
 /* ===== PRINT ===== */

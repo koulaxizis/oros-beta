@@ -11,6 +11,8 @@ var BASE = self.registration.scope || '/';
 // Assets to cache precache (fonts, icons, static CSS/JS)
 var ASSETS_TO_CACHE = [
   'favicon.svg',
+  'index.html',
+  'editor.html',
   'converter.html',
   'assets/css/icons.css',
   'assets/css/style.css',
@@ -30,6 +32,7 @@ var SCRIPTS_TO_CACHE = [
   'assets/js/main.js',
   'assets/js/editor.js',
   'assets/js/converter.js',
+  'assets/js/global-settings.js',
   'assets/js/components/header.js',
   'assets/js/components/footer.js',
   'assets/js/translations.json'

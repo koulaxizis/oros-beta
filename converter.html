@@ -27,6 +27,9 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/converter.css">
 
+  <!-- Global settings manager (SHARED with Editor) -->
+  <script src="assets/js/global-settings.js" defer></script>
+  
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/converter.js" defer></script>
@@ -66,11 +69,11 @@
       </div>
 
       <div class="toolbar-section toolbar-center">
-        <button class="mode-btn" data-mode="uppercase" data-i18n="mode_uppercase" title="UPPERCASE">UPPERCASE</button>
+        <button class="mode-btn active" data-mode="uppercase" data-i18n="mode_uppercase" title="UPPERCASE">UPPERCASE</button>
         <button class="mode-btn" data-mode="lowercase" data-i18n="mode_lowercase" title="lowercase">lowercase</button>
         <button class="mode-btn" data-mode="title" data-i18n="mode_title" title="Title Case">Title Case</button>
         <button class="mode-btn" data-mode="sentence" data-i18n="mode_sentence" title="Sentence case">Sentence case</button>
-        <button class="mode-btn" data-mode="toggle" data-i18n="mode_toggle" title="tOGGLE cASE">tOGGLE</button>
+        <button class="mode-btn" data-mode="toggle" data-i18n="mode_toggle" title="tOGGGLE cASE">tOGGLE</button>
         <span class="tb-separator"></span>
         <button class="mode-btn" data-mode="camel" data-i18n="mode_camel" title="camelCase">camelCase</button>
         <button class="mode-btn" data-mode="pascal" data-i18n="mode_pascal" title="PascalCase">PascalCase</button>
@@ -183,6 +186,7 @@
 
   </div>
 
+  <!-- SHARED SETTINGS MODAL (same as Editor) -->
   <div class="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
@@ -193,6 +197,7 @@
       <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
+        <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -275,10 +280,62 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="converter-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_copy_btn">Hide Copy Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-copy-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_save_btn">Hide Save Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-save-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_open_btn">Hide Open Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-open-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_clear_btn">Hide Clear Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-clear-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_undo_btn">Hide Undo Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-undo-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_redo_btn">Hide Redo Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-redo-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_reset_btn">Hide Reset Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-reset-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_options">Hide Options Dropdown</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-options"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_stats_btn">Hide Stats Panel</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-stats-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
                 <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
                 <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
+                <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
+                <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>
