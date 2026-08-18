@@ -1,56 +1,49 @@
 {
-  "name": "orOS — The Artist's Operating System",
+  "name": "orOS — Creative Toolkit",
   "short_name": "orOS",
-  "description": "Privacy-first rich text editor and case converter. Works offline. No tracking.",
-  "start_url": "editor.html",
-  "scope": ".",
+  "description": "Privacy-first creative toolkit: Writer, Converter, Case Tool, Kanban, and Wiki Notes. No cookies, no tracking, no ads.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#1b1a18",
+  "background_color": "#0f0f0f",
   "theme_color": "#c8a96e",
+  "orientation": "any",
   "icons": [
-    {
-      "src": "favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshot-editor.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Writer - Rich text editor with autosave"
-    },
-    {
-      "src": "screenshot-converter.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Case Converter - Text transformation tool"
-    }
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
       "name": "Writer",
       "short_name": "Writer",
-      "description": "Open the rich text editor",
-      "url": "editor.html",
-      "icons": [{"src": "favicon.svg", "sizes": "any"}]
+      "url": "/editor.html",
+      "icons": [{ "src": "assets/icons/writer-96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "name": "Case Converter",
+      "name": "Converter",
       "short_name": "Converter",
-      "description": "Transform text case",
-      "url": "converter.html",
-      "icons": [{"src": "favicon.svg", "sizes": "any"}]
+      "url": "/converter.html",
+      "icons": [{ "src": "assets/icons/converter-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Case Tool",
+      "short_name": "Case",
+      "url": "/case.html",
+      "icons": [{ "src": "assets/icons/case-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Kanban",
+      "short_name": "Kanban",
+      "url": "/kanban.html",
+      "icons": [{ "src": "assets/icons/kanban-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Wiki Notes",
+      "short_name": "Wiki",
+      "url": "/wiki.html",
+      "icons": [{ "src": "assets/icons/wiki-96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],
-  "categories": ["productivity", "utilities", "education"],
-  "lang": "en",
-  "dir": "ltr",
-  "prefer_related_applications": false,
-  "iarc_rating_id": "eUgAA"
+  "categories": ["productivity", "utilities"]
 }

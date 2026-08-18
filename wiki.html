@@ -3,41 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS — Privacy-first creative toolkit. Writer, Converter, Case Tool, Kanban, and Wiki Notes. No cookies, no tracking, no ads. Open source.">
+  <meta name="description" content="orOS Wiki Notes — Privacy-first wiki note-taking with bidirectional links, markdown, graph view, and XML import/export. Works offline. No tracking.">
+
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
 
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/">
-  <meta property="og:title" content="orOS — Privacy-First Creative Toolkit">
-  <meta property="og:description" content="Writer, Converter, Case Tool, Kanban, and Wiki Notes. No cookies, no tracking, no ads. Open source. Works offline.">
-  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/wiki.html">
+  <meta property="og:title" content="orOS Wiki Notes — Privacy-First Wiki Note-Taking">
+  <meta property="og:description" content="Markdown wiki with bidirectional links, graph view, tags, and XML import/export. Works offline. No tracking.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-wiki.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/">
-  <meta name="twitter:title" content="orOS — Privacy-First Creative Toolkit">
-  <meta name="twitter:description" content="Writer, Converter, Case Tool, Kanban, and Wiki Notes. No cookies, no tracking, no ads. Open source. Works offline.">
-  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/wiki.html">
+  <meta name="twitter:title" content="orOS Wiki Notes — Privacy-First Wiki Note-Taking">
+  <meta name="twitter:description" content="Markdown wiki with bidirectional links, graph view, tags, and XML import/export. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card-wiki.png">
   <meta name="twitter:creator" content="@koulaxizis">
 
-  <meta name="keywords" content="orOS, writing tool, markdown editor, text converter, case converter, kanban board, wiki notes, privacy, offline, open source, no tracking">
+  <meta name="keywords" content="wiki, notes, note-taking, markdown, bidirectional links, graph view, privacy, offline, open source">
 
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
 
-  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/">
-  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/?lang=de">
-  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/">
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/wiki.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/wiki.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/wiki.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/wiki.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/wiki.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/wiki.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/wiki.html">
 
-  <title>orOS — Privacy-First Creative Toolkit</title>
+  <title>orOS Wiki Notes</title>
   <script src="config.js"></script>
   <script>
     document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
@@ -58,117 +59,103 @@
 
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/wiki.css">
 
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/wiki.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
 <body class="noscript">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
 
   <noscript>
-    <div class="noscript-message">JavaScript is required for orOS to function. Please enable JavaScript.</div>
+    <div class="noscript-message">JavaScript is required for orOS Wiki Notes to function. Please enable JavaScript.</div>
   </noscript>
 
   <div id="oros-header"></div>
 
-  <main class="oros-main">
+  <div id="wiki-wrapper">
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1 class="hero-title" data-i18n="hero_title">orOS</h1>
-        <p class="hero-subtitle" data-i18n="hero_subtitle">Privacy-first creative toolkit</p>
-        <p class="hero-description" data-i18n="hero_description">No cookies. No tracking. No ads. Everything stays in your browser.</p>
+    <!-- Sidebar — Note List -->
+    <aside class="wiki-sidebar" id="wiki-sidebar">
+      <div class="wiki-sidebar-header">
+        <input type="text" id="wiki-search" class="wiki-search-input" placeholder="Search notes...">
+        <button class="action-btn" id="btn-new-note" title="New note">
+          <i class="fa fa-plus"></i>
+        </button>
       </div>
-    </section>
+      <div class="wiki-sidebar-tags" id="wiki-sidebar-tags"></div>
+      <div class="wiki-note-list" id="wiki-note-list"></div>
+    </aside>
 
-    <!-- Tools Grid -->
-    <section class="tools-section">
-      <div class="tools-grid">
+    <!-- Resize Handle -->
+    <div class="wiki-resize-handle" id="wiki-resize-handle"></div>
 
-        <!-- Writer -->
-        <a href="editor.html" class="tool-card" data-tool="writer">
-          <div class="tool-icon">
-            <i class="fa fa-pencil-square-o"></i>
-          </div>
-          <h2 data-i18n="tool_writer">Writer</h2>
-          <p data-i18n="tool_writer_desc">Distraction-free markdown editor with live preview, word count, and smart typography.</p>
-        </a>
-
-        <!-- Converter -->
-        <a href="converter.html" class="tool-card" data-tool="converter">
-          <div class="tool-icon">
-            <i class="fa fa-exchange"></i>
-          </div>
-          <h2 data-i18n="tool_converter">Converter</h2>
-          <p data-i18n="tool_converter_desc">Convert text between Markdown, HTML, and plain text. Clean, fast, and private.</p>
-        </a>
-
-        <!-- Case Tool -->
-        <a href="case.html" class="tool-card" data-tool="case">
-          <div class="tool-icon">
-            <i class="fa fa-font"></i>
-          </div>
-          <h2 data-i18n="tool_case">Case Tool</h2>
-          <p data-i18n="tool_case_desc">Transform text case with precision. UPPERCASE, lowercase, Title Case, and more.</p>
-        </a>
-
-        <!-- Kanban -->
-        <a href="kanban.html" class="tool-card" data-tool="kanban">
-          <div class="tool-icon">
-            <i class="fa fa-columns"></i>
-          </div>
-          <h2 data-i18n="tool_kanban">Kanban</h2>
-          <p data-i18n="tool_kanban_desc">Privacy-first kanban board with drag &amp; drop, labels, due dates, pomodoro timer, and XML import/export. Works offline.</p>
-          <span class="tool-badge">New</span>
-        </a>
-
-        <!-- Wiki Notes -->
-        <a href="wiki.html" class="tool-card" data-tool="wiki">
-          <div class="tool-icon">
-            <i class="fa fa-book"></i>
-          </div>
-          <h2 data-i18n="tool_wiki">Wiki Notes</h2>
-          <p data-i18n="tool_wiki_desc">Markdown wiki with bidirectional links, graph view, tags, and XML import/export. Works offline.</p>
-          <span class="tool-badge">New</span>
-        </a>
-
+    <!-- Main Editor Area -->
+    <main class="wiki-main" id="wiki-main">
+      <div class="wiki-empty" id="wiki-empty">
+        <i class="fa fa-book"></i>
+        <p>Select or create a note to begin.</p>
       </div>
-    </section>
 
-    <!-- Privacy Section -->
-    <section class="privacy-section">
-      <div class="privacy-content">
-        <h2 data-i18n="privacy_title">Privacy First</h2>
-        <div class="privacy-grid">
-          <div class="privacy-item">
-            <i class="fa fa-shield"></i>
-            <h3 data-i18n="privacy_no_cookies">No Cookies</h3>
-            <p data-i18n="privacy_no_cookies_desc">We don't set any cookies. Period.</p>
+      <div class="wiki-editor-view" id="wiki-editor-view" style="display:none;">
+        <!-- Editor Toolbar -->
+        <div class="wiki-editor-toolbar">
+          <input type="text" id="wiki-note-title" class="wiki-note-title-input" placeholder="Note title...">
+
+          <div class="wiki-view-toggle">
+            <button class="view-btn active" data-view="split" title="Split view"><i class="fa fa-columns"></i></button>
+            <button class="view-btn" data-view="edit" title="Edit only"><i class="fa fa-pencil"></i></button>
+            <button class="view-btn" data-view="preview" title="Preview only"><i class="fa fa-eye"></i></button>
           </div>
-          <div class="privacy-item">
-            <i class="fa fa-eye-slash"></i>
-            <h3 data-i18n="privacy_no_tracking">No Tracking</h3>
-            <p data-i18n="privacy_no_tracking_desc">No analytics, no fingerprints, no profiling.</p>
+
+          <button class="action-btn" id="btn-graph-toggle" title="Graph view"><i class="fa fa-share-alt"></i></button>
+          <button class="action-btn" id="btn-wiki-import" title="Import XML"><i class="fa fa-folder-open"></i></button>
+          <button class="action-btn" id="btn-wiki-export" title="Export XML"><i class="fa fa-download"></i></button>
+          <input type="file" id="wiki-file-input" accept=".xml" style="display:none;">
+        </div>
+
+        <!-- Split Pane -->
+        <div class="wiki-split-pane" id="wiki-split-pane">
+          <div class="wiki-editor-pane" id="wiki-editor-pane">
+            <textarea id="wiki-editor" class="wiki-editor-textarea" placeholder="Start writing in Markdown..."></textarea>
           </div>
-          <div class="privacy-item">
-            <i class="fa fa-ban"></i>
-            <h3 data-i18n="privacy_no_ads">No Ads</h3>
-            <p data-i18n="privacy_no_ads_desc">No sponsors, no banners, no interruptions.</p>
-          </div>
-          <div class="privacy-item">
-            <i class="fa fa-lock"></i>
-            <h3 data-i18n="privacy_local">Local Storage</h3>
-            <p data-i18n="privacy_local_desc">Your data never leaves your browser.</p>
+          <div class="wiki-preview-pane" id="wiki-preview-pane">
+            <div class="wiki-preview-content" id="wiki-preview-content"></div>
           </div>
         </div>
-      </div>
-    </section>
 
-  </main>
+        <!-- Backlinks Panel -->
+        <div class="wiki-backlinks" id="wiki-backlinks">
+          <div class="wiki-backlinks-header">
+            <i class="fa fa-link"></i>&nbsp; Backlinks
+          </div>
+          <div class="wiki-backlinks-list" id="wiki-backlinks-list"></div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="wiki-status-bar">
+          <span id="wiki-word-count">0 words</span>
+          <span id="wiki-modified-date">—</span>
+          <span id="wiki-save-status" style="color:var(--text-muted);">Saved</span>
+        </div>
+      </div>
+
+      <!-- Graph View Canvas -->
+      <div class="wiki-graph-overlay" id="wiki-graph-overlay" style="display:none;">
+        <div class="wiki-graph-header">
+          <span class="wiki-graph-title">Connection Graph</span>
+          <button class="mini-btn" id="btn-graph-close" title="Close graph"><i class="fa fa-times"></i></button>
+        </div>
+        <canvas id="wiki-graph-canvas"></canvas>
+      </div>
+
+    </main>
+
+  </div>
 
   <!-- SHARED SETTINGS MODAL -->
   <div class="settings-modal">
@@ -226,6 +213,15 @@
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="setting_typewriter_sound">Typewriter Sound</span>
               <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_stats">Hide Stats Overlay</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-stats"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
             </div>
           </div>
         </div>
