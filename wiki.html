@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS Wiki Notes — Privacy-first wiki note-taking with bidirectional links, markdown, graph view, and XML import/export. Works offline. No tracking.">
+  <meta name="description" content="orOS Wiki Notes — Privacy-first markdown notebook with bidirectional links, tags, graph view, XML import/export. Works offline. No tracking.">
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
@@ -11,20 +11,20 @@
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/wiki.html">
-  <meta property="og:title" content="orOS Wiki Notes — Privacy-First Wiki Note-Taking">
-  <meta property="og:description" content="Markdown wiki with bidirectional links, graph view, tags, and XML import/export. Works offline. No tracking.">
-  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-wiki.png">
+  <meta property="og:title" content="orOS Wiki Notes — Privacy-First Notebook">
+  <meta property="og:description" content="Markdown wiki with [[backlinks]], tags, graph view. Works offline. No tracking.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/wiki.html">
-  <meta name="twitter:title" content="orOS Wiki Notes — Privacy-First Wiki Note-Taking">
-  <meta name="twitter:description" content="Markdown wiki with bidirectional links, graph view, tags, and XML import/export. Works offline. No tracking.">
-  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card-wiki.png">
+  <meta name="twitter:title" content="orOS Wiki Notes — Privacy-First Notebook">
+  <meta name="twitter:description" content="Markdown wiki with [[backlinks]], tags, graph view. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
   <meta name="twitter:creator" content="@koulaxizis">
 
-  <meta name="keywords" content="wiki, notes, note-taking, markdown, bidirectional links, graph view, privacy, offline, open source">
+  <meta name="keywords" content="wiki, notes, markdown, knowledge base, second brain, bi-directional links, privacy, offline, open source">
 
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
@@ -76,117 +76,141 @@
 
   <div id="oros-header"></div>
 
-  <div id="wiki-wrapper">
-
+  <!-- Main Container -->
+  <div class="wiki-wrapper" id="wiki-wrapper">
     <!-- Sidebar -->
-    <aside class="wiki-sidebar" id="wiki-sidebar">
-      <div class="wiki-sidebar-header">
-        <input type="text" id="wiki-search" class="wiki-search-input" placeholder="Search notes...">
-        <button class="action-btn" id="btn-new-note" title="New note">
+    <div class="wiki-sidebar" id="wiki-sidebar">
+      <!-- Note List Header -->
+      <div class="note-list-header">
+        <h2 data-i18n="wiki_notes">Notes</h2>
+        <button class="mini-btn" id="btn-new-note" title="New Note" data-i18n-title="wiki_new_note">
           <i class="fa fa-plus"></i>
         </button>
       </div>
-      <div class="wiki-sidebar-tags" id="wiki-sidebar-tags"></div>
-
-      <div class="wiki-note-actions" id="wiki-note-actions" style="display:none;">
-        <button class="mini-btn" id="btn-wiki-delete-note" title="Delete note">
-          <i class="fa fa-trash-o"></i>
-        </button>
-        <button class="mini-btn" id="btn-wiki-duplicate-note" title="Duplicate note">
-          <i class="fa fa-files-o"></i>
-        </button>
-        <button class="mini-btn" id="btn-wiki-toggle-pin" title="Pin/Unpin note">
-          <i class="fa fa-thumb-tack"></i>
-        </button>
+      
+      <!-- Search -->
+      <input type="text" id="wiki-search" class="wiki-search-input" placeholder="Search notes..." data-i18n-ph="wiki_search_ph">
+      
+      <!-- Tags Filter -->
+      <div class="tags-filter-container" id="wiki-sidebar-tags">
+        <!-- Tags injected dynamically -->
       </div>
-
-      <div class="wiki-note-list" id="wiki-note-list"></div>
-    </aside>
-
+      
+      <!-- Note List -->
+      <div class="note-list" id="wiki-note-list">
+        <!-- Notes injected dynamically -->
+      </div>
+    </div>
+    
     <!-- Resize Handle -->
-    <div class="wiki-resize-handle" id="wiki-resize-handle"></div>
-
-    <!-- Main Editor Area -->
-    <main class="wiki-main" id="wiki-main">
-      <div class="wiki-empty" id="wiki-empty">
-        <i class="fa fa-book"></i>
-        <p>Select or create a note to begin.</p>
+    <div class="resize-handle" id="wiki-resize-handle"></div>
+    
+    <!-- Editor Area -->
+    <div class="wiki-main" id="wiki-main">
+      <!-- Empty State -->
+      <div class="wiki-empty-state" id="wiki-empty">
+        <div class="empty-icon"><i class="fa fa-book"></i></div>
+        <h3 data-i18n="wiki_no_note_selected">Select or create a note</h3>
+        <p data-i18n="wiki_empty_tip">Create your first note or select one from the sidebar.</p>
       </div>
-
-      <div class="wiki-editor-view" id="wiki-editor-view" style="display:none;">
-        <!-- Editor Toolbar -->
-        <div class="wiki-editor-toolbar">
-          <input type="text" id="wiki-note-title" class="wiki-note-title-input" placeholder="Note title...">
-
-          <div class="wiki-view-toggle">
-            <button class="view-btn" data-view="edit" title="Edit only">
-              <i class="fa fa-pencil"></i>
-            </button>
-            <button class="view-btn active" data-view="split" title="Split view">
-              <i class="fa fa-columns"></i>
-            </button>
-            <button class="view-btn" data-view="preview" title="Preview only">
-              <i class="fa fa-eye"></i>
-            </button>
-          </div>
-
-          <button class="action-btn" id="btn-graph-toggle" title="Graph view">
-            <i class="fa fa-share-alt"></i>
+      
+      <!-- Editor View -->
+      <div class="editor-view" id="wiki-editor-view" style="display:none;">
+        <!-- Note Actions -->
+        <div class="note-actions" id="wiki-note-actions" style="display:none;">
+          <button class="action-btn" id="btn-wiki-toggle-pin" title="Pin/Unpin" data-i18n-title="wiki_pin_note">
+            <i class="fa fa-thumb-tack"></i>
           </button>
-          <button class="action-btn" id="btn-wiki-import" title="Import XML">
-            <i class="fa fa-folder-open"></i>
+          <button class="action-btn" id="btn-wiki-duplicate-note" title="Duplicate" data-i18n-title="wiki_duplicate">
+            <i class="fa fa-copy"></i>
           </button>
-          <button class="action-btn" id="btn-wiki-export" title="Export XML">
-            <i class="fa fa-download"></i>
+          <button class="action-btn" id="btn-wiki-delete-note" title="Delete" data-i18n-title="wiki_delete">
+            <i class="fa fa-trash-o"></i>
           </button>
-          <input type="file" id="wiki-file-input" accept=".xml" style="display:none;">
+          <div class="tb-spacer"></div>
+          <button class="view-btn active" data-view="split" data-i18n-title="wiki_view_split">
+            <i class="fa fa-columns"></i>
+          </button>
+          <button class="view-btn" data-view="edit" data-i18n-title="wiki_view_edit">
+            <i class="fa fa-pencil"></i>
+          </button>
+          <button class="view-btn" data-view="preview" data-i18n-title="wiki_view_preview">
+            <i class="fa fa-eye"></i>
+          </button>
         </div>
-
+        
+        <!-- Title Input -->
+        <input type="text" id="wiki-note-title" class="wiki-title-input" placeholder="Note title..." data-i18n-ph="wiki_title_ph">
+        
         <!-- Split Pane -->
         <div class="wiki-split-pane" id="wiki-split-pane" data-mode="split">
-          <div class="wiki-editor-pane" id="wiki-editor-pane">
-            <textarea id="wiki-editor" class="wiki-editor-textarea" placeholder="Start writing in Markdown..."></textarea>
+          <!-- Editor -->
+          <div class="editor-pane">
+            <textarea id="wiki-editor" class="wiki-editor-textarea" placeholder="Write in markdown..." data-i18n-ph="wiki_editor_ph"></textarea>
           </div>
-          <div class="wiki-preview-pane" id="wiki-preview-pane">
-            <div class="wiki-preview-content" id="wiki-preview-content"></div>
-          </div>
-        </div>
-
-        <!-- Tags and Backlinks Panel -->
-        <div class="wiki-meta-panel" id="wiki-meta-panel">
-          <div class="wiki-tags-section">
-            <div class="wiki-tags-header">
-              <i class="fa fa-tags"></i>&nbsp; <span data-i18n="wiki_tags">Tags</span>
-            </div>
-            <div class="wiki-tags-editor" id="wiki-tags-editor"></div>
-          </div>
-          <div class="wiki-backlinks-section">
-            <div class="wiki-backlinks-header">
-              <i class="fa fa-link"></i>&nbsp; <span data-i18n="wiki_backlinks">Backlinks</span>
-            </div>
-            <div class="wiki-backlinks-list" id="wiki-backlinks-list"></div>
+          
+          <!-- Preview -->
+          <div class="preview-pane">
+            <div class="preview-content" id="wiki-preview-content"></div>
           </div>
         </div>
-
+        
+        <!-- Backlinks Panel -->
+        <div class="backlinks-panel">
+          <h4 data-i18n="wiki_backlinks">Backlinks</h4>
+          <div class="backlinks-list" id="wiki-backlinks-list">
+            <!-- Backlinks injected dynamically -->
+          </div>
+        </div>
+        
+        <!-- Tags Editor -->
+        <div class="tags-editor">
+          <h4 data-i18n="wiki_tags">Tags</h4>
+          <div class="tags-chips" id="wiki-tags-editor">
+            <!-- Tags injected dynamically -->
+          </div>
+        </div>
+        
         <!-- Status Bar -->
         <div class="wiki-status-bar">
-          <span id="wiki-word-count">0 words</span>
-          <span id="wiki-modified-date">&mdash;</span>
-          <span id="wiki-save-status" style="color:var(--text-muted);">Saved</span>
+          <span class="status-item">
+            <i class="fa fa-file-text-o"></i>
+            <span id="wiki-word-count">0 words</span>
+          </span>
+          <span class="status-item">
+            <i class="fa fa-clock-o"></i>
+            <span id="wiki-modified-date">—</span>
+          </span>
+          <span class="status-item">
+            <i class="fa fa-floppy-o"></i>
+            <span id="wiki-save-status" data-i18n="text_saved">Saved</span>
+          </span>
+          <div class="tb-spacer"></div>
+          <button class="mini-btn" id="btn-graph-toggle" title="Graph View" data-i18n-title="wiki_graph_view">
+            <i class="fa fa-share-alt"></i> Graph
+          </button>
+          <button class="mini-btn" id="btn-wiki-import" title="Import XML" data-i18n-title="wiki_import">
+            <i class="fa fa-upload"></i> Import
+          </button>
+          <input type="file" id="wiki-file-input" accept=".xml" style="display:none;">
+          <button class="mini-btn" id="btn-wiki-export" title="Export XML" data-i18n-title="wiki_export">
+            <i class="fa fa-download"></i> Export
+          </button>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Graph View Overlay -->
-      <div class="wiki-graph-overlay" id="wiki-graph-overlay" style="display:none;">
-        <div class="wiki-graph-header">
-          <span class="wiki-graph-title">Connection Graph</span>
-          <button class="mini-btn" id="btn-graph-close" title="Close graph"><i class="fa fa-times"></i></button>
-        </div>
-        <canvas id="wiki-graph-canvas"></canvas>
-      </div>
-
-    </main>
-
+  <!-- Graph Overlay -->
+  <div class="graph-overlay" id="wiki-graph-overlay">
+    <div class="graph-toolbar">
+      <h3 data-i18n="wiki_graph_view">Knowledge Graph</h3>
+      <button class="mini-btn" id="btn-graph-close" title="Close"><i class="fa fa-times"></i></button>
+    </div>
+    <canvas id="wiki-graph-canvas"></canvas>
+    <div class="graph-controls">
+      <span data-i18n="wiki_graph_zoom">Scroll to zoom • Drag nodes to rearrange</span>
+    </div>
   </div>
 
   <!-- SHARED SETTINGS MODAL -->
@@ -202,8 +226,10 @@
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
         <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
+        <button class="tab-btn" data-tab="wiki-settings" data-i18n="tab_wiki">Wiki Notes</button>
       </div>
       <div class="settings-body">
+        <!-- Global Settings -->
         <div class="tab-panel" id="global-settings" style="display:flex;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -225,6 +251,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Writer Settings -->
         <div class="tab-panel" id="writer-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -248,39 +276,6 @@
               <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_stats">Hide Stats Overlay</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_goal_btn">Hide Goal Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_outline_btn">Hide Outline Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_metadata_btn">Hide Metadata Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_find_btn">Hide Find Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-find-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_wordfreq_btn">Hide Word Frequency Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
@@ -290,6 +285,8 @@
             </table>
           </div>
         </div>
+
+        <!-- Converter Settings -->
         <div class="tab-panel" id="converter-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -301,33 +298,8 @@
               <label class="switch"><input type="checkbox" id="toggle-hide-save-btn"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_open_btn">Hide Open Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-open-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_hide_clear_btn">Hide Clear Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-clear-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_undo_btn">Hide Undo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-undo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_redo_btn">Hide Redo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-redo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_reset_btn">Hide Reset Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-reset-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_options">Hide Options Dropdown</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-options"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_stats_btn">Hide Stats Panel</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats-btn"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
             <table class="shortcut-table">
@@ -340,6 +312,8 @@
             </table>
           </div>
         </div>
+
+        <!-- Kanban Settings -->
         <div class="tab-panel" id="kanban-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -357,6 +331,30 @@
                 <tr><td>New Card</td><td><kbd>N</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
                 <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Wiki Notes Settings -->
+        <div class="tab-panel" id="wiki-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="wiki_setting_auto_preview">Auto Preview Refresh</span>
+              <label class="switch"><input type="checkbox" id="toggle-wiki-auto-preview" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="wiki_setting_link_creates_note">Click Unlinked Creates Note</span>
+              <label class="switch"><input type="checkbox" id="toggle-wiki-create-on-click" checked><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Note</td><td><kbd>Ctrl+N</kbd></td></tr>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Graph View</td><td><kbd>G</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>

@@ -1,0 +1,89 @@
+<!-- translate/index.html — Σκελετός -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>orOS Translation Console</title>
+  <link rel="stylesheet" href="../assets/css/icons.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="translator.css">
+</head>
+<body>
+  <div class="translator-layout">
+    <header class="translator-header">
+      <h1>orOS Translation Console</h1>
+      <div class="lang-selector">
+        <label>Source:</label>
+        <select id="source-lang">
+          <option value="en">English</option>
+        </select>
+        <label>Target:</label>
+        <select id="target-lang">
+          <option value="el">Ελληνικά</option>
+          <option value="es">Español</option>
+          <option value="it">Italiano</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button id="btn-load" class="action-btn">Load</button>
+        <button id="btn-export" class="action-btn">Export JSON</button>
+        <button id="btn-import" class="action-btn">Import JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none;">
+      </div>
+    </header>
+
+    <div class="translator-stats">
+      <div class="stat">
+        <span class="stat-label">Total Keys</span>
+        <span class="stat-value" id="stat-total">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Translated</span>
+        <span class="stat-value" id="stat-translated">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Missing</span>
+        <span class="stat-value" id="stat-missing">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Progress</span>
+        <span class="stat-value" id="stat-progress">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="translator-search">
+      <input type="text" id="search-filter" placeholder="Filter keys...">
+      <label class="switch-inline">
+        <input type="checkbox" id="show-missing-only"> Show missing only
+      </label>
+    </div>
+
+    <div class="translator-table-wrapper">
+      <table class="translator-table" id="translation-table">
+        <thead>
+          <tr>
+            <th class="col-key">Key</th>
+            <th class="col-source">Source (EN)</th>
+            <th class="col-target">Translation</th>
+            <th class="col-status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="translation-rows"></tbody>
+      </table>
+    </div>
+
+    <footer class="translator-footer">
+      <p>Edit translations, then click "Export JSON" and submit a Pull Request.</p>
+      <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener">→ GitHub Repository</a>
+    </footer>
+  </div>
+
+  <script src="translator.js"></script>
+</body>
+</html>

@@ -9,7 +9,10 @@ orOS is a privacy-first creative toolkit for artists. All tools work completely 
 
 ## Core Products
 1. Writer (editor.html) — Rich text editor with autosave, writing goals, document outline, word frequency analysis
-2. Case Converter (converter.html) — 10 text transformation modes + Greek accent removal
+2. Converter (converter.html) — Format converter: Markdown↔HTML, JSON↔YAML, JSON↔CSV, Base64, URL encode, HTML entities, hex, binary, slugify, and more
+3. Case Tool (case.html) — 10 text transformation modes + Greek accent removal
+4. Kanban (kanban.html) — Privacy-first kanban board with drag & drop, labels, due dates, pomodoro timer, XML import/export
+5. Wiki Notes (wiki.html) — Markdown wiki with bidirectional links, graph view, tags, XML import/export
 
 ## Privacy Principles
 - No cookies, no tracking, no analytics

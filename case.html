@@ -3,48 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS Case Converter — Privacy-first text transformation tool with 10 case modes and Greek accent stripping. Works offline. No tracking.">
-  
-  <!-- SEO Meta Tags -->
+  <meta name="description" content="orOS Case Tool — Transform text case with 10 modes plus Greek accent removal. Works offline. No tracking.">
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
-  
-  <!-- Open Graph / Facebook -->
+
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/converter.html">
-  <meta property="og:title" content="orOS Case Converter — Privacy-First Text Transformation">
-  <meta property="og:description" content="Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/case.html">
+  <meta property="og:title" content="orOS Case Tool — Text Case Converter">
+  <meta property="og:description" content="10 text transformation modes plus Greek accent removal. Works offline. No tracking.">
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
-  
-  <!-- Twitter Card -->
+
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/converter.html">
-  <meta name="twitter:title" content="orOS Case Converter — Privacy-First Text Transformation">
-  <meta name="twitter:description" content="Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/case.html">
+  <meta name="twitter:title" content="orOS Case Tool — Text Case Converter">
+  <meta name="twitter:description" content="10 text transformation modes plus Greek accent removal. Works offline. No tracking.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
   <meta name="twitter:creator" content="@koulaxizis">
-  
-  <!-- Additional SEO -->
-  <meta name="keywords" content="case converter, text transformation, uppercase, lowercase, title case, camelCase, snake_case, kebab-case, Greek accents, Markdown, privacy, offline">
-  
-  <!-- Resource Hints -->
+
+  <meta name="keywords" content="case converter, uppercase, lowercase, title case, camelCase, snake_case, kebab-case, Greek accents, text tool, privacy, offline">
+
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
-  
-  <!-- hreflang -->
-  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/converter.html">
-  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=de">
-  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/converter.html">
-  
-  <title>orOS Case Converter</title>
+
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/case.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/case.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/case.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/case.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/case.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/case.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/case.html">
+
+  <title>orOS Case Tool</title>
   <script src="config.js"></script>
   <script>
     document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
@@ -65,72 +58,73 @@
 
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/converter.css">
+  <link rel="stylesheet" href="assets/css/case.css">
 
-  <!-- Global settings manager (SHARED with Editor) -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
-  
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
-  <script src="assets/js/converter.js" defer></script>
+  <script src="assets/js/case.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
 <body class="noscript">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
 
   <noscript>
-    <div class="noscript-message">JavaScript is required for orOS Case Converter to function. Please enable JavaScript.</div>
+    <div class="noscript-message">JavaScript is required for orOS Case Tool to function. Please enable JavaScript.</div>
   </noscript>
 
   <div id="oros-header"></div>
 
   <div id="converter-wrapper">
 
+    <!-- Toolbar -->
     <div class="converter-toolbar" id="converter-toolbar">
+      <!-- Left: File Actions -->
       <div class="toolbar-section toolbar-left">
-        <button class="action-btn" id="btn-copy" data-i18n-tooltip="tooltip_copy" title="Copy to clipboard">
-          <i class="fa fa-copy"></i>
-        </button>
-        <button class="action-btn" id="btn-save" data-i18n-tooltip="tooltip_save_file" title="Save file (Ctrl+S)">
-          <i class="fa fa-save"></i>
-        </button>
-        <button class="action-btn" id="btn-open" data-i18n-tooltip="tooltip_open" title="Open file">
+        <button class="action-btn" id="btn-open" title="Open file">
           <i class="fa fa-folder-open"></i>
         </button>
-        <input type="file" id="file-input" accept=".txt,.md,.markdown" style="display:none;">
-        <button class="action-btn" id="btn-clear" data-i18n-tooltip="tooltip_clear" title="Clear all">
+        <input type="file" id="file-input" accept=".txt,.md,.csv,.json" style="display:none;">
+        <button class="action-btn" id="btn-copy" title="Copy output">
+          <i class="fa fa-copy"></i>
+        </button>
+        <button class="action-btn" id="btn-save" title="Save output">
+          <i class="fa fa-download"></i>
+        </button>
+        <button class="action-btn" id="btn-clear" title="Clear all">
           <i class="fa fa-trash-o"></i>
         </button>
-        <button class="action-btn" id="btn-undo" data-i18n-tooltip="tooltip_undo" title="Undo (Ctrl+Z)">
+        <span class="tb-separator"></span>
+        <button class="action-btn" id="btn-undo" title="Undo">
           <i class="fa fa-undo"></i>
         </button>
-        <button class="action-btn" id="btn-redo" data-i18n-tooltip="tooltip_redo" title="Redo (Ctrl+Y)">
+        <button class="action-btn" id="btn-redo" title="Redo">
           <i class="fa fa-repeat"></i>
         </button>
-        <span class="tb-separator"></span>
-        <button class="action-btn" id="btn-reset" data-i18n-tooltip="tooltip_reset" title="Restore original">
+        <button class="action-btn" id="btn-reset" title="Restore original">
           <i class="fa fa-refresh"></i>
         </button>
       </div>
 
+      <!-- Center: Mode Buttons -->
       <div class="toolbar-section toolbar-center">
-        <button class="mode-btn active" data-mode="uppercase" data-i18n="mode_uppercase" title="UPPERCASE">UPPERCASE</button>
-        <button class="mode-btn" data-mode="lowercase" data-i18n="mode_lowercase" title="lowercase">lowercase</button>
-        <button class="mode-btn" data-mode="title" data-i18n="mode_title" title="Title Case">Title Case</button>
-        <button class="mode-btn" data-mode="sentence" data-i18n="mode_sentence" title="Sentence case">Sentence case</button>
-        <button class="mode-btn" data-mode="toggle" data-i18n="mode_toggle" title="tOGGLE cASE">tOGGLE</button>
-        <span class="tb-separator"></span>
-        <button class="mode-btn" data-mode="camel" data-i18n="mode_camel" title="camelCase">camelCase</button>
-        <button class="mode-btn" data-mode="pascal" data-i18n="mode_pascal" title="PascalCase">PascalCase</button>
-        <button class="mode-btn" data-mode="snake" data-i18n="mode_snake" title="snake_case">snake_case</button>
-        <button class="mode-btn" data-mode="kebab" data-i18n="mode_kebab" title="kebab-case">kebab-case</button>
-        <button class="mode-btn" data-mode="constant" data-i18n="mode_constant" title="CONSTANT_CASE">CONSTANT</button>
+        <button class="mode-btn active" data-mode="uppercase" title="UPPERCASE (Ctrl+Shift+U)">UPPER</button>
+        <button class="mode-btn" data-mode="lowercase" title="lowercase (Ctrl+Shift+L)">lower</button>
+        <button class="mode-btn" data-mode="title" title="Title Case (Ctrl+Shift+T)">Title</button>
+        <button class="mode-btn" data-mode="sentence" title="Sentence case">Sentence</button>
+        <button class="mode-btn" data-mode="toggle" title="tOGGLE cASE">tOGGLE</button>
+        <button class="mode-btn" data-mode="camel" title="camelCase">camelCase</button>
+        <button class="mode-btn" data-mode="pascal" title="PascalCase">PascalCase</button>
+        <button class="mode-btn" data-mode="snake" title="snake_case">snake_case</button>
+        <button class="mode-btn" data-mode="kebab" title="kebab-case">kebab-case</button>
+        <button class="mode-btn" data-mode="constant" title="CONSTANT_CASE">CONSTANT</button>
       </div>
 
+      <!-- Right: Options + Stats -->
       <div class="toolbar-section toolbar-right">
-        <div class="options-dropdown" id="options-dropdown-container">
-          <button class="action-btn dropdown-toggle" id="btn-options" data-i18n-tooltip="tooltip_options" title="Conversion options">
+        <div class="dropdown options-dropdown">
+          <button class="action-btn" id="btn-options" title="Options">
             <i class="fa fa-sliders"></i>
             <i class="fa fa-caret-down dropdown-arrow-icon"></i>
           </button>
@@ -138,92 +132,97 @@
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-sentence-preserve">
-                <span data-i18n="opt_sentence_preserve">Preserve sentence starts</span>
+                <span>Preserve sentence starts (lower)</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-word-preserve">
-                <span data-i18n="opt_word_preserve">Preserve word starts</span>
+                <span>Preserve word starts (lower)</span>
               </label>
             </div>
+            <div class="dropdown-divider"></div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-acronyms">
-                <span data-i18n="opt_acronyms">Preserve acronyms</span>
+                <span>Preserve acronyms (Title)</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-roman">
-                <span data-i18n="opt_roman">Preserve Roman numerals</span>
+                <span>Preserve Roman numerals (Title)</span>
               </label>
             </div>
             <div class="dropdown-divider"></div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-trim">
-                <span data-i18n="opt_trim">Trim lines</span>
+                <span>Trim whitespace per line</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-collapse">
-                <span data-i18n="opt_collapse">Collapse spaces</span>
+                <span>Collapse multiple spaces</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-removelinebreaks">
-                <span data-i18n="opt_removelinebreaks">Remove line breaks</span>
+                <span>Remove line breaks</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-removechars">
-                <span data-i18n="opt_removechars">Remove special chars</span>
+                <span>Remove special characters</span>
               </label>
             </div>
+            <div class="dropdown-divider"></div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-stripaccents">
-                <span data-i18n="opt_stripaccents">Strip accents</span>
+                <span>Strip Greek accents</span>
               </label>
             </div>
             <div class="dropdown-option">
               <label class="option-label">
                 <input type="checkbox" id="opt-stripformatting">
-                <span data-i18n="opt_stripformatting">Strip formatting</span>
+                <span>Strip Markdown/HTML formatting</span>
               </label>
             </div>
           </div>
         </div>
-        <button class="action-btn" id="btn-stats" data-i18n-tooltip="tooltip_stats" title="Statistics">
+        <button class="action-btn" id="btn-stats" title="Toggle stats">
           <i class="fa fa-bar-chart"></i>
         </button>
       </div>
     </div>
 
+    <!-- Content -->
     <div class="converter-content">
-      <textarea id="input-area" data-i18n-placeholder="input_placeholder" spellcheck="false"></textarea>
-      <div class="arrow-indicator"><i class="fa fa-arrow-down"></i></div>
+      <textarea id="input-area" placeholder="Type or paste text here..." spellcheck="false"></textarea>
+      <div class="arrow-indicator">
+        <i class="fa fa-arrow-down"></i>
+      </div>
       <div class="output-container">
-        <textarea id="output-area" readonly data-i18n-placeholder="output_placeholder" spellcheck="false"></textarea>
-        <div class="stats-panel" id="stats-panel" style="display:none;">
+        <textarea id="output-area" placeholder="Output..." spellcheck="false" readonly></textarea>
+        <div class="stats-panel" id="stats-panel">
           <div class="stat-item">
-            <span class="stat-label" data-i18n="conv_stats_chars">Characters</span>
+            <span class="stat-label">Characters</span>
             <span class="stat-value" id="stat-chars">0</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label" data-i18n="conv_stats_words">Words</span>
+            <span class="stat-label">Words</span>
             <span class="stat-value" id="stat-words">0</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label" data-i18n="conv_stats_lines">Lines</span>
+            <span class="stat-label">Lines</span>
             <span class="stat-value" id="stat-lines">0</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label" data-i18n="conv_stats_sentences">Sentences</span>
+            <span class="stat-label">Sentences</span>
             <span class="stat-value" id="stat-sentences">0</span>
           </div>
         </div>
@@ -244,8 +243,11 @@
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
+        <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
+        <button class="tab-btn" data-tab="wiki-settings" data-i18n="tab_wiki">Wiki Notes</button>
       </div>
       <div class="settings-body">
+        <!-- Global Settings -->
         <div class="tab-panel" id="global-settings" style="display:flex;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -267,6 +269,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Writer Settings -->
         <div class="tab-panel" id="writer-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -290,39 +294,6 @@
               <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_stats">Hide Stats Overlay</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_goal_btn">Hide Goal Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_outline_btn">Hide Outline Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_metadata_btn">Hide Metadata Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_find_btn">Hide Find Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-find-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_wordfreq_btn">Hide Word Frequency Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
@@ -332,6 +303,8 @@
             </table>
           </div>
         </div>
+
+        <!-- Converter Settings -->
         <div class="tab-panel" id="converter-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
@@ -375,13 +348,56 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
-                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
-                <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
-                <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
-                <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
-                <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Kanban Settings -->
+        <div class="tab-panel" id="kanban-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_work">Pomodoro Work (minutes)</span>
+              <input type="number" id="setting-pomo-work" min="1" max="60" value="25" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_break">Pomodoro Break (minutes)</span>
+              <input type="number" id="setting-pomo-break" min="1" max="30" value="5" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Card</td><td><kbd>N</kbd></td></tr>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Wiki Notes Settings -->
+        <div class="tab-panel" id="wiki-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="wiki_setting_auto_preview">Auto Preview Refresh</span>
+              <label class="switch"><input type="checkbox" id="toggle-wiki-auto-preview" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="wiki_setting_link_creates_note">Click Unlinked Creates Note</span>
+              <label class="switch"><input type="checkbox" id="toggle-wiki-create-on-click" checked><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Note</td><td><kbd>Ctrl+N</kbd></td></tr>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Graph View</td><td><kbd>G</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>

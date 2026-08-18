@@ -1,30 +1,178 @@
+// ============================================
+// orOS Header Component
+// Updated for Productivity Suite branding
+// ============================================
+
 (function() {
-  document.addEventListener('DOMContentLoaded', function() {
-    var headerEl = document.getElementById('oros-header');
-    if (!headerEl) return;
+  'use strict';
 
-    var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.6.2';
-    var channel = (window.OROS_CONFIG && window.OROS_CONFIG.channel) || 'beta';
+  function getCurrentLang() {
+    return localStorage.getItem('oros-language') || 'en';
+  }
 
-    headerEl.innerHTML =
-      '<header class="header">' +
-        '<div class="header-content">' +
-          '<div class="header-left">' +
-            '<a href="index.html" class="logo-link">' +
-              '<img src="favicon.svg" alt="orOS" class="logo-icon" />' +
-              '<span class="logo-text">orOS</span>' +
+  function getTrans(key) {
+    var lang = getCurrentLang();
+    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
+    return t[key] || key;
+  }
+
+  function renderHeader() {
+    var container = document.getElementById('oros-header');
+    if (!container) return;
+
+    container.innerHTML =
+      '<header class="orus-header">' +
+        '<div class="header-main">' +
+          '<div class="brand-section">' +
+            '<a href="/index.html" class="brand-logo">' +
+              '<div class="logo-icon"><svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 2L4 8v16l12 6 12-6V8L16 2zm0 3.5l9 4.5-9 4.5-9-4.5 9-4.5zM6.5 10l8.5 4.25v11.5L6.5 21.5V10zm19 0v11.5L17 25.75v-11.5L25.5 10z"/></svg></div>' +
+              '<div class="brand-text">' +
+                '<span class="brand-name">orOS</span>' +
+                '<span class="brand-tagline">' + getTrans('suite_productivity') + '</span>' +
+              '</div>' +
             '</a>' +
-            '<span class="version-badge">' + version + '</span>' +
-            (channel === 'beta' ? '<span class="channel-badge beta">BETA</span>' : '') +
-			(channel === 'stable' ? '<span class="channel-badge beta">STABLE</span>' : '') +
           '</div>' +
-          '<div class="header-right">' +
-            '<select id="language-select" class="lang-select" aria-label="Language"></select>' +
-            '<button id="btn-zen" class="header-btn" data-i18n-aria="aria_zen" aria-label="Zen Mode" title="Zen Mode (F9)"><i class="fa fa-eye-slash"></i></button>' +
-            '<button id="btn-settings" class="header-btn" data-i18n-aria="aria_settings" aria-label="Settings" title="Settings"><i class="fa fa-cog"></i></button>' +
-            '<button id="theme-toggle" class="header-btn" data-i18n-aria="aria_theme_toggle" aria-label="Toggle theme" title="Toggle theme"><i class="fa fa-sun-o"></i></button>' +
+          '<nav class="nav-section">' +
+            '<a href="/index.html" class="nav-link" data-i18n="nav_home">Home</a>' +
+            '<a href="/editor.html" class="nav-link" data-i18n="nav_writer">Writer</a>' +
+            '<a href="/kanban.html" class="nav-link" data-i18n="nav_kanban">Kanban</a>' +
+            '<a href="/wiki.html" class="nav-link" data-i18n="nav_wiki">Wiki Notes</a>' +
+            '<a href="/case.html" class="nav-link" data-i18n="nav_case">Case</a>' +
+            '<a href="/converter.html" class="nav-link" data-i18n="nav_converter">Convert</a>' +
+            '<a href="/prompter.html" class="nav-link" data-i18n="nav_prompter">Prompter</a>' +
+          '</nav>' +
+          '<div class="header-actions">' +
+            '<div class="language-dropdown">' +
+              '<button class="lang-btn" id="language-select-btn" aria-label="Select Language">' +
+                '<i class="fa fa-globe"></i>' +
+                '<span id="current-lang-label">' + (getCurrentLang() === 'el' ? 'Ελληνικά' : 'English') + '</span>' +
+              '</button>' +
+              '<div class="lang-dropdown" id="language-dropdown">' +
+                '<a href="#" class="lang-item" data-lang="el">Ελληνικά</a>' +
+                '<a href="#" class="lang-item" data-lang="en">English</a>' +
+                '<a href="#" class="lang-item" data-lang="es">Español</a>' +
+                '<a href="#" class="lang-item" data-lang="it">Italiano</a>' +
+                '<a href="#" class="lang-item" data-lang="fr">Français</a>' +
+                '<a href="#" class="lang-item" data-lang="de">Deutsch</a>' +
+              '</div>' +
+            '</div>' +
+            '<button class="action-btn zen-mode-toggle" id="zen-mode-btn" title="Zen Mode" data-i18n-title="toggle_zen">' +
+              '<i class="fa fa-arrows-alt"></i>' +
+            '</button>' +
+            '<button class="action-btn settings-btn" id="settings-btn" title="Settings" data-i18n-title="settings">' +
+              '<i class="fa fa-cog"></i>' +
+            '</button>' +
           '</div>' +
         '</div>' +
       '</header>';
-  });
+
+    // Language dropdown handler
+    var btn = document.getElementById('language-select-btn');
+    var dropdown = document.getElementById('language-dropdown');
+    var label = document.getElementById('current-lang-label');
+
+    if (btn && dropdown && label) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('visible');
+      });
+
+      document.addEventListener('click', function() {
+        dropdown.classList.remove('visible');
+      });
+
+      dropdown.addEventListener('click', function(e) {
+        if (e.target.classList.contains('lang-item')) {
+          var lang = e.target.dataset.lang;
+          if (window.OROS_I18N && window.OROS_I18N.setLang) {
+            window.OROS_I18N.setLang(lang);
+            label.textContent = lang === 'el' ? 'Ελληνικά' : (lang === 'en' ? 'English' :
+              lang === 'es' ? 'Español' : lang === 'it' ? 'Italiano' :
+              lang === 'fr' ? 'Français' : 'Deutsch');
+          }
+          dropdown.classList.remove('visible');
+        }
+        e.stopPropagation();
+      });
+    }
+
+    // Zen mode toggle
+    var zenBtn = document.getElementById('zen-mode-btn');
+    if (zenBtn) {
+      zenBtn.addEventListener('click', function() {
+        document.body.classList.toggle('zen-mode');
+        var zenEnabled = document.body.classList.contains('zen-mode');
+        localStorage.setItem('oros-zen-mode', zenEnabled.toString());
+        window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
+          detail: { enabled: zenEnabled }
+        }));
+      });
+
+      // Restore saved zen mode
+      var savedZen = localStorage.getItem('oros-zen-mode') === 'true';
+      if (savedZen) {
+        document.body.classList.add('zen-mode');
+      }
+    }
+
+    // Settings button
+    var settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', function() {
+        var modal = document.querySelector('.settings-modal');
+        if (modal) {
+          modal.classList.add('visible');
+        }
+      });
+    }
+
+    // Translate static UI elements after rendering
+    translateStaticElements();
+  }
+
+  function translateStaticElements() {
+    var el;
+    
+    el = document.querySelector('.brand-tagline');
+    if (el) el.textContent = getTrans('suite_productivity') || 'Productivity Suite';
+
+    // Navigation links
+    var navLinks = [
+      { selector: '.nav-link[href="/index.html"]', key: 'nav_home' },
+      { selector: '.nav-link[href="/editor.html"]', key: 'nav_writer' },
+      { selector: '.nav-link[href="/kanban.html"]', key: 'nav_kanban' },
+      { selector: '.nav-link[href="/wiki.html"]', key: 'nav_wiki' },
+      { selector: '.nav-link[href="/case.html"]', key: 'nav_case' },
+      { selector: '.nav-link[href="/converter.html"]', key: 'nav_converter' },
+      { selector: '.nav-link[href="/prompter.html"]', key: 'nav_prompter' }
+    ];
+
+    navLinks.forEach(function(item) {
+      el = document.querySelector(item.selector);
+      if (el) el.setAttribute('data-i18n', item.key);
+    });
+
+    // Apply translations
+    document.querySelectorAll('[data-i18n]').forEach(function(elem) {
+      var key = elem.getAttribute('data-i18n');
+      var val = getTrans(key);
+      if (val && val !== key) elem.textContent = val;
+    });
+  }
+
+  // Re-render on language change
+  if (window.OROS_I18N) {
+    window.addEventListener('oras-language-changed', function(e) {
+      renderHeader();
+    });
+  }
+
+  // Initial render
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(renderHeader, 100);
+    });
+  } else {
+    setTimeout(renderHeader, 100);
+  }
 })();

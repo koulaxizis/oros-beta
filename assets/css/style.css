@@ -1183,3 +1183,133 @@ body.landing-page {
 body:not(.js-enabled) .noscript-message {
   display: block;
 }
+
+/* ============================================
+   orOS — Landing Page & Privacy Section Additions
+   APPEND to end of style.css
+   ============================================ */
+
+/* ===== MAIN WRAPPER (Landing Page) ===== */
+.oros-main {
+  padding-top: 56px;
+  padding-bottom: 56px;
+  min-height: 100vh;
+}
+
+/* ===== TOOLS SECTION WRAPPER ===== */
+.tools-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ===== TOOL BADGE ("New") ===== */
+.tool-card {
+  position: relative;
+}
+
+.tool-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== PRIVACY SECTION ===== */
+.privacy-section {
+  padding: 3rem 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.privacy-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.privacy-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.privacy-item {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.privacy-item:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+
+.privacy-icon {
+  font-size: 2rem;
+  color: var(--accent-gold);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-icon .fa {
+  font-size: 2rem;
+}
+
+.privacy-item h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.privacy-item p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ===== RESPONSIVE — PRIVACY ===== */
+@media (max-width: 768px) {
+  .privacy-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .privacy-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .privacy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oros-main {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+}

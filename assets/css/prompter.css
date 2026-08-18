@@ -1,0 +1,278 @@
+/* ============================================
+   orOS Prompter — Stylesheet
+   ============================================ */
+
+.prompter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#prompter-search {
+  flex: 1;
+  max-width: 320px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+#prompter-search:focus { border-color: var(--accent-gold); }
+
+.prompter-categories {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: thin;
+}
+
+.cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.cat-btn:hover { border-color: var(--accent-gold); color: var(--text-primary); }
+.cat-btn.active { background: var(--accent-gold); color: var(--bg-base); border-color: var(--accent-gold); }
+
+.cat-count {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cat-btn.active .cat-count { background: rgba(0, 0, 0, 0.25); }
+
+/* Main layout */
+.prompter-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 24px;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Grid */
+.prompter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Prompt Card */
+.prompt-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
+.prompt-card.completed { opacity: 0.6; }
+.prompt-card.completed .prompt-card-title { text-decoration: line-through; }
+.prompt-card.favorite { border-color: rgba(200, 169, 110, 0.4); }
+
+.prompt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prompt-cat-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  background: rgba(200, 169, 110, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.prompt-fav-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.prompt-fav-btn:hover { color: var(--accent-gold); }
+
+.prompt-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.prompt-card-excerpt {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.prompt-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.prompt-number { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.prompt-done { color: var(--success); font-size: 14px; }
+
+/* Detail View */
+.prompter-detail {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.prompt-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt-detail-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.prompt-detail-body { display: flex; flex-direction: column; gap: 16px; }
+
+.prompt-section h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-gold);
+  margin: 0 0 6px 0;
+}
+
+.prompt-section p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.technique-box {
+  background: rgba(200, 169, 110, 0.06);
+  border-left: 3px solid var(--accent-gold);
+  padding: 12px 16px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Writing Area */
+.prompter-writing {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.writing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.writing-header h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.writing-header span { font-size: 12px; color: var(--text-muted); }
+
+.prompter-writing textarea {
+  width: 100%;
+  min-height: 300px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-family: var(--font-primary);
+  font-size: 15px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+}
+
+.prompter-writing textarea:focus { border-color: var(--accent-gold); }
+
+/* Empty State */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+}
+
+.empty-state i { font-size: 32px; margin-bottom: 12px; display: block; }
+.empty-state p { font-size: 13px; }
+
+/* Mini btn reuse */
+.mini-btn {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mini-btn:hover { border-color: var(--accent-gold); color: var(--text-primary); }
+
+/* Action btn reuse */
+.action-btn {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.action-btn:hover { border-color: var(--accent-gold); color: var(--text-primary); }

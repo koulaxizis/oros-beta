@@ -1,7 +1,8 @@
 // ============================================
-// orOS Wiki Notes — Full Implementation v2
+// orOS Wiki Notes — Full Implementation v3
 // FIXES: checklist support, note actions,
-// tags editor, i18n, pinned notes, backlinks
+// tags editor, i18n, pinned notes, backlinks,
+// multi-format import (md/txt/html/enex/json/xml)
 // ============================================
 
 (function() {
@@ -397,7 +398,6 @@
 
   // ========== RENDERING ==========
   function renderNoteList() {
-    // Sort: pinned first, then by modified date descending
     noteOrder.sort(function(a, b) {
       var na = notes[a] || {};
       var nb = notes[b] || {};
@@ -575,7 +575,7 @@
     backlinksList.innerHTML = '';
 
     if (links.length === 0) {
-      backlinksList.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic;padding:4px 0;">—</div>';
+      backlinksList.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic;padding:4px 0;">\u2014</div>';
       return;
     }
 
@@ -710,6 +710,261 @@
     save();
     saveStatusEl.textContent = getTrans('text_saved');
     updateStatusBar();
+  }
+
+  // ========== MULTI-FORMAT IMPORT ==========
+  function importFromFile(file) {
+    var ext = file.name.split('.').pop().toLowerCase();
+
+    switch(ext) {
+      case 'md':
+      case 'markdown':
+        importMarkdown(file);
+        break;
+      case 'txt':
+        importPlainText(file);
+        break;
+      case 'html':
+      case 'htm':
+        importHTML(file);
+        break;
+      case 'enex':
+        importEvernote(file);
+        break;
+      case 'json':
+        importJSONNotes(file);
+        break;
+      case 'xml':
+        importXML(file);
+        break;
+      default:
+        showToast(getTrans('wiki_unsupported_format') || 'Unsupported format: ' + ext);
+    }
+  }
+
+  // --- Markdown Import ---
+  function importMarkdown(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var content = e.target.result;
+      var title = file.name.replace(/\.(md|markdown)$/i, '');
+      var tags = [];
+      var body = content;
+
+      // Parse YAML frontmatter (Obsidian/Jekyll style)
+      var fmMatch = content.match(/^---\n([\s\S]*?)\n---\n?/);
+      if (fmMatch) {
+        var fm = fmMatch[1];
+        var titleMatch = fm.match(/^title:\s*(.+)$/m);
+        if (titleMatch) title = titleMatch[1].replace(/^["']|["']$/g, '').trim();
+        var tagsMatch = fm.match(/^tags:\s*\[(.+)\]/m);
+        if (tagsMatch) {
+          tags = tagsMatch[1].split(',').map(function(t) {
+            return t.trim().replace(/^["']|["']$/g, '');
+          }).filter(Boolean);
+        } else {
+          var tagSection = fm.match(/^tags:\n((?:\s+-\s+.+\n?)+)/m);
+          if (tagSection) {
+            tags = tagSection[1].match(/-\s+(.+)/g).map(function(t) {
+              return t.replace(/^-\s+/, '').trim().replace(/^["']|["']$/g, '');
+            });
+          }
+        }
+        body = content.slice(fmMatch[0].length);
+      }
+
+      var id = createNote(title, body);
+      notes[id].tags = tags;
+      notes[id].modified = new Date().toISOString();
+      save();
+      selectNote(id);
+      renderNoteList();
+      renderSidebarTags();
+      showToast(getTrans('wiki_import_success') || 'Note imported');
+    };
+    reader.readAsText(file);
+  }
+
+  // --- Plain Text ---
+  function importPlainText(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var title = file.name.replace(/\.txt$/i, '');
+      var content = e.target.result;
+      var id = createNote(title, content);
+      save();
+      selectNote(id);
+      renderNoteList();
+      showToast(getTrans('wiki_import_success') || 'Note imported');
+    };
+    reader.readAsText(file);
+  }
+
+  // --- HTML Import ---
+  function importHTML(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var temp = document.createElement('div');
+      temp.innerHTML = e.target.result;
+
+      var titleEl = temp.querySelector('title');
+      var title = titleEl ? titleEl.textContent : file.name.replace(/\.html?$/i, '');
+
+      var markdown = htmlToMarkdownWiki(temp);
+      var id = createNote(title, markdown);
+      save();
+      selectNote(id);
+      renderNoteList();
+      showToast(getTrans('wiki_import_success') || 'Note imported');
+    };
+    reader.readAsText(file);
+  }
+
+  function htmlToMarkdownWiki(container) {
+    var md = '';
+    var children = container.childNodes;
+
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      if (child.nodeType === 3) {
+        md += child.textContent;
+      } else if (child.nodeType === 1) {
+        var tag = child.tagName.toLowerCase();
+        switch(tag) {
+          case 'h1': md += '\n# ' + child.textContent + '\n\n'; break;
+          case 'h2': md += '\n## ' + child.textContent + '\n\n'; break;
+          case 'h3': md += '\n### ' + child.textContent + '\n\n'; break;
+          case 'p': md += '\n' + htmlToMarkdownWiki(child) + '\n\n'; break;
+          case 'br': md += '\n'; break;
+          case 'strong': case 'b': md += '**' + child.textContent + '**'; break;
+          case 'em': case 'i': md += '*' + child.textContent + '*'; break;
+          case 'u': md += '__' + child.textContent + '__'; break;
+          case 'code': md += '`' + child.textContent + '`'; break;
+          case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n'; break;
+          case 'blockquote': md += '\n> ' + child.textContent + '\n\n'; break;
+          case 'ul':
+            var ulItems = child.querySelectorAll(':scope > li');
+            for (var j = 0; j < ulItems.length; j++) {
+              md += '- ' + ulItems[j].textContent + '\n';
+            }
+            md += '\n';
+            break;
+          case 'ol':
+            var olItems = child.querySelectorAll(':scope > li');
+            for (var k = 0; k < olItems.length; k++) {
+              md += (k + 1) + '. ' + olItems[k].textContent + '\n';
+            }
+            md += '\n';
+            break;
+          case 'a': md += '[' + child.textContent + '](' + child.getAttribute('href') + ')'; break;
+          case 'img': md += '![' + (child.alt || '') + '](' + child.src + ')'; break;
+          case 'hr': md += '\n---\n\n'; break;
+          case 'table': md += convertTableToMd(child); break;
+          default: md += child.textContent || ''; break;
+        }
+      }
+    }
+    return md;
+  }
+
+  function convertTableToMd(table) {
+    var rows = table.querySelectorAll('tr');
+    if (rows.length === 0) return '';
+    var md = '\n';
+    for (var i = 0; i < rows.length; i++) {
+      var cells = rows[i].querySelectorAll('td, th');
+      var rowText = '|';
+      for (var j = 0; j < cells.length; j++) {
+        rowText += ' ' + cells[j].textContent.trim() + ' |';
+      }
+      md += rowText + '\n';
+      if (i === 0) {
+        var sep = '|';
+        for (var j = 0; j < cells.length; j++) sep += ' --- |';
+        md += sep + '\n';
+      }
+    }
+    md += '\n';
+    return md;
+  }
+
+  // --- Evernote ENEX Import ---
+  function importEvernote(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(e.target.result, 'text/xml');
+        var noteEls = doc.querySelectorAll('note');
+        var imported = 0;
+
+        for (var i = 0; i < noteEls.length; i++) {
+          var noteEl = noteEls[i];
+          var title = (noteEl.querySelector('title') || {}).textContent || 'Untitled';
+          var created = (noteEl.querySelector('created') || {}).textContent || '';
+          var contentEl = noteEl.querySelector('content');
+          var content = contentEl ? contentEl.textContent : '';
+
+          if (content) {
+            var temp = document.createElement('div');
+            temp.innerHTML = content;
+            content = htmlToMarkdownWiki(temp);
+          }
+
+          var id = createNote(title, content);
+          if (created) notes[id].created = created;
+          notes[id].modified = new Date().toISOString();
+          imported++;
+        }
+
+        save();
+        renderNoteList();
+        renderSidebarTags();
+        if (imported > 0) selectNote(noteOrder[0]);
+        showToast(imported + ' notes imported from Evernote');
+      } catch(err) {
+        showToast('Evernote import error: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // --- JSON Import (Obsidian / generic) ---
+  function importJSONNotes(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        var imported = 0;
+
+        var notesArr = Array.isArray(data) ? data : (data.notes || [data]);
+
+        for (var i = 0; i < notesArr.length; i++) {
+          var item = notesArr[i];
+          var title = item.title || item.name || 'Untitled';
+          var content = item.content || item.body || item.text || '';
+          var tags = item.tags || [];
+
+          var id = createNote(title, content);
+          if (Array.isArray(tags)) {
+            notes[id].tags = tags;
+          } else if (typeof tags === 'string') {
+            notes[id].tags = tags.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+          }
+          notes[id].modified = new Date().toISOString();
+          imported++;
+        }
+
+        save();
+        renderNoteList();
+        renderSidebarTags();
+        if (imported > 0) selectNote(noteOrder[0]);
+        showToast(imported + ' notes imported');
+      } catch(err) {
+        showToast('JSON import error: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
   }
 
   // ========== XML IMPORT / EXPORT ==========
@@ -881,7 +1136,6 @@
     ctx.translate(graphOffset.x, graphOffset.y);
     ctx.scale(graphZoom, graphZoom);
 
-    // Draw edges
     ctx.strokeStyle = 'rgba(200, 169, 110, 0.25)';
     ctx.lineWidth = 1;
     for (var i = 0; i < graphEdges.length; i++) {
@@ -894,7 +1148,6 @@
       ctx.stroke();
     }
 
-    // Draw nodes
     for (var i = 0; i < graphNodes.length; i++) {
       var node = graphNodes[i];
       var isActive = node.id === settings.activeNoteId;
@@ -1266,8 +1519,13 @@
     if (btnImport && fileInput) {
       btnImport.addEventListener('click', function() { fileInput.click(); });
       fileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-          importXML(this.files[0]);
+        if (this.files && this.files.length > 0) {
+          // Multi-format import with staggered loading
+          for (var i = 0; i < this.files.length; i++) {
+            (function(f, delay) {
+              setTimeout(function() { importFromFile(f); }, delay);
+            })(this.files[i], i * 200);
+          }
           this.value = '';
         }
       });
@@ -1312,6 +1570,14 @@
         titleInput.select();
         renderNoteList();
         renderSidebarTags();
+      }
+
+      if (e.key === 'g' && !e.ctrlKey && !e.metaKey) {
+        var activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+          e.preventDefault();
+          openGraphView();
+        }
       }
     });
 
