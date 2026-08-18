@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS Wiki Notes — Privacy-first wiki note-taking with bidirectional links, markdown, graph view, and XML import/export. Works offline. No tracking.">
-
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
@@ -79,7 +78,7 @@
 
   <div id="wiki-wrapper">
 
-    <!-- Sidebar — Note List -->
+    <!-- Sidebar -->
     <aside class="wiki-sidebar" id="wiki-sidebar">
       <div class="wiki-sidebar-header">
         <input type="text" id="wiki-search" class="wiki-search-input" placeholder="Search notes...">
@@ -88,6 +87,19 @@
         </button>
       </div>
       <div class="wiki-sidebar-tags" id="wiki-sidebar-tags"></div>
+
+      <div class="wiki-note-actions" id="wiki-note-actions" style="display:none;">
+        <button class="mini-btn" id="btn-wiki-delete-note" title="Delete note">
+          <i class="fa fa-trash-o"></i>
+        </button>
+        <button class="mini-btn" id="btn-wiki-duplicate-note" title="Duplicate note">
+          <i class="fa fa-files-o"></i>
+        </button>
+        <button class="mini-btn" id="btn-wiki-toggle-pin" title="Pin/Unpin note">
+          <i class="fa fa-thumb-tack"></i>
+        </button>
+      </div>
+
       <div class="wiki-note-list" id="wiki-note-list"></div>
     </aside>
 
@@ -107,19 +119,31 @@
           <input type="text" id="wiki-note-title" class="wiki-note-title-input" placeholder="Note title...">
 
           <div class="wiki-view-toggle">
-            <button class="view-btn active" data-view="split" title="Split view"><i class="fa fa-columns"></i></button>
-            <button class="view-btn" data-view="edit" title="Edit only"><i class="fa fa-pencil"></i></button>
-            <button class="view-btn" data-view="preview" title="Preview only"><i class="fa fa-eye"></i></button>
+            <button class="view-btn" data-view="edit" title="Edit only">
+              <i class="fa fa-pencil"></i>
+            </button>
+            <button class="view-btn active" data-view="split" title="Split view">
+              <i class="fa fa-columns"></i>
+            </button>
+            <button class="view-btn" data-view="preview" title="Preview only">
+              <i class="fa fa-eye"></i>
+            </button>
           </div>
 
-          <button class="action-btn" id="btn-graph-toggle" title="Graph view"><i class="fa fa-share-alt"></i></button>
-          <button class="action-btn" id="btn-wiki-import" title="Import XML"><i class="fa fa-folder-open"></i></button>
-          <button class="action-btn" id="btn-wiki-export" title="Export XML"><i class="fa fa-download"></i></button>
+          <button class="action-btn" id="btn-graph-toggle" title="Graph view">
+            <i class="fa fa-share-alt"></i>
+          </button>
+          <button class="action-btn" id="btn-wiki-import" title="Import XML">
+            <i class="fa fa-folder-open"></i>
+          </button>
+          <button class="action-btn" id="btn-wiki-export" title="Export XML">
+            <i class="fa fa-download"></i>
+          </button>
           <input type="file" id="wiki-file-input" accept=".xml" style="display:none;">
         </div>
 
         <!-- Split Pane -->
-        <div class="wiki-split-pane" id="wiki-split-pane">
+        <div class="wiki-split-pane" id="wiki-split-pane" data-mode="split">
           <div class="wiki-editor-pane" id="wiki-editor-pane">
             <textarea id="wiki-editor" class="wiki-editor-textarea" placeholder="Start writing in Markdown..."></textarea>
           </div>
@@ -128,23 +152,31 @@
           </div>
         </div>
 
-        <!-- Backlinks Panel -->
-        <div class="wiki-backlinks" id="wiki-backlinks">
-          <div class="wiki-backlinks-header">
-            <i class="fa fa-link"></i>&nbsp; Backlinks
+        <!-- Tags and Backlinks Panel -->
+        <div class="wiki-meta-panel" id="wiki-meta-panel">
+          <div class="wiki-tags-section">
+            <div class="wiki-tags-header">
+              <i class="fa fa-tags"></i>&nbsp; <span data-i18n="wiki_tags">Tags</span>
+            </div>
+            <div class="wiki-tags-editor" id="wiki-tags-editor"></div>
           </div>
-          <div class="wiki-backlinks-list" id="wiki-backlinks-list"></div>
+          <div class="wiki-backlinks-section">
+            <div class="wiki-backlinks-header">
+              <i class="fa fa-link"></i>&nbsp; <span data-i18n="wiki_backlinks">Backlinks</span>
+            </div>
+            <div class="wiki-backlinks-list" id="wiki-backlinks-list"></div>
+          </div>
         </div>
 
         <!-- Status Bar -->
         <div class="wiki-status-bar">
           <span id="wiki-word-count">0 words</span>
-          <span id="wiki-modified-date">—</span>
+          <span id="wiki-modified-date">&mdash;</span>
           <span id="wiki-save-status" style="color:var(--text-muted);">Saved</span>
         </div>
       </div>
 
-      <!-- Graph View Canvas -->
+      <!-- Graph View Overlay -->
       <div class="wiki-graph-overlay" id="wiki-graph-overlay" style="display:none;">
         <div class="wiki-graph-header">
           <span class="wiki-graph-title">Connection Graph</span>
@@ -169,6 +201,7 @@
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
+        <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -223,6 +256,38 @@
               <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
             </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_goal_btn">Hide Goal Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_outline_btn">Hide Outline Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_metadata_btn">Hide Metadata Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_find_btn">Hide Find Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-find-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_wordfreq_btn">Hide Word Frequency Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
         <div class="tab-panel" id="converter-settings" style="display:none;">
@@ -235,6 +300,66 @@
               <span class="toggle-label" data-i18n="toggle_hide_save_btn">Hide Save Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-save-btn"><span class="slider"></span></label>
             </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_open_btn">Hide Open Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-open-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_clear_btn">Hide Clear Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-clear-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_undo_btn">Hide Undo Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-undo-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_redo_btn">Hide Redo Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-redo-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_reset_btn">Hide Reset Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-reset-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_options">Hide Options Dropdown</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-options"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_stats_btn">Hide Stats Panel</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-stats-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="kanban-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_work">Pomodoro Work (minutes)</span>
+              <input type="number" id="setting-pomo-work" min="1" max="60" value="25" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_break">Pomodoro Break (minutes)</span>
+              <input type="number" id="setting-pomo-break" min="1" max="30" value="5" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Card</td><td><kbd>N</kbd></td></tr>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 /* ============================================
    orOS Wiki Notes — Stylesheet
-   Dark theme only · Champagne gold accent
+   Dark theme only — Champagne gold accent
    ============================================ */
 
 /* ===== Additional Fork Awesome Icons ===== */
@@ -10,6 +10,9 @@
 .fa-sitemap:before       { content: '\f0e8'; }
 .fa-link:before          { content: '\f0c1'; }
 .fa-tag:before           { content: '\f02b'; }
+.fa-tags:before          { content: '\f02c'; }
+.fa-thumb-tack:before    { content: '\f08d'; }
+.fa-files-o:before       { content: '\f0c5'; }
 
 /* ===== WRAPPER ===== */
 #wiki-wrapper {
@@ -102,6 +105,21 @@
   border-color: var(--accent-gold);
 }
 
+/* ===== NOTE ACTIONS TOOLBAR ===== */
+.wiki-note-actions {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.wiki-note-actions .mini-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
 /* ===== NOTE LIST ===== */
 .wiki-note-list {
   flex: 1;
@@ -127,6 +145,14 @@
 .note-item.active {
   background: var(--accent-gold-dim);
   border-left-color: var(--accent-gold);
+}
+
+.note-item.pinned .note-item-title::before {
+  content: '\f08d';
+  font-family: 'ForkAwesome', 'FontAwesome';
+  font-size: 10px;
+  margin-right: 4px;
+  color: var(--accent-gold);
 }
 
 .note-item-title {
@@ -382,7 +408,6 @@
   color: var(--accent-gold);
 }
 
-/* Wiki-style links */
 .wiki-preview-content .wiki-link {
   color: var(--accent-gold);
   text-decoration: none;
@@ -429,18 +454,46 @@
   font-weight: 700;
 }
 
-/* ===== BACKLINKS PANEL ===== */
-.wiki-backlinks {
+/* ===== CHECKLIST STYLES ===== */
+.wiki-preview-content ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.wiki-preview-content .task-list-item {
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 2px 0;
+}
+
+.wiki-preview-content .task-list-checkbox {
+  margin-top: 4px;
+  accent-color: var(--accent-gold);
+}
+
+/* ===== META PANEL (Tags + Backlinks) ===== */
+.wiki-meta-panel {
   border-top: 1px solid var(--border-color);
-  padding: 8px 16px;
   flex-shrink: 0;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
   background: var(--bg-toolbar);
 }
 
-.wiki-backlinks:empty { display: none; }
+.wiki-meta-panel:empty { display: none; }
 
+.wiki-tags-section,
+.wiki-backlinks-section {
+  padding: 8px 16px;
+}
+
+.wiki-tags-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.wiki-tags-header,
 .wiki-backlinks-header {
   font-size: 11px;
   font-weight: 700;
@@ -449,6 +502,47 @@
   letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
+
+.wiki-tags-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.wiki-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.wiki-tag-chip-remove {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 9px;
+}
+
+.wiki-tag-chip-remove:hover { opacity: 1; color: var(--danger); }
+
+.wiki-tag-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: var(--font-primary);
+  outline: none;
+  width: 80px;
+  padding: 2px 4px;
+}
+
+.wiki-tag-input::placeholder { color: var(--text-muted); font-style: italic; }
 
 .wiki-backlinks-list {
   display: flex;
@@ -525,17 +619,14 @@
 #wiki-graph-canvas:active { cursor: grabbing; }
 
 /* ===== VIEW MODES ===== */
-/* Split (default) — both panes visible */
 .wiki-split-pane[data-mode="split"] .wiki-editor-pane,
 .wiki-split-pane[data-mode="split"] .wiki-preview-pane {
   display: flex;
 }
 
-/* Edit only — hide preview */
 .wiki-split-pane[data-mode="edit"] .wiki-preview-pane { display: none; }
 .wiki-split-pane[data-mode="edit"] .wiki-editor-pane { flex: 1; }
 
-/* Preview only — hide editor */
 .wiki-split-pane[data-mode="preview"] .wiki-editor-pane { display: none; }
 .wiki-split-pane[data-mode="preview"] .wiki-preview-pane { flex: 1; }
 
@@ -543,7 +634,7 @@
 [data-zen="true"] .wiki-sidebar { display: none !important; }
 [data-zen="true"] .wiki-resize-handle { display: none !important; }
 [data-zen="true"] .wiki-editor-toolbar { display: none !important; }
-[data-zen="true"] .wiki-backlinks { display: none !important; }
+[data-zen="true"] .wiki-meta-panel { display: none !important; }
 [data-zen="true"] .wiki-status-bar { display: none !important; }
 [data-zen="true"] .wiki-split-pane[data-mode="split"] .wiki-preview-pane { display: none !important; }
 [data-zen="true"] #wiki-wrapper { height: 100vh; margin-top: 0; }
@@ -574,7 +665,6 @@
     border-top: 1px solid var(--border-color);
   }
 
-  /* On mobile: toggle between edit and preview */
   .wiki-split-pane[data-mode="split"] .wiki-editor-pane {
     flex: 1;
   }
@@ -598,7 +688,7 @@
   .wiki-resize-handle,
   .wiki-editor-toolbar,
   .wiki-editor-pane,
-  .wiki-backlinks,
+  .wiki-meta-panel,
   .wiki-status-bar,
   .wiki-graph-overlay {
     display: none !important;

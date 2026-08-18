@@ -723,3 +723,100 @@
     overflow: visible;
   }
 }
+
+/* ===== ARCHIVE VIEW ===== */
+.kanban-archive-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--bg-dark);
+}
+
+.archive-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.archive-view-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.archive-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 600px;
+}
+
+.archive-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  transition: border-color var(--transition);
+}
+
+.archive-card-item:hover {
+  border-color: var(--border-hover);
+}
+
+.archive-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archive-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.archive-card-list-name {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.archive-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.archive-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+  padding: 32px;
+}
+
+/* ===== KANBAN SETTINGS TAB ===== */
+#kanban-settings .toggle-row {
+  align-items: center;
+}
+
+#kanban-settings input[type="number"] {
+  outline: none;
+}
+
+#kanban-settings input[type="number"]:focus {
+  border-color: var(--accent-gold);
+}
+
+/* ===== ACTIVE STATE FOR ARCHIVE BTN ===== */
+.action-btn.active-toggle {
+  background: var(--accent-gold-dim);
+  color: var(--accent-gold-light);
+}

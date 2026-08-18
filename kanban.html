@@ -4,14 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS Kanban — Privacy-first kanban board with drag & drop, labels, pomodoro timer, and XML import/export. Works offline. No tracking.">
-  
-  <!-- SEO Meta Tags -->
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
-  
-  <!-- Open Graph / Facebook -->
+
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
   <meta property="og:title" content="orOS Kanban — Privacy-First Kanban Board">
@@ -19,23 +16,19 @@
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
-  
-  <!-- Twitter Card -->
+
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
   <meta name="twitter:title" content="orOS Kanban — Privacy-First Kanban Board">
   <meta name="twitter:description" content="Drag & drop kanban board with labels, due dates, pomodoro timer, and XML import/export. Works offline. No tracking.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
   <meta name="twitter:creator" content="@koulaxizis">
-  
-  <!-- Additional SEO -->
+
   <meta name="keywords" content="kanban board, task management, project management, drag and drop, pomodoro, privacy, offline, open source">
-  
-  <!-- Resource Hints -->
+
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
-  
-  <!-- hreflang -->
+
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/kanban.html">
   <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=el">
   <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=es">
@@ -43,7 +36,7 @@
   <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=fr">
   <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=de">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/kanban.html">
-  
+
   <title>orOS Kanban</title>
   <script src="config.js"></script>
   <script>
@@ -67,7 +60,6 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
-  <!-- Global settings manager (SHARED with Editor & Converter) -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
@@ -91,7 +83,7 @@
       <div class="board-tabs-scroll">
         <div class="board-tabs" id="board-tabs"></div>
       </div>
-      <button class="action-btn" id="btn-add-board" title="New board">
+      <button class="action-btn" id="btn-add-board" title="New board" data-i18n-title="kanban_add_board">
         <i class="fa fa-plus"></i>
       </button>
     </div>
@@ -99,18 +91,21 @@
     <!-- Toolbar -->
     <div class="kanban-toolbar" id="kanban-toolbar">
       <div class="toolbar-section toolbar-left">
-        <button class="action-btn" id="btn-add-list" title="Add list">
-          <i class="fa fa-plus"></i>&nbsp;List
+        <button class="action-btn" id="btn-add-list" title="Add list" data-i18n-title="kanban_add_list">
+          <i class="fa fa-plus"></i>&nbsp;<span data-i18n="kanban_add_list">List</span>
+        </button>
+        <button class="action-btn" id="btn-show-archived" title="Show archived" data-i18n-title="kanban_archive">
+          <i class="fa fa-archive"></i>&nbsp;<span data-i18n="kanban_archive">Archive</span>
         </button>
       </div>
       <div class="toolbar-section toolbar-center">
-        <input type="text" id="kanban-search" class="kanban-search-input" placeholder="Search cards...">
+        <input type="text" id="kanban-search" class="kanban-search-input" data-i18n-ph="kanban_search" placeholder="Search cards...">
       </div>
       <div class="toolbar-section toolbar-right">
-        <button class="action-btn" id="btn-import" title="Import XML">
+        <button class="action-btn" id="btn-import" title="Import XML" data-i18n-title="kanban_import">
           <i class="fa fa-folder-open"></i>
         </button>
-        <button class="action-btn" id="btn-export" title="Export XML">
+        <button class="action-btn" id="btn-export" title="Export XML" data-i18n-title="kanban_export">
           <i class="fa fa-download"></i>
         </button>
         <input type="file" id="file-input" accept=".xml" style="display:none;">
@@ -119,6 +114,15 @@
 
     <!-- Board Container -->
     <div class="kanban-board" id="kanban-board"></div>
+
+    <!-- Archive View Container (hidden by default) -->
+    <div class="kanban-archive-view" id="kanban-archive-view" style="display:none;">
+      <div class="archive-view-header">
+        <h3 data-i18n="kanban_archive">Archive</h3>
+        <button class="mini-btn" id="btn-close-archive" title="Close"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="archive-cards-list" id="archive-cards-list"></div>
+    </div>
 
     <!-- Pomodoro Widget -->
     <div class="pomodoro-widget" id="pomodoro-widget" style="display:none;">
@@ -138,41 +142,41 @@
     <div class="card-detail-overlay"></div>
     <div class="card-detail-content">
       <div class="card-detail-header">
-        <input type="text" id="card-detail-title" placeholder="Card title...">
+        <input type="text" id="card-detail-title" data-i18n-ph="kanban_card_title" placeholder="Card title...">
         <button class="settings-close" id="btn-card-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="card-detail-body">
         <div class="card-detail-section">
-          <label class="cd-label">Description</label>
-          <textarea id="card-detail-description" placeholder="Add description..." rows="5"></textarea>
+          <label class="cd-label" data-i18n="kanban_description">Description</label>
+          <textarea id="card-detail-description" class="card-detail-description" placeholder="Add description..." rows="5"></textarea>
         </div>
         <div class="card-detail-row">
           <div class="card-detail-field">
-            <label class="cd-label">Due Date</label>
+            <label class="cd-label" data-i18n="kanban_due_date">Due Date</label>
             <input type="date" id="card-detail-due">
           </div>
           <div class="card-detail-field">
-            <label class="cd-label">Priority</label>
+            <label class="cd-label" data-i18n="kanban_priority">Priority</label>
             <select id="card-detail-priority">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low" data-i18n="kanban_priority_low">Low</option>
+              <option value="medium" data-i18n="kanban_priority_medium">Medium</option>
+              <option value="high" data-i18n="kanban_priority_high">High</option>
             </select>
           </div>
         </div>
         <div class="card-detail-section">
-          <label class="cd-label">Labels</label>
+          <label class="cd-label" data-i18n="kanban_labels">Labels</label>
           <div class="label-chips" id="card-detail-labels"></div>
         </div>
         <div class="card-detail-section">
-          <label class="cd-label">Time Spent</label>
+          <label class="cd-label" data-i18n="kanban_time_spent">Time Spent</label>
           <span id="card-detail-time">0m</span>
         </div>
       </div>
       <div class="card-detail-footer">
-        <button class="mini-btn" id="btn-card-pomodoro"><i class="fa fa-clock-o"></i>&nbsp;Timer</button>
-        <button class="mini-btn" id="btn-card-archive"><i class="fa fa-archive"></i>&nbsp;Archive</button>
-        <button class="mini-btn" id="btn-card-delete" style="margin-left:auto;color:var(--danger);"><i class="fa fa-trash-o"></i>&nbsp;Delete</button>
+        <button class="mini-btn" id="btn-card-pomodoro"><i class="fa fa-clock-o"></i>&nbsp;<span data-i18n="kanban_pomodoro_start">Timer</span></button>
+        <button class="mini-btn" id="btn-card-archive"><i class="fa fa-archive"></i>&nbsp;<span data-i18n="kanban_archive">Archive</span></button>
+        <button class="mini-btn" id="btn-card-delete" style="margin-left:auto;color:var(--danger);"><i class="fa fa-trash-o"></i>&nbsp;<span data-i18n="kanban_delete">Delete</span></button>
       </div>
     </div>
   </div>
@@ -189,6 +193,7 @@
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
+        <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -320,6 +325,29 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
+                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- ===== NEW: KANBAN SETTINGS TAB ===== -->
+        <div class="tab-panel" id="kanban-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_work">Pomodoro Work (minutes)</span>
+              <input type="number" id="setting-pomo-work" min="1" max="60" value="25" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="kanban_pomodoro_break">Pomodoro Break (minutes)</span>
+              <input type="number" id="setting-pomo-break" min="1" max="30" value="5" style="width:60px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-primary);font-size:13px;outline:none;">
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Card</td><td><kbd>N</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
                 <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>

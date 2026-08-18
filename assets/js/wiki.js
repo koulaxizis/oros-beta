@@ -1,7 +1,7 @@
 // ============================================
-// orOS Wiki Notes — Full Implementation
-// Local-first · Markdown · Bidirectional Links
-// Graph View · XML Import/Export · Tags
+// orOS Wiki Notes — Full Implementation v2
+// FIXES: checklist support, note actions,
+// tags editor, i18n, pinned notes, backlinks
 // ============================================
 
 (function() {
@@ -10,22 +10,6 @@
   // ========== STORAGE KEYS ==========
   var STORAGE_KEY = 'oros_wiki_notes';
   var SETTINGS_KEY = 'oros_wiki_settings';
-
-  // ========== DATA MODEL ==========
-  /*
-  notes = {
-    "n1": {
-      id: "n1",
-      title: "Getting Started",
-      content: "# Getting Started\nWelcome to [[orOS Wiki]]!",
-      tags: ["tutorial", "intro"],
-      created: "2026-01-01T10:00:00Z",
-      modified: "2026-01-01T12:00:00Z"
-    }
-  };
-  noteOrder = ["n1", "n2", "n3"];
-  settings = { activeNoteId: "n1", viewMode: "split", sidebarWidth: 280 };
-  */
 
   // ========== STATE ==========
   var notes = {};
@@ -39,6 +23,8 @@
   var graphOffset = { x: 0, y: 0 };
   var graphZoom = 1;
   var graphPanStart = null;
+  var graphAnimFrame = null;
+  var deferredInstallPrompt = null;
 
   // ========== DOM ==========
   var noteListEl = document.getElementById('wiki-note-list');
@@ -51,12 +37,13 @@
   var emptyState = document.getElementById('wiki-empty');
   var editorView = document.getElementById('wiki-editor-view');
   var backlinksList = document.getElementById('wiki-backlinks-list');
-  var backlinksPanel = document.getElementById('wiki-backlinks');
+  var tagsEditorEl = document.getElementById('wiki-tags-editor');
   var wordCountEl = document.getElementById('wiki-word-count');
   var modifiedDateEl = document.getElementById('wiki-modified-date');
   var saveStatusEl = document.getElementById('wiki-save-status');
   var graphOverlay = document.getElementById('wiki-graph-overlay');
   var graphCanvas = document.getElementById('wiki-graph-canvas');
+  var noteActionsEl = document.getElementById('wiki-note-actions');
 
   // ========== HELPERS ==========
   function uid() {
@@ -132,7 +119,6 @@
 
   function extractPreview(content) {
     if (!content) return '';
-    // Strip markdown syntax for preview
     var stripped = content
       .replace(/^#+\s+/gm, '')
       .replace(/\[\[.+?\]\]/g, function(m) { return m.slice(2, -2); })
@@ -142,8 +128,35 @@
     return stripped.substring(0, 80);
   }
 
-  // ========== MARKDOWN PARSER ==========
-  // Lightweight, dependency-free markdown renderer
+  // ========== TRANSLATE UI ==========
+  function translateUI() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      var val = getTrans(key);
+      if (val && val !== key) el.textContent = val;
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-title');
+      var val = getTrans(key);
+      if (val && val !== key) el.title = val;
+    });
+
+    document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-ph');
+      var val = getTrans(key);
+      if (val && val !== key) el.placeholder = val;
+    });
+
+    renderNoteList();
+    renderSidebarTags();
+    renderPreview();
+    renderBacklinks();
+    renderTagsEditor();
+    updateStatusBar();
+  }
+
+  // ========== MARKDOWN PARSER (with checklist support) ==========
   function renderMarkdown(content) {
     if (!content) return '';
 
@@ -151,7 +164,28 @@
 
     // Code blocks (fenced)
     html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
-      return '<pre><code>' + code.trim() + '</code></pre>';
+      return '\n<pre><code>' + code.trim() + '</code></pre>\n';
+    });
+
+    // Checklist items — BEFORE regular list processing
+    html = html.replace(/^[\-*]\s+\[( |x|X)\]\s+(.+)$/gm, function(match, check, text) {
+      var checked = check.toLowerCase() === 'x';
+      var cb = checked ? 'checked' : '';
+      return '<li class="task-list-item"><input type="checkbox" class="task-list-checkbox" ' + cb + ' disabled> ' + text + '</li>';
+    });
+
+    // Regular unordered list items (not checklists)
+    html = html.replace(/^[\-*]\s+(?!\[)(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li(?:\s+class="task-list-item")?>.*<\/li>\n?)+/g, function(match) {
+      var hasTask = match.indexOf('task-list-item') !== -1;
+      var cls = hasTask ? ' class="contains-task-list"' : '';
+      return '<ul' + cls + '>' + match + '</ul>';
+    });
+
+    // Ordered lists
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li-num>$1</li-num>');
+    html = html.replace(/(<li-num>.*<\/li-num>\n?)+/g, function(match) {
+      return '<ol>' + match.replace(/<li-num>/g, '<li>').replace(/<\/li-num>/g, '</li>') + '</ol>';
     });
 
     // Inline code
@@ -203,22 +237,10 @@
       return '<img src="' + url + '" alt="' + alt + '">';
     });
 
-    // Unordered lists
-    html = html.replace(/^[\-*]\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
-      return '<ul>' + match + '</ul>';
-    });
-
-    // Ordered lists
-    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li-num>$1</li-num>');
-    html = html.replace(/(<li-num>.*<\/li-num>\n?)+/g, function(match) {
-      return '<ol>' + match.replace(/<li-num>/g, '<li>').replace(/<\/li-num>/g, '</li>') + '</ol>';
-    });
-
-    // Tables (simple pipe syntax)
+    // Tables
     html = html.replace(/^\|(.+)\|$/gm, function(match, cells) {
       var trimmed = cells.trim();
-      if (trimmed.indexOf('---') !== -1) return ''; // separator row
+      if (trimmed.indexOf('---') !== -1) return '';
       var cellArr = trimmed.split('|').map(function(c) { return c.trim(); });
       if (!cellArr[cellArr.length - 1]) cellArr.pop();
       if (!cellArr[0]) cellArr.shift();
@@ -229,7 +251,7 @@
       return '<table>' + match + '</table>';
     });
 
-    // Paragraphs (lines not wrapped in tags)
+    // Paragraphs
     html = html.split('\n\n').map(function(block) {
       if (block.trim() === '') return '';
       if (/^<(h[1-6]|ul|ol|pre|blockquote|hr|table)/.test(block.trim())) return block;
@@ -264,14 +286,12 @@
       }
     } catch(e) {}
 
-    // Ensure order includes all notes
     var noteIds = Object.keys(notes);
     for (var i = 0; i < noteIds.length; i++) {
       if (noteOrder.indexOf(noteIds[i]) === -1) {
         noteOrder.push(noteIds[i]);
       }
     }
-    // Remove orphan IDs from order
     noteOrder = noteOrder.filter(function(id) { return notes[id]; });
 
     if (noteOrder.length === 0) {
@@ -302,16 +322,26 @@
         '- XML import/export',
         '- Everything stays in your browser',
         '',
+        '## Checklists',
+        '',
+        '- [ ] Try checking this box',
+        '- [x] This one is done',
+        '- [ ] Add your own tasks',
+        '',
         '## Getting Started',
         '',
         'Try creating a new note and linking to it with [[brackets]].',
         'Click on an unlinked title to create that note instantly.',
+        '',
+        'Use the tag editor below to add tags.',
+        'Use the pin button to pin important notes.',
         '',
         '---',
         '',
         'Designed by Christos Koulaxizis'
       ].join('\n'),
       tags: ['welcome', 'tutorial'],
+      pinned: false,
       created: new Date().toISOString(),
       modified: new Date().toISOString()
     };
@@ -365,45 +395,19 @@
     return tagSet;
   }
 
-  function extractTagsFromContent(content) {
-    var tags = [];
-    var lines = content.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-      var match = lines[i].match(/^tags:\s*(.+)$/i);
-      if (match) {
-        tags = match[1].split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-      }
-    }
-    return tags;
-  }
-
-  function parseTagsLine() {
-    var note = getActiveNote();
-    if (!note) return;
-    var content = editorTextarea.value;
-    var lines = content.split('\n');
-    var updatedTags = [];
-    var tagsLineIdx = -1;
-
-    for (var i = 0; i < lines.length; i++) {
-      if (/^tags:\s*.+/i.test(lines[i])) {
-        updatedTags = lines[i].replace(/^tags:\s*/i, '').split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-        tagsLineIdx = i;
-        break;
-      }
-    }
-
-    if (JSON.stringify(updatedTags.sort()) !== JSON.stringify((note.tags || []).sort())) {
-      note.tags = updatedTags;
-      note.modified = new Date().toISOString();
-      scheduleSave();
-      renderSidebarTags();
-      renderNoteList();
-    }
-  }
-
   // ========== RENDERING ==========
   function renderNoteList() {
+    // Sort: pinned first, then by modified date descending
+    noteOrder.sort(function(a, b) {
+      var na = notes[a] || {};
+      var nb = notes[b] || {};
+      if (na.pinned && !nb.pinned) return -1;
+      if (!na.pinned && nb.pinned) return 1;
+      var ma = new Date(na.modified || 0).getTime();
+      var mb = new Date(nb.modified || 0).getTime();
+      return mb - ma;
+    });
+
     noteListEl.innerHTML = '';
 
     var searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
@@ -430,6 +434,7 @@
         var note = notes[noteId];
         var item = document.createElement('div');
         item.className = 'note-item' + (noteId === settings.activeNoteId ? ' active' : '');
+        if (note.pinned) item.classList.add('pinned');
 
         var title = document.createElement('div');
         title.className = 'note-item-title';
@@ -470,7 +475,6 @@
 
     if (tagArr.length === 0) return;
 
-    // "All" button
     var allBtn = document.createElement('span');
     allBtn.className = 'tag-filter' + (!activeTagFilter ? ' active' : '');
     allBtn.textContent = 'All';
@@ -497,7 +501,6 @@
   }
 
   function selectNote(noteId) {
-    // Save current note if editing
     flushSave();
 
     settings.activeNoteId = noteId;
@@ -512,9 +515,12 @@
     emptyState.style.display = 'none';
     editorView.style.display = 'flex';
 
+    if (noteActionsEl) noteActionsEl.style.display = 'flex';
+
     setViewMode(settings.viewMode);
     renderPreview();
     renderBacklinks();
+    renderTagsEditor();
     updateStatusBar();
 
     renderNoteList();
@@ -524,7 +530,6 @@
     settings.viewMode = mode;
     splitPane.dataset.mode = mode;
 
-    // Update toggle buttons
     var btns = document.querySelectorAll('.view-btn');
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle('active', btns[i].dataset.view === mode);
@@ -538,7 +543,6 @@
     var html = renderMarkdown(content);
     previewContent.innerHTML = html;
 
-    // Wire up wiki-link clicks
     var links = previewContent.querySelectorAll('.wiki-link');
     for (var i = 0; i < links.length; i++) {
       (function(link) {
@@ -550,9 +554,10 @@
           if (noteId && notes[noteId]) {
             selectNote(noteId);
           } else if (createTitle) {
-            // Create new note with this title
             var newId = createNote(createTitle);
             selectNote(newId);
+            renderSidebarTags();
+            renderNoteList();
           }
         });
       })(links[i]);
@@ -562,7 +567,7 @@
   function renderBacklinks() {
     var note = getActiveNote();
     if (!note) {
-      backlinksPanel.style.display = 'none';
+      backlinksList.innerHTML = '';
       return;
     }
 
@@ -570,11 +575,9 @@
     backlinksList.innerHTML = '';
 
     if (links.length === 0) {
-      backlinksPanel.style.display = 'none';
+      backlinksList.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic;padding:4px 0;">—</div>';
       return;
     }
-
-    backlinksPanel.style.display = 'block';
 
     for (var i = 0; i < links.length; i++) {
       (function(bl) {
@@ -587,6 +590,55 @@
         backlinksList.appendChild(item);
       })(links[i]);
     }
+  }
+
+  function renderTagsEditor() {
+    var note = getActiveNote();
+    if (!note || !tagsEditorEl) return;
+
+    tagsEditorEl.innerHTML = '';
+
+    if (note.tags) {
+      for (var i = 0; i < note.tags.length; i++) {
+        (function(tag, idx) {
+          var chip = document.createElement('span');
+          chip.className = 'wiki-tag-chip';
+          chip.innerHTML = tag + ' <span class="wiki-tag-chip-remove">\u00d7</span>';
+          chip.querySelector('.wiki-tag-chip-remove').addEventListener('click', function() {
+            note.tags.splice(idx, 1);
+            note.modified = new Date().toISOString();
+            scheduleSave();
+            renderTagsEditor();
+            renderSidebarTags();
+            renderNoteList();
+          });
+          tagsEditorEl.appendChild(chip);
+        })(note.tags[i], i);
+      }
+    }
+
+    var input = document.createElement('input');
+    input.className = 'wiki-tag-input';
+    input.placeholder = '+ tag';
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        var val = input.value.trim();
+        if (val) {
+          if (!note.tags) note.tags = [];
+          if (note.tags.indexOf(val) === -1) {
+            note.tags.push(val);
+            note.modified = new Date().toISOString();
+            scheduleSave();
+            renderTagsEditor();
+            renderSidebarTags();
+            renderNoteList();
+          }
+          input.value = '';
+        }
+      }
+    });
+    tagsEditorEl.appendChild(input);
   }
 
   function updateStatusBar() {
@@ -604,6 +656,7 @@
       title: title || getTrans('wiki_untitled'),
       content: content || '',
       tags: [],
+      pinned: false,
       created: new Date().toISOString(),
       modified: new Date().toISOString()
     };
@@ -626,6 +679,10 @@
     renderSidebarTags();
     if (settings.activeNoteId) {
       selectNote(settings.activeNoteId);
+    } else {
+      emptyState.style.display = 'flex';
+      editorView.style.display = 'none';
+      if (noteActionsEl) noteActionsEl.style.display = 'none';
     }
     showToast(getTrans('toast_cleared'));
   }
@@ -649,12 +706,6 @@
     note.title = titleInput.value.trim() || getTrans('wiki_untitled');
     note.content = editorTextarea.value;
     note.modified = new Date().toISOString();
-
-    // Extract tags from content
-    var contentTags = extractTagsFromContent(note.content);
-    if (contentTags.length > 0) {
-      note.tags = contentTags;
-    }
 
     save();
     saveStatusEl.textContent = getTrans('text_saved');
@@ -683,7 +734,9 @@
 
       xml += '    <note id="' + note.id + '" ';
       xml += 'created="' + (note.created || '') + '" ';
-      xml += 'modified="' + (note.modified || '') + '">\n';
+      xml += 'modified="' + (note.modified || '') + '"';
+      if (note.pinned) xml += ' pinned="true"';
+      xml += '>\n';
       xml += '      <title>' + escapeXml(note.title) + '</title>\n';
 
       if (note.tags && note.tags.length > 0) {
@@ -731,7 +784,6 @@
           var noteEl = noteEls[i];
           var id = noteEl.getAttribute('id') || uid();
 
-                    // Avoid duplicate IDs
           if (notes[id]) id = uid();
 
           var titleEl = noteEl.querySelector('title');
@@ -743,6 +795,7 @@
             title: titleEl ? titleEl.textContent : getTrans('wiki_untitled'),
             content: contentEl ? contentEl.textContent : '',
             tags: [],
+            pinned: noteEl.getAttribute('pinned') === 'true',
             created: noteEl.getAttribute('created') || new Date().toISOString(),
             modified: noteEl.getAttribute('modified') || new Date().toISOString()
           };
@@ -790,7 +843,6 @@
       });
     }
 
-    // Build edges from [[wiki links]]
     for (var i = 0; i < ids.length; i++) {
       var note = notes[ids[i]];
       var matches = note.content.match(/\[\[(.+?)\]\]/g) || [];
@@ -798,7 +850,6 @@
         var linkTitle = matches[j].slice(2, -2).trim();
         var target = findNoteByTitle(linkTitle);
         if (target && target.id !== note.id) {
-          // Avoid duplicate edges
           var exists = false;
           for (var k = 0; k < graphEdges.length; k++) {
             if ((graphEdges[k].source === ids[i] && graphEdges[k].target === target.id) ||
@@ -848,7 +899,6 @@
       var node = graphNodes[i];
       var isActive = node.id === settings.activeNoteId;
 
-      // Outer glow for active node
       if (isActive) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius + 4, 0, Math.PI * 2);
@@ -864,7 +914,6 @@
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Label
       ctx.font = '11px Nunito, sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       ctx.textAlign = 'center';
@@ -875,13 +924,11 @@
   }
 
   function startGraphSimulation() {
-    // Simple force-directed layout
     function tick() {
       var rect = graphCanvas.getBoundingClientRect();
       var cx = rect.width / 2;
       var cy = rect.height / 2;
 
-      // Repulsion between nodes
       for (var i = 0; i < graphNodes.length; i++) {
         for (var j = i + 1; j < graphNodes.length; j++) {
           var dx = graphNodes[i].x - graphNodes[j].x;
@@ -895,7 +942,6 @@
         }
       }
 
-      // Attraction along edges
       for (var i = 0; i < graphEdges.length; i++) {
         var source = graphNodes.find(function(n) { return n.id === graphEdges[i].source; });
         var target = graphNodes.find(function(n) { return n.id === graphEdges[i].target; });
@@ -910,13 +956,11 @@
         target.vy -= (dy / dist) * force;
       }
 
-      // Center gravity
       for (var i = 0; i < graphNodes.length; i++) {
         graphNodes[i].vx += (cx - graphNodes[i].x) * 0.001;
         graphNodes[i].vy += (cy - graphNodes[i].y) * 0.001;
       }
 
-      // Apply velocity with damping
       for (var i = 0; i < graphNodes.length; i++) {
         if (graphNodes[i] === graphDragNode) continue;
         graphNodes[i].vx *= 0.85;
@@ -932,20 +976,13 @@
     tick();
   }
 
-  var graphAnimFrame = null;
-
   function openGraphView() {
     graphOverlay.style.display = 'flex';
     buildGraphData();
-
-    // Auto-layout with simulation
     cancelAnimationFrame(graphAnimFrame);
     startGraphSimulation();
-
-    // Stop simulation after settling
     setTimeout(function() {
       cancelAnimationFrame(graphAnimFrame);
-      // Continue rendering statically
       renderGraph();
     }, 3000);
   }
@@ -955,14 +992,13 @@
     cancelAnimationFrame(graphAnimFrame);
   }
 
-  // Graph interaction — drag nodes
+  // ========== GRAPH INTERACTION ==========
   function setupGraphInteraction() {
     graphCanvas.addEventListener('mousedown', function(e) {
       var rect = graphCanvas.getBoundingClientRect();
       var mx = (e.clientX - rect.left - graphOffset.x) / graphZoom;
       var my = (e.clientY - rect.top - graphOffset.y) / graphZoom;
 
-      // Check if clicking a node
       for (var i = 0; i < graphNodes.length; i++) {
         var dx = mx - graphNodes[i].x;
         var dy = my - graphNodes[i].y;
@@ -972,7 +1008,6 @@
         }
       }
 
-      // Otherwise pan
       graphPanStart = { x: e.clientX - graphOffset.x, y: e.clientY - graphOffset.y };
     });
 
@@ -1003,7 +1038,6 @@
     });
 
     graphCanvas.addEventListener('click', function(e) {
-      // Click (without drag) to navigate to note
       if (graphDragNode) return;
       var rect = graphCanvas.getBoundingClientRect();
       var mx = (e.clientX - rect.left - graphOffset.x) / graphZoom;
@@ -1054,6 +1088,106 @@
     });
   }
 
+  // ========== INSTALL PROMPT ==========
+  function setupInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      var btn = document.getElementById('btn-install');
+      if (btn) btn.disabled = false;
+    });
+
+    var btn = document.getElementById('btn-install');
+    if (btn) {
+      btn.addEventListener('click', function() {
+        if (!deferredInstallPrompt) {
+          showToast(getTrans('install_app') + ': N/A');
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function(choice) {
+          if (choice.outcome === 'accepted') {
+            showToast(getTrans('install_app') + ' \u2713');
+          }
+          deferredInstallPrompt = null;
+          btn.disabled = true;
+        });
+      });
+    }
+
+    window.addEventListener('appinstalled', function() {
+      var btn = document.getElementById('btn-install');
+      if (btn) btn.disabled = true;
+      deferredInstallPrompt = null;
+    });
+  }
+
+  // ========== NOTE ACTIONS ==========
+  function setupNoteActions() {
+    var deleteBtn = document.getElementById('btn-wiki-delete-note');
+    var dupBtn = document.getElementById('btn-wiki-duplicate-note');
+    var pinBtn = document.getElementById('btn-wiki-toggle-pin');
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function() {
+        var note = getActiveNote();
+        if (!note) return;
+        if (confirm(getTrans('wiki_confirm_delete_note'))) {
+          deleteNote(note.id);
+        }
+      });
+    }
+
+    if (dupBtn) {
+      dupBtn.addEventListener('click', function() {
+        var note = getActiveNote();
+        if (!note) return;
+        flushSave();
+        var id = createNote(note.title + ' (copy)', note.content);
+        if (note.tags) {
+          notes[id].tags = note.tags.slice();
+        }
+        notes[id].modified = new Date().toISOString();
+        save();
+        selectNote(id);
+        renderNoteList();
+        renderSidebarTags();
+        showToast('Note duplicated');
+      });
+    }
+
+    if (pinBtn) {
+      pinBtn.addEventListener('click', function() {
+        var note = getActiveNote();
+        if (!note) return;
+        note.pinned = !note.pinned;
+        note.modified = new Date().toISOString();
+        scheduleSave();
+        renderNoteList();
+        showToast(note.pinned ? 'Note pinned' : 'Note unpinned');
+      });
+    }
+  }
+
+  // ========== SETTINGS TAB SWITCHING ==========
+  function setupSettingsTabs() {
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = 'none'; });
+        btn.classList.add('active');
+        var panel = document.getElementById(btn.dataset.tab);
+        if (panel) panel.style.display = 'flex';
+      });
+    });
+
+    document.querySelectorAll('.settings-close, .settings-modal-overlay').forEach(function(el) {
+      el.addEventListener('click', function() {
+        document.querySelector('.settings-modal').classList.remove('visible');
+      });
+    });
+  }
+
   // ========== EVENT LISTENERS ==========
   function setupEventListeners() {
     // New note button
@@ -1098,16 +1232,13 @@
         renderPreview();
         updateStatusBar();
 
-        // Debounced backlink/sidebar refresh
         clearTimeout(editorTextarea._refreshTimer);
         editorTextarea._refreshTimer = setTimeout(function() {
-          parseTagsLine();
           renderBacklinks();
           renderNoteList();
         }, 600);
       });
 
-      // Tab indentation
       editorTextarea.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -1160,21 +1291,18 @@
 
     // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-      // Ctrl/Cmd+S — save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         flushSave();
         showToast(getTrans('text_saved'));
       }
 
-      // Escape — close graph
       if (e.key === 'Escape') {
         if (graphOverlay.style.display !== 'none') {
           closeGraphView();
         }
       }
 
-      // Ctrl/Cmd+N — new note (when not in input)
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         flushSave();
@@ -1193,13 +1321,27 @@
     // Graph interaction
     setupGraphInteraction();
 
-    // Re-render on language change
+    // Install prompt
+    setupInstallPrompt();
+
+    // Note actions
+    setupNoteActions();
+
+    // Settings tabs
+    setupSettingsTabs();
+
+    // Language change
+    document.addEventListener('change', function(e) {
+      if (e.target && e.target.id === 'language-select') {
+        var lang = e.target.value;
+        localStorage.setItem('oros-language', lang);
+        translateUI();
+        window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
+      }
+    });
+
     window.addEventListener('oros-language-changed', function() {
-      renderNoteList();
-      renderSidebarTags();
-      renderPreview();
-      renderBacklinks();
-      updateStatusBar();
+      translateUI();
     });
   }
 
@@ -1207,7 +1349,6 @@
   function init() {
     load();
 
-    // Restore sidebar width
     if (settings.sidebarWidth) {
       var sidebar = document.getElementById('wiki-sidebar');
       if (sidebar) {
@@ -1226,5 +1367,11 @@
     setupEventListeners();
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(init, 100);
+    });
+  } else {
+    setTimeout(init, 100);
+  }
 })();
