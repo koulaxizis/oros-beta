@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: beta
+          ref: main
 
       - name: Guard - Skip if auto-commit
         id: guard
@@ -550,10 +550,10 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git pull --rebase --no-edit origin beta || {
+          git pull --rebase --no-edit origin main || {
             echo "Rebase had conflicts, fetching..."
-            git fetch origin beta
-            git merge origin/beta --no-edit || {
+            git fetch origin main
+            git merge origin/main --no-edit || {
               echo "Merge failed. Aborting."
               exit 1
             }
@@ -564,8 +564,8 @@ jobs:
           fi
           COMMIT_BODY="${COMMIT_BODY} | Includes: GH Pages host, license URL, UI text (Stable->Beta)"
           git commit -m "Auto-update beta URLs (rollback)" -m "$COMMIT_BODY"
-          git push origin beta
-          echo "Changes committed and pushed to beta branch."
+          git push origin main
+          echo "Changes committed and pushed to main."
 
       - name: Notice - Dry run mode
         if: steps.count-before.outputs.nothing_to_do != 'true' && github.event.inputs.dry_run == 'true'
