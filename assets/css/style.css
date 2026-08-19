@@ -1,6 +1,7 @@
 /* ============================================
    orOS Writer — style.css (FINAL v0.5-beta)
    All fixes: Background, Header, Footer, Settings Modal, Icons
+   Fix: html overflow:hidden locking landing page scroll
    ============================================ */
 
 /* ===== FONTS ===== */
@@ -67,8 +68,13 @@
 
 /* ===== RESET ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; }
+
+/* FIX: html must NOT have overflow:hidden — it locks the entire viewport.
+   Only body gets overflow:hidden for app pages. Landing page overrides it. */
+html { height: 100%; }
 body {
+  height: 100%;
+  overflow: hidden;
   font-family: var(--font-primary);
   background: var(--bg-dark);
   color: var(--text-primary);
@@ -81,6 +87,7 @@ body {
 /* ===== LANDING PAGE OVERRIDE ===== */
 body.landing-page {
   height: auto !important;
+  min-height: 100vh;
   overflow-y: auto !important;
 }
 
@@ -791,7 +798,8 @@ body.landing-page {
 /* ===== LANDING PAGE HERO & TOOLS GRID ===== */
 .hero {
   text-align: center;
-  padding: 4rem 0;
+  /* FIX: Add top padding to clear the fixed 56px header */
+  padding: calc(4rem + 56px) 0 4rem;
   background: linear-gradient(135deg, var(--bg-surface), var(--bg-dark));
 }
 
@@ -820,7 +828,8 @@ body.landing-page {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
-  padding: 2rem 0;
+  /* FIX: Add bottom padding to clear the fixed 56px footer */
+  padding: 2rem 0 calc(2rem + 56px);
   justify-items: center;
 }
 
