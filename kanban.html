@@ -68,7 +68,6 @@
     cLink.href = OROS_CONFIG.domain + window.location.pathname;
     document.head.appendChild(cLink);
 
-    // Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(
@@ -94,12 +93,13 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
-  <!-- FIXED ORDER: Settings FIRST, then components, then app logic -->
+  <!-- SAME ORDER AS EDITOR: settings → seo → components → app → main -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/kanban.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
 </head>
 <body class="kanban-page noscript">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
