@@ -6,7 +6,7 @@ var OROS_CONFIG = {
   baseHref: '/',
   version: '0.9',
   channel: 'beta',
-  domain: 'https://useoros.online',
+  domain: 'https://koulaxizis.github.io/oros-beta/',
   cacheName: 'oros-v0.9',
   
   // SEO Configuration
