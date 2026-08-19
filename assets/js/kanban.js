@@ -1579,10 +1579,9 @@
       });
     }
 
-    // ===== Auto-save toggle =====
+        // ===== Auto-save toggle =====
     var autoSaveBtn = document.getElementById('btn-autosave');
     if (autoSaveBtn) {
-      // Restore active state
       if (state.settings.autoSave) {
         autoSaveBtn.classList.add('autosave-active');
       }
@@ -1730,7 +1729,6 @@
         addAssignment(state.editingCardId, '', '');
         var result = getCard(state.editingCardId);
         if (result) renderCardEditAssignments(result.card);
-        // Focus the type input of the new row
         var container = document.getElementById('card-edit-assignments');
         var lastRow = container.querySelector('.assignment-row:last-child [data-field="type"]');
         if (lastRow) lastRow.focus();
@@ -1876,8 +1874,7 @@
     window.addEventListener('oros-language-changed', function() {
       renderAll();
       renderFilterDropdown();
-      // Note: Do NOT call applyTranslations() here — translations are applied on initial load
-      // The global-settings.js handles i18n for the main site components
+      applyTranslations();
     });
   }
 
@@ -1900,11 +1897,7 @@
     }
   }
 
-  // Wait for DOM
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // FIXED: With defer, DOM is always ready — call init directly
+  init();
 
 })();

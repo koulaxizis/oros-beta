@@ -1,5 +1,5 @@
 /* ============================================
-   orOS Kanban — Full CSS (Fixed v1.0)
+   orOS Kanban — Full CSS (Fixed v1.1)
    All styles: toolbar, board selector, search,
    filter, cards, columns, modals, drag & drop
    ============================================ */
@@ -324,11 +324,11 @@
   color: #1b1a18;
 }
 
-/* ===== BOARD AREA ===== */
+/* ===== BOARD AREA — FIXED: removed margin-top, use top padding instead ===== */
 .kanban-board-area {
   position: relative;
   height: calc(100vh - 112px);
-  margin-top: 48px;
+  padding-top: 48px;
   overflow-x: auto;
   overflow-y: auto;
   background: var(--bg-dark, #1b1a18);
@@ -1212,7 +1212,7 @@
   border: none;
   cursor: pointer;
   flex-shrink: 0;
-  }
+}
 
 .label-manage-text {
   flex: 1;
@@ -1293,7 +1293,7 @@
 
 [data-zen="true"] .kanban-board-area {
   height: 100vh;
-  margin-top: 0;
+  padding-top: 0;
 }
 
 [data-zen="true"] .kanban-columns {

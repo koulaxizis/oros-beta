@@ -62,6 +62,13 @@
   <title>orOS Kanban — Privacy-First Kanban Board</title>
   <script src="config.js"></script>
   <script>
+    document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
+    var cLink = document.createElement('link');
+    cLink.rel = 'canonical';
+    cLink.href = OROS_CONFIG.domain + window.location.pathname;
+    document.head.appendChild(cLink);
+
+    // Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(
@@ -87,11 +94,11 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
-  <!-- FIX: Component scripts FIRST, then settings, then app logic -->
-  <script src="assets/js/components/header.js" defer></script>
-  <script src="assets/js/components/footer.js" defer></script>
+  <!-- FIXED ORDER: Settings FIRST, then components, then app logic -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/kanban.js" defer></script>
 </head>
 <body class="kanban-page noscript">
