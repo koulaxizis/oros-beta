@@ -1,124 +1,56 @@
 {
-  "name": "orOS Productivity Suite",
+  "name": "orOS — The Artist's Operating System",
   "short_name": "orOS",
-  "description": "Privacy-first productivity suite: Writer, Kanban, Wiki Notes, Case Converter, Prompter. All tools work offline. No tracking. No cookies.",
-  "start_url": "/index.html",
+  "description": "Privacy-first rich text editor and case converter. Works offline. No tracking.",
+  "start_url": "editor.html",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#161618",
+  "orientation": "portrait-primary",
+  "background_color": "#1b1a18",
   "theme_color": "#c8a96e",
-  "orientation": "any",
   "icons": [
     {
-      "src": "assets/images/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/images/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "assets/images/screenshot-desktop.png",
+      "src": "screenshot-editor.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "orOS Productivity Suite Dashboard"
+      "label": "Writer - Rich text editor with autosave"
     },
     {
-      "src": "assets/images/screenshot-mobile.png",
-      "sizes": "750x1334",
+      "src": "screenshot-converter.png",
+      "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "orOS Mobile Experience"
+      "form_factor": "wide",
+      "label": "Case Converter - Text transformation tool"
     }
   ],
   "shortcuts": [
     {
       "name": "Writer",
       "short_name": "Writer",
-      "description": "Rich text writer with markdown export",
-      "url": "/editor.html",
-      "icons": [{ "src": "assets/images/shortcuts/writer-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Kanban",
-      "short_name": "Kanban",
-      "description": "Project management with drag & drop",
-      "url": "/kanban.html",
-      "icons": [{ "src": "assets/images/shortcuts/kanban-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Wiki Notes",
-      "short_name": "Wiki",
-      "description": "Markdown notebook with backlinks",
-      "url": "/wiki.html",
-      "icons": [{ "src": "assets/images/shortcuts/wiki-96.png", "sizes": "96x96" }]
+      "description": "Open the rich text editor",
+      "url": "editor.html",
+      "icons": [{"src": "favicon.svg", "sizes": "any"}]
     },
     {
       "name": "Case Converter",
-      "short_name": "Case",
-      "description": "Text case transformations",
-      "url": "/case.html",
-      "icons": [{ "src": "assets/images/shortcuts/case-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Format Converter",
-      "short_name": "Convert",
-      "description": "Multi-format text converter",
-      "url": "/converter.html",
-      "icons": [{ "src": "assets/images/shortcuts/converter-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Prompter",
-      "short_name": "Prompter",
-      "description": "Creative writing prompts",
-      "url": "/prompter.html",
-      "icons": [{ "src": "assets/images/shortcuts/prompter-96.png", "sizes": "96x96" }]
+      "short_name": "Converter",
+      "description": "Transform text case",
+      "url": "converter.html",
+      "icons": [{"src": "favicon.svg", "sizes": "any"}]
     }
   ],
-  "categories": ["productivity", "utilities"],
-  "prefer_related_applications": false,
+  "categories": ["productivity", "utilities", "education"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "iarc_rating_id": "eUgAA"
 }

@@ -135,7 +135,7 @@
         "price": "0",
         "priceCurrency": "EUR"
       },
-      "license": "https://github.com/koulaxizis/oros-beta/blob/main/LICENSE",
+      "license": "https://github.com/koulaxizis/oros/blob/main/LICENSE",
       "softwareVersion": OROS_CONFIG.version,
       "keywords": "text editor, case converter, privacy, offline, writer, productivity, open source, Greek"
     };
@@ -149,11 +149,6 @@
         'Offline-first architecture',
         'Zero tracking, zero cookies'
       ];
-      structuredData.aggregateRating = {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "127"
-      };
     }
 
     script.textContent = JSON.stringify(structuredData);

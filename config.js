@@ -1,19 +1,19 @@
 // ============================================
-// orOS — Central Config
+// orOS — Central Config 
 // ============================================
 
 var OROS_CONFIG = {
-  baseHref: '/oros-beta/',
-  version: '0.8.0',
+  baseHref: '/',
+  version: '0.9',
   channel: 'beta',
-  domain: 'https://koulaxizis.github.io/oros-beta',
-  cacheName: 'oros-v0.8.0',
-
+  domain: 'https://useoros.online',
+  cacheName: 'oros-v0.9',
+  
   // SEO Configuration
   seo: {
-    title: 'orOS Productivity Suite — Your Private Workspace',
-    description: 'Privacy-first productivity suite: Writer, Kanban, Wiki Notes, Case Converter, Format Converter, Prompter. All work offline. No tracking. No cookies.',
-    keywords: ['productivity suite', 'writer', 'kanban', 'wiki', 'notes', 'case converter', 'format converter', 'prompter', 'privacy', 'offline', 'open source'],
+    title: 'orOS — The Artist\'s Operating System',
+    description: 'Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.',
+    keywords: ['text editor', 'case converter', 'privacy', 'offline', 'writer', 'open source', 'Greek'],
     author: 'Christos Koulaxizis',
     twitterHandle: '@koulaxizis',
     ogImage: '/og-image.png',

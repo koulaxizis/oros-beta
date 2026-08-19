@@ -42,6 +42,33 @@
   // Storage keys
   var STORAGE_PREFIX = 'oros_';
 
+  // Mapping of localStorage keys to SETTINGS properties
+  var KEY_MAP = {
+    'zen_mode': 'zenModeEnabled',
+    'reading_progress': 'readingProgressEnabled',
+    'focus_mode': 'focusModeEnabled',
+    'quick_tbar_show': 'quickTbarShow',
+    'smart_typography': 'smartTypographyEnabled',
+    'typewriter_sound': 'typewriterSoundEnabled',
+    'hide_stats': 'hideStatsOverlay',
+    'hide_save_indicator': 'hideSaveIndicator',
+    'hide_goal_btn': 'hideGoalBtn',
+    'hide_outline_btn': 'hideOutlineBtn',
+    'hide_metadata_btn': 'hideMetadataBtn',
+    'hide_find_btn': 'hideFindBtn',
+    'hide_wordfreq_btn': 'hideWordFreqBtn',
+    'hide_lorem_btn': 'hideLoremBtn',
+    'hide_converter_copy_btn': 'hideCopyBtn',
+    'hide_converter_save_btn': 'hideSaveBtn',
+    'hide_converter_open_btn': 'hideOpenBtn',
+    'hide_converter_clear_btn': 'hideClearBtn',
+    'hide_converter_undo_btn': 'hideUndoBtn',
+    'hide_converter_redo_btn': 'hideRedoBtn',
+    'hide_converter_reset_btn': 'hideResetBtn',
+    'hide_converter_options': 'hideOptionsDropdown',
+    'hide_converter_stats_btn': 'hideStatsPanelBtn'
+  };
+
   // Event dispatchers for inter-app communication
   window.orosSettings = {
     getSetting: function(key) { return SETTINGS[key]; },
@@ -72,7 +99,6 @@
 
   function loadAllSettings() {
     // Theme & display
-    // FIXED: Consistent zen_mode key
     SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen_mode') === 'true';
     SETTINGS.readingProgressEnabled = localStorage.getItem(STORAGE_PREFIX + 'reading_progress') !== 'false';
     SETTINGS.focusModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'focus_mode') !== 'false';
@@ -106,28 +132,30 @@
 
   function setupLocalStorageListener() {
     window.addEventListener('storage', function(e) {
-      // Key changed in another tab/window
       var key = e.key;
       var value = e.newValue;
 
-      // Update our in-memory state
-      switch(key) {
-        // FIXED: Consistent zen_mode key
-        case STORAGE_PREFIX + 'zen_mode':
-          SETTINGS.zenModeEnabled = value === 'true';
-          break;
-        case STORAGE_PREFIX + 'hide_goal_btn':
-          SETTINGS.hideGoalBtn = value === 'true';
-          break;
-        case STORAGE_PREFIX + 'hide_outline_btn':
-          SETTINGS.hideOutlineBtn = value === 'true';
-          break;
-        // ... add all cases as needed
+      if (!key || key.indexOf(STORAGE_PREFIX) !== 0) return;
+
+      var strippedKey = key.replace(STORAGE_PREFIX, '');
+
+      // Update in-memory state using KEY_MAP
+      if (KEY_MAP[strippedKey]) {
+        var settingProp = KEY_MAP[strippedKey];
+        // Handle boolean-like settings (default true vs default false)
+        var defaultTrueKeys = [
+          'reading_progress', 'focus_mode', 'quick_tbar_show', 'smart_typography'
+        ];
+        if (defaultTrueKeys.indexOf(strippedKey) !== -1) {
+          SETTINGS[settingProp] = value !== 'false';
+        } else {
+          SETTINGS[settingProp] = value === 'true';
+        }
       }
 
       // Notify this page
       window.dispatchEvent(new CustomEvent('oros-storage-sync', {
-        detail: { key: key.replace(STORAGE_PREFIX, ''), value: value }
+        detail: { key: strippedKey, value: value }
       }));
 
       // Apply visibility if elements exist

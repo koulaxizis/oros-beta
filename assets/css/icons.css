@@ -1,6 +1,5 @@
 /* ============================================
    orOS Fork Awesome Icons — Self-hosted
-   Consolidated: all icons across all pages
    ============================================ */
 
 @font-face {
@@ -25,92 +24,56 @@
 }
 
 /* ===== HEADER ICONS ===== */
-.fa-eye-slash:before    { content: '\f070'; }
-.fa-eye:before          { content: '\f06e'; }
+.fa-eye-slash:before   { content: '\f070'; }
 .fa-cog:before          { content: '\f013'; }
 .fa-sun-o:before        { content: '\f185'; }
 .fa-moon-o:before       { content: '\f186'; }
 
 /* ===== TOOLBAR — FILE ACTIONS ===== */
-.fa-save:before         { content: '\f0c7'; }
-.fa-folder-open:before  { content: '\f07c'; }
-.fa-trash-o:before      { content: '\f014'; }
-.fa-download:before     { content: '\f019'; }
-.fa-pencil:before       { content: '\f040'; }
-.fa-copy:before         { content: '\f0c5'; }
-.fa-files-o:before      { content: '\f0c5'; }
+.fa-save:before          { content: '\f0c7'; }
+.fa-folder-open:before   { content: '\f07c'; }
+.fa-trash-o:before       { content: '\f014'; }
+.fa-download:before      { content: '\f019'; }
+.fa-pencil:before        { content: '\f040'; }
+.fa-copy:before          { content: '\f0c5'; }
 
 /* ===== TOOLBAR — FORMATTING ===== */
-.fa-bold:before         { content: '\f032'; }
-.fa-italic:before       { content: '\f033'; }
-.fa-underline:before    { content: '\f0cd'; }
+.fa-bold:before          { content: '\f032'; }
+.fa-italic:before        { content: '\f033'; }
+.fa-underline:before     { content: '\f0cd'; }
 .fa-strikethrough:before { content: '\f0cc'; }
-.fa-header:before       { content: '\f1dc'; }
-.fa-list-ul:before      { content: '\f03a'; }
-.fa-list-ol:before      { content: '\f0cb'; }
-.fa-list:before         { content: '\f03a'; }
+.fa-header:before        { content: '\f1dc'; }
+.fa-list-ul:before       { content: '\f03a'; }
+.fa-list-ol:before       { content: '\f0cb'; }
 
 /* ===== TOOLBAR — TOOLS ===== */
-.fa-bullseye:before     { content: '\f140'; }
-.fa-info-circle:before { content: '\f05a'; }
-.fa-search:before      { content: '\f002'; }
-.fa-bar-chart:before   { content: '\f080'; }
-.fa-sliders:before      { content: '\f1de'; }
+.fa-bullseye:before      { content: '\f140'; }
+.fa-info-circle:before   { content: '\f05a'; }
+.fa-search:before        { content: '\f002'; }
+.fa-bar-chart:before     { content: '\f080'; }
+.fa-sliders:before       { content: '\f1de'; }
 
 /* ===== GOAL BAR ===== */
-.fa-check:before        { content: '\f00c'; }
-.fa-check-square-o:before { content: '\f046'; }
-.fa-times:before        { content: '\f00d'; }
+.fa-check:before         { content: '\f00c'; }
+.fa-times:before         { content: '\f00d'; }
 
 /* ===== FIND & REPLACE ===== */
-.fa-exchange:before     { content: '\f0ec'; }
-.fa-refresh:before      { content: '\f021'; }
+.fa-exchange:before      { content: '\f0ec'; }
+.fa-refresh:before       { content: '\f021'; }
 
 /* ===== DROPDOWN ===== */
-.fa-caret-down:before   { content: '\f0d7'; }
+.fa-caret-down:before    { content: '\f0d7'; }
 
 /* ===== CONTEXT MENU ===== */
-.fa-undo:before         { content: '\f0e2'; }
-.fa-repeat:before       { content: '\f01e'; }
+.fa-undo:before          { content: '\f0e2'; }
+.fa-repeat:before        { content: '\f01e'; }
 
 /* ===== ALIGNMENT ===== */
-.fa-align-left:before   { content: '\f036'; }
-.fa-align-center:before { content: '\f037'; }
-.fa-align-right:before  { content: '\f038'; }
-.fa-align-justify:before { content: '\f03a'; }
+.fa-align-left:before    { content: '\f036'; }
+.fa-align-center:before  { content: '\f037'; }
+.fa-align-right:before   { content: '\f038'; }
+.fa-align-justify:before { content: '\f039'; }
 
-/* ===== CONVERTER (Case + Format) ===== */
-.fa-text-width:before   { content: '\f035'; }
-.fa-arrow-down:before   { content: '\f063'; }
-
-/* ===== LANDING PAGE — TOOL CARD ICONS ===== */
-.fa-pencil-square-o:before { content: '\f044'; }
-.fa-font:before           { content: '\f031'; }
-.fa-columns:before        { content: '\f0db'; }
-.fa-book:before           { content: '\f02d'; }
-
-/* ===== PRIVACY SECTION ICONS ===== */
-.fa-shield:before        { content: '\f132'; }
-.fa-ban:before           { content: '\f05e'; }
-.fa-lock:before          { content: '\f023'; }
-
-/* ===== KANBAN ICONS ===== */
-.fa-plus:before         { content: '\f067'; }
-.fa-play:before         { content: '\f04b'; }
-.fa-pause:before        { content: '\f04c'; }
-.fa-clock-o:before      { content: '\f017'; }
-.fa-archive:before      { content: '\f187'; }
-.fa-tag:before          { content: '\f02b'; }
-.fa-tags:before         { content: '\f02c'; }
-.fa-calendar:before     { content: '\f073'; }
-
-/* ===== WIKI ICONS ===== */
-.fa-share-alt:before    { content: '\f1e0'; }
-.fa-sitemap:before      { content: '\f0e8'; }
-.fa-link:before         { content: '\f0c1'; }
-.fa-thumb-tack:before   { content: '\f08d'; }
-
-/* ===== FORMAT CONVERTER ICONS (new) ===== */
-.fa-code:before             { content: '\f121'; }
-.fa-magic:before            { content: '\f0d0'; }
-.fa-long-arrow-right:before { content: '\f178'; }
+/* ===== CONVERTER ===== */
+.fa-text-width:before    { content: '\f035'; }
+.fa-arrow-down:before    { content: '\f063'; }
