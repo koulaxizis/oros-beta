@@ -2,7 +2,6 @@
    orOS Productivity Suite — Dashboard Styles
    ============================================ */
 
-/* --- Reset & Base --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -14,13 +13,26 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
-/* --- Header --- */
+/* --- CRITICAL: Override style.css overflow:hidden on dashboard page --- */
+body.dashboard-page {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh;
+  padding-top: 60px;
+  padding-bottom: 56px;
+}
+
+/* --- Header (FIXED) --- */
 .orus-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   background: #1e1e22;
   border-bottom: 1px solid #333338;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  pointer-events: auto;
 }
 
 .header-main {
@@ -46,7 +58,6 @@ a { color: inherit; text-decoration: none; }
 .logo-icon {
   width: 32px;
   height: 32px;
-  color: #c8a96e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +94,7 @@ a { color: inherit; text-decoration: none; }
   gap: 4px;
   flex: 1;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -93,6 +105,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 6px;
   transition: all 0.15s ease;
   white-space: nowrap;
+  pointer-events: auto;
 }
 
 .nav-link:hover {
@@ -187,6 +200,7 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   transition: all 0.15s ease;
   font-size: 14px;
+  pointer-events: auto;
 }
 
 .action-btn:hover {
@@ -430,11 +444,16 @@ a { color: inherit; text-decoration: none; }
   text-decoration: underline;
 }
 
-/* --- Footer --- */
+/* --- Footer (FIXED at bottom) --- */
 .orus-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
   background: #1e1e22;
   border-top: 1px solid #333338;
-  padding: 24px;
+  padding: 16px 24px;
 }
 
 .footer-content {
@@ -444,7 +463,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 8px;
 }
 
 .footer-section {
@@ -598,7 +617,6 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
 }
 
-/* Toggle Switch */
 .switch {
   position: relative;
   display: inline-block;
@@ -700,7 +718,7 @@ a { color: inherit; text-decoration: none; }
 /* --- Toast --- */
 .zentool-toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: #c8a96e;
@@ -725,8 +743,10 @@ a { color: inherit; text-decoration: none; }
   .header-main {
     flex-wrap: wrap;
     height: auto;
-    padding: 12px 16px;
+    padding: 8px 16px;
   }
+
+  .brand-section { width: 100%; justify-content: space-between; }
 
   .nav-section {
     order: 3;
@@ -734,6 +754,7 @@ a { color: inherit; text-decoration: none; }
     justify-content: flex-start;
     overflow-x: auto;
     padding-top: 8px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .nav-link {
@@ -743,16 +764,22 @@ a { color: inherit; text-decoration: none; }
 
   .hero-content h1 { font-size: 26px; }
   .hero-content p { font-size: 14px; }
+  .hero-section { padding: 48px 16px; }
 
+  .tools-section { padding: 48px 16px; }
   .tools-grid { grid-template-columns: 1fr; }
 
-  .privacy-features { grid-template-columns: 1fr 1fr; }
+  .privacy-section { padding: 48px 16px; }
+  .privacy-features { grid-template-columns: 1fr 1fr; gap: 24px; }
 
   .footer-content { flex-direction: column; text-align: center; }
+
+  body.dashboard-page {
+    padding-top: 120px;
+  }
 }
 
 @media (max-width: 480px) {
   .privacy-features { grid-template-columns: 1fr; }
-  .hero-section { padding: 48px 16px; }
-  .tools-section { padding: 48px 16px; }
+  .cta-section { padding: 48px 16px; }
 }

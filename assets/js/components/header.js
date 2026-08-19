@@ -1,7 +1,5 @@
 // ============================================
 // orOS Header Component
-// Updated for Productivity Suite branding
-// FIXED: relative links, zen key, event name typo
 // ============================================
 
 (function() {
@@ -17,6 +15,14 @@
     return t[key] || key;
   }
 
+  function langLabel(code) {
+    var labels = {
+      'el': 'Ελληνικά', 'en': 'English', 'es': 'Español',
+      'it': 'Italiano', 'fr': 'Français', 'de': 'Deutsch'
+    };
+    return labels[code] || code;
+  }
+
   function renderHeader() {
     var container = document.getElementById('oros-header');
     if (!container) return;
@@ -26,7 +32,14 @@
         '<div class="header-main">' +
           '<div class="brand-section">' +
             '<a href="index.html" class="brand-logo">' +
-              '<div class="logo-icon"><svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 2L4 8v16l12 6 12-6V8L16 2zm0 3.5l9 4.5-9 4.5-9-4.5 9-4.5zM6.5 10l8.5 4.25v11.5L6.5 21.5V10zm19 0v11.5L17 25.75v-11.5L25.5 10z"/></svg></div>' +
+              '<div class="logo-icon">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">' +
+                  '<rect width="512" height="512" rx="96" fill="#1b1a18"/>' +
+                  '<path d="M256 104 L460 408 L52 408 Z M256 104 L342 246 L388 176 L460 408" ' +
+                  'stroke="#c8a96e" stroke-width="20" stroke-linecap="round" ' +
+                  'stroke-linejoin="miter" stroke-miterlimit="3" fill="none"/>' +
+                '</svg>' +
+              '</div>' +
               '<div class="brand-text">' +
                 '<span class="brand-name">orOS</span>' +
                 '<span class="brand-tagline">' + getTrans('suite_productivity') + '</span>' +
@@ -46,7 +59,7 @@
             '<div class="language-dropdown">' +
               '<button class="lang-btn" id="language-select-btn" aria-label="Select Language">' +
                 '<i class="fa fa-globe"></i>' +
-                '<span id="current-lang-label">' + (getCurrentLang() === 'el' ? 'Ελληνικά' : 'English') + '</span>' +
+                '<span id="current-lang-label">' + langLabel(getCurrentLang()) + '</span>' +
               '</button>' +
               '<div class="lang-dropdown" id="language-dropdown">' +
                 '<a href="#" class="lang-item" data-lang="el">Ελληνικά</a>' +
@@ -57,17 +70,17 @@
                 '<a href="#" class="lang-item" data-lang="de">Deutsch</a>' +
               '</div>' +
             '</div>' +
-            '<button class="action-btn zen-mode-toggle" id="zen-mode-btn" title="Zen Mode" data-i18n-title="toggle_zen">' +
+            '<button class="action-btn" id="btn-zen" title="Zen Mode" data-i18n-title="toggle_zen">' +
               '<i class="fa fa-arrows-alt"></i>' +
             '</button>' +
-            '<button class="action-btn settings-btn" id="settings-btn" title="Settings" data-i18n-title="settings">' +
+            '<button class="action-btn" id="btn-settings" title="Settings" data-i18n-title="settings">' +
               '<i class="fa fa-cog"></i>' +
             '</button>' +
           '</div>' +
         '</div>' +
       '</header>';
 
-    // Language dropdown handler
+    // --- Language dropdown ---
     var btn = document.getElementById('language-select-btn');
     var dropdown = document.getElementById('language-dropdown');
     var label = document.getElementById('current-lang-label');
@@ -84,44 +97,45 @@
 
       dropdown.addEventListener('click', function(e) {
         if (e.target.classList.contains('lang-item')) {
+          e.preventDefault();
           var lang = e.target.dataset.lang;
-          if (window.OROS_I18N && window.OROS_I18N.setLang) {
-            window.OROS_I18N.setLang(lang);
-          } else {
-            localStorage.setItem('oros-language', lang);
-          }
-          label.textContent = lang === 'el' ? 'Ελληνικά' : (lang === 'en' ? 'English' :
-            lang === 'es' ? 'Español' : lang === 'it' ? 'Italiano' :
-            lang === 'fr' ? 'Français' : 'Deutsch');
+          // FIX: Set localStorage AND dispatch event for _loader.js + main.js
+          localStorage.setItem('oros-language', lang);
+          label.textContent = langLabel(lang);
           dropdown.classList.remove('visible');
+          window.dispatchEvent(new CustomEvent('oros-language-changed', {
+            detail: { lang: lang }
+          }));
         }
         e.stopPropagation();
       });
     }
 
-    // Zen mode toggle
-    var zenBtn = document.getElementById('zen-mode-btn');
+    // --- Zen mode (FIX: use data-zen attribute + oros_zen_mode key, matching main.js) ---
+    var zenBtn = document.getElementById('btn-zen');
     if (zenBtn) {
       zenBtn.addEventListener('click', function() {
-        document.body.classList.toggle('zen-mode');
-        var zenEnabled = document.body.classList.contains('zen-mode');
-        // FIXED: use oros_zen_mode (underscore) to match main.js
-        localStorage.setItem('oros_zen_mode', zenEnabled ? 'true' : 'false');
+        var body = document.body;
+        var isZen = body.hasAttribute('data-zen');
+        if (isZen) {
+          body.removeAttribute('data-zen');
+        } else {
+          body.setAttribute('data-zen', 'true');
+        }
+        localStorage.setItem('oros_zen_mode', isZen ? 'false' : 'true');
         window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
-          detail: { enabled: zenEnabled }
+          detail: { enabled: !isZen }
         }));
       });
 
       // Restore saved zen mode
-      // FIXED: use oros_zen_mode (underscore) to match main.js
-      var savedZen = localStorage.getItem('oros_zen_mode') === 'true';
-      if (savedZen) {
-        document.body.classList.add('zen-mode');
+      if (localStorage.getItem('oros_zen_mode') === 'true') {
+        document.body.setAttribute('data-zen', 'true');
       }
     }
 
-    // Settings button
-    var settingsBtn = document.getElementById('settings-btn');
+    // --- Settings button ---
+    var settingsBtn = document.getElementById('btn-settings');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', function() {
         var modal = document.querySelector('.settings-modal');
@@ -131,12 +145,7 @@
       });
     }
 
-    // Translate static UI elements after rendering
-    translateStaticElements();
-  }
-
-  function translateStaticElements() {
-    // Apply translations to all data-i18n elements
+    // --- Apply translations ---
     document.querySelectorAll('[data-i18n]').forEach(function(elem) {
       var key = elem.getAttribute('data-i18n');
       var val = getTrans(key);
@@ -144,23 +153,21 @@
     });
   }
 
-  // Re-render on language change
-  // FIXED: typo was 'oras-language-changed' → 'oros-language-changed'
+  // --- Event listeners ---
   window.addEventListener('oros-language-changed', function() {
     renderHeader();
   });
 
-  // Also re-render when translations are first loaded
   window.addEventListener('oros-translations-ready', function() {
     renderHeader();
   });
 
-  // Initial render
+  // --- Init ---
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(renderHeader, 100);
+      renderHeader();
     });
   } else {
-    setTimeout(renderHeader, 100);
+    renderHeader();
   }
 })();
