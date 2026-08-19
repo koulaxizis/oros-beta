@@ -282,6 +282,7 @@
 
     var el = document.createElement('div');
     el.className = 'tree-item ' + node.type;
+    el.setAttribute('data-id', node.id); // FIX: Add data-id for highlighting
     if (node.id === state.activeNodeId) el.classList.add('active');
     if (node.modified > node.created && !node.isNew) el.classList.add('modified');
 
@@ -907,12 +908,13 @@
     closeLinkPickerModal();
   }
 
-  // ========== EMPTY STATE ==========
+  // ========== EMPTY STATE (FIXED) ==========
   function toggleEmptyState() {
     var emptyState = document.getElementById('notes-empty-state');
     var editorPanel = document.getElementById('notes-editor-panel');
     var toolbar = document.getElementById('notes-toolbar');
     var container = document.getElementById('notes-container');
+    var sidebar = document.getElementById('notes-sidebar');
 
     var hasNotes = getNotes().length > 0;
 
@@ -920,18 +922,21 @@
       if (emptyState) emptyState.style.display = 'flex';
       if (editorPanel) editorPanel.style.display = 'none';
       if (toolbar) toolbar.style.display = 'none';
-      if (container) container.style.display = 'none';
+      if (sidebar) sidebar.style.display = 'none';
+      // DO NOT hide container — empty state is inside it!
+      if (container) container.style.display = 'flex';
     } else {
       if (emptyState) emptyState.style.display = 'none';
       if (toolbar) toolbar.style.display = '';
+      if (sidebar) sidebar.style.display = '';
       if (container) container.style.display = '';
-      // Editor panel visibility depends on active note
       var note = getNode(state.activeNodeId);
       if (!note || note.type !== 'note') {
         if (editorPanel) editorPanel.style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
       } else {
         if (editorPanel) editorPanel.style.display = 'flex';
+        if (emptyState) emptyState.style.display = 'none';
       }
     }
   }

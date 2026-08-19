@@ -7,7 +7,6 @@
   
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
-  <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
   
   <meta property="og:type" content="article">
@@ -15,50 +14,19 @@
   <meta property="og:title" content="orOS Kanban — Privacy-First Kanban Board">
   <meta property="og:description" content="Drag & drop kanban board with multiple boards, labels, due dates, and search. Works offline. No tracking.">
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
-  <meta property="og:locale" content="en_US">
-  <meta property="og:site_name" content="orOS">
   
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
   <meta name="twitter:title" content="orOS Kanban — Privacy-First Kanban Board">
   <meta name="twitter:description" content="Drag & drop kanban board with multiple boards, labels, due dates, and search. Works offline. No tracking.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
-  <meta name="twitter:creator" content="@koulaxizis">
   
   <meta name="keywords" content="kanban, kanban board, project management, task manager, privacy, offline, drag and drop, open source">
   
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/kanban.html">
   <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=de">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/kanban.html">
   
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "orOS Kanban",
-    "url": "https://koulaxizis.github.io/oros-beta/kanban.html",
-    "author": {
-      "@type": "Person",
-      "name": "Christos Koulaxizis",
-      "url": "https://koulaxizis.gr"
-    },
-    "description": "Privacy-first kanban board with drag & drop, multiple boards, labels, due dates, and search.",
-    "inLanguage": ["en", "el", "es", "it", "fr", "de"],
-    "operatingSystem": "Web",
-    "applicationCategory": "ProductivityApplication",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "EUR"
-    },
-    "license": "https://github.com/koulaxizis/oros-beta/blob/main/LICENSE"
-  }
-  </script>
-
   <title>orOS Kanban — Privacy-First Kanban Board</title>
   <script src="config.js"></script>
   <script>
@@ -67,17 +35,6 @@
     cLink.rel = 'canonical';
     cLink.href = OROS_CONFIG.domain + window.location.pathname;
     document.head.appendChild(cLink);
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register(
-          OROS_CONFIG.baseHref + 'service-worker.js',
-          { scope: OROS_CONFIG.baseHref }
-        ).catch(function(err) {
-          console.warn('SW registration failed:', err);
-        });
-      });
-    }
   </script>
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -93,7 +50,6 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
-  <!-- SAME ORDER AS EDITOR: settings → seo → components → app → main -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
@@ -110,7 +66,7 @@
 
   <div id="oros-header"></div>
 
-  <!-- Kanban Toolbar -->
+  <!-- KANBAN TOOLBAR -->
   <div class="kanban-toolbar" id="kanban-toolbar">
     <div class="kanban-toolbar-left">
       <div class="board-selector" id="board-selector">
@@ -163,12 +119,12 @@
     </div>
   </div>
 
-  <!-- Kanban Board Area -->
+  <!-- KANBAN BOARD AREA -->
   <div class="kanban-board-area" id="kanban-board-area">
     <div class="kanban-columns" id="kanban-columns"></div>
   </div>
 
-  <!-- Empty State -->
+  <!-- EMPTY STATE -->
   <div class="kanban-empty-state" id="kanban-empty-state" style="display:none;">
     <div class="empty-icon"><i class="fa fa-list-ul"></i></div>
     <h2 data-i18n="kanban_empty_title">No boards yet</h2>
@@ -178,7 +134,7 @@
     </button>
   </div>
 
-  <!-- Card Edit Modal -->
+  <!-- CARD MODAL -->
   <div class="card-modal" id="card-modal">
     <div class="card-modal-overlay" id="card-modal-overlay"></div>
     <div class="card-modal-content">
@@ -196,14 +152,12 @@
             <button class="btn-clear-due" id="btn-clear-due" data-i18n="kanban_clear_due">Clear</button>
           </div>
         </div>
-
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_description">Description</label>
           <textarea class="card-edit-description" id="card-edit-description"
                     placeholder="Add a description..." data-i18n-placeholder="kanban_desc_placeholder"
                     rows="6"></textarea>
         </div>
-
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_assignments">Assignments</label>
           <div id="card-edit-assignments" class="card-edit-assignments"></div>
@@ -211,7 +165,6 @@
             <i class="fa fa-plus"></i> <span data-i18n="kanban_add_assignment">Add Assignment</span>
           </button>
         </div>
-
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_labels">Labels</label>
           <div class="card-edit-labels" id="card-edit-labels"></div>
@@ -230,7 +183,6 @@
             <i class="fa fa-plus"></i> <span data-i18n="kanban_manage_labels">Manage Labels</span>
           </button>
         </div>
-
         <div class="card-edit-section card-meta">
           <span class="card-meta-created" id="card-meta-created"></span>
         </div>
@@ -242,7 +194,7 @@
     </div>
   </div>
 
-  <!-- Manage Labels Modal -->
+  <!-- LABEL MANAGE MODAL -->
   <div class="label-modal" id="label-modal" style="display:none;">
     <div class="label-modal-overlay" id="label-modal-overlay"></div>
     <div class="label-modal-content">
@@ -260,11 +212,8 @@
   </div>
 
   <input type="text" class="column-title-edit" id="column-title-edit" style="display:none;">
-
-  <!-- Zen Toast -->
   <div class="zentool-toast" id="zen-toast" style="display:none;"></div>
 
   <div id="oros-footer"></div>
-
 </body>
 </html>
