@@ -61,7 +61,7 @@
 
   <title>orOS Kanban — Privacy-First Kanban Board</title>
   <script src="config.js"></script>
-    <script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(
@@ -135,7 +135,7 @@
 
       <!-- Filter labels -->
       <div class="kanban-filter-dropdown" id="filter-dropdown">
-        <button class="filter-btn" id="filter-btn" aria-label="Filter by labels">
+        <button class="filter-btn" id="filter-btn" aria-label="Filter by labels" data-i18n-aria="kanban_filter">
           <i class="fa fa-sliders"></i> <span data-i18n="kanban_filter">Filter</span>
         </button>
         <div class="filter-dropdown-content" id="filter-dropdown-content"></div>
@@ -146,10 +146,10 @@
       <button class="kanban-action-btn" id="btn-add-column" title="Add column" data-i18n-aria="aria_add_column">
         <i class="fa fa-plus"></i> <span data-i18n="kanban_add_column">Add Column</span>
       </button>
-      <button class="kanban-action-btn" id="btn-import" title="Import board" data-i18n-aria="aria_import">
+      <button class="kanban-action-btn" id="btn-import" title="Import board" data-i18n-aria="kanban_import">
         <i class="fa fa-folder-open"></i>
       </button>
-      <button class="kanban-action-btn" id="btn-export" title="Export board" data-i18n-aria="aria_export">
+      <button class="kanban-action-btn" id="btn-export" title="Export board" data-i18n-aria="kanban_export">
         <i class="fa fa-download"></i>
       </button>
       <input type="file" id="import-file-input" accept=".json" style="display:none;">
@@ -184,26 +184,6 @@
         </button>
       </div>
       <div class="card-modal-body">
-        <!-- Labels section -->
-        <div class="card-edit-section">
-          <label class="card-edit-label" data-i18n="kanban_labels">Labels</label>
-          <div class="card-edit-labels" id="card-edit-labels"></div>
-          <div class="label-picker" id="label-picker" style="display:none;">
-            <div class="label-picker-list" id="label-picker-list"></div>
-            <button class="label-picker-add" id="label-picker-add">
-              <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
-            </button>
-            <div class="label-picker-new" id="label-picker-new" style="display:none;">
-              <input type="text" id="new-label-text" placeholder="Label name..." data-i18n-placeholder="kanban_label_name">
-              <input type="color" id="new-label-color" value="#6d4aff">
-              <button id="new-label-save" data-i18n="kanban_add">Add</button>
-            </div>
-          </div>
-          <button class="btn-add-label" id="btn-add-label">
-            <i class="fa fa-plus"></i> <span data-i18n="kanban_add_label">Add</span>
-          </button>
-        </div>
-
         <!-- Due date section -->
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_due_date">Due Date</label>
@@ -219,6 +199,35 @@
           <textarea class="card-edit-description" id="card-edit-description" 
                     placeholder="Add a description..." data-i18n-placeholder="kanban_desc_placeholder"
                     rows="6"></textarea>
+        </div>
+
+        <!-- Assignment fields (NEW) -->
+        <div class="card-edit-section">
+          <label class="card-edit-label" data-i18n="kanban_assignments">Assignments</label>
+          <div id="card-edit-assignments" class="card-edit-assignments"></div>
+          <button class="btn-add-assignment" id="btn-add-assignment" data-i18n="kanban_add_assignment">
+            <i class="fa fa-plus"></i> Add Assignment
+          </button>
+        </div>
+
+        <!-- Labels section (moved to bottom of modal) -->
+        <div class="card-edit-section">
+          <label class="card-edit-label" data-i18n="kanban_labels">Labels</label>
+          <div class="card-edit-labels" id="card-edit-labels"></div>
+          <div class="label-picker" id="label-picker" style="display:none;">
+            <div class="label-picker-list" id="label-picker-list"></div>
+            <button class="label-picker-add" id="label-picker-add">
+              <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
+            </button>
+            <div class="label-picker-new" id="label-picker-new" style="display:none;">
+              <input type="text" id="new-label-text" placeholder="Label name..." data-i18n-placeholder="kanban_label_name">
+              <input type="color" id="new-label-color" value="#6d4aff">
+              <button id="new-label-save" data-i18n="kanban_add">Add</button>
+            </div>
+          </div>
+          <button class="btn-add-label" id="btn-add-label" data-i18n="kanban_manage_labels">
+            <i class="fa fa-plus"></i> Manage Labels
+          </button>
         </div>
 
         <!-- Meta info -->
@@ -256,7 +265,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
+        navigator.serviceWorker.register(OROS_CONFIG.baseHref + 'service-worker.js').catch(function(err) {
           console.warn('SW registration failed:', err);
         });
       });

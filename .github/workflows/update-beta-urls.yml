@@ -179,7 +179,8 @@ jobs:
           echo "VERSION SYNC — Reading from config.js"
           echo "════════════════════════════════════════"
 
-          CONFIG_VERSION=$(grep -oP "version:\s*['\"]\K[^'\"]+" config.js)
+          # Extract version from config.js (anchored to start of line to avoid apiVersion, etc.)
+          CONFIG_VERSION=$(grep -oP "^\s*version:\s*['\"]\K[^'\"]+" config.js | head -1)
 
           if [[ -z "$CONFIG_VERSION" ]]; then
             echo "❌ Could not extract version from config.js"
@@ -188,6 +189,7 @@ jobs:
 
           echo "  config.js version: $CONFIG_VERSION"
 
+          # Build full version — append .0 if only two parts (X.Y → X.Y.0)
           DOTS=$(echo "$CONFIG_VERSION" | tr -cd '.' | wc -c)
           if [[ $DOTS -ge 2 ]]; then
             FULL_VERSION="$CONFIG_VERSION"
@@ -199,17 +201,20 @@ jobs:
           echo "CONFIG_VERSION=$CONFIG_VERSION" >> $GITHUB_ENV
           echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
 
+          # 1. Update manifest.json — "version": "X.Y.Z"
           if [[ -f "manifest.json" ]]; then
             sed -i "s|\"version\": *\"[^\"]*\"|\"version\": \"$FULL_VERSION\"|" manifest.json
             echo "  ✅ manifest.json → $FULL_VERSION"
           fi
 
+          # 2. Update service-worker.js — CACHE_NAME = 'oros-vX.Y.Z' + // Version: comment
           if [[ -f "service-worker.js" ]]; then
             sed -i "s|CACHE_NAME *= *'oros-v[^']*'|CACHE_NAME = 'oros-v$FULL_VERSION'|" service-worker.js
-            sed -i "s|^# Version: [0-9.]*|# Version: $FULL_VERSION|" service-worker.js
+            sed -i "s|^// Version: [0-9.]*|// Version: $FULL_VERSION|" service-worker.js
             echo "  ✅ service-worker.js → oros-v$FULL_VERSION"
           fi
 
+          # 3. Update ai-meta.txt — # Version: X.Y + # Last Updated: YYYY-MM-DD
           if [[ -f "ai-meta.txt" ]]; then
             TODAY=$(date +%Y-%m-%d)
             sed -i "s|^# Version: [0-9.]*|# Version: $CONFIG_VERSION|" ai-meta.txt
@@ -249,7 +254,7 @@ jobs:
             "assets/js/global-settings.js"
           )
 
-          EXTRA_HTML=$(find . -maxdepth 3 -name '*.html' -not -path './.git/*' -not -path './.github/*' -type f 2>/dev/null || true)
+          EXTRA_HTML=$(find . -maxdepth 3 -name '*.html' -not -path './.git/*' -not -path './.github/*' -not -path './node_modules/*' -type f 2>/dev/null || true)
           EXTRA_JS=$(find . -maxdepth 3 -name '*.js' -not -path './.git/*' -not -path './node_modules/*' -not -path './.github/*' -type f 2>/dev/null || true)
           EXTRA_CSS=$(find . -maxdepth 3 -name '*.css' -not -path './.git/*' -not -path './node_modules/*' -not -path './.github/*' -type f 2>/dev/null || true)
           EXTRA_TXT=$(find . -maxdepth 3 -name '*.txt' -not -path './.git/*' -not -path './node_modules/*' -not -path './.github/*' -type f 2>/dev/null || true)
@@ -293,11 +298,10 @@ jobs:
               CHANGED=1
             fi
 
-            # 4: BASE HREF REPLACEMENT — TARGETED ONLY
+            # 4: BASE HREF REPLACEMENT — TARGETED ONLY (BUG FIXED)
             # 4a: <base href="/"> → <base href="/oros-beta/">
-            if grep -q '<base href="/">"' "$file" 2>/dev/null || grep -q "<base href=\"\/\">" "$file" 2>/dev/null; then
+            if grep -q '<base href="/">' "$file" 2>/dev/null; then
               sed -i 's|<base href="/">|<base href="/oros-beta/">|g' "$file"
-              sed -i "s|<base href=\"/\">|<base href=\"/oros-beta/\">|g" "$file"
               CHANGED=1
             fi
             if grep -q '<base href="/" />' "$file" 2>/dev/null; then
@@ -331,10 +335,11 @@ jobs:
               CHANGED=1
             fi
 
-            # 7: Standalone oros → oros-beta (MUST USE WORD BOUNDARY TO AVOID MATCHING oros-beta ALREADY)
-            # BUG FIX: Use Perl negative lookahead to avoid matching oros-beta already
-            if grep -qE '\boros\b' "$file" 2>/dev/null && ! grep -qE '\boros-beta\b' "$file" 2>/dev/null; then
-              perl -i -pe 's/\boros\b(?!\-beta)/oros-beta/g' "$file" 2>/dev/null && CHANGED=1
+            # 7: Standalone oros → oros-beta (CRITICAL BUG FIX)
+            # Use negative lookahead for ANY dash to protect both oros-beta AND oros-vX.Y.Z
+            if grep -qP '\boros\b(?!\-)' "$file" 2>/dev/null; then
+              perl -i -pe 's/\boros\b(?!\-)/oros-beta/g' "$file"
+              CHANGED=1
             fi
 
             # 8: UI text — Stable Channel
@@ -576,7 +581,7 @@ jobs:
 
           # NEW: Version consistency check
           if [[ -n "$CONFIG_VERSION" && -n "$FULL_VERSION" ]]; then
-            MANIFEST_VER=$(grep -oP '"version":\s*"\K[^"]+' manifest.json)
+            MANIFEST_VER=$(grep -oP '"version":\s*"\K[^"]+' manifest.json 2>/dev/null || true)
             SW_CACHE=$(grep -oP "CACHE_NAME\s*=\s*'\Koros-v[^']+" service-worker.js 2>/dev/null || true)
 
             echo ""
