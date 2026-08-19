@@ -2,7 +2,8 @@
 // orOS Kanban — Full Implementation
 // Privacy-first, offline, vanilla JavaScript
 // Features: Multi-board, DnD cards/columns,
-// labels, due dates, search, filters, import/export
+// labels, due dates, assignments, search, filters,
+// import/export, auto-save, persistent settings
 // ============================================
 
 (function() {
@@ -10,6 +11,7 @@
 
   // ========== STORAGE KEYS ==========
   var STORAGE_KEY = 'oros_kanban_data';
+  var SETTINGS_KEY = 'oros_kanban_settings';
 
   // ========== STATE ==========
   var state = {
@@ -22,7 +24,12 @@
     editingColumnId: null,
     draggingCard: null,
     draggingColumn: null,
-    labelPickerOpen: false
+    labelPickerOpen: false,
+    settings: {
+      autoSave: false,
+      lastImportPath: '',
+      lastExportPath: ''
+    }
   };
 
   // ========== DEFAULT LABELS ==========
@@ -81,10 +88,23 @@
       state.labels = [];
     }
 
+    // Load settings
+    try {
+      var settingsRaw = localStorage.getItem(SETTINGS_KEY);
+      if (settingsRaw) {
+        state.settings = Object.assign({}, state.settings, JSON.parse(settingsRaw));
+      }
+    } catch(e) {}
+
     // Ensure default labels exist
     if (state.labels.length === 0) {
       state.labels = DEFAULT_LABELS.slice();
     }
+
+    // Trigger i18n after load
+    setTimeout(function() {
+      triggerI18n();
+    }, 100);
   }
 
   function saveData() {
@@ -93,8 +113,58 @@
         boards: state.boards,
         labels: state.labels
       }));
+      
+      // Auto-save to file if enabled
+      if (state.settings.autoSave) {
+        scheduleAutoSave();
+      }
     } catch(e) {
       showToast('Storage limit reached. Try exporting and deleting old boards.');
+    }
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+    } catch(e) {}
+  }
+
+  // ========== AUTO-SAVE ==========
+  var autoSaveTimer = null;
+  
+  function scheduleAutoSave() {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function() {
+      doAutoSave();
+    }, 5000); // 5 seconds delay after changes
+  }
+
+  function doAutoSave() {
+    var board = getCurrentBoard();
+    if (!board) return;
+    
+    var exportObj = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      board: board,
+      labels: state.labels
+    };
+    
+    var jsonStr = JSON.stringify(exportObj, null, 2);
+    var blob = new Blob([jsonStr], { type: 'application/json' });
+    
+    // Store blob URL for quick download
+    if (state.settings.lastExportUrl) {
+      URL.revokeObjectURL(state.settings.lastExportUrl);
+    }
+    state.settings.lastExportUrl = URL.createObjectURL(blob);
+    saveSettings();
+    
+    // Optionally show subtle indicator
+    var btn = document.getElementById('btn-autosave');
+    if (btn) {
+      btn.classList.add('autosave-active');
+      setTimeout(function() { btn.classList.remove('autosave-active'); }, 500);
     }
   }
 
@@ -261,8 +331,10 @@
       title: title || 'Untitled Card',
       description: '',
       labels: [],
+      assignments: [],
       dueDate: null,
       created: Date.now(),
+      modified: Date.now(),
       order: col.cards.length
     };
 
@@ -279,6 +351,7 @@
     for (var key in updates) {
       card[key] = updates[key];
     }
+    card.modified = Date.now();
     saveData();
   }
 
@@ -319,6 +392,48 @@
     saveData();
   }
 
+  // ========== ASSIGNMENT OPERATIONS ==========
+  function addAssignment(cardId, type, value) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    
+    var assignment = {
+      id: genId('asn'),
+      type: type,
+      value: value
+    };
+    
+    card.assignments = card.assignments || [];
+    card.assignments.push(assignment);
+    saveData();
+  }
+
+  function updateAssignment(cardId, asnId, updates) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    if (!card.assignments) return;
+    
+    var asn = card.assignments.find(function(a) { return a.id === asnId; });
+    if (asn) {
+      for (var key in updates) {
+        asn[key] = updates[key];
+      }
+      saveData();
+    }
+  }
+
+  function removeAssignment(cardId, asnId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    if (!card.assignments) return;
+    
+    card.assignments = card.assignments.filter(function(a) { return a.id !== asnId; });
+    saveData();
+  }
+
   // ========== LABEL OPERATIONS ==========
   function createLabel(text, color) {
     var label = {
@@ -348,6 +463,25 @@
     saveData();
   }
 
+  function renameLabel(labelId, newText) {
+    var label = state.labels.find(function(l) { return l.id === labelId; });
+    if (label) {
+      label.text = newText;
+      // Update all cards with this label
+      state.boards.forEach(function(board) {
+        board.columns.forEach(function(col) {
+          col.cards.forEach(function(card) {
+            var cardLbl = card.labels.find(function(l) { return l.id === labelId; });
+            if (cardLbl) {
+              cardLbl.text = newText;
+            }
+          });
+        });
+      });
+      saveData();
+    }
+  }
+
   function getLabelById(labelId) {
     return state.labels.find(function(l) { return l.id === labelId; });
   }
@@ -369,7 +503,6 @@
   }
 
   // ========== RENDERING ==========
-
   function renderAll() {
     renderBoardSelector();
     renderBoard();
@@ -407,14 +540,12 @@
           '<i class="fa fa-trash-o"></i>' +
         '</button>';
 
-      // Click to switch
       item.addEventListener('click', function(e) {
         if (e.target.closest('.board-list-item-delete')) return;
         switchBoard(board.id);
         closeBoardSelector();
       });
 
-      // Delete button
       var delBtn = item.querySelector('.board-list-item-delete');
       if (delBtn) {
         delBtn.addEventListener('click', function(e) {
@@ -426,7 +557,6 @@
       dropdown.appendChild(item);
     });
 
-    // Update current board name
     var current = getCurrentBoard();
     if (current) {
       nameEl.textContent = current.title;
@@ -441,7 +571,6 @@
 
     if (!board || board.columns.length === 0) {
       container.innerHTML = '';
-      // Show add column placeholder
       if (board) {
         var placeholder = document.createElement('div');
         placeholder.className = 'add-column-placeholder';
@@ -454,16 +583,13 @@
       return;
     }
 
-    // Sort columns by order
     board.columns.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-
     container.innerHTML = '';
 
     board.columns.forEach(function(col) {
       container.appendChild(renderColumn(col));
     });
 
-    // Add column placeholder at the end
     var addPlaceholder = document.createElement('div');
     addPlaceholder.className = 'add-column-placeholder';
     addPlaceholder.innerHTML = '<i class="fa fa-plus"></i> ' + getTrans('kanban_add_column');
@@ -472,7 +598,6 @@
     });
     container.appendChild(addPlaceholder);
 
-    // Apply search filter
     applySearchFilter();
   }
 
@@ -482,7 +607,6 @@
     colEl.dataset.colId = col.id;
     colEl.draggable = true;
 
-    // Header
     var header = document.createElement('div');
     header.className = 'column-header';
 
@@ -514,19 +638,15 @@
     header.appendChild(countEl);
     header.appendChild(actions);
 
-    // Cards container
     var cardsEl = document.createElement('div');
     cardsEl.className = 'column-cards';
     cardsEl.dataset.colId = col.id;
 
-    // Sort cards by order
     col.cards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-
     col.cards.forEach(function(card) {
       cardsEl.appendChild(renderCard(card, col.id));
     });
 
-    // Add card input area
     var addCardArea = document.createElement('div');
     addCardArea.className = 'add-card-input-wrapper';
 
@@ -551,7 +671,6 @@
     addCardArea.appendChild(addCardInput);
     addCardArea.appendChild(addCardActions);
 
-    // Add card button area (default visible)
     var addCardBtnArea = document.createElement('div');
     addCardBtnArea.className = 'column-add-card';
 
@@ -561,7 +680,6 @@
 
     addCardBtnArea.appendChild(addCardBtn);
 
-    // Assemble column
     colEl.appendChild(header);
     colEl.appendChild(cardsEl);
     colEl.appendChild(addCardBtnArea);
@@ -569,7 +687,6 @@
 
     // ===== EVENT LISTENERS =====
 
-    // Title click to rename
     titleEl.addEventListener('click', function() {
       var rect = titleEl.getBoundingClientRect();
       var editInput = document.getElementById('column-title-edit');
@@ -611,7 +728,6 @@
       editInput.addEventListener('keydown', onKeydown);
     });
 
-    // Add card button
     addBtn.addEventListener('click', function() {
       toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput);
     });
@@ -620,25 +736,21 @@
       toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput);
     });
 
-    // Confirm add card
     confirmBtn.addEventListener('click', function() {
       var title = addCardInput.value.trim();
       if (title) {
         createCard(col.id, title);
       }
       addCardInput.value = '';
-      // Keep input open for rapid card entry
       addCardInput.focus();
     });
 
-    // Cancel add card
     cancelBtn.addEventListener('click', function() {
       addCardInput.value = '';
       addCardArea.classList.remove('visible');
       addCardBtnArea.style.display = 'block';
     });
 
-    // Enter key on textarea
     addCardInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -648,20 +760,17 @@
       }
     });
 
-    // Auto-resize textarea
     addCardInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.max(36, this.scrollHeight) + 'px';
     });
 
-    // Delete column
     deleteBtn.addEventListener('click', function() {
       deleteColumn(col.id);
     });
 
     // ===== DRAG & DROP: COLUMN =====
     colEl.addEventListener('dragstart', function(e) {
-      // Don't drag column if dragging a card
       if (state.draggingCard) return;
 
       state.draggingColumn = col.id;
@@ -673,13 +782,11 @@
     colEl.addEventListener('dragend', function() {
       colEl.classList.remove('dragging');
       state.draggingColumn = null;
-      // Clear all drop targets
       document.querySelectorAll('.kanban-column.drop-target').forEach(function(el) {
         el.classList.remove('drop-target');
       });
     });
 
-    // Allow column drop
     colEl.addEventListener('dragover', function(e) {
       if (state.draggingColumn && state.draggingColumn !== col.id) {
         e.preventDefault();
@@ -702,7 +809,6 @@
       if (!data) return;
 
       if (data.startsWith('column:') && state.draggingColumn) {
-        // Move column
         var draggedId = state.draggingColumn;
         var board = getCurrentBoard();
         if (!board) return;
@@ -711,12 +817,11 @@
         var targetCol = getColumn(board, col.id);
         if (!draggedCol || !targetCol) return;
 
-        // Calculate new order based on drop position
         var rect = colEl.getBoundingClientRect();
         var midX = rect.left + rect.width / 2;
         var placeAfter = e.clientX > midX;
 
-        var cols = board.columns.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+        var cols = board.columns.slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
         var draggedIdx = cols.indexOf(draggedCol);
         cols.splice(draggedIdx, 1);
 
@@ -726,6 +831,7 @@
         cols.splice(targetIdx, 0, draggedCol);
         cols.forEach(function(c, i) { c.order = i; });
 
+        board.columns = cols;
         saveData();
         renderBoard();
       }
@@ -738,13 +844,11 @@
         e.dataTransfer.dropEffect = 'move';
         cardsEl.classList.add('drop-target');
 
-        // Determine insertion point
         var afterEl = getCardAfter(cardsEl, e.clientY);
         var placeholder = document.querySelector('.drag-placeholder');
         if (!placeholder) {
           placeholder = document.createElement('div');
           placeholder.className = 'drag-placeholder';
-          placeholder.style.height = '40px';
         }
 
         if (afterEl == null) {
@@ -776,7 +880,6 @@
         var cardId = data.substring(5);
         var toColId = col.id;
 
-        // Determine target index
         var afterEl = getCardAfter(cardsEl, e.clientY);
         var toIndex;
         if (afterEl == null) {
@@ -787,7 +890,6 @@
           toIndex = afterCard ? col.cards.indexOf(afterCard) : col.cards.length;
         }
 
-        // Find source column
         var board = getCurrentBoard();
         if (!board) return;
         var fromColId = null;
@@ -816,17 +918,9 @@
 
     var inner = '';
 
-    // Labels
-    if (card.labels && card.labels.length > 0) {
-      inner += '<div class="card-labels">';
-      card.labels.forEach(function(lbl) {
-        inner += '<span class="card-label" style="background:' + lbl.color + '">' + escapeHtml(lbl.text) + '</span>';
-      });
-      inner += '</div>';
-    }
-
-    // Title
-    inner += '<div class="card-title">' + escapeHtml(card.title) + '</div>';
+    // Body content (title, due date, description)
+    var bodyContent = '<div class="card-body-content">';
+    bodyContent += '<div class="card-title">' + escapeHtml(card.title) + '</div>';
 
     // Due date
     if (card.dueDate) {
@@ -844,40 +938,57 @@
         dueClass = ' today';
       }
 
-      inner += '<div class="card-due-date' + dueClass + '"><i class="fa fa-calendar"></i> ' + dueText + '</div>';
+      bodyContent += '<div class="card-due-date' + dueClass + '"><i class="fa fa-calendar"></i> ' + dueText + '</div>';
     }
 
     // Description indicator
     if (card.description) {
-      inner += '<div class="card-description-indicator"><i class="fa fa-align-left"></i></div>';
+      bodyContent += '<div class="card-description-indicator"><i class="fa fa-align-left"></i></div>';
+    }
+
+    // Assignments (NEW)
+    if (card.assignments && card.assignments.length > 0) {
+      bodyContent += '<div class="card-assignments">';
+      card.assignments.forEach(function(asn) {
+        bodyContent += '<div class="card-assignment">';
+        bodyContent += '<span class="assignment-type">' + escapeHtml(asn.type) + ':</span>';
+        bodyContent += '<span class="assignment-value">' + escapeHtml(asn.value) + '</span>';
+        bodyContent += '</div>';
+      });
+      bodyContent += '</div>';
+    }
+
+    bodyContent += '</div>';
+    inner += bodyContent;
+
+    // Labels at bottom
+    if (card.labels && card.labels.length > 0) {
+      inner += '<div class="card-labels">';
+      card.labels.forEach(function(lbl) {
+        inner += '<span class="card-label" style="background:' + lbl.color + '">' + escapeHtml(lbl.text) + '</span>';
+      });
+      inner += '</div>';
     }
 
     cardEl.innerHTML = inner;
 
     // ===== CARD EVENTS =====
-
-    // Click to edit
     cardEl.addEventListener('click', function(e) {
       if (cardEl.classList.contains('dragging')) return;
       openCardModal(card.id);
     });
 
-    // Drag start
     cardEl.addEventListener('dragstart', function(e) {
       state.draggingCard = card.id;
       cardEl.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', 'card:' + card.id);
-
-      // Prevent column drag while dragging card
       e.stopPropagation();
     });
 
-    // Drag end
     cardEl.addEventListener('dragend', function() {
       cardEl.classList.remove('dragging');
       state.draggingCard = null;
-      // Clear placeholders
       document.querySelectorAll('.drag-placeholder').forEach(function(el) { el.remove(); });
       document.querySelectorAll('.column-cards.drop-target').forEach(function(el) {
         el.classList.remove('drop-target');
@@ -887,7 +998,6 @@
     return cardEl;
   }
 
-  // Helper: find the card element after the cursor Y position
   function getCardAfter(container, y) {
     var cards = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
 
@@ -902,7 +1012,6 @@
     }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
   }
 
-  // ========== ADD CARD TOGGLE ==========
   function toggleAddCardInput(btnArea, inputArea, input) {
     btnArea.style.display = 'none';
     inputArea.classList.add('visible');
@@ -922,6 +1031,7 @@
     var descInput = document.getElementById('card-edit-description');
     var dueInput = document.getElementById('card-edit-due-date');
     var labelsContainer = document.getElementById('card-edit-labels');
+    var assignmentsContainer = document.getElementById('card-edit-assignments');
     var metaCreated = document.getElementById('card-meta-created');
 
     titleInput.value = card.title;
@@ -929,13 +1039,11 @@
     dueInput.value = card.dueDate || '';
     metaCreated.textContent = 'Created: ' + new Date(card.created).toLocaleDateString();
 
-    // Render card labels
     renderCardEditLabels(card);
+    renderCardEditAssignments(card);
 
-    // Show modal
     modal.classList.add('visible');
 
-    // Focus title
     setTimeout(function() { titleInput.focus(); }, 50);
   }
 
@@ -944,7 +1052,6 @@
     modal.classList.remove('visible');
     state.editingCardId = null;
 
-    // Hide label picker
     var picker = document.getElementById('label-picker');
     if (picker) picker.style.display = 'none';
     state.labelPickerOpen = false;
@@ -1000,6 +1107,73 @@
     });
   }
 
+    // ========== ASSIGNMENTS UI ==========
+  function renderCardEditAssignments(card) {
+    var container = document.getElementById('card-edit-assignments');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!card.assignments || card.assignments.length === 0) {
+      var empty = document.createElement('em');
+      empty.style.cssText = 'color:var(--text-muted,#8a8474); font-size:11px;';
+      empty.textContent = 'No assignments yet';
+      container.appendChild(empty);
+      return;
+    }
+
+    card.assignments.forEach(function(asn) {
+      var row = document.createElement('div');
+      row.className = 'assignment-row';
+      row.dataset.asnId = asn.id;
+
+      var typeInput = document.createElement('input');
+      typeInput.type = 'text';
+      typeInput.className = 'assignment-input';
+      typeInput.value = asn.type || '';
+      typeInput.placeholder = 'Type (e.g. Illustration)';
+      typeInput.dataset.field = 'type';
+
+      var valueInput = document.createElement('input');
+      valueInput.type = 'text';
+      valueInput.className = 'assignment-input';
+      valueInput.value = asn.value || '';
+      valueInput.placeholder = 'Value (e.g. John Doe)';
+      valueInput.dataset.field = 'value';
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove-assignment';
+      removeBtn.innerHTML = '<i class="fa fa-times"></i>';
+      removeBtn.title = 'Remove assignment';
+
+      // Save on blur
+      typeInput.addEventListener('blur', function() {
+        updateAssignment(state.editingCardId, asn.id, { type: this.value.trim() });
+      });
+      valueInput.addEventListener('blur', function() {
+        updateAssignment(state.editingCardId, asn.id, { value: this.value.trim() });
+      });
+
+      // Enter key moves to next field
+      typeInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); valueInput.focus(); }
+      });
+      valueInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      });
+
+      removeBtn.addEventListener('click', function() {
+        removeAssignment(state.editingCardId, asn.id);
+        var result = getCard(state.editingCardId);
+        if (result) renderCardEditAssignments(result.card);
+      });
+
+      row.appendChild(typeInput);
+      row.appendChild(valueInput);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+  }
+
   // ========== SEARCH & FILTER ==========
   function applySearchFilter() {
     var query = state.searchQuery.toLowerCase().trim();
@@ -1014,14 +1188,21 @@
       var matchesSearch = true;
       var matchesFilter = true;
 
-      // Search
       if (query) {
         var titleMatch = card.title.toLowerCase().includes(query);
         var descMatch = (card.description || '').toLowerCase().includes(query);
-        matchesSearch = titleMatch || descMatch;
+        var asnMatch = false;
+        if (card.assignments) {
+          card.assignments.forEach(function(asn) {
+            if ((asn.type || '').toLowerCase().includes(query) ||
+                (asn.value || '').toLowerCase().includes(query)) {
+              asnMatch = true;
+            }
+          });
+        }
+        matchesSearch = titleMatch || descMatch || asnMatch;
       }
 
-      // Filter
       if (state.activeFilters.length > 0) {
         matchesFilter = card.labels.some(function(lbl) {
           return state.activeFilters.includes(lbl.id);
@@ -1034,9 +1215,6 @@
         cardEl.classList.add('filtered-out');
       }
     });
-
-    // Update column counts to reflect filtered
-    // (optional: we keep original count for clarity)
   }
 
   function renderFilterDropdown() {
@@ -1091,6 +1269,94 @@
     }
   }
 
+  // ========== LABEL MANAGEMENT MODAL ==========
+  function openLabelModal() {
+    var modal = document.getElementById('label-modal');
+    if (!modal) return;
+
+    renderLabelManageList();
+    modal.classList.add('visible');
+  }
+
+  function closeLabelModal() {
+    var modal = document.getElementById('label-modal');
+    if (modal) modal.classList.remove('visible');
+  }
+
+  function renderLabelManageList() {
+    var body = document.getElementById('label-modal-body');
+    if (!body) return;
+    body.innerHTML = '';
+
+    state.labels.forEach(function(lbl) {
+      var item = document.createElement('div');
+      item.className = 'label-manage-item';
+
+      var colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.className = 'label-manage-color';
+      colorInput.value = lbl.color;
+      colorInput.addEventListener('change', function() {
+        lbl.color = this.value;
+        // Update all cards with this label
+        state.boards.forEach(function(board) {
+          board.columns.forEach(function(col) {
+            col.cards.forEach(function(card) {
+              var cardLbl = card.labels.find(function(l) { return l.id === lbl.id; });
+              if (cardLbl) cardLbl.color = lbl.color;
+            });
+          });
+        });
+        saveData();
+        renderBoard();
+      });
+
+      var textInput = document.createElement('input');
+      textInput.type = 'text';
+      textInput.className = 'label-manage-text';
+      textInput.value = lbl.text;
+      textInput.addEventListener('blur', function() {
+        var newText = this.value.trim();
+        if (newText && newText !== lbl.text) {
+          renameLabel(lbl.id, newText);
+          renderBoard();
+          renderFilterDropdown();
+        }
+      });
+      textInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') this.blur();
+      });
+
+      var deleteBtn = document.createElement('button');
+      deleteBtn.className = 'label-manage-delete';
+      deleteBtn.innerHTML = '<i class="fa fa-trash-o"></i>';
+      deleteBtn.title = 'Delete label';
+      deleteBtn.addEventListener('click', function() {
+        var msg = getCurrentLang() === 'el'
+          ? 'Διαγραφή ετικέτας "' + lbl.text + '";'
+          : 'Delete label "' + lbl.text + '"?';
+        if (confirm(msg)) {
+          deleteLabel(lbl.id);
+          renderLabelManageList();
+          renderBoard();
+          renderFilterDropdown();
+        }
+      });
+
+      item.appendChild(colorInput);
+      item.appendChild(textInput);
+      item.appendChild(deleteBtn);
+      body.appendChild(item);
+    });
+
+    if (state.labels.length === 0) {
+      var empty = document.createElement('p');
+      empty.style.cssText = 'color:var(--text-muted,#8a8474); text-align:center; font-size:13px;';
+      empty.textContent = 'No labels yet. Create one below.';
+      body.appendChild(empty);
+    }
+  }
+
   // ========== IMPORT / EXPORT ==========
   function exportData() {
     var board = getCurrentBoard();
@@ -1110,12 +1376,17 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'kanban_' + board.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_' + 
+    a.download = 'kanban_' + board.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_' +
                  new Date().toISOString().slice(0,10) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // Remember export action
+    state.settings.lastExportPath = a.download;
+    saveSettings();
+
     showToast(getTrans('toast_downloaded') || 'Exported');
   }
 
@@ -1125,45 +1396,76 @@
       try {
         var data = JSON.parse(e.target.result);
 
-        if (!data.board || !data.board.id) {
-          showToast('Invalid kanban file');
+        // Support our own format (with "board" key) or generic board (direct object)
+        var boardData = null;
+        var labelsData = null;
+
+        if (data.board && data.board.id) {
+          boardData = data.board;
+          labelsData = data.labels;
+        } else if (data.id && data.columns) {
+          boardData = data;
+          labelsData = data.labels || [];
+        } else if (data.boards && Array.isArray(data.boards)) {
+          // Bulk import multiple boards
+          data.boards.forEach(function(b) {
+            var existingB = state.boards.find(function(ex) { return ex.id === b.id; });
+            if (existingB) b.id = genId('board');
+            b.order = state.boards.length;
+            state.boards.push(b);
+          });
+          if (data.labels) {
+            data.labels.forEach(function(lbl) {
+              var exists = state.labels.find(function(l) {
+                return l.text === lbl.text && l.color === lbl.color;
+              });
+              if (!exists) {
+                state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
+              }
+            });
+          }
+          state.currentBoardId = state.boards.length > 0 ? state.boards[state.boards.length - 1].id : null;
+          saveData();
+          renderAll();
+          showToast((getTrans('notes_imported') || 'Imported') + ' (' + data.boards.length + ' boards)');
+          return;
+        } else {
+          showToast(getTrans('notes_invalid_file') || 'Invalid file');
+          return;
+        }
+
+        if (!boardData || !boardData.id) {
+          showToast(getTrans('notes_invalid_file') || 'Invalid file');
           return;
         }
 
         // Check for duplicate ID
-        var existing = state.boards.find(function(b) { return b.id === data.board.id; });
+        var existing = state.boards.find(function(b) { return b.id === boardData.id; });
         if (existing) {
-          // Generate new ID
-          data.board.id = genId('board');
+          boardData.id = genId('board');
         }
 
-        // Assign new order
-        data.board.order = state.boards.length;
+        boardData.order = state.boards.length;
 
-        // Merge labels (avoid duplicates by text+color)
-        if (data.labels) {
-          data.labels.forEach(function(lbl) {
+        // Merge labels
+        if (labelsData) {
+          labelsData.forEach(function(lbl) {
             var exists = state.labels.find(function(l) {
               return l.text === lbl.text && l.color === lbl.color;
             });
             if (!exists) {
-              var newLbl = {
-                id: genId('lbl'),
-                color: lbl.color,
-                text: lbl.text
-              };
-              state.labels.push(newLbl);
+              state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
             }
           });
         }
 
-        state.boards.push(data.board);
-        state.currentBoardId = data.board.id;
+        state.boards.push(boardData);
+        state.currentBoardId = boardData.id;
         saveData();
         renderAll();
         showToast(getTrans('toast_opened') || 'Board imported');
       } catch(err) {
-        showToast('Failed to import file');
+        showToast(getTrans('notes_import_failed') || 'Failed to import');
       }
     };
     reader.readAsText(file);
@@ -1203,6 +1505,33 @@
   function closeBoardSelector() {
     var dropdown = document.getElementById('board-selector-dropdown');
     if (dropdown) dropdown.classList.remove('visible');
+  }
+
+  function triggerI18n() {
+    // Dispatch event so global i18n system re-applies translations
+    window.dispatchEvent(new CustomEvent('oros-language-changed'));
+    // Also manually translate any data-i18n attributes in kanban
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      var val = getTrans(key);
+      if (val && val !== key) {
+        el.textContent = val;
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-placeholder');
+      var val = getTrans(key);
+      if (val && val !== key) {
+        el.setAttribute('placeholder', val);
+      }
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-aria');
+      var val = getTrans(key);
+      if (val && val !== key) {
+        el.setAttribute('aria-label', val);
+      }
+    });
   }
 
   // ========== SETUP ==========
@@ -1250,6 +1579,27 @@
       });
     }
 
+    // ===== Auto-save toggle =====
+    var autoSaveBtn = document.getElementById('btn-autosave');
+    if (autoSaveBtn) {
+      // Restore active state
+      if (state.settings.autoSave) {
+        autoSaveBtn.classList.add('autosave-active');
+      }
+      autoSaveBtn.addEventListener('click', function() {
+        state.settings.autoSave = !state.settings.autoSave;
+        saveSettings();
+        if (state.settings.autoSave) {
+          autoSaveBtn.classList.add('autosave-active');
+          showToast(getCurrentLang() === 'el' ? 'Αυτόματη αποθήκευση ενεργή' : 'Auto-save enabled');
+          doAutoSave();
+        } else {
+          autoSaveBtn.classList.remove('autosave-active');
+          showToast(getCurrentLang() === 'el' ? 'Αυτόματη αποθήκευση ανενεργή' : 'Auto-save disabled');
+        }
+      });
+    }
+
     // ===== Import =====
     var importBtn = document.getElementById('btn-import');
     var importInput = document.getElementById('import-file-input');
@@ -1260,6 +1610,8 @@
       importInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
           importData(this.files[0]);
+          state.settings.lastImportPath = this.files[0].name;
+          saveSettings();
           this.value = '';
         }
       });
@@ -1331,6 +1683,22 @@
         var descInput = document.getElementById('card-edit-description');
         var dueInput = document.getElementById('card-edit-due-date');
 
+        // Gather assignments from DOM
+        var result = getCard(state.editingCardId);
+        if (result) {
+          var card = result.card;
+          card.assignments = [];
+          var rows = document.querySelectorAll('#card-edit-assignments .assignment-row');
+          rows.forEach(function(row) {
+            var asnId = row.dataset.asnId;
+            var typeVal = row.querySelector('[data-field="type"]').value.trim();
+            var valVal = row.querySelector('[data-field="value"]').value.trim();
+            if (typeVal || valVal) {
+              card.assignments.push({ id: asnId, type: typeVal, value: valVal });
+            }
+          });
+        }
+
         updateCard(state.editingCardId, {
           title: titleInput.value.trim() || 'Untitled Card',
           description: descInput.value.trim(),
@@ -1351,6 +1719,21 @@
           closeCardModal();
           showToast(getCurrentLang() === 'el' ? 'Η κάρτα διαγράφηκε' : 'Card deleted');
         }
+      });
+    }
+
+    // ===== Assignments: Add button =====
+    var btnAddAssignment = document.getElementById('btn-add-assignment');
+    if (btnAddAssignment) {
+      btnAddAssignment.addEventListener('click', function() {
+        if (!state.editingCardId) return;
+        addAssignment(state.editingCardId, '', '');
+        var result = getCard(state.editingCardId);
+        if (result) renderCardEditAssignments(result.card);
+        // Focus the type input of the new row
+        var container = document.getElementById('card-edit-assignments');
+        var lastRow = container.querySelector('.assignment-row:last-child [data-field="type"]');
+        if (lastRow) lastRow.focus();
       });
     }
 
@@ -1409,7 +1792,6 @@
         }
       });
 
-      // Enter key on label text
       var newLabelText = document.getElementById('new-label-text');
       if (newLabelText) {
         newLabelText.addEventListener('keydown', function(e) {
@@ -1419,6 +1801,25 @@
           }
         });
       }
+    }
+
+    // ===== Label Management Modal =====
+    var labelModalOverlay = document.getElementById('label-modal-overlay');
+    var labelModalClose = document.getElementById('label-modal-close');
+    var btnAddLabelModal = document.getElementById('btn-add-label-modal');
+
+    if (labelModalOverlay) labelModalOverlay.addEventListener('click', closeLabelModal);
+    if (labelModalClose) labelModalClose.addEventListener('click', closeLabelModal);
+
+    if (btnAddLabelModal) {
+      btnAddLabelModal.addEventListener('click', function() {
+        var text = prompt(getTrans('kanban_new_label') || 'New label name:', '');
+        if (text && text.trim()) {
+          createLabel(text.trim(), '#6d4aff');
+          renderLabelManageList();
+          renderFilterDropdown();
+        }
+      });
     }
 
     // ===== Create First Board =====
@@ -1436,19 +1837,20 @@
 
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', function(e) {
-      // Esc closes modal
       if (e.key === 'Escape') {
         var modal = document.getElementById('card-modal');
         if (modal && modal.classList.contains('visible')) {
           closeCardModal();
           return;
         }
-        // Close board selector
+        var labelModal = document.getElementById('label-modal');
+        if (labelModal && labelModal.classList.contains('visible')) {
+          closeLabelModal();
+          return;
+        }
         closeBoardSelector();
-        // Close filter dropdown
         var filterDropdown = document.getElementById('filter-dropdown-content');
         if (filterDropdown) filterDropdown.classList.remove('visible');
-        // Close label picker
         if (state.labelPickerOpen) {
           var picker = document.getElementById('label-picker');
           if (picker) picker.style.display = 'none';
@@ -1456,13 +1858,11 @@
         }
       }
 
-      // Ctrl+S export
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         exportData();
       }
 
-      // Ctrl+N new board
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
@@ -1476,6 +1876,8 @@
     window.addEventListener('oros-language-changed', function() {
       renderAll();
       renderFilterDropdown();
+      // Re-translate static elements
+      triggerI18n();
     });
   }
 
@@ -1484,13 +1886,17 @@
     loadData();
     setup();
 
-    // If no boards exist, create a default one
     if (state.boards.length === 0) {
-      // Don't auto-create; show empty state
       toggleEmptyState();
     } else {
       state.currentBoardId = state.boards[0].id;
       renderAll();
+    }
+
+    // Apply saved auto-save state
+    if (state.settings.autoSave) {
+      var btn = document.getElementById('btn-autosave');
+      if (btn) btn.classList.add('autosave-active');
     }
   }
 
