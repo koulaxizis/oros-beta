@@ -421,10 +421,13 @@
 
   <div id="oros-footer"></div>
 
-  <script>
+    <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
+        navigator.serviceWorker.register(
+          OROS_CONFIG.baseHref + 'service-worker.js',
+          { scope: OROS_CONFIG.baseHref }
+        ).catch(function(err) {
           console.warn('SW registration failed:', err);
         });
       });
