@@ -31,6 +31,7 @@
         '<div class="footer-content">' +
           '<div class="footer-section">' +
             '<p class="footer-credit">' + credit + '</p>' +
+            '<span class="footer-separator">•</span>' +
             '<p class="footer-privacy">' + privacy + '</p>' +
           '</div>' +
           '<div class="footer-section">' +
@@ -42,14 +43,14 @@
       '</footer>';
   }
 
-  // Re-render on language change
-  if (window.OROS_I18N) {
-    window.addEventListener('oros-language-changed', function() {
-      renderFooter();
-    });
-  }
+  window.addEventListener('oros-language-changed', function() {
+    renderFooter();
+  });
 
-  // Initial render
+  window.addEventListener('oros-translations-ready', function() {
+    renderFooter();
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       setTimeout(renderFooter, 100);
