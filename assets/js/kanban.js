@@ -1,5 +1,5 @@
 // ============================================
-// orOS Kanban — Full Implementation
+// orOS Kanban — Full Implementation (Fixed v1.0)
 // Privacy-first, offline, vanilla JavaScript
 // Features: Multi-board, DnD cards/columns,
 // labels, due dates, assignments, search, filters,
@@ -101,9 +101,9 @@
       state.labels = DEFAULT_LABELS.slice();
     }
 
-    // Trigger i18n after load
+    // Trigger i18n after load (delayed to allow DOM to be ready)
     setTimeout(function() {
-      triggerI18n();
+      applyTranslations();
     }, 100);
   }
 
@@ -1507,10 +1507,10 @@
     if (dropdown) dropdown.classList.remove('visible');
   }
 
-  function triggerI18n() {
-    // Dispatch event so global i18n system re-applies translations
-    window.dispatchEvent(new CustomEvent('oros-language-changed'));
-    // Also manually translate any data-i18n attributes in kanban
+  // ========== TRANSLATION APPLIER (FIXED: no infinite recursion) ==========
+  function applyTranslations() {
+    // Manual translation of data-i18n attributes in kanban components
+    // DO NOT dispatch 'oros-language-changed' event here — it would cause infinite recursion
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');
       var val = getTrans(key);
@@ -1872,12 +1872,12 @@
       }
     });
 
-    // ===== Language Change Listener =====
+    // ===== Language Change Listener (FIXED: no recursion) =====
     window.addEventListener('oros-language-changed', function() {
       renderAll();
       renderFilterDropdown();
-      // Re-translate static elements
-      triggerI18n();
+      // Note: Do NOT call applyTranslations() here — translations are applied on initial load
+      // The global-settings.js handles i18n for the main site components
     });
   }
 

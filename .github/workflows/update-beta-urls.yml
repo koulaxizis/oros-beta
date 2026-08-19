@@ -50,7 +50,7 @@ jobs:
         run: |
           LAST_COMMIT_MSG=$(git log -1 --pretty=%s)
           echo "Last commit: $LAST_COMMIT_MSG"
-          if [[ "$LAST_COMMIT_MSG" == *"Auto-update beta URLs"* ]]; then
+          if [[ "$LAST_COMMIT_MSG" == *"Auto-update URLs and Version"* ]]; then
             echo "Skipping - this is an automated commit"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -563,7 +563,7 @@ jobs:
             COMMIT_BODY="${COMMIT_BODY} | Snapshot: $SNAPSHOT_BRANCH"
           fi
           COMMIT_BODY="${COMMIT_BODY} | Includes: GH Pages host, license URL, UI text (Stable->Beta)"
-          git commit -m "Auto-update beta URLs (rollback)" -m "$COMMIT_BODY"
+          git commit -m "Auto-update URLs and Version" -m "$COMMIT_BODY"
           git push origin main
           echo "Changes committed and pushed to main."
 
