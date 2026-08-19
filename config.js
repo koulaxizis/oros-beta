@@ -1,26 +1,16 @@
 // ============================================
-// orOS — Central Config 
+// orOS Global Configuration
 // ============================================
 
 var OROS_CONFIG = {
-  baseHref: '/',
   version: '0.9',
   channel: 'beta',
   domain: 'https://koulaxizis.github.io/oros-beta/',
-  cacheName: 'oros-v0.9',
-  
-  // SEO Configuration
-  seo: {
-    title: 'orOS — The Artist\'s Operating System',
-    description: 'Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.',
-    keywords: ['text editor', 'case converter', 'privacy', 'offline', 'writer', 'open source', 'Greek'],
-    author: 'Christos Koulaxizis',
-    twitterHandle: '@koulaxizis',
-    ogImage: '/og-image.png',
-    twitterImage: '/twitter-card.png'
-  }
+  baseHref: '/',
+  author: 'Christos Koulaxizis',
+  website: 'https://koulaxizis.gr',
+  github: 'https://github.com/koulaxizis/oros-beta',
+  license: 'MIT',
+  languages: ['en', 'el', 'es', 'it', 'fr', 'de'],
+  defaultLanguage: 'en'
 };
-
-if (typeof window !== 'undefined') {
-  window.OROS_CONFIG = OROS_CONFIG;
-}

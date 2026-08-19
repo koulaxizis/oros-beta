@@ -11,9 +11,9 @@
   var PAGE_META = {
     'index.html': {
       title: 'orOS — The Artist\'s Operating System',
-      description: 'Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.',
+      description: 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more. Works offline. No tracking. No ads.',
       type: 'website',
-      keywords: ['text editor', 'case converter', 'privacy', 'offline', 'writer', 'open source', 'Greek']
+      keywords: ['text editor', 'case converter', 'kanban board', 'wiki notes', 'privacy', 'offline', 'writer', 'open source', 'Greek']
     },
     'editor.html': {
       title: 'orOS Writer — Privacy-First Rich Text Editor',
@@ -26,6 +26,18 @@
       description: 'Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.',
       type: 'article',
       keywords: ['case converter', 'text transformation', 'uppercase', 'lowercase', 'Greek accents', 'Markdown']
+    },
+    'kanban.html': {
+      title: 'orOS Kanban — Privacy-First Kanban Board',
+      description: 'Drag & drop kanban board with multiple boards, columns, labels, due dates, search, and filters. Works offline. No tracking.',
+      type: 'article',
+      keywords: ['kanban', 'kanban board', 'task manager', 'project management', 'drag and drop', 'labels', 'due dates', 'offline', 'privacy']
+    },
+    'notes.html': {
+      title: 'orOS Notes — Privacy-First Wiki Notes',
+      description: 'Wiki-style notes with [[wikilinks]], Markdown rendering, folder hierarchy, and search. Works offline. No tracking.',
+      type: 'article',
+      keywords: ['notes', 'wiki notes', 'wikilinks', 'markdown', 'knowledge base', 'note taking', 'offline', 'privacy', 'open source']
     }
   };
 
@@ -125,8 +137,12 @@
         "url": "https://koulaxizis.gr"
       },
       "description": page === 'index.html'
-        ? 'Privacy-first creative toolkit. Writer, Case Converter, and more.'
-        : (page === 'editor.html' ? 'Rich text editor with autosave and writing tools.' : 'Text transformation tool with 10 case modes.'),
+        ? 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more.'
+        : (page === 'editor.html' ? 'Rich text editor with autosave and writing tools.'
+           : page === 'converter.html' ? 'Text transformation tool with 10 case modes.'
+           : page === 'kanban.html' ? 'Drag & drop kanban board with multiple boards, labels, and due dates.'
+           : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
+           : 'Privacy-first creative toolkit.'),
       "inLanguage": ["en", "el", "es", "it", "fr", "de"],
       "operatingSystem": "Web",
       "applicationCategory": "ProductivityApplication",
@@ -137,7 +153,7 @@
       },
       "license": "https://github.com/koulaxizis/oros/blob/main/LICENSE",
       "softwareVersion": OROS_CONFIG.version,
-      "keywords": "text editor, case converter, privacy, offline, writer, productivity, open source, Greek"
+      "keywords": "text editor, case converter, kanban, wiki notes, privacy, offline, writer, productivity, open source, Greek"
     };
 
     // Add features based on page
@@ -145,7 +161,8 @@
       structuredData.featureList = [
         'Rich text editor with autosave',
         'Case converter with 10 modes',
-        'Greek accent stripping',
+        'Kanban boards with drag & drop',
+        'Wiki notes with wikilinks',
         'Offline-first architecture',
         'Zero tracking, zero cookies'
       ];
@@ -175,7 +192,11 @@
         {
           "@type": "ListItem",
           "position": 2,
-          "name": page === 'editor.html' ? 'Writer' : 'Case Converter',
+          "name": page === 'editor.html' ? 'Writer' 
+            : page === 'converter.html' ? 'Case Converter'
+            : page === 'kanban.html' ? 'Kanban'
+            : page === 'notes.html' ? 'Notes'
+            : 'Tool',
           "item": OROS_CONFIG.domain + '/' + page
         }
       ]

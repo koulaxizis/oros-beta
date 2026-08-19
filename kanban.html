@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="orOS Kanban — Privacy-first kanban board. Drag & drop cards, columns, and boards. Works offline. No tracking.">
+  
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="theme-color" content="#c8a96e">
+  
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://useoros.online/kanban.html">
+  <meta property="og:title" content="orOS Kanban — Privacy-First Kanban Board">
+  <meta property="og:description" content="Drag & drop kanban board with multiple boards, labels, due dates, and search. Works offline. No tracking.">
+  <meta property="og:image" content="https://useoros.online/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://useoros.online/kanban.html">
+  <meta name="twitter:title" content="orOS Kanban — Privacy-First Kanban Board">
+  <meta name="twitter:description" content="Drag & drop kanban board with multiple boards, labels, due dates, and search. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://useoros.online/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+  
+  <meta name="keywords" content="kanban, kanban board, project management, task manager, privacy, offline, drag and drop, open source">
+  
+  <link rel="alternate" hreflang="en" href="https://useoros.online/kanban.html">
+  <link rel="alternate" hreflang="el" href="https://useoros.online/kanban.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://useoros.online/kanban.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://useoros.online/kanban.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://useoros.online/kanban.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://useoros.online/kanban.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://useoros.online/kanban.html">
+  
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "orOS Kanban",
+    "url": "https://useoros.online/kanban.html",
+    "author": {
+      "@type": "Person",
+      "name": "Christos Koulaxizis",
+      "url": "https://koulaxizis.gr"
+    },
+    "description": "Privacy-first kanban board with drag & drop, multiple boards, labels, due dates, and search.",
+    "inLanguage": ["en", "el", "es", "it", "fr", "de"],
+    "operatingSystem": "Web",
+    "applicationCategory": "ProductivityApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    },
+    "license": "https://github.com/koulaxizis/oros/blob/main/LICENSE"
+  }
+  </script>
+
+  <title>orOS Kanban — Privacy-First Kanban Board</title>
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
+    var cLink = document.createElement('link');
+    cLink.rel = 'canonical';
+    cLink.href = OROS_CONFIG.domain + window.location.pathname;
+    document.head.appendChild(cLink);
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/kanban.css">
+
+  <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/kanban.js" defer></script>
+</head>
+<body class="kanban-page noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS Kanban to function. Please enable JavaScript.</div>
+  </noscript>
+
+  <div id="oros-header"></div>
+
+  <!-- Kanban Toolbar -->
+  <div class="kanban-toolbar" id="kanban-toolbar">
+    <div class="kanban-toolbar-left">
+      <!-- Board selector dropdown -->
+      <div class="board-selector" id="board-selector">
+        <button class="board-selector-btn" id="board-selector-btn" aria-label="Select board">
+          <span class="board-selector-name" id="current-board-name">My Board</span>
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="board-selector-dropdown" id="board-selector-dropdown">
+          <div class="board-list" id="board-list"></div>
+          <div class="board-selector-footer">
+            <button class="btn-add-board" id="btn-add-board-dropdown">
+              <i class="fa fa-plus"></i> <span data-i18n="kanban_add_board">Add Board</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kanban-toolbar-center">
+      <!-- Search -->
+      <div class="kanban-search-box">
+        <i class="fa fa-search search-icon"></i>
+        <input type="text" class="kanban-search-input" id="kanban-search" 
+               placeholder="Search cards..." data-i18n-placeholder="kanban_search_placeholder">
+        <button class="kanban-search-clear" id="kanban-search-clear" style="display:none;">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Filter labels -->
+      <div class="kanban-filter-dropdown" id="filter-dropdown">
+        <button class="filter-btn" id="filter-btn" aria-label="Filter by labels">
+          <i class="fa fa-sliders"></i> <span data-i18n="kanban_filter">Filter</span>
+        </button>
+        <div class="filter-dropdown-content" id="filter-dropdown-content"></div>
+      </div>
+    </div>
+
+    <div class="kanban-toolbar-right">
+      <button class="kanban-action-btn" id="btn-add-column" title="Add column" data-i18n-aria="aria_add_column">
+        <i class="fa fa-plus"></i> <span data-i18n="kanban_add_column">Add Column</span>
+      </button>
+      <button class="kanban-action-btn" id="btn-import" title="Import board" data-i18n-aria="aria_import">
+        <i class="fa fa-folder-open"></i>
+      </button>
+      <button class="kanban-action-btn" id="btn-export" title="Export board" data-i18n-aria="aria_export">
+        <i class="fa fa-download"></i>
+      </button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none;">
+    </div>
+  </div>
+
+  <!-- Kanban Board Area -->
+  <div class="kanban-board-area" id="kanban-board-area">
+    <div class="kanban-columns" id="kanban-columns">
+      <!-- Columns rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="kanban-empty-state" id="kanban-empty-state" style="display:none;">
+    <div class="empty-icon"><i class="fa fa-list-ul"></i></div>
+    <h2 data-i18n="kanban_empty_title">No boards yet</h2>
+    <p data-i18n="kanban_empty_desc">Create your first board to get started.</p>
+    <button class="btn-create-first-board" id="btn-create-first-board">
+      <i class="fa fa-plus"></i> <span data-i18n="kanban_create_first_board">Create Board</span>
+    </button>
+  </div>
+
+  <!-- Card Edit Modal -->
+  <div class="card-modal" id="card-modal">
+    <div class="card-modal-overlay" id="card-modal-overlay"></div>
+    <div class="card-modal-content">
+      <div class="card-modal-header">
+        <input type="text" class="card-modal-title-input" id="card-edit-title" placeholder="Card title...">
+        <button class="card-modal-close" id="card-modal-close" aria-label="Close">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      <div class="card-modal-body">
+        <!-- Labels section -->
+        <div class="card-edit-section">
+          <label class="card-edit-label" data-i18n="kanban_labels">Labels</label>
+          <div class="card-edit-labels" id="card-edit-labels"></div>
+          <div class="label-picker" id="label-picker" style="display:none;">
+            <div class="label-picker-list" id="label-picker-list"></div>
+            <button class="label-picker-add" id="label-picker-add">
+              <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
+            </button>
+            <div class="label-picker-new" id="label-picker-new" style="display:none;">
+              <input type="text" id="new-label-text" placeholder="Label name..." data-i18n-placeholder="kanban_label_name">
+              <input type="color" id="new-label-color" value="#6d4aff">
+              <button id="new-label-save" data-i18n="kanban_add">Add</button>
+            </div>
+          </div>
+          <button class="btn-add-label" id="btn-add-label">
+            <i class="fa fa-plus"></i> <span data-i18n="kanban_add_label">Add</span>
+          </button>
+        </div>
+
+        <!-- Due date section -->
+        <div class="card-edit-section">
+          <label class="card-edit-label" data-i18n="kanban_due_date">Due Date</label>
+          <div class="due-date-row">
+            <input type="date" id="card-edit-due-date" class="card-edit-date-input">
+            <button class="btn-clear-due" id="btn-clear-due" data-i18n="kanban_clear_due">Clear</button>
+          </div>
+        </div>
+
+        <!-- Description section -->
+        <div class="card-edit-section">
+          <label class="card-edit-label" data-i18n="kanban_description">Description</label>
+          <textarea class="card-edit-description" id="card-edit-description" 
+                    placeholder="Add a description..." data-i18n-placeholder="kanban_desc_placeholder"
+                    rows="6"></textarea>
+        </div>
+
+        <!-- Meta info -->
+        <div class="card-edit-section card-meta">
+          <span class="card-meta-created" id="card-meta-created"></span>
+        </div>
+      </div>
+      <div class="card-modal-footer">
+        <button class="btn-delete-card" id="btn-delete-card" data-i18n="kanban_delete_card">Delete Card</button>
+        <button class="btn-save-card" id="btn-save-card" data-i18n="kanban_save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Label Modal -->
+  <div class="label-modal" id="label-modal" style="display:none;">
+    <div class="label-modal-overlay" id="label-modal-overlay"></div>
+    <div class="label-modal-content">
+      <div class="label-modal-header">
+        <h3 data-i18n="kanban_manage_labels">Manage Labels</h3>
+        <button class="label-modal-close" id="label-modal-close"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="label-modal-body" id="label-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Column title edit inline input (hidden, shown on demand) -->
+  <input type="text" class="column-title-edit" id="column-title-edit" style="display:none;">
+
+  <!-- Zen Toast -->
+  <div class="zentool-toast" id="zen-toast" style="display:none;"></div>
+
+  <div id="oros-footer"></div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

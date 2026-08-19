@@ -16,7 +16,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://useoros.online/">
   <meta property="og:title" content="orOS — The Artist's Operating System">
-  <meta property="og:description" content="Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.">
+  <meta property="og:description" content="Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more. Works offline. No tracking. No ads.">
   <meta property="og:image" content="https://useoros.online/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
@@ -25,12 +25,12 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://useoros.online/">
   <meta name="twitter:title" content="orOS — The Artist's Operating System">
-  <meta name="twitter:description" content="Privacy-first creative toolkit. Writer, Case Converter, and more. Works offline. No tracking. No ads.">
+  <meta name="twitter:description" content="Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more. Works offline. No tracking. No ads.">
   <meta name="twitter:image" content="https://useoros.online/twitter-card.png">
   <meta name="twitter:creator" content="@koulaxizis">
   
   <!-- Additional SEO -->
-  <meta name="keywords" content="text editor, case converter, privacy, offline, writer, open source, Greek, orOS">
+  <meta name="keywords" content="text editor, case converter, kanban board, wiki notes, privacy, offline, writer, open source, Greek">
   <meta name="distribution" content="global">
   <meta name="rating" content="general">
   
@@ -39,6 +39,8 @@
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
   <link rel="prefetch" href="assets/js/editor.js" as="script">
   <link rel="prefetch" href="assets/js/converter.js" as="script">
+  <link rel="prefetch" href="assets/js/kanban.js" as="script">
+  <link rel="prefetch" href="assets/js/notes.js" as="script">
   
   <!-- hreflang for multi-language -->
   <link rel="alternate" hreflang="en" href="https://useoros.online/index.html">
@@ -46,7 +48,7 @@
   <link rel="alternate" hreflang="es" href="https://useoros.online/index.html?lang=es">
   <link rel="alternate" hreflang="it" href="https://useoros.online/index.html?lang=it">
   <link rel="alternate" hreflang="fr" href="https://useoros.online/index.html?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://useoros.online/index.html?lang=de">
+   <link rel="alternate" hreflang="de" href="https://useoros.online/index.html?lang=de">
   <link rel="alternate" hreflang="x-default" href="https://useoros.online/index.html">
   
   <!-- Structured Data -->
@@ -61,7 +63,7 @@
       "name": "Christos Koulaxizis",
       "url": "https://koulaxizis.gr"
     },
-    "description": "Privacy-first creative toolkit. Writer, Case Converter, and more.",
+    "description": "Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more.",
     "inLanguage": ["en", "el", "es", "it", "fr", "de"],
     "potentialAction": {
       "@type": "SearchAction",
@@ -128,6 +130,16 @@
           <h2 class="tool-name" data-i18n="converter_name">Case Converter</h2>
           <p class="tool-desc" data-i18n="converter_desc">Transform text case with advanced options</p>
         </a>
+        <a href="kanban.html" class="tool-card" aria-label="Open Kanban — drag and drop kanban board">
+          <div class="tool-icon"><i class="fa fa-list-ul"></i></div>
+          <h2 class="tool-name" data-i18n="kanban_name">Kanban</h2>
+          <p class="tool-desc" data-i18n="kanban_desc">Drag & drop project board</p>
+        </a>
+        <a href="notes.html" class="tool-card" aria-label="Open Notes — wiki-style note taking app">
+          <div class="tool-icon"><i class="fa fa-book"></i></div>
+          <h2 class="tool-name" data-i18n="notes_name">Notes</h2>
+          <p class="tool-desc" data-i18n="notes_desc">Wiki notes with [[wikilinks]]</p>
+        </a>
       </div>
     </div>
   </section>
@@ -139,10 +151,12 @@
         <h2 data-i18n="settings">Settings</h2>
         <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
-            <div class="settings-nav">
+      <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
         <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
+        <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
+        <button class="tab-btn" data-tab="notes-settings" data-i18n="tab_notes">Notes</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -283,6 +297,60 @@
                 <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
                 <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
                 <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="kanban-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_add_column_btn">Hide Add Column Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-add-column-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_import_btn">Hide Import Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-import-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_export_btn">Hide Export Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-export-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>Export Board</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>New Board</td><td><kbd>Ctrl+N</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="notes-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_new_note_btn">Hide New Note Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-new-note-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_new_folder_btn">Hide New Folder Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-new-folder-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_sidebar_toggle">Hide Sidebar Toggle</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-sidebar-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>Export All</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>New Note</td><td><kbd>Ctrl+N</kbd></td></tr>
+                <tr><td>Export Note</td><td><kbd>Ctrl+E</kbd></td></tr>
+                <tr><td>Search</td><td><kbd>Ctrl+Shift+F</kbd></td></tr>
                 <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
