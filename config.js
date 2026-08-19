@@ -5,7 +5,7 @@
 var OROS_CONFIG = {
   version: '0.9',
   channel: 'beta',
-  domain: 'https://useoros.online',
+  domain: 'https://koulaxizis.github.io/oros-beta',
   baseHref: (function() {
     var path = window.location.pathname;
     var base = path.substring(0, path.lastIndexOf('/') + 1);
@@ -13,7 +13,7 @@ var OROS_CONFIG = {
   })(),
   author: 'Christos Koulaxizis',
   website: 'https://koulaxizis.gr',
-  github: 'https://github.com/koulaxizis/oros',
+  github: 'https://github.com/koulaxizis/oros-beta',
   license: 'MIT',
   languages: ['en', 'el', 'es', 'it', 'fr', 'de'],
   defaultLanguage: 'en'

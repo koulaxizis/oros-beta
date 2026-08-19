@@ -151,7 +151,7 @@
         "price": "0",
         "priceCurrency": "EUR"
       },
-      "license": "https://github.com/koulaxizis/oros/blob/main/LICENSE",
+      "license": "https://github.com/koulaxizis/oros-beta/blob/main/LICENSE",
       "softwareVersion": OROS_CONFIG.version,
       "keywords": "text editor, case converter, kanban, wiki notes, privacy, offline, writer, productivity, open source, Greek"
     };
