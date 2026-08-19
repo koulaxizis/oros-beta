@@ -1,6 +1,7 @@
 // ============================================
 // orOS Header Component
 // Updated for Productivity Suite branding
+// FIXED: relative links, zen key, event name typo
 // ============================================
 
 (function() {
@@ -24,7 +25,7 @@
       '<header class="orus-header">' +
         '<div class="header-main">' +
           '<div class="brand-section">' +
-            '<a href="/index.html" class="brand-logo">' +
+            '<a href="index.html" class="brand-logo">' +
               '<div class="logo-icon"><svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 2L4 8v16l12 6 12-6V8L16 2zm0 3.5l9 4.5-9 4.5-9-4.5 9-4.5zM6.5 10l8.5 4.25v11.5L6.5 21.5V10zm19 0v11.5L17 25.75v-11.5L25.5 10z"/></svg></div>' +
               '<div class="brand-text">' +
                 '<span class="brand-name">orOS</span>' +
@@ -33,13 +34,13 @@
             '</a>' +
           '</div>' +
           '<nav class="nav-section">' +
-            '<a href="/index.html" class="nav-link" data-i18n="nav_home">Home</a>' +
-            '<a href="/editor.html" class="nav-link" data-i18n="nav_writer">Writer</a>' +
-            '<a href="/kanban.html" class="nav-link" data-i18n="nav_kanban">Kanban</a>' +
-            '<a href="/wiki.html" class="nav-link" data-i18n="nav_wiki">Wiki Notes</a>' +
-            '<a href="/case.html" class="nav-link" data-i18n="nav_case">Case</a>' +
-            '<a href="/converter.html" class="nav-link" data-i18n="nav_converter">Convert</a>' +
-            '<a href="/prompter.html" class="nav-link" data-i18n="nav_prompter">Prompter</a>' +
+            '<a href="index.html" class="nav-link" data-i18n="nav_home">Home</a>' +
+            '<a href="editor.html" class="nav-link" data-i18n="nav_writer">Writer</a>' +
+            '<a href="kanban.html" class="nav-link" data-i18n="nav_kanban">Kanban</a>' +
+            '<a href="wiki.html" class="nav-link" data-i18n="nav_wiki">Wiki Notes</a>' +
+            '<a href="case.html" class="nav-link" data-i18n="nav_case">Case</a>' +
+            '<a href="converter.html" class="nav-link" data-i18n="nav_converter">Convert</a>' +
+            '<a href="prompter.html" class="nav-link" data-i18n="nav_prompter">Prompter</a>' +
           '</nav>' +
           '<div class="header-actions">' +
             '<div class="language-dropdown">' +
@@ -86,10 +87,12 @@
           var lang = e.target.dataset.lang;
           if (window.OROS_I18N && window.OROS_I18N.setLang) {
             window.OROS_I18N.setLang(lang);
-            label.textContent = lang === 'el' ? 'Ελληνικά' : (lang === 'en' ? 'English' :
-              lang === 'es' ? 'Español' : lang === 'it' ? 'Italiano' :
-              lang === 'fr' ? 'Français' : 'Deutsch');
+          } else {
+            localStorage.setItem('oros-language', lang);
           }
+          label.textContent = lang === 'el' ? 'Ελληνικά' : (lang === 'en' ? 'English' :
+            lang === 'es' ? 'Español' : lang === 'it' ? 'Italiano' :
+            lang === 'fr' ? 'Français' : 'Deutsch');
           dropdown.classList.remove('visible');
         }
         e.stopPropagation();
@@ -102,14 +105,16 @@
       zenBtn.addEventListener('click', function() {
         document.body.classList.toggle('zen-mode');
         var zenEnabled = document.body.classList.contains('zen-mode');
-        localStorage.setItem('oros-zen-mode', zenEnabled.toString());
+        // FIXED: use oros_zen_mode (underscore) to match main.js
+        localStorage.setItem('oros_zen_mode', zenEnabled ? 'true' : 'false');
         window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
           detail: { enabled: zenEnabled }
         }));
       });
 
       // Restore saved zen mode
-      var savedZen = localStorage.getItem('oros-zen-mode') === 'true';
+      // FIXED: use oros_zen_mode (underscore) to match main.js
+      var savedZen = localStorage.getItem('oros_zen_mode') === 'true';
       if (savedZen) {
         document.body.classList.add('zen-mode');
       }
@@ -131,28 +136,7 @@
   }
 
   function translateStaticElements() {
-    var el;
-    
-    el = document.querySelector('.brand-tagline');
-    if (el) el.textContent = getTrans('suite_productivity') || 'Productivity Suite';
-
-    // Navigation links
-    var navLinks = [
-      { selector: '.nav-link[href="/index.html"]', key: 'nav_home' },
-      { selector: '.nav-link[href="/editor.html"]', key: 'nav_writer' },
-      { selector: '.nav-link[href="/kanban.html"]', key: 'nav_kanban' },
-      { selector: '.nav-link[href="/wiki.html"]', key: 'nav_wiki' },
-      { selector: '.nav-link[href="/case.html"]', key: 'nav_case' },
-      { selector: '.nav-link[href="/converter.html"]', key: 'nav_converter' },
-      { selector: '.nav-link[href="/prompter.html"]', key: 'nav_prompter' }
-    ];
-
-    navLinks.forEach(function(item) {
-      el = document.querySelector(item.selector);
-      if (el) el.setAttribute('data-i18n', item.key);
-    });
-
-    // Apply translations
+    // Apply translations to all data-i18n elements
     document.querySelectorAll('[data-i18n]').forEach(function(elem) {
       var key = elem.getAttribute('data-i18n');
       var val = getTrans(key);
@@ -161,11 +145,15 @@
   }
 
   // Re-render on language change
-  if (window.OROS_I18N) {
-    window.addEventListener('oras-language-changed', function(e) {
-      renderHeader();
-    });
-  }
+  // FIXED: typo was 'oras-language-changed' → 'oros-language-changed'
+  window.addEventListener('oros-language-changed', function() {
+    renderHeader();
+  });
+
+  // Also re-render when translations are first loaded
+  window.addEventListener('oros-translations-ready', function() {
+    renderHeader();
+  });
 
   // Initial render
   if (document.readyState === 'loading') {

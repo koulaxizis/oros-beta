@@ -1,4 +1,5 @@
 // Fixed: zen-mode key consistency (oros_zen_mode throughout)
+// Fixed: translation loading via _loader.js event
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ========== LANGUAGE SELECTOR ==========
+  // ========== LANGUAGE SELECTOR (legacy <select> support) ==========
   var langSelect = document.getElementById('language-select');
 
   if (langSelect) {
@@ -98,17 +99,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ========== LOAD TRANSLATIONS ==========
-  fetch('assets/js/translations.json')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      window.OROS_TRANSLATIONS = data;
-      translatePage();
-      window.dispatchEvent(new CustomEvent('oros-language-changed', {
-        detail: { lang: localStorage.getItem('oros-language') || 'en' }
-      }));
-    })
-    .catch(function(e) { console.error('Failed to load translations:', e); });
+  // ========== LOAD TRANSLATIONS (via _loader.js event) ==========
+  // Wait for _loader.js to dispatch 'oros-translations-ready'
+  window.addEventListener('oros-translations-ready', function(e) {
+    translatePage();
+    window.dispatchEvent(new CustomEvent('oros-language-changed', {
+      detail: { lang: localStorage.getItem('oros-language') || 'en' }
+    }));
+  });
+
+  // Also listen for language changes from _loader.js / header.js
+  window.addEventListener('oros-language-changed', function() {
+    translatePage();
+  });
 
   // ========== ZEN MODE ==========
   var zenBtn = document.getElementById('btn-zen');
