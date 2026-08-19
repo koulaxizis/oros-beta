@@ -1,5 +1,6 @@
 /* ============================================
    orOS Fork Awesome Icons — Self-hosted
+   All icons for Writer, Converter, Kanban, Notes
    ============================================ */
 
 @font-face {
@@ -25,6 +26,7 @@
 
 /* ===== HEADER ICONS ===== */
 .fa-eye-slash:before   { content: '\f070'; }
+.fa-eye:before         { content: '\f06e'; }
 .fa-cog:before          { content: '\f013'; }
 .fa-sun-o:before        { content: '\f185'; }
 .fa-moon-o:before       { content: '\f186'; }
@@ -77,3 +79,26 @@
 /* ===== CONVERTER ===== */
 .fa-text-width:before    { content: '\f035'; }
 .fa-arrow-down:before    { content: '\f063'; }
+
+/* ===== LANDING PAGE TOOL CARDS ===== */
+.fa-book:before          { content: '\f02d'; }
+.fa-sticky-note-o:before { content: '\f249'; }
+
+/* ===== KANBAN ICONS ===== */
+.fa-plus:before          { content: '\f067'; }
+.fa-calendar:before      { content: '\f073'; }
+.fa-tag:before           { content: '\f02b'; }
+.fa-tags:before          { content: '\f02c'; }
+.fa-ellipsis-v:before    { content: '\f142'; }
+
+/* ===== NOTES ICONS ===== */
+.fa-folder:before        { content: '\f07b'; }
+.fa-file-text-o:before   { content: '\f0f6'; }
+.fa-chevron-right:before { content: '\f054'; }
+.fa-bars:before          { content: '\f0c9'; }
+.fa-share-square-o:before { content: '\f14d'; }
+
+/* ===== UTILITY ===== */
+.fa-arrow-up:before      { content: '\f062'; }
+.fa-arrow-right:before   { content: '\f061'; }
+.fa-thumb-tack:before    { content: '\f08d'; }
