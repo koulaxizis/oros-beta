@@ -90,6 +90,7 @@
 .fa-tag:before           { content: '\f02b'; }
 .fa-tags:before          { content: '\f02c'; }
 .fa-ellipsis-v:before    { content: '\f142'; }
+.fa-archive:before       { content: '\f187'; }
 
 /* ===== NOTES ICONS ===== */
 .fa-folder:before        { content: '\f07b'; }

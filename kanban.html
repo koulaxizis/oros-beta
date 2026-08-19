@@ -105,7 +105,6 @@
   <!-- Kanban Toolbar -->
   <div class="kanban-toolbar" id="kanban-toolbar">
     <div class="kanban-toolbar-left">
-      <!-- Board selector dropdown -->
       <div class="board-selector" id="board-selector">
         <button class="board-selector-btn" id="board-selector-btn" aria-label="Select board">
           <span class="board-selector-name" id="current-board-name">My Board</span>
@@ -123,19 +122,16 @@
     </div>
 
     <div class="kanban-toolbar-center">
-      <!-- Search -->
       <div class="kanban-search-box">
         <i class="fa fa-search search-icon"></i>
-        <input type="text" class="kanban-search-input" id="kanban-search" 
+        <input type="text" class="kanban-search-input" id="kanban-search"
                placeholder="Search cards..." data-i18n-placeholder="kanban_search_placeholder">
         <button class="kanban-search-clear" id="kanban-search-clear" style="display:none;">
           <i class="fa fa-times"></i>
         </button>
       </div>
-
-      <!-- Filter labels -->
       <div class="kanban-filter-dropdown" id="filter-dropdown">
-        <button class="filter-btn" id="filter-btn" aria-label="Filter by labels" data-i18n-aria="kanban_filter">
+        <button class="filter-btn" id="filter-btn" aria-label="Filter by labels">
           <i class="fa fa-sliders"></i> <span data-i18n="kanban_filter">Filter</span>
         </button>
         <div class="filter-dropdown-content" id="filter-dropdown-content"></div>
@@ -143,13 +139,16 @@
     </div>
 
     <div class="kanban-toolbar-right">
-      <button class="kanban-action-btn" id="btn-add-column" title="Add column" data-i18n-aria="aria_add_column">
+      <button class="kanban-action-btn" id="btn-add-column" data-i18n-aria="aria_add_column">
         <i class="fa fa-plus"></i> <span data-i18n="kanban_add_column">Add Column</span>
       </button>
-      <button class="kanban-action-btn" id="btn-import" title="Import board" data-i18n-aria="kanban_import">
+      <button class="kanban-action-btn" id="btn-autosave" data-i18n-aria="kanban_auto_save_file" title="Auto-save to file">
+        <i class="fa fa-save"></i> <span data-i18n="kanban_auto_save">Auto-save</span>
+      </button>
+      <button class="kanban-action-btn" id="btn-import" data-i18n-aria="kanban_import" title="Import board">
         <i class="fa fa-folder-open"></i>
       </button>
-      <button class="kanban-action-btn" id="btn-export" title="Export board" data-i18n-aria="kanban_export">
+      <button class="kanban-action-btn" id="btn-export" data-i18n-aria="kanban_export" title="Export board">
         <i class="fa fa-download"></i>
       </button>
       <input type="file" id="import-file-input" accept=".json" style="display:none;">
@@ -158,9 +157,7 @@
 
   <!-- Kanban Board Area -->
   <div class="kanban-board-area" id="kanban-board-area">
-    <div class="kanban-columns" id="kanban-columns">
-      <!-- Columns rendered dynamically -->
-    </div>
+    <div class="kanban-columns" id="kanban-columns"></div>
   </div>
 
   <!-- Empty State -->
@@ -184,7 +181,7 @@
         </button>
       </div>
       <div class="card-modal-body">
-        <!-- Due date section -->
+        <!-- Due date -->
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_due_date">Due Date</label>
           <div class="due-date-row">
@@ -193,44 +190,44 @@
           </div>
         </div>
 
-        <!-- Description section -->
+        <!-- Description -->
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_description">Description</label>
-          <textarea class="card-edit-description" id="card-edit-description" 
+          <textarea class="card-edit-description" id="card-edit-description"
                     placeholder="Add a description..." data-i18n-placeholder="kanban_desc_placeholder"
                     rows="6"></textarea>
         </div>
 
-        <!-- Assignment fields (NEW) -->
+        <!-- Assignments (NEW) -->
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_assignments">Assignments</label>
           <div id="card-edit-assignments" class="card-edit-assignments"></div>
-          <button class="btn-add-assignment" id="btn-add-assignment" data-i18n="kanban_add_assignment">
-            <i class="fa fa-plus"></i> Add Assignment
+          <button class="btn-add-assignment" id="btn-add-assignment">
+            <i class="fa fa-plus"></i> <span data-i18n="kanban_add_assignment">Add Assignment</span>
           </button>
         </div>
 
-        <!-- Labels section (moved to bottom of modal) -->
+        <!-- Labels (moved to bottom) -->
         <div class="card-edit-section">
           <label class="card-edit-label" data-i18n="kanban_labels">Labels</label>
           <div class="card-edit-labels" id="card-edit-labels"></div>
           <div class="label-picker" id="label-picker" style="display:none;">
             <div class="label-picker-list" id="label-picker-list"></div>
-            <button class="label-picker-add" id="label-picker-add">
-              <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
-            </button>
             <div class="label-picker-new" id="label-picker-new" style="display:none;">
               <input type="text" id="new-label-text" placeholder="Label name..." data-i18n-placeholder="kanban_label_name">
               <input type="color" id="new-label-color" value="#6d4aff">
               <button id="new-label-save" data-i18n="kanban_add">Add</button>
             </div>
+            <button class="label-picker-add" id="label-picker-add">
+              <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
+            </button>
           </div>
-          <button class="btn-add-label" id="btn-add-label" data-i18n="kanban_manage_labels">
-            <i class="fa fa-plus"></i> Manage Labels
+          <button class="btn-add-label" id="btn-add-label">
+            <i class="fa fa-plus"></i> <span data-i18n="kanban_manage_labels">Manage Labels</span>
           </button>
         </div>
 
-        <!-- Meta info -->
+        <!-- Meta -->
         <div class="card-edit-section card-meta">
           <span class="card-meta-created" id="card-meta-created"></span>
         </div>
@@ -242,7 +239,7 @@
     </div>
   </div>
 
-  <!-- New Label Modal -->
+  <!-- Manage Labels Modal -->
   <div class="label-modal" id="label-modal" style="display:none;">
     <div class="label-modal-overlay" id="label-modal-overlay"></div>
     <div class="label-modal-content">
@@ -251,26 +248,20 @@
         <button class="label-modal-close" id="label-modal-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="label-modal-body" id="label-modal-body"></div>
+      <div class="label-modal-footer">
+        <button class="btn-add-label-modal" id="btn-add-label-modal">
+          <i class="fa fa-plus"></i> <span data-i18n="kanban_new_label">New Label</span>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Column title edit inline input (hidden, shown on demand) -->
   <input type="text" class="column-title-edit" id="column-title-edit" style="display:none;">
 
   <!-- Zen Toast -->
   <div class="zentool-toast" id="zen-toast" style="display:none;"></div>
 
   <div id="oros-footer"></div>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register(OROS_CONFIG.baseHref + 'service-worker.js').catch(function(err) {
-          console.warn('SW registration failed:', err);
-        });
-      });
-    }
-  </script>
 
 </body>
 </html>
