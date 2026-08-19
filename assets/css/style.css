@@ -2,6 +2,7 @@
    orOS Writer — style.css (FINAL v0.5-beta)
    All fixes: Background, Header, Footer, Settings Modal, Icons
    Fix: html overflow:hidden locking landing page scroll
+   Fix: kanban-page overflow override for column scrolling
    ============================================ */
 
 /* ===== FONTS ===== */
@@ -70,7 +71,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* FIX: html must NOT have overflow:hidden — it locks the entire viewport.
-   Only body gets overflow:hidden for app pages. Landing page overrides it. */
+   Only body gets overflow:hidden for app pages. Landing/Kanban pages override it. */
 html { height: 100%; }
 body {
   height: 100%;
@@ -89,6 +90,13 @@ body.landing-page {
   height: auto !important;
   min-height: 100vh;
   overflow-y: auto !important;
+}
+
+/* ===== KANBAN PAGE OVERRIDE ===== */
+body.kanban-page {
+  height: 100vh;
+  overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
 /* ===== HEADER COMPONENT ===== */
@@ -974,11 +982,14 @@ body.landing-page {
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
+  gap: 16px;
 }
 
 .toggle-label {
   font-size: 14px;
   color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
 }
 
 .switch {
@@ -1080,7 +1091,7 @@ body.landing-page {
   background: var(--accent-gold);
   color: #1b1a18;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 10px 24px;
   font-size: 14px;
   font-weight: 600;
@@ -1143,15 +1154,6 @@ body.landing-page {
 .settings-modal-content .toggles-container {
   width: 100%;
   box-sizing: border-box;
-}
-
-/* Fix: toggle label crowding the switch */
-.toggle-row {
-  gap: 16px;
-}
-.toggle-label {
-  flex: 1;
-  min-width: 0;
 }
 
 /* Fix: tool icon sizing for Fork Awesome on index */
