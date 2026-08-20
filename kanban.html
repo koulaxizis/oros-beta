@@ -1,15 +1,94 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kanban — orOS</title>
-  <link rel="stylesheet" href="/forkawesome/fork-awesome.min.css">
-  <link rel="stylesheet" href="/assets/css/kanban.css">
-  <link rel="manifest" href="/manifest.json">
+  <meta name="description" content="orOS Kanban — Privacy-first drag & drop project board. Offline, no tracking.">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#6d4aff">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
+  <meta property="og:title" content="orOS Kanban — Privacy-First Project Board">
+  <meta property="og:description" content="Drag & drop kanban board. Offline, no tracking, local storage only.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
+  <meta name="twitter:title" content="orOS Kanban — Privacy-First Project Board">
+  <meta name="twitter:description" content="Drag & drop kanban board. Offline, no tracking, local storage only.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+  
+  <!-- Additional SEO -->
+  <meta name="keywords" content="kanban, project management, drag and drop, offline, privacy, open source">
+  
+  <!-- Resource Hints -->
+  <link rel="preconnect" href="https://koulaxizis.github.io">
+  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
+  
+  <!-- hreflang -->
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/kanban.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/kanban.html">
+  
+  <title>orOS Kanban</title>
+  <script src="config.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register(
+          OROS_CONFIG.baseHref + 'service-worker.js',
+          { scope: OROS_CONFIG.baseHref }
+        ).catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/kanban.css">
+
+  <!-- Shared scripts -->
+  <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/kanban.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
 </head>
-<body class="dark-theme">
+<body class="dark-theme noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS Kanban to function. Please enable JavaScript.</div>
+  </noscript>
+
+  <div id="oros-header"></div>
+
   <div class="app-container">
     <!-- Header -->
     <header class="kanban-header">
@@ -207,15 +286,6 @@
     <input type="text" id="column-title-edit" class="column-title-edit" style="display:none;">
   </div>
 
-  <script src="/assets/js/kanban.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').catch(function(reg) {
-          console.log('SW registration failed:', reg);
-        });
-      });
-    }
-  </script>
+  <div id="oros-footer"></div>
 </body>
 </html>
