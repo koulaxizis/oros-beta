@@ -1,6 +1,8 @@
 // ============================================
-// orOS Kanban — Full Implementation (Fixed v1.5)
-// Changes: Removed auto-save, full export/import, real-time card count
+// orOS Kanban — Full Implementation v2.0
+// Features: Multi-format import, board rename/reorder,
+// subtasks, archive, priority, card colors, markdown,
+// statistics, quick-add, duplicate, CSV export, activity log
 // ============================================
 
 (function() {
@@ -9,6 +11,7 @@
   // ========== STORAGE KEYS ==========
   var STORAGE_KEY = 'oros_kanban_data';
   var SETTINGS_KEY = 'oros_kanban_settings';
+  var ACTIVITY_KEY = 'oros_kanban_activity';
 
   // ========== STATE ==========
   var state = {
@@ -22,6 +25,10 @@
     draggingCard: null,
     draggingColumn: null,
     labelPickerOpen: false,
+    showArchived: false,
+    mdPreviewMode: false,
+    selectedPriority: 0,
+    selectedColor: '',
     settings: {
       lastImportPath: '',
       lastExportPath: ''
@@ -37,12 +44,27 @@
     { id: 'lbl_purple', color: '#9c27b0', text: 'design' }
   ];
 
+  // ========== BOARD TEMPLATES ==========
+  var BOARD_TEMPLATES = {
+    basic: ['To Do', 'Doing', 'Done'],
+    scrum: ['Backlog', 'Sprint', 'In Review', 'Done'],
+    personal: ['Ideas', 'Today', 'Done']
+  };
+
+  // ========== TRELLO COLOR MAP ==========
+  var TRELLO_COLORS = {
+    green: '#4caf50', yellow: '#ff9800', orange: '#ff5722',
+    red: '#f44336', purple: '#9c27b0', blue: '#2196f3',
+    sky: '#03a9f4', lime: '#cddc39', pink: '#e91e63',
+    black: '#37474f', null: '#6d4aff'
+  };
+
   // ========== ID GENERATOR ==========
   function genId(prefix) {
     return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
   }
 
-  // ========== HELPER: i18n ==========
+  // ========== HELPERS ==========
   function getCurrentLang() {
     return localStorage.getItem('oros-language') || 'en';
   }
@@ -68,6 +90,102 @@
     toast._timer = setTimeout(function() {
       toast.classList.remove('visible');
     }, 2500);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  function formatDateTime(ts) {
+    var d = new Date(ts);
+    var now = new Date();
+    var diff = now - d;
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+    if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+    if (diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
+    return d.toLocaleDateString();
+  }
+
+  // ========== MINI MARKDOWN PARSER ==========
+  function parseMarkdown(text) {
+    if (!text) return '';
+    var html = escapeHtml(text);
+
+    // Code blocks
+    html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
+      return '<pre><code>' + code + '</code></pre>';
+    });
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Headings
+    html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+
+    // Bold, italic, strikethrough
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+
+    // Links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    // Lists
+    var lines = html.split('\n');
+    var inList = false;
+    var result = [];
+
+    lines.forEach(function(line) {
+      if (/^\s*[-*] /.test(line)) {
+        if (!inList) { result.push('<ul>'); inList = true; }
+        result.push('<li>' + line.replace(/^\s*[-*] /, '') + '</li>');
+      } else if (/^\s*\d+\. /.test(line)) {
+        if (!inList) { result.push('<ul>'); inList = true; }
+        result.push('<li>' + line.replace(/^\s*\d+\. /, '') + '</li>');
+      } else {
+        if (inList) { result.push('</ul>'); inList = false; }
+        result.push(line);
+      }
+    });
+    if (inList) result.push('</ul>');
+
+    return result.join('\n');
+  }
+
+  // ========== ACTIVITY LOG ==========
+  function logActivity(action, detail) {
+    try {
+      var logs = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '{}');
+      var boardId = state.currentBoardId || 'global';
+      if (!logs[boardId]) logs[boardId] = [];
+      logs[boardId].unshift({
+        action: action,
+        detail: detail,
+        ts: Date.now()
+      });
+      // Keep last 50 per board
+      if (logs[boardId].length > 50) logs[boardId] = logs[boardId].slice(0, 50);
+      localStorage.setItem(ACTIVITY_KEY, JSON.stringify(logs));
+    } catch(e) {}
+  }
+
+  function getActivityLog(boardId) {
+    try {
+      var logs = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '{}');
+      return logs[boardId] || [];
+    } catch(e) { return []; }
   }
 
   // ========== DATA: LOAD / SAVE ==========
@@ -107,7 +225,7 @@
         labels: state.labels
       }));
     } catch(e) {
-      showToast('Storage limit reached. Try exporting and deleting old boards.');
+      showToast('Storage limit reached. Export and delete old boards.');
     }
   }
 
@@ -129,7 +247,10 @@
     return state.boards.find(function(b) { return b.id === state.currentBoardId; });
   }
 
-  function createBoard(title) {
+  function createBoard(title, template) {
+    template = template || 'basic';
+    var cols = BOARD_TEMPLATES[template] || BOARD_TEMPLATES.basic;
+
     var board = {
       id: genId('board'),
       title: title || 'Untitled Board',
@@ -137,28 +258,19 @@
       columns: []
     };
 
-    board.columns.push({
-      id: genId('col'),
-      title: 'To Do',
-      order: 0,
-      cards: []
-    });
-    board.columns.push({
-      id: genId('col'),
-      title: 'Doing',
-      order: 1,
-      cards: []
-    });
-    board.columns.push({
-      id: genId('col'),
-      title: 'Done',
-      order: 2,
-      cards: []
+    cols.forEach(function(colName, i) {
+      board.columns.push({
+        id: genId('col'),
+        title: colName,
+        order: i,
+        cards: []
+      });
     });
 
     state.boards.push(board);
     state.currentBoardId = board.id;
     saveData();
+    logActivity('board_created', board.title);
     renderAll();
     return board;
   }
@@ -174,7 +286,6 @@
 
     var idx = state.boards.indexOf(board);
     state.boards.splice(idx, 1);
-
     state.boards.forEach(function(b, i) { b.order = i; });
 
     if (state.currentBoardId === boardId) {
@@ -182,6 +293,7 @@
     }
 
     saveData();
+    logActivity('board_deleted', board.title);
     renderAll();
     showToast(getCurrentLang() === 'el' ? 'Το board διαγράφηκε' : 'Board deleted');
   }
@@ -189,15 +301,67 @@
   function renameBoard(boardId, newTitle) {
     var board = state.boards.find(function(b) { return b.id === boardId; });
     if (board) {
+      var oldTitle = board.title;
       board.title = newTitle;
       saveData();
+      logActivity('board_renamed', oldTitle + ' → ' + newTitle);
       renderAll();
     }
   }
 
   function switchBoard(boardId) {
     state.currentBoardId = boardId;
+    state.showArchived = false;
+    var btn = document.getElementById('btn-archive-toggle');
+    if (btn) btn.classList.remove('archive-active');
     renderAll();
+  }
+
+  function reorderBoard(boardId, direction) {
+    var boards = getBoards();
+    var idx = boards.findIndex(function(b) { return b.id === boardId; });
+    if (idx === -1) return;
+
+    var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= boards.length) return;
+
+    var tmpOrder = boards[idx].order;
+    boards[idx].order = boards[swapIdx].order;
+    boards[swapIdx].order = tmpOrder;
+
+    saveData();
+    renderBoardSelector();
+  }
+
+  function duplicateBoard(boardId) {
+    var board = state.boards.find(function(b) { return b.id === boardId; });
+    if (!board) return;
+
+    var copy = JSON.parse(JSON.stringify(board));
+    copy.id = genId('board');
+    copy.title = board.title + ' (copy)';
+    copy.order = state.boards.length;
+
+    // Regenerate all IDs
+    copy.columns.forEach(function(col) {
+      col.id = genId('col');
+      col.cards.forEach(function(card) {
+        card.id = genId('card');
+        if (card.subtasks) {
+          card.subtasks.forEach(function(st) { st.id = genId('st'); });
+        }
+        if (card.assignments) {
+          card.assignments.forEach(function(a) { a.id = genId('asn'); });
+        }
+      });
+    });
+
+    state.boards.push(copy);
+    state.currentBoardId = copy.id;
+    saveData();
+    logActivity('board_duplicated', copy.title);
+    renderAll();
+    showToast(getCurrentLang() === 'el' ? 'Το board αντιγράφηκε' : 'Board duplicated');
   }
 
   // ========== COLUMN OPERATIONS ==========
@@ -218,6 +382,7 @@
 
     board.columns.push(col);
     saveData();
+    logActivity('column_created', col.title);
     renderBoard();
     return col;
   }
@@ -235,10 +400,10 @@
 
     var idx = board.columns.indexOf(col);
     board.columns.splice(idx, 1);
-
     board.columns.forEach(function(c, i) { c.order = i; });
 
     saveData();
+    logActivity('column_deleted', col.title);
     renderBoard();
     showToast(getCurrentLang() === 'el' ? 'Η στήλη διαγράφηκε' : 'Column deleted');
   }
@@ -252,6 +417,29 @@
       saveData();
       renderBoard();
     }
+  }
+
+  function duplicateColumn(colId) {
+    var board = getCurrentBoard();
+    if (!board) return;
+    var col = getColumn(board, colId);
+    if (!col) return;
+
+    var copy = JSON.parse(JSON.stringify(col));
+    copy.id = genId('col');
+    copy.title = col.title + ' (copy)';
+    copy.order = board.columns.length;
+    copy.cards.forEach(function(card) {
+      card.id = genId('card');
+      if (card.subtasks) card.subtasks.forEach(function(st) { st.id = genId('st'); });
+      if (card.assignments) card.assignments.forEach(function(a) { a.id = genId('asn'); });
+    });
+
+    board.columns.push(copy);
+    saveData();
+    logActivity('column_duplicated', copy.title);
+    renderBoard();
+    showToast(getCurrentLang() === 'el' ? 'Η στήλη αντιγράφηκε' : 'Column duplicated');
   }
 
   // ========== CARD OPERATIONS ==========
@@ -277,7 +465,11 @@
       description: '',
       labels: [],
       assignments: [],
+      subtasks: [],
       dueDate: null,
+      priority: 0,
+      color: '',
+      archived: false,
       created: Date.now(),
       modified: Date.now(),
       order: col.cards.length
@@ -285,6 +477,7 @@
 
     col.cards.push(card);
     saveData();
+    logActivity('card_created', card.title);
     renderBoard();
     return card;
   }
@@ -308,6 +501,7 @@
     col.cards.splice(idx, 1);
     col.cards.forEach(function(c, i) { c.order = i; });
     saveData();
+    logActivity('card_deleted', result.card.title);
   }
 
   function moveCard(cardId, fromColId, toColId, toIndex) {
@@ -323,9 +517,7 @@
     var fromIdx = fromCol.cards.indexOf(card);
     fromCol.cards.splice(fromIdx, 1);
 
-    if (toIndex === undefined || toIndex === null) {
-      toIndex = toCol.cards.length;
-    }
+    if (toIndex === undefined || toIndex === null) toIndex = toCol.cards.length;
     toCol.cards.splice(toIndex, 0, card);
 
     fromCol.cards.forEach(function(c, i) { c.order = i; });
@@ -334,20 +526,98 @@
     saveData();
   }
 
+  function archiveCard(cardId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    result.card.archived = true;
+    saveData();
+    logActivity('card_archived', result.card.title);
+    closeCardModal();
+    renderBoard();
+    showToast(getCurrentLang() === 'el' ? 'Η κάρτα αρχειοθετήθηκε' : 'Card archived');
+  }
+
+  function unarchiveCard(cardId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    result.card.archived = false;
+    saveData();
+    logActivity('card_unarchived', result.card.title);
+    renderBoard();
+    showToast(getCurrentLang() === 'el' ? 'Η κάρτα επαναφέρθηκε' : 'Card restored');
+  }
+
+  function duplicateCard(cardId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    var col = result.column;
+
+    var copy = JSON.parse(JSON.stringify(card));
+    copy.id = genId('card');
+    copy.title = card.title + ' (copy)';
+    copy.created = Date.now();
+    copy.modified = Date.now();
+    copy.order = col.cards.length;
+    copy.archived = false;
+    if (copy.subtasks) copy.subtasks.forEach(function(st) { st.id = genId('st'); st.completed = false; });
+    if (copy.assignments) copy.assignments.forEach(function(a) { a.id = genId('asn'); });
+
+    col.cards.push(copy);
+    saveData();
+    logActivity('card_duplicated', copy.title);
+    renderBoard();
+    showToast(getCurrentLang() === 'el' ? 'Η κάρτα αντιγράφηκε' : 'Card duplicated');
+  }
+
+  // ========== SUBTASK OPERATIONS ==========
+  function addSubtask(cardId, text) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    card.subtasks = card.subtasks || [];
+    card.subtasks.push({
+      id: genId('st'),
+      text: text,
+      completed: false
+    });
+    saveData();
+  }
+
+  function toggleSubtask(cardId, subtaskId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    if (!card.subtasks) return;
+    var st = card.subtasks.find(function(s) { return s.id === subtaskId; });
+    if (st) { st.completed = !st.completed; saveData(); }
+  }
+
+  function deleteSubtask(cardId, subtaskId) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    if (!card.subtasks) return;
+    card.subtasks = card.subtasks.filter(function(s) { return s.id !== subtaskId; });
+    saveData();
+  }
+
+  function updateSubtaskText(cardId, subtaskId, text) {
+    var result = getCard(cardId);
+    if (!result) return;
+    var card = result.card;
+    if (!card.subtasks) return;
+    var st = card.subtasks.find(function(s) { return s.id === subtaskId; });
+    if (st) { st.text = text; saveData(); }
+  }
+
   // ========== ASSIGNMENT OPERATIONS ==========
   function addAssignment(cardId, type, value) {
     var result = getCard(cardId);
     if (!result) return;
     var card = result.card;
-
-    var assignment = {
-      id: genId('asn'),
-      type: type,
-      value: value
-    };
-
     card.assignments = card.assignments || [];
-    card.assignments.push(assignment);
+    card.assignments.push({ id: genId('asn'), type: type, value: value });
     saveData();
   }
 
@@ -356,14 +626,8 @@
     if (!result) return;
     var card = result.card;
     if (!card.assignments) return;
-
     var asn = card.assignments.find(function(a) { return a.id === asnId; });
-    if (asn) {
-      for (var key in updates) {
-        asn[key] = updates[key];
-      }
-      saveData();
-    }
+    if (asn) { for (var key in updates) { asn[key] = updates[key]; } saveData(); }
   }
 
   function removeAssignment(cardId, asnId) {
@@ -371,18 +635,13 @@
     if (!result) return;
     var card = result.card;
     if (!card.assignments) return;
-
     card.assignments = card.assignments.filter(function(a) { return a.id !== asnId; });
     saveData();
   }
 
   // ========== LABEL OPERATIONS ==========
   function createLabel(text, color) {
-    var label = {
-      id: genId('lbl'),
-      color: color || '#6d4aff',
-      text: text || 'label'
-    };
+    var label = { id: genId('lbl'), color: color || '#6d4aff', text: text || 'label' };
     state.labels.push(label);
     saveData();
     return label;
@@ -392,7 +651,6 @@
     var idx = state.labels.findIndex(function(l) { return l.id === labelId; });
     if (idx === -1) return;
     state.labels.splice(idx, 1);
-
     state.boards.forEach(function(board) {
       board.columns.forEach(function(col) {
         col.cards.forEach(function(card) {
@@ -400,7 +658,6 @@
         });
       });
     });
-
     saveData();
   }
 
@@ -412,9 +669,7 @@
         board.columns.forEach(function(col) {
           col.cards.forEach(function(card) {
             var cardLbl = card.labels.find(function(l) { return l.id === labelId; });
-            if (cardLbl) {
-              cardLbl.text = newText;
-            }
+            if (cardLbl) cardLbl.text = newText;
           });
         });
       });
@@ -435,9 +690,7 @@
       card.labels = card.labels.filter(function(l) { return l.id !== labelId; });
     } else {
       var label = getLabelById(labelId);
-      if (label) {
-        card.labels.push({ id: label.id, color: label.color, text: label.text });
-      }
+      if (label) card.labels.push({ id: label.id, color: label.color, text: label.text });
     }
     saveData();
   }
@@ -458,17 +711,17 @@
     dropdown.innerHTML = '';
 
     if (boards.length === 0) {
-      nameEl.textContent = getTrans('kanban_empty_title');
+      if (nameEl) nameEl.textContent = getTrans('kanban_empty_title');
       return;
     }
 
-    boards.forEach(function(board) {
+    boards.forEach(function(board, idx) {
       var item = document.createElement('div');
       item.className = 'board-list-item';
       if (board.id === state.currentBoardId) item.classList.add('active');
 
       var totalCards = board.columns.reduce(function(sum, col) {
-        return sum + col.cards.length;
+        return sum + col.cards.filter(function(c) { return !c.archived; }).length;
       }, 0);
 
       item.innerHTML =
@@ -476,16 +729,57 @@
           escapeHtml(board.title) +
         '</span>' +
         '<span class="board-list-item-count">' + totalCards + '</span>' +
-        '<button class="board-list-item-delete" title="Delete">' +
-          '<i class="fa fa-trash-o"></i>' +
-        '</button>';
+        '<div class="board-list-item-controls">' +
+          '<button class="board-reorder-btn up" title="Move up"><i class="fa fa-chevron-up"></i></button>' +
+          '<button class="board-reorder-btn down" title="Move down"><i class="fa fa-chevron-down"></i></button>' +
+          '<button class="board-rename-btn" title="Rename"><i class="fa fa-pencil"></i></button>' +
+          '<button class="board-list-item-delete" title="Delete"><i class="fa fa-trash-o"></i></button>' +
+        '</div>';
 
+      // Click to switch
       item.addEventListener('click', function(e) {
-        if (e.target.closest('.board-list-item-delete')) return;
+        if (e.target.closest('.board-list-item-controls')) return;
         switchBoard(board.id);
         closeBoardSelector();
       });
 
+      // Reorder up
+      var upBtn = item.querySelector('.board-reorder-btn.up');
+      if (upBtn) {
+        upBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          reorderBoard(board.id, 'up');
+        });
+      }
+
+      // Reorder down
+      var downBtn = item.querySelector('.board-reorder-btn.down');
+      if (downBtn) {
+        downBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          reorderBoard(board.id, 'down');
+        });
+      }
+
+      // Rename
+      var renameBtn = item.querySelector('.board-rename-btn');
+      if (renameBtn) {
+        renameBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          startBoardRename(board, renameBtn);
+        });
+      }
+
+      // Double-click name to rename
+      var nameSpan = item.querySelector('.board-list-item-name');
+      if (nameSpan) {
+        nameSpan.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          startBoardRename(board, nameSpan);
+        });
+      }
+
+      // Delete
       var delBtn = item.querySelector('.board-list-item-delete');
       if (delBtn) {
         delBtn.addEventListener('click', function(e) {
@@ -494,13 +788,53 @@
         });
       }
 
+      // Disable reorder buttons at edges
+      if (idx === 0) upBtn.style.visibility = 'hidden';
+      if (idx === boards.length - 1) downBtn.style.visibility = 'hidden';
+
       dropdown.appendChild(item);
     });
 
     var current = getCurrentBoard();
-    if (current) {
+    if (current && nameEl) {
       nameEl.textContent = current.title;
     }
+  }
+
+  function startBoardRename(board, anchorEl) {
+    var input = document.getElementById('board-rename-input');
+    if (!input) return;
+
+    var rect = anchorEl.getBoundingClientRect();
+    input.value = board.title;
+    input.style.display = 'block';
+    input.style.left = rect.left + 'px';
+    input.style.top = rect.top + 'px';
+    input.style.width = Math.max(120, rect.width) + 'px';
+    input.focus();
+    input.select();
+
+    function finishEdit() {
+      var newTitle = input.value.trim();
+      if (newTitle && newTitle !== board.title) {
+        renameBoard(board.id, newTitle);
+      }
+      input.style.display = 'none';
+      input.removeEventListener('blur', finishEdit);
+      input.removeEventListener('keydown', onKeydown);
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Enter') { e.preventDefault(); finishEdit(); }
+      else if (e.key === 'Escape') {
+        input.style.display = 'none';
+        input.removeEventListener('blur', finishEdit);
+        input.removeEventListener('keydown', onKeydown);
+      }
+    }
+
+    input.addEventListener('blur', finishEdit);
+    input.addEventListener('keydown', onKeydown);
   }
 
   function renderBoard() {
@@ -508,16 +842,24 @@
     if (!container) return;
 
     var board = getCurrentBoard();
+    container.innerHTML = '';
+
+    // Archive bar
+    if (state.showArchived && board) {
+      var archiveBar = document.createElement('div');
+      archiveBar.className = 'archive-bar';
+      archiveBar.innerHTML =
+        '<i class="fa fa-archive"></i> ' +
+        (getCurrentLang() === 'el' ? 'Προβολή αρχειοθετημένων καρτών' : 'Showing archived cards');
+      container.appendChild(archiveBar);
+    }
 
     if (!board || board.columns.length === 0) {
-      container.innerHTML = '';
       if (board) {
         var placeholder = document.createElement('div');
         placeholder.className = 'add-column-placeholder';
         placeholder.innerHTML = '<i class="fa fa-plus"></i> ' + getTrans('kanban_add_column');
-        placeholder.addEventListener('click', function() {
-          createColumn('New Column');
-        });
+        placeholder.addEventListener('click', function() { createColumn('New Column'); });
         container.appendChild(placeholder);
       }
       renderBoardSelector();
@@ -525,7 +867,6 @@
     }
 
     board.columns.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-    container.innerHTML = '';
 
     board.columns.forEach(function(col) {
       container.appendChild(renderColumn(col));
@@ -534,9 +875,7 @@
     var addPlaceholder = document.createElement('div');
     addPlaceholder.className = 'add-column-placeholder';
     addPlaceholder.innerHTML = '<i class="fa fa-plus"></i> ' + getTrans('kanban_add_column');
-    addPlaceholder.addEventListener('click', function() {
-      createColumn('New Column');
-    });
+    addPlaceholder.addEventListener('click', function() { createColumn('New Column'); });
     container.appendChild(addPlaceholder);
 
     renderBoardSelector();
@@ -556,9 +895,13 @@
     titleEl.className = 'column-title';
     titleEl.textContent = col.title;
 
+    var visibleCards = col.cards.filter(function(c) {
+      return state.showArchived ? true : !c.archived;
+    });
+
     var countEl = document.createElement('span');
     countEl.className = 'column-card-count';
-    countEl.textContent = col.cards.length;
+    countEl.textContent = visibleCards.length;
 
     var actions = document.createElement('div');
     actions.className = 'column-actions';
@@ -568,14 +911,19 @@
     addBtn.innerHTML = '<i class="fa fa-plus"></i>';
     addBtn.title = 'Add card';
 
+    var dupBtn = document.createElement('button');
+    dupBtn.className = 'column-action-btn';
+    dupBtn.innerHTML = '<i class="fa fa-copy"></i>';
+    dupBtn.title = 'Duplicate column';
+
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'column-action-btn delete';
     deleteBtn.innerHTML = '<i class="fa fa-trash-o"></i>';
     deleteBtn.title = 'Delete column';
 
     actions.appendChild(addBtn);
+    actions.appendChild(dupBtn);
     actions.appendChild(deleteBtn);
-
     header.appendChild(titleEl);
     header.appendChild(countEl);
     header.appendChild(actions);
@@ -584,51 +932,43 @@
     cardsEl.className = 'column-cards';
     cardsEl.dataset.colId = col.id;
 
-    col.cards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-    col.cards.forEach(function(card) {
+    visibleCards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+    visibleCards.forEach(function(card) {
       cardsEl.appendChild(renderCard(card, col.id));
     });
 
+    var addCardBtnArea = document.createElement('div');
+    addCardBtnArea.className = 'column-add-card';
+    var addCardBtn = document.createElement('button');
+    addCardBtn.className = 'btn-add-card';
+    addCardBtn.innerHTML = '<i class="fa fa-plus"></i> ' + (getTrans('kanban_add_card') || 'Add Card');
+    addCardBtnArea.appendChild(addCardBtn);
+
     var addCardArea = document.createElement('div');
     addCardArea.className = 'add-card-input-wrapper';
-
     var addCardInput = document.createElement('textarea');
     addCardInput.className = 'add-card-input';
     addCardInput.placeholder = getTrans('kanban_card_placeholder') || 'Enter card title...';
     addCardInput.rows = 1;
-
     var addCardActions = document.createElement('div');
     addCardActions.className = 'add-card-actions';
-
     var confirmBtn = document.createElement('button');
     confirmBtn.className = 'btn-confirm-add-card';
     confirmBtn.textContent = getTrans('kanban_add') || 'Add';
-
     var cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn-cancel-add-card';
     cancelBtn.textContent = getTrans('kanban_cancel') || 'Cancel';
-
     addCardActions.appendChild(confirmBtn);
     addCardActions.appendChild(cancelBtn);
     addCardArea.appendChild(addCardInput);
     addCardArea.appendChild(addCardActions);
-
-    var addCardBtnArea = document.createElement('div');
-    addCardBtnArea.className = 'column-add-card';
-
-    var addCardBtn = document.createElement('button');
-    addCardBtn.className = 'btn-add-card';
-    addCardBtn.innerHTML = '<i class="fa fa-plus"></i> ' + (getTrans('kanban_add_card') || 'Add Card');
-
-    addCardBtnArea.appendChild(addCardBtn);
 
     colEl.appendChild(header);
     colEl.appendChild(cardsEl);
     colEl.appendChild(addCardBtnArea);
     colEl.appendChild(addCardArea);
 
-    // ===== EVENT LISTENERS =====
-
+    // ===== EVENTS =====
     titleEl.addEventListener('click', function() {
       var rect = titleEl.getBoundingClientRect();
       var editInput = document.getElementById('column-title-edit');
@@ -640,49 +980,35 @@
       editInput.style.height = rect.height + 'px';
       editInput.focus();
       editInput.select();
-
       state.editingColumnId = col.id;
 
       function finishEdit() {
         var newTitle = editInput.value.trim();
-        if (newTitle && newTitle !== col.title) {
-          renameColumn(col.id, newTitle);
-        }
+        if (newTitle && newTitle !== col.title) renameColumn(col.id, newTitle);
         editInput.style.display = 'none';
         editInput.removeEventListener('blur', finishEdit);
         editInput.removeEventListener('keydown', onKeydown);
         state.editingColumnId = null;
       }
-
       function onKeydown(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          finishEdit();
-        } else if (e.key === 'Escape') {
+        if (e.key === 'Enter') { e.preventDefault(); finishEdit(); }
+        else if (e.key === 'Escape') {
           editInput.style.display = 'none';
           editInput.removeEventListener('blur', finishEdit);
           editInput.removeEventListener('keydown', onKeydown);
           state.editingColumnId = null;
         }
       }
-
       editInput.addEventListener('blur', finishEdit);
       editInput.addEventListener('keydown', onKeydown);
     });
 
-    addBtn.addEventListener('click', function() {
-      toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput);
-    });
-
-    addCardBtn.addEventListener('click', function() {
-      toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput);
-    });
+    addBtn.addEventListener('click', function() { toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput); });
+    addCardBtn.addEventListener('click', function() { toggleAddCardInput(addCardBtnArea, addCardArea, addCardInput); });
 
     confirmBtn.addEventListener('click', function() {
       var title = addCardInput.value.trim();
-      if (title) {
-        createCard(col.id, title);
-      }
+      if (title) createCard(col.id, title);
       addCardInput.value = '';
       addCardInput.focus();
     });
@@ -694,12 +1020,8 @@
     });
 
     addCardInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        confirmBtn.click();
-      } else if (e.key === 'Escape') {
-        cancelBtn.click();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmBtn.click(); }
+      else if (e.key === 'Escape') { cancelBtn.click(); }
     });
 
     addCardInput.addEventListener('input', function() {
@@ -707,14 +1029,12 @@
       this.style.height = Math.max(36, this.scrollHeight) + 'px';
     });
 
-    deleteBtn.addEventListener('click', function() {
-      deleteColumn(col.id);
-    });
+    dupBtn.addEventListener('click', function() { duplicateColumn(col.id); });
+    deleteBtn.addEventListener('click', function() { deleteColumn(col.id); });
 
     // ===== DRAG & DROP: COLUMN =====
     colEl.addEventListener('dragstart', function(e) {
       if (state.draggingCard) return;
-
       state.draggingColumn = col.id;
       colEl.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -724,9 +1044,7 @@
     colEl.addEventListener('dragend', function() {
       colEl.classList.remove('dragging');
       state.draggingColumn = null;
-      document.querySelectorAll('.kanban-column.drop-target').forEach(function(el) {
-        el.classList.remove('drop-target');
-      });
+      document.querySelectorAll('.kanban-column.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
     });
 
     colEl.addEventListener('dragover', function(e) {
@@ -746,7 +1064,6 @@
       e.preventDefault();
       e.stopPropagation();
       colEl.classList.remove('drop-target');
-
       var data = e.dataTransfer.getData('text/plain');
       if (!data) return;
 
@@ -754,25 +1071,19 @@
         var draggedId = state.draggingColumn;
         var board = getCurrentBoard();
         if (!board) return;
-
         var draggedCol = getColumn(board, draggedId);
         var targetCol = getColumn(board, col.id);
         if (!draggedCol || !targetCol) return;
 
         var rect = colEl.getBoundingClientRect();
-        var midX = rect.left + rect.width / 2;
-        var placeAfter = e.clientX > midX;
-
+        var placeAfter = e.clientX > rect.left + rect.width / 2;
         var cols = board.columns.slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
         var draggedIdx = cols.indexOf(draggedCol);
         cols.splice(draggedIdx, 1);
-
         var targetIdx = cols.indexOf(targetCol);
         if (placeAfter) targetIdx++;
-
         cols.splice(targetIdx, 0, draggedCol);
         cols.forEach(function(c, i) { c.order = i; });
-
         board.columns = cols;
         saveData();
         renderBoard();
@@ -785,19 +1096,11 @@
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         cardsEl.classList.add('drop-target');
-
         var afterEl = getCardAfter(cardsEl, e.clientY);
         var placeholder = document.querySelector('.drag-placeholder');
-        if (!placeholder) {
-          placeholder = document.createElement('div');
-          placeholder.className = 'drag-placeholder';
-        }
-
-        if (afterEl == null) {
-          cardsEl.appendChild(placeholder);
-        } else {
-          cardsEl.insertBefore(placeholder, afterEl);
-        }
+        if (!placeholder) { placeholder = document.createElement('div'); placeholder.className = 'drag-placeholder'; }
+        if (afterEl == null) cardsEl.appendChild(placeholder);
+        else cardsEl.insertBefore(placeholder, afterEl);
       }
     });
 
@@ -814,24 +1117,20 @@
       cardsEl.classList.remove('drop-target');
       var ph = cardsEl.querySelector('.drag-placeholder');
       if (ph) ph.remove();
-
       var data = e.dataTransfer.getData('text/plain');
       if (!data) return;
 
       if (data.startsWith('card:')) {
         var cardId = data.substring(5);
         var toColId = col.id;
-
         var afterEl = getCardAfter(cardsEl, e.clientY);
         var toIndex;
-        if (afterEl == null) {
-          toIndex = col.cards.length;
-        } else {
+        if (afterEl == null) toIndex = col.cards.length;
+        else {
           var afterCardId = afterEl.dataset.cardId;
           var afterCard = col.cards.find(function(c) { return c.id === afterCardId; });
           toIndex = afterCard ? col.cards.indexOf(afterCard) : col.cards.length;
         }
-
         var board = getCurrentBoard();
         if (!board) return;
         var fromColId = null;
@@ -841,11 +1140,7 @@
             break;
           }
         }
-
-        if (fromColId) {
-          moveCard(cardId, fromColId, toColId, toIndex);
-          renderBoard();
-        }
+        if (fromColId) { moveCard(cardId, fromColId, toColId, toIndex); renderBoard(); }
       }
     });
 
@@ -858,47 +1153,63 @@
     cardEl.dataset.cardId = card.id;
     cardEl.draggable = true;
 
-    var inner = '';
+    if (card.archived) cardEl.classList.add('archived');
+    if (card.color) {
+      cardEl.classList.add('has-color');
+      cardEl.style.setProperty('--card-color', card.color);
+    }
 
-    var bodyContent = '<div class="card-body-content">';
-    bodyContent += '<div class="card-title">' + escapeHtml(card.title) + '</div>';
+    var inner = '<div class="card-body-content">';
 
+    // Priority badge
+    if (card.priority && card.priority > 0) {
+      var pLabel = card.priority === 1 ? 'L' : card.priority === 2 ? 'M' : 'H';
+      inner += '<span class="card-priority-badge p' + card.priority + '">' + pLabel + '</span>';
+    }
+
+    inner += '<span class="card-title">' + escapeHtml(card.title) + '</span>';
+
+    // Due date
     if (card.dueDate) {
       var dueClass = '';
       var dueText = formatDate(card.dueDate);
-      var today = new Date();
-      today.setHours(0, 0, 0, 0);
-      var due = new Date(card.dueDate);
-      due.setHours(0, 0, 0, 0);
-
-      if (due < today) {
-        dueClass = ' overdue';
-        dueText += ' (overdue)';
-      } else if (due.getTime() === today.getTime()) {
-        dueClass = ' today';
-      }
-
-      bodyContent += '<div class="card-due-date' + dueClass + '"><i class="fa fa-calendar"></i> ' + dueText + '</div>';
+      var today = new Date(); today.setHours(0,0,0,0);
+      var due = new Date(card.dueDate); due.setHours(0,0,0,0);
+      if (due < today) { dueClass = ' overdue'; dueText += ' (overdue)'; }
+      else if (due.getTime() === today.getTime()) { dueClass = ' today'; }
+      inner += '<div class="card-due-date' + dueClass + '"><i class="fa fa-calendar"></i> ' + dueText + '</div>';
     }
 
+    // Description indicator
     if (card.description) {
-      bodyContent += '<div class="card-description-indicator"><i class="fa fa-align-left"></i></div>';
+      inner += '<div class="card-description-indicator"><i class="fa fa-align-left"></i></div>';
     }
 
+    // Subtask progress
+    if (card.subtasks && card.subtasks.length > 0) {
+      var done = card.subtasks.filter(function(s) { return s.completed; }).length;
+      var total = card.subtasks.length;
+      var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      inner += '<div class="card-subtask-indicator"><i class="fa fa-check-square-o"></i> ' + done + '/' + total;
+      inner += '<div class="subtask-progress-bar"><div class="subtask-progress-fill" style="width:' + pct + '%"></div></div>';
+      inner += '</div>';
+    }
+
+    // Assignments
     if (card.assignments && card.assignments.length > 0) {
-      bodyContent += '<div class="card-assignments">';
+      inner += '<div class="card-assignments">';
       card.assignments.forEach(function(asn) {
-        bodyContent += '<div class="card-assignment">';
-        bodyContent += '<span class="assignment-type">' + escapeHtml(asn.type) + ':</span>';
-        bodyContent += '<span class="assignment-value">' + escapeHtml(asn.value) + '</span>';
-        bodyContent += '</div>';
+        inner += '<div class="card-assignment">';
+        inner += '<span class="assignment-type">' + escapeHtml(asn.type) + ':</span>';
+        inner += '<span class="assignment-value">' + escapeHtml(asn.value) + '</span>';
+        inner += '</div>';
       });
-      bodyContent += '</div>';
+      inner += '</div>';
     }
 
-    bodyContent += '</div>';
-    inner += bodyContent;
+    inner += '</div>';
 
+    // Labels
     if (card.labels && card.labels.length > 0) {
       inner += '<div class="card-labels">';
       card.labels.forEach(function(lbl) {
@@ -926,25 +1237,19 @@
       cardEl.classList.remove('dragging');
       state.draggingCard = null;
       document.querySelectorAll('.drag-placeholder').forEach(function(el) { el.remove(); });
-      document.querySelectorAll('.column-cards.drop-target').forEach(function(el) {
-        el.classList.remove('drop-target');
-      });
+      document.querySelectorAll('.column-cards.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
     });
 
     return cardEl;
   }
 
   function getCardAfter(container, y) {
-    var cards = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
-
+    var cards = [].slice.call(container.querySelectorAll('.kanban-card:not(.dragging)'));
     return cards.reduce(function(closest, child) {
       var box = child.getBoundingClientRect();
       var offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) {
-        return { offset: offset, element: child };
-      } else {
-        return closest;
-      }
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
     }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
   }
 
@@ -959,38 +1264,107 @@
     var result = getCard(cardId);
     if (!result) return;
     var card = result.card;
-
     state.editingCardId = cardId;
+    state.selectedPriority = card.priority || 0;
+    state.selectedColor = card.color || '';
 
     var modal = document.getElementById('card-modal');
-    var titleInput = document.getElementById('card-edit-title');
-    var descInput = document.getElementById('card-edit-description');
-    var dueInput = document.getElementById('card-edit-due-date');
-    var metaCreated = document.getElementById('card-meta-created');
-
-    titleInput.value = card.title;
-    descInput.value = card.description || '';
-    dueInput.value = card.dueDate || '';
-    metaCreated.textContent = 'Created: ' + new Date(card.created).toLocaleDateString();
+    document.getElementById('card-edit-title').value = card.title;
+    document.getElementById('card-edit-description').value = card.description || '';
+    document.getElementById('card-edit-due-date').value = card.dueDate || '';
+    document.getElementById('card-meta-created').textContent =
+      (getCurrentLang() === 'el' ? 'Δημιουργήθηκε: ' : 'Created: ') + new Date(card.created).toLocaleDateString();
 
     renderCardEditLabels(card);
     renderCardEditAssignments(card);
+    renderSubtaskList(card);
+    updatePrioritySelector();
+    updateColorPicker();
+
+    // Reset markdown preview
+    state.mdPreviewMode = false;
+    var descInput = document.getElementById('card-edit-description');
+    var mdPreview = document.getElementById('md-preview');
+    var mdToggle = document.getElementById('md-toggle-btn');
+    if (descInput) descInput.style.display = '';
+    if (mdPreview) mdPreview.style.display = 'none';
+    if (mdToggle) mdToggle.classList.remove('active');
 
     modal.classList.add('visible');
-
-    setTimeout(function() { titleInput.focus(); }, 50);
+    setTimeout(function() { document.getElementById('card-edit-title').focus(); }, 50);
   }
 
   function closeCardModal() {
     var modal = document.getElementById('card-modal');
     modal.classList.remove('visible');
     state.editingCardId = null;
-
     var picker = document.getElementById('label-picker');
     if (picker) picker.style.display = 'none';
     state.labelPickerOpen = false;
-
     renderBoard();
+  }
+
+  function renderSubtaskList(card) {
+    var container = document.getElementById('subtask-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!card.subtasks || card.subtasks.length === 0) {
+      var empty = document.createElement('em');
+      empty.style.cssText = 'color:var(--text-muted,#8a8474); font-size:11px;';
+      empty.textContent = 'No subtasks yet';
+      container.appendChild(empty);
+      return;
+    }
+
+    card.subtasks.forEach(function(st) {
+      var item = document.createElement('div');
+      item.className = 'subtask-item';
+
+      var checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'subtask-checkbox';
+      checkbox.checked = st.completed;
+
+      var textInput = document.createElement('input');
+      textInput.type = 'text';
+      textInput.className = 'subtask-text' + (st.completed ? ' completed' : '');
+      textInput.value = st.text;
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'subtask-delete';
+      delBtn.innerHTML = '<i class="fa fa-times"></i>';
+
+      checkbox.addEventListener('change', function() {
+        toggleSubtask(state.editingCardId, st.id);
+        textInput.classList.toggle('completed', checkbox.checked);
+        updateSubtaskProgressOnCard();
+      });
+
+      textInput.addEventListener('blur', function() {
+        updateSubtaskText(state.editingCardId, st.id, this.value.trim());
+      });
+      textInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      });
+
+      delBtn.addEventListener('click', function() {
+        deleteSubtask(state.editingCardId, st.id);
+        var result = getCard(state.editingCardId);
+        if (result) renderSubtaskList(result.card);
+      });
+
+      item.appendChild(checkbox);
+      item.appendChild(textInput);
+      item.appendChild(delBtn);
+      container.appendChild(item);
+    });
+  }
+
+  function updateSubtaskProgressOnCard() {
+    // Just re-render the board to update progress bars
+    var board = getCurrentBoard();
+    if (board) renderBoard();
   }
 
   function renderCardEditLabels(card) {
@@ -1027,16 +1401,13 @@
       el.className = 'picker-label-item';
       el.style.background = lbl.color;
       el.textContent = lbl.text;
-
       var isSelected = cardLabels.some(function(cl) { return cl.id === lbl.id; });
       if (isSelected) el.classList.add('selected');
-
       el.addEventListener('click', function() {
         toggleCardLabel(cardId, lbl.id);
         renderLabelPicker(cardId);
         renderCardEditLabels(getCard(cardId).card);
       });
-
       list.appendChild(el);
     });
   }
@@ -1060,38 +1431,23 @@
       row.dataset.asnId = asn.id;
 
       var typeInput = document.createElement('input');
-      typeInput.type = 'text';
-      typeInput.className = 'assignment-input';
-      typeInput.value = asn.type || '';
-      typeInput.placeholder = 'Type (e.g. Illustration)';
+      typeInput.type = 'text'; typeInput.className = 'assignment-input';
+      typeInput.value = asn.type || ''; typeInput.placeholder = 'Type';
       typeInput.dataset.field = 'type';
 
       var valueInput = document.createElement('input');
-      valueInput.type = 'text';
-      valueInput.className = 'assignment-input';
-      valueInput.value = asn.value || '';
-      valueInput.placeholder = 'Value (e.g. John Doe)';
+      valueInput.type = 'text'; valueInput.className = 'assignment-input';
+      valueInput.value = asn.value || ''; valueInput.placeholder = 'Value';
       valueInput.dataset.field = 'value';
 
       var removeBtn = document.createElement('button');
       removeBtn.className = 'btn-remove-assignment';
       removeBtn.innerHTML = '<i class="fa fa-times"></i>';
-      removeBtn.title = 'Remove assignment';
 
-      typeInput.addEventListener('blur', function() {
-        updateAssignment(state.editingCardId, asn.id, { type: this.value.trim() });
-      });
-      valueInput.addEventListener('blur', function() {
-        updateAssignment(state.editingCardId, asn.id, { value: this.value.trim() });
-      });
-
-      typeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); valueInput.focus(); }
-      });
-      valueInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
-      });
-
+      typeInput.addEventListener('blur', function() { updateAssignment(state.editingCardId, asn.id, { type: this.value.trim() }); });
+      valueInput.addEventListener('blur', function() { updateAssignment(state.editingCardId, asn.id, { value: this.value.trim() }); });
+      typeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); valueInput.focus(); } });
+      valueInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); this.blur(); } });
       removeBtn.addEventListener('click', function() {
         removeAssignment(state.editingCardId, asn.id);
         var result = getCard(state.editingCardId);
@@ -1105,17 +1461,32 @@
     });
   }
 
+  // ========== PRIORITY & COLOR SELECTORS ==========
+  function updatePrioritySelector() {
+    var btns = document.querySelectorAll('.priority-btn');
+    btns.forEach(function(btn) {
+      btn.classList.remove('active');
+      if (parseInt(btn.dataset.priority) === state.selectedPriority) btn.classList.add('active');
+    });
+  }
+
+  function updateColorPicker() {
+    var swatches = document.querySelectorAll('.color-swatch');
+    swatches.forEach(function(sw) {
+      sw.classList.remove('active');
+      if (sw.dataset.color === state.selectedColor) sw.classList.add('active');
+    });
+  }
+
   // ========== SEARCH & FILTER ==========
   function applySearchFilter() {
     var query = state.searchQuery.toLowerCase().trim();
     var cards = document.querySelectorAll('.kanban-card');
-
     cards.forEach(function(cardEl) {
       var cardId = cardEl.dataset.cardId;
       var result = getCard(cardId);
       if (!result) return;
       var card = result.card;
-
       var matchesSearch = true;
       var matchesFilter = true;
 
@@ -1125,26 +1496,17 @@
         var asnMatch = false;
         if (card.assignments) {
           card.assignments.forEach(function(asn) {
-            if ((asn.type || '').toLowerCase().includes(query) ||
-                (asn.value || '').toLowerCase().includes(query)) {
-              asnMatch = true;
-            }
+            if ((asn.type||'').toLowerCase().includes(query) || (asn.value||'').toLowerCase().includes(query)) asnMatch = true;
           });
         }
         matchesSearch = titleMatch || descMatch || asnMatch;
       }
 
       if (state.activeFilters.length > 0) {
-        matchesFilter = card.labels.some(function(lbl) {
-          return state.activeFilters.includes(lbl.id);
-        });
+        matchesFilter = card.labels.some(function(lbl) { return state.activeFilters.includes(lbl.id); });
       }
 
-      if (matchesSearch && matchesFilter) {
-        cardEl.classList.remove('filtered-out');
-      } else {
-        cardEl.classList.add('filtered-out');
-      }
+      cardEl.classList.toggle('filtered-out', !(matchesSearch && matchesFilter));
     });
   }
 
@@ -1156,55 +1518,38 @@
     state.labels.forEach(function(lbl) {
       var item = document.createElement('div');
       item.className = 'filter-item';
-
       var dot = document.createElement('div');
       dot.className = 'filter-color-dot';
       dot.style.background = lbl.color;
-
       var text = document.createElement('span');
       text.className = 'filter-item-text';
       text.textContent = lbl.text;
-
       var checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'filter-item-checkbox';
       checkbox.checked = state.activeFilters.includes(lbl.id);
       checkbox.addEventListener('change', function() {
-        if (this.checked) {
-          if (!state.activeFilters.includes(lbl.id)) {
-            state.activeFilters.push(lbl.id);
-          }
-        } else {
-          state.activeFilters = state.activeFilters.filter(function(id) { return id !== lbl.id; });
-        }
+        if (this.checked) { if (!state.activeFilters.includes(lbl.id)) state.activeFilters.push(lbl.id); }
+        else { state.activeFilters = state.activeFilters.filter(function(id) { return id !== lbl.id; }); }
         applySearchFilter();
         updateFilterBtnState();
       });
-
-      item.appendChild(dot);
-      item.appendChild(text);
-      item.appendChild(checkbox);
+      item.appendChild(dot); item.appendChild(text); item.appendChild(checkbox);
       container.appendChild(item);
     });
-
     updateFilterBtnState();
   }
 
   function updateFilterBtnState() {
     var btn = document.getElementById('filter-btn');
     if (!btn) return;
-    if (state.activeFilters.length > 0) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
+    btn.classList.toggle('active', state.activeFilters.length > 0);
   }
 
   // ========== LABEL MANAGEMENT MODAL ==========
   function openLabelModal() {
     var modal = document.getElementById('label-modal');
     if (!modal) return;
-
     renderLabelManageList();
     modal.classList.add('visible');
   }
@@ -1247,25 +1592,15 @@
       textInput.value = lbl.text;
       textInput.addEventListener('blur', function() {
         var newText = this.value.trim();
-        if (newText && newText !== lbl.text) {
-          renameLabel(lbl.id, newText);
-          renderBoard();
-          renderFilterDropdown();
-        }
+        if (newText && newText !== lbl.text) { renameLabel(lbl.id, newText); renderBoard(); renderFilterDropdown(); }
       });
-      textInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') this.blur();
-      });
+      textInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') this.blur(); });
 
       var deleteBtn = document.createElement('button');
       deleteBtn.className = 'label-manage-delete';
       deleteBtn.innerHTML = '<i class="fa fa-trash-o"></i>';
-      deleteBtn.title = 'Delete label';
       deleteBtn.addEventListener('click', function() {
-        var msg = getCurrentLang() === 'el'
-          ? 'Διαγραφή ετικέτας "' + lbl.text + '";'
-          : 'Delete label "' + lbl.text + '"?';
-        if (confirm(msg)) {
+        if (confirm('Delete label "' + lbl.text + '"?')) {
           deleteLabel(lbl.id);
           renderLabelManageList();
           renderBoard();
@@ -1285,6 +1620,162 @@
       empty.textContent = 'No labels yet. Create one below.';
       body.appendChild(empty);
     }
+  }
+
+  // ========== STATISTICS ==========
+  function openStatsModal() {
+    var board = getCurrentBoard();
+    if (!board) return;
+    var modal = document.getElementById('stats-modal');
+    if (!modal) return;
+
+    var body = document.getElementById('stats-modal-body');
+    body.innerHTML = '';
+
+    // Calculate stats
+    var totalCards = 0;
+    var archivedCards = 0;
+    var overdueCards = 0;
+    var totalSubtasks = 0;
+    var doneSubtasks = 0;
+    var priorityCounts = [0, 0, 0, 0];
+    var labelCounts = {};
+
+    board.columns.forEach(function(col) {
+      col.cards.forEach(function(card) {
+        totalCards++;
+        if (card.archived) archivedCards++;
+        if (card.dueDate) {
+          var due = new Date(card.dueDate); due.setHours(0,0,0,0);
+          var today = new Date(); today.setHours(0,0,0,0);
+          if (due < today && !card.archived) overdueCards++;
+        }
+        if (card.priority) priorityCounts[card.priority]++;
+        if (card.subtasks) {
+          totalSubtasks += card.subtasks.length;
+          doneSubtasks += card.subtasks.filter(function(s) { return s.completed; }).length;
+        }
+        if (card.labels) {
+          card.labels.forEach(function(lbl) {
+            labelCounts[lbl.text] = (labelCounts[lbl.text] || 0) + 1;
+          });
+        }
+      });
+    });
+
+    var activeCards = totalCards - archivedCards;
+
+    // KPI grid
+    var grid = document.createElement('div');
+    grid.className = 'stats-grid';
+    grid.innerHTML =
+      '<div class="stat-card"><div class="stat-value">' + activeCards + '</div><div class="stat-label">Active Cards</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + board.columns.length + '</div><div class="stat-label">Columns</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + archivedCards + '</div><div class="stat-label">Archived</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + overdueCards + '</div><div class="stat-label">Overdue</div></div>';
+    body.appendChild(grid);
+
+    // Subtask progress
+    if (totalSubtasks > 0) {
+      var stSection = document.createElement('div');
+      stSection.innerHTML = '<div class="stats-section-title">Subtask Completion</div>';
+      var stBar = document.createElement('div');
+      stBar.className = 'stats-bar-row';
+      var stPct = Math.round((doneSubtasks / totalSubtasks) * 100);
+      stBar.innerHTML =
+        '<div class="stats-bar-label">Completed</div>' +
+        '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + stPct + '%; background:var(--accent-gold);"></div></div>' +
+        '<div class="stats-bar-value">' + doneSubtasks + '/' + totalSubtasks + '</div>';
+      stSection.appendChild(stBar);
+      body.appendChild(stSection);
+    }
+
+    // Cards per column
+    var colSection = document.createElement('div');
+    colSection.innerHTML = '<div class="stats-section-title">Cards per Column</div>';
+    var maxCards = 1;
+    board.columns.forEach(function(col) {
+      var cnt = col.cards.filter(function(c) { return !c.archived; }).length;
+      if (cnt > maxCards) maxCards = cnt;
+    });
+    board.columns.forEach(function(col) {
+      var cnt = col.cards.filter(function(c) { return !c.archived; }).length;
+      var pct = Math.round((cnt / maxCards) * 100);
+      var row = document.createElement('div');
+      row.className = 'stats-bar-row';
+      row.innerHTML =
+        '<div class="stats-bar-label">' + escapeHtml(col.title) + '</div>' +
+        '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%; background:var(--accent-gold);"></div></div>' +
+        '<div class="stats-bar-value">' + cnt + '</div>';
+      colSection.appendChild(row);
+    });
+    body.appendChild(colSection);
+
+    // Priority distribution
+    if (priorityCounts[1] + priorityCounts[2] + priorityCounts[3] > 0) {
+      var priSection = document.createElement('div');
+      priSection.innerHTML = '<div class="stats-section-title">Priority Distribution</div>';
+      var priLabels = ['', 'Low', 'Medium', 'High'];
+      var priColors = ['', '#4caf50', '#ff9800', '#f44336'];
+      for (var p = 1; p <= 3; p++) {
+        var cnt = priorityCounts[p];
+        var pct = totalCards > 0 ? Math.round((cnt / totalCards) * 100) : 0;
+        var row = document.createElement('div');
+        row.className = 'stats-bar-row';
+        row.innerHTML =
+          '<div class="stats-bar-label">' + priLabels[p] + '</div>' +
+          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%; background:' + priColors[p] + ';"></div></div>' +
+          '<div class="stats-bar-value">' + cnt + '</div>';
+        priSection.appendChild(row);
+      }
+      body.appendChild(priSection);
+    }
+
+    // Label distribution
+    var labelKeys = Object.keys(labelCounts);
+    if (labelKeys.length > 0) {
+      var lblSection = document.createElement('div');
+      lblSection.innerHTML = '<div class="stats-section-title">Label Distribution</div>';
+      var maxLbl = Math.max.apply(null, labelKeys.map(function(k) { return labelCounts[k]; }));
+      labelKeys.forEach(function(key) {
+        var cnt = labelCounts[key];
+        var pct = Math.round((cnt / maxLbl) * 100);
+        var row = document.createElement('div');
+        row.className = 'stats-bar-row';
+        row.innerHTML =
+          '<div class="stats-bar-label">' + escapeHtml(key) + '</div>' +
+          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%; background:var(--accent-gold);"></div></div>' +
+          '<div class="stats-bar-value">' + cnt + '</div>';
+        lblSection.appendChild(row);
+      });
+      body.appendChild(lblSection);
+    }
+
+    // Activity log
+    var logs = getActivityLog(board.id);
+    if (logs.length > 0) {
+      var logSection = document.createElement('div');
+      logSection.innerHTML = '<div class="stats-section-title">Recent Activity</div>';
+      var logContainer = document.createElement('div');
+      logContainer.className = 'activity-log';
+      logs.slice(0, 15).forEach(function(entry) {
+        var entryEl = document.createElement('div');
+        entryEl.className = 'activity-entry';
+        entryEl.innerHTML =
+          '<span class="activity-time">' + formatDateTime(entry.ts) + '</span>' +
+          '<span class="activity-text">' + escapeHtml(entry.action) + ': ' + escapeHtml(entry.detail || '') + '</span>';
+        logContainer.appendChild(entryEl);
+      });
+      logSection.appendChild(logContainer);
+      body.appendChild(logSection);
+    }
+
+    modal.classList.add('visible');
+  }
+
+  function closeStatsModal() {
+    var modal = document.getElementById('stats-modal');
+    if (modal) modal.classList.remove('visible');
   }
 
   // ========== EXPORT (FULL BACKUP — ALL DATA) ==========
@@ -1318,92 +1809,495 @@
     showToast(getTrans('toast_downloaded') || 'Backup exported');
   }
 
-  // ========== IMPORT (FULL RESTORE FROM BACKUP) ==========
+  // ========== EXPORT CSV ==========
+  function exportCSV() {
+    var board = getCurrentBoard();
+    if (!board) { showToast('No board to export'); return; }
+
+    var rows = [['Board', 'Column', 'Card Title', 'Description', 'Due Date', 'Priority', 'Labels', 'Subtasks', 'Assignments', 'Archived']];
+
+    board.columns.forEach(function(col) {
+      col.cards.forEach(function(card) {
+        var labels = (card.labels || []).map(function(l) { return l.text; }).join('; ');
+        var subtasks = (card.subtasks || []).map(function(s) { return (s.completed ? '[x] ' : '[ ] ') + s.text; }).join('; ');
+        var assignments = (card.assignments || []).map(function(a) { return a.type + ':' + a.value; }).join('; ');
+        var priLabels = ['', 'Low', 'Medium', 'High'];
+        rows.push([
+          board.title,
+          col.title,
+          card.title,
+          (card.description || '').replace(/\n/g, ' '),
+          card.dueDate || '',
+          priLabels[card.priority || 0],
+          labels,
+          subtasks,
+          assignments,
+          card.archived ? 'Yes' : 'No'
+        ]);
+      });
+    });
+
+    var csv = rows.map(function(row) {
+      return row.map(function(cell) {
+        var s = String(cell || '');
+        if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }).join(',');
+    }).join('\n');
+
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'orOS_Kanban_' + board.title.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('CSV exported');
+  }
+
+  // ========== IMPORT (MULTI-FORMAT) ==========
   function importData(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       try {
-        var data = JSON.parse(e.target.result);
+        var content = e.target.result;
 
-        // v2.0 format: { boards, labels, settings, currentBoardId }
-        if (data.boards && Array.isArray(data.boards)) {
-          data.boards.forEach(function(b) {
-            var existing = state.boards.find(function(ex) { return ex.id === b.id; });
-            if (existing) {
-              b.id = genId('board');
-            }
-            state.boards.push(b);
-          });
+        // Try JSON first
+        if (file.name.endsWith('.json') || content.trim().startsWith('{') || content.trim().startsWith('[')) {
+          var data = JSON.parse(content);
 
-          if (data.labels) {
-            data.labels.forEach(function(lbl) {
-              var exists = state.labels.find(function(l) {
-                return l.text === lbl.text && l.color === lbl.color;
-              });
-              if (!exists) {
-                state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
-              }
-            });
+          // Detect format
+          if (data.boards && Array.isArray(data.boards)) {
+            // orOS native v2.0
+            importNative(data);
+          } else if (data.lists && Array.isArray(data.lists)) {
+            // Trello
+            importFromTrello(data);
+          } else if (data.columns && Array.isArray(data.columns) && data.id) {
+            // Brisqi or Kanri single board
+            importFromBrisqiOrKanri(data);
+          } else if (data.board && data.board.id) {
+            // orOS v1.0
+            importNativeV1(data);
+          } else if (data.id && data.columns) {
+            // Legacy direct board object
+            importLegacyBoard(data);
+          } else {
+            showToast('Unrecognized JSON format');
           }
-
-          if (data.settings) {
-            state.settings = Object.assign({}, state.settings, data.settings);
-          }
-
-          state.currentBoardId = state.boards.length > 0
-            ? state.boards[state.boards.length - 1].id
-            : null;
-
-          saveData();
-          saveSettings();
-          renderAll();
-          showToast((getTrans('notes_imported') || 'Imported') + ' (' + data.boards.length + ' boards)');
           return;
         }
 
-        // v1.0 format: single { board, labels }
-        if (data.board && data.board.id) {
-          var boardData = data.board;
-          var existingB = state.boards.find(function(b) { return b.id === boardData.id; });
-          if (existingB) boardData.id = genId('board');
-          boardData.order = state.boards.length;
-
-          if (data.labels) {
-            data.labels.forEach(function(lbl) {
-              var exists = state.labels.find(function(l) {
-                return l.text === lbl.text && l.color === lbl.color;
-              });
-              if (!exists) {
-                state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
-              }
-            });
-          }
-
-          state.boards.push(boardData);
-          state.currentBoardId = boardData.id;
-          saveData();
-          renderAll();
-          showToast(getTrans('toast_opened') || 'Board imported');
+        // Try CSV
+        if (file.name.endsWith('.csv') || content.includes(',')) {
+          importFromCSV(content);
           return;
         }
 
-        // Legacy: direct board object
-        if (data.id && data.columns) {
-          data.order = state.boards.length;
-          state.boards.push(data);
-          state.currentBoardId = data.id;
-          saveData();
-          renderAll();
-          showToast(getTrans('toast_opened') || 'Board imported');
-          return;
-        }
-
-        showToast(getTrans('notes_invalid_file') || 'Invalid file');
+        showToast('Unrecognized file format');
       } catch(err) {
-        showToast(getTrans('notes_import_failed') || 'Failed to import');
+        showToast(getTrans('notes_import_failed') || 'Failed to import: ' + err.message);
       }
     };
     reader.readAsText(file);
+  }
+
+  function importNative(data) {
+    data.boards.forEach(function(b) {
+      var existing = state.boards.find(function(ex) { return ex.id === b.id; });
+      if (existing) b.id = genId('board');
+      state.boards.push(b);
+    });
+
+    if (data.labels) {
+      data.labels.forEach(function(lbl) {
+        var exists = state.labels.find(function(l) { return l.text === lbl.text && l.color === lbl.color; });
+        if (!exists) state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
+      });
+    }
+
+    if (data.settings) state.settings = Object.assign({}, state.settings, data.settings);
+    state.currentBoardId = state.boards.length > 0 ? state.boards[state.boards.length - 1].id : null;
+
+    saveData(); saveSettings(); renderAll();
+    showToast('Imported ' + data.boards.length + ' boards');
+  }
+
+  function importNativeV1(data) {
+    var boardData = data.board;
+    var existingB = state.boards.find(function(b) { return b.id === boardData.id; });
+	    if (existingB) boardData.id = genId('board');
+    boardData.order = state.boards.length;
+
+    if (data.labels) {
+      data.labels.forEach(function(lbl) {
+        var exists = state.labels.find(function(l) { return l.text === lbl.text && l.color === lbl.color; });
+        if (!exists) state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
+      });
+    }
+
+    state.boards.push(boardData);
+    state.currentBoardId = boardData.id;
+    saveData();
+    renderAll();
+    showToast(getTrans('toast_opened') || 'Board imported');
+  }
+
+  function importLegacyBoard(data) {
+    data.order = state.boards.length;
+    state.boards.push(data);
+    state.currentBoardId = data.id;
+    saveData();
+    renderAll();
+    showToast(getTrans('toast_opened') || 'Board imported');
+  }
+
+  // ========== IMPORT: TRELLO ==========
+  function importFromTrello(data) {
+    var board = {
+      id: genId('board'),
+      title: data.name || 'Imported Trello Board',
+      order: state.boards.length,
+      columns: []
+    };
+
+    // Map Trello lists → columns
+    var lists = (data.lists || []).filter(function(l) { return !l.closed; });
+    lists.sort(function(a, b) { return (a.pos || 0) - (b.pos || 0); });
+
+    lists.forEach(function(list, idx) {
+      var col = {
+        id: genId('col'),
+        title: list.name || 'Column',
+        order: idx,
+        cards: []
+      };
+
+      // Find cards for this list
+      var trelloCards = (data.cards || []).filter(function(c) {
+        return c.idList === list.id && !c.closed;
+      });
+      trelloCards.sort(function(a, b) { return (a.pos || 0) - (b.pos || 0); });
+
+      trelloCards.forEach(function(tc, cardIdx) {
+        var card = {
+          id: genId('card'),
+          title: tc.name || 'Untitled',
+          description: tc.desc || '',
+          labels: [],
+          assignments: [],
+          subtasks: [],
+          dueDate: tc.due ? tc.due.split('T')[0] : null,
+          priority: 0,
+          color: '',
+          archived: false,
+          created: tc.dateLastActivity ? new Date(tc.dateLastActivity).getTime() : Date.now(),
+          modified: Date.now(),
+          order: cardIdx
+        };
+
+        // Map Trello labels
+        if (tc.labels && tc.labels.length > 0) {
+          tc.labels.forEach(function(tl) {
+            var color = TRELLO_COLORS[tl.color] || '#6d4aff';
+            var text = tl.name || tl.color || 'label';
+            var existing = state.labels.find(function(l) { return l.text === text && l.color === color; });
+            if (!existing) {
+              existing = { id: genId('lbl'), color: color, text: text };
+              state.labels.push(existing);
+            }
+            card.labels.push({ id: existing.id, color: existing.color, text: existing.text });
+          });
+        }
+
+        // Map Trello checklists → subtasks
+        if (data.checklists) {
+          var cardChecklists = data.checklists.filter(function(cl) { return cl.idCard === tc.id; });
+          cardChecklists.forEach(function(cl) {
+            if (cl.checkItems) {
+              cl.checkItems.forEach(function(ci) {
+                card.subtasks.push({
+                  id: genId('st'),
+                  text: ci.name,
+                  completed: ci.state === 'complete'
+                });
+              });
+            }
+          });
+        }
+
+        // Map Trello members → assignments
+        if (tc.idMembers && tc.idMembers.length > 0 && data.members) {
+          tc.idMembers.forEach(function(memberId) {
+            var member = data.members.find(function(m) { return m.id === memberId; });
+            if (member) {
+              card.assignments.push({
+                id: genId('asn'),
+                type: 'Assignee',
+                value: member.fullName || member.username || 'Unknown'
+              });
+            }
+          });
+        }
+
+        col.cards.push(card);
+      });
+
+      board.columns.push(col);
+    });
+
+    state.boards.push(board);
+    state.currentBoardId = board.id;
+    saveData();
+    renderAll();
+    logActivity('imported', 'Trello board: ' + board.title);
+    showToast('Trello board imported (' + lists.length + ' columns)');
+  }
+
+  // ========== IMPORT: BRISQI / KANRI ==========
+  function importFromBrisqiOrKanri(data) {
+    var board = {
+      id: genId('board'),
+      title: data.title || 'Imported Board',
+      order: state.boards.length,
+      columns: []
+    };
+
+    var cols = data.columns || [];
+    cols.sort(function(a, b) { return (a.order || a.position || 0) - (b.order || b.position || 0); });
+
+    cols.forEach(function(srcCol, idx) {
+      var col = {
+        id: genId('col'),
+        title: srcCol.title || 'Column',
+        order: idx,
+        cards: []
+      };
+
+      var srcCards = srcCol.cards || [];
+      srcCards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+
+      srcCards.forEach(function(sc, cardIdx) {
+        var card = {
+          id: genId('card'),
+          title: sc.title || 'Untitled',
+          description: sc.description || '',
+          labels: [],
+          assignments: [],
+          subtasks: [],
+          dueDate: null,
+          priority: 0,
+          color: '',
+          archived: sc.archived || false,
+          created: sc.createdAt ? new Date(sc.createdAt).getTime() : Date.now(),
+          modified: sc.updatedAt ? new Date(sc.updatedAt).getTime() : Date.now(),
+          order: cardIdx
+        };
+
+        // Due date
+        if (sc.dueDate) {
+          var dd = new Date(sc.dueDate);
+          if (!isNaN(dd.getTime())) card.dueDate = dd.toISOString().split('T')[0];
+        }
+
+        // Color
+        if (sc.color) card.color = sc.color;
+
+        // Tags → labels
+        if (sc.tags && Array.isArray(sc.tags)) {
+          sc.tags.forEach(function(tag) {
+            var tagText = typeof tag === 'string' ? tag : (tag.name || tag.text || 'tag');
+            var tagColor = (typeof tag === 'object' && tag.color) ? tag.color : '#6d4aff';
+            var existing = state.labels.find(function(l) { return l.text === tagText && l.color === tagColor; });
+            if (!existing) {
+              existing = { id: genId('lbl'), color: tagColor, text: tagText };
+              state.labels.push(existing);
+            }
+            card.labels.push({ id: existing.id, color: existing.color, text: existing.text });
+          });
+        }
+
+        // Subtasks / checklists
+        if (sc.subtasks && Array.isArray(sc.subtasks)) {
+          sc.subtasks.forEach(function(st) {
+            card.subtasks.push({
+              id: genId('st'),
+              text: st.title || st.text || '',
+              completed: st.completed || false
+            });
+          });
+        }
+        if (sc.checklist && Array.isArray(sc.checklist)) {
+          sc.checklist.forEach(function(item) {
+            card.subtasks.push({
+              id: genId('st'),
+              text: item.title || item.text || '',
+              completed: item.completed || false
+            });
+          });
+        }
+
+        // Assignee
+        if (sc.assignee) {
+          card.assignments.push({
+            id: genId('asn'),
+            type: 'Assignee',
+            value: typeof sc.assignee === 'string' ? sc.assignee : (sc.assignee.name || sc.assignee.email || 'Unknown')
+          });
+        }
+
+        col.cards.push(card);
+      });
+
+      board.columns.push(col);
+    });
+
+    state.boards.push(board);
+    state.currentBoardId = board.id;
+    saveData();
+    renderAll();
+    logActivity('imported', 'Brisqi/Kanri board: ' + board.title);
+    showToast('Board imported (' + cols.length + ' columns)');
+  }
+
+  // ========== IMPORT: CSV ==========
+  function importFromCSV(content) {
+    var lines = content.split(/\r?\n/).filter(function(l) { return l.trim(); });
+    if (lines.length < 2) { showToast('CSV is empty'); return; }
+
+    // Parse header
+    var headers = parseCSVLine(lines[0]).map(function(h) { return h.toLowerCase().trim(); });
+
+    // Find column indices
+    var titleIdx = findHeader(headers, ['card title', 'title', 'name', 'task']);
+    var colIdx = findHeader(headers, ['column', 'list', 'status', 'stage']);
+    var descIdx = findHeader(headers, ['description', 'desc', 'details']);
+    var dueIdx = findHeader(headers, ['due date', 'due', 'deadline']);
+    var labelsIdx = findHeader(headers, ['labels', 'tags']);
+    var priIdx = findHeader(headers, ['priority']);
+    var asnIdx = findHeader(headers, ['assignments', 'assignee', 'assigned']);
+
+    if (titleIdx === -1) { showToast('CSV must have a Title/Name column'); return; }
+
+    // Group cards by column
+    var columnsMap = {};
+    var columnOrder = [];
+
+    for (var i = 1; i < lines.length; i++) {
+      var cells = parseCSVLine(lines[i]);
+      var cardTitle = cells[titleIdx] || 'Untitled';
+      var colName = colIdx >= 0 ? (cells[colIdx] || 'Imported') : 'Imported';
+
+      if (!columnsMap[colName]) {
+        columnsMap[colName] = [];
+        columnOrder.push(colName);
+      }
+
+      var card = {
+        id: genId('card'),
+        title: cardTitle,
+        description: descIdx >= 0 ? (cells[descIdx] || '') : '',
+        labels: [],
+        assignments: [],
+        subtasks: [],
+        dueDate: null,
+        priority: 0,
+        color: '',
+        archived: false,
+        created: Date.now(),
+        modified: Date.now(),
+        order: columnsMap[colName].length
+      };
+
+      if (dueIdx >= 0 && cells[dueIdx]) {
+        var parsed = new Date(cells[dueIdx]);
+        if (!isNaN(parsed.getTime())) card.dueDate = parsed.toISOString().split('T')[0];
+      }
+
+      if (labelsIdx >= 0 && cells[labelsIdx]) {
+        var tagList = cells[labelsIdx].split(/[;,]/);
+        tagList.forEach(function(tag) {
+          tag = tag.trim();
+          if (!tag) return;
+          var existing = state.labels.find(function(l) { return l.text === tag; });
+          if (!existing) {
+            existing = { id: genId('lbl'), color: '#6d4aff', text: tag };
+            state.labels.push(existing);
+          }
+          card.labels.push({ id: existing.id, color: existing.color, text: existing.text });
+        });
+      }
+
+      if (priIdx >= 0 && cells[priIdx]) {
+        var priText = cells[priIdx].toLowerCase().trim();
+        if (priText === 'high' || priText === '3') card.priority = 3;
+        else if (priText === 'medium' || priText === 'med' || priText === '2') card.priority = 2;
+        else if (priText === 'low' || priText === '1') card.priority = 1;
+      }
+
+      if (asnIdx >= 0 && cells[asnIdx]) {
+        card.assignments.push({ id: genId('asn'), type: 'Assignee', value: cells[asnIdx] });
+      }
+
+      columnsMap[colName].push(card);
+    }
+
+    // Build board
+    var board = {
+      id: genId('board'),
+      title: 'CSV Import ' + new Date().toISOString().slice(0, 10),
+      order: state.boards.length,
+      columns: []
+    };
+
+    columnOrder.forEach(function(colName, idx) {
+      board.columns.push({
+        id: genId('col'),
+        title: colName,
+        order: idx,
+        cards: columnsMap[colName]
+      });
+    });
+
+    state.boards.push(board);
+    state.currentBoardId = board.id;
+    saveData();
+    renderAll();
+    logActivity('imported', 'CSV board: ' + board.title);
+    showToast('CSV imported (' + (lines.length - 1) + ' cards, ' + columnOrder.length + ' columns)');
+  }
+
+  function parseCSVLine(line) {
+    var result = [];
+    var current = '';
+    var inQuotes = false;
+
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function findHeader(headers, candidates) {
+    for (var i = 0; i < candidates.length; i++) {
+      var idx = headers.indexOf(candidates[i]);
+      if (idx !== -1) return idx;
+    }
+    return -1;
   }
 
   // ========== EMPTY STATE ==========
@@ -1423,20 +2317,6 @@
     }
   }
 
-  // ========== UTILITY ==========
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function formatDate(dateStr) {
-    var d = new Date(dateStr);
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[d.getMonth()] + ' ' + d.getDate();
-  }
-
   function closeBoardSelector() {
     var dropdown = document.getElementById('board-selector-dropdown');
     if (dropdown) dropdown.classList.remove('visible');
@@ -1447,23 +2327,59 @@
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');
       var val = getTrans(key);
-      if (val && val !== key) {
-        el.textContent = val;
-      }
+      if (val && val !== key) el.textContent = val;
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
       var val = getTrans(key);
-      if (val && val !== key) {
-        el.setAttribute('placeholder', val);
-      }
+      if (val && val !== key) el.setAttribute('placeholder', val);
     });
     document.querySelectorAll('[data-i18n-aria]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-aria');
       var val = getTrans(key);
-      if (val && val !== key) {
-        el.setAttribute('aria-label', val);
+      if (val && val !== key) el.setAttribute('aria-label', val);
+    });
+  }
+
+  // ========== QUICK ADD ==========
+  function quickAddCard() {
+    var board = getCurrentBoard();
+    if (!board) return;
+
+    // Find first column
+    var cols = board.columns.slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+    if (cols.length === 0) { showToast('Create a column first'); return; }
+
+    // Show inline prompt via toast-like overlay
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-panel,#252320);border:1px solid var(--border-color);border-radius:8px;padding:16px;z-index:20000;display:flex;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Quick add card...';
+    input.style.cssText = 'background:var(--bg-dark,#1b1a18);border:1px solid var(--border-color);color:var(--text-primary);padding:8px 12px;border-radius:4px;font-size:14px;outline:none;width:280px;font-family:var(--font-primary);';
+    var btnAdd = document.createElement('button');
+    btnAdd.textContent = 'Add';
+    btnAdd.style.cssText = 'background:var(--accent-gold);color:#1b1a18;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700;font-family:var(--font-primary);';
+
+    overlay.appendChild(input);
+    overlay.appendChild(btnAdd);
+    document.body.appendChild(overlay);
+    input.focus();
+
+    function close() { document.body.removeChild(overlay); }
+    function submit() {
+      var title = input.value.trim();
+      if (title) {
+        createCard(cols[0].id, title);
+        showToast('Card added to "' + cols[0].title + '"');
       }
+      close();
+    }
+
+    btnAdd.addEventListener('click', submit);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      else if (e.key === 'Escape') { close(); }
     });
   }
 
@@ -1479,14 +2395,8 @@
         e.stopPropagation();
         boardDropdown.classList.toggle('visible');
       });
-
-      document.addEventListener('click', function() {
-        boardDropdown.classList.remove('visible');
-      });
-
-      boardDropdown.addEventListener('click', function(e) {
-        e.stopPropagation();
-      });
+      document.addEventListener('click', function() { boardDropdown.classList.remove('visible'); });
+      boardDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
     }
 
     var addBoardDropdownBtn = document.getElementById('btn-add-board-dropdown');
@@ -1505,9 +2415,7 @@
     if (addColBtn) {
       addColBtn.addEventListener('click', function() {
         var name = prompt(getTrans('kanban_column_name') || 'Column name:', 'New Column');
-        if (name && name.trim()) {
-          createColumn(name.trim());
-        }
+        if (name && name.trim()) createColumn(name.trim());
       });
     }
 
@@ -1515,9 +2423,7 @@
     var importBtn = document.getElementById('btn-import');
     var importInput = document.getElementById('import-file-input');
     if (importBtn && importInput) {
-      importBtn.addEventListener('click', function() {
-        importInput.click();
-      });
+      importBtn.addEventListener('click', function() { importInput.click(); });
       importInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
           importData(this.files[0]);
@@ -1528,11 +2434,50 @@
       });
     }
 
-    // ===== Export =====
+    // ===== Export Menu =====
     var exportBtn = document.getElementById('btn-export');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', exportData);
+    var exportMenu = document.getElementById('kanban-export-menu');
+    if (exportBtn && exportMenu) {
+      exportBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        exportMenu.style.display = exportMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', function() { exportMenu.style.display = 'none'; });
+      exportMenu.addEventListener('click', function(e) { e.stopPropagation(); });
     }
+
+    var exportJsonBtn = document.getElementById('btn-export-json');
+    if (exportJsonBtn) exportJsonBtn.addEventListener('click', function() {
+      exportData();
+      exportMenu.style.display = 'none';
+    });
+
+    var exportCsvBtn = document.getElementById('btn-export-csv');
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', function() {
+      exportCSV();
+      exportMenu.style.display = 'none';
+    });
+
+    // ===== Archive Toggle =====
+    var archiveToggle = document.getElementById('btn-archive-toggle');
+    if (archiveToggle) {
+      archiveToggle.addEventListener('click', function() {
+        state.showArchived = !state.showArchived;
+        archiveToggle.classList.toggle('archive-active', state.showArchived);
+        renderBoard();
+      });
+    }
+
+    // ===== Stats Button =====
+    var statsBtn = document.getElementById('btn-stats');
+    if (statsBtn) {
+      statsBtn.addEventListener('click', openStatsModal);
+    }
+
+    var statsModalClose = document.getElementById('stats-modal-close');
+    var statsModalOverlay = document.getElementById('stats-modal-overlay');
+    if (statsModalClose) statsModalClose.addEventListener('click', closeStatsModal);
+    if (statsModalOverlay) statsModalOverlay.addEventListener('click', closeStatsModal);
 
     // ===== Search =====
     var searchInput = document.getElementById('kanban-search');
@@ -1540,9 +2485,7 @@
     if (searchInput) {
       searchInput.addEventListener('input', function() {
         state.searchQuery = this.value;
-        if (searchClear) {
-          searchClear.style.display = this.value ? 'block' : 'none';
-        }
+        if (searchClear) searchClear.style.display = this.value ? 'block' : 'none';
         applySearchFilter();
       });
     }
@@ -1567,14 +2510,8 @@
         renderFilterDropdown();
         filterDropdown.classList.toggle('visible');
       });
-
-      document.addEventListener('click', function() {
-        filterDropdown.classList.remove('visible');
-      });
-
-      filterDropdown.addEventListener('click', function(e) {
-        e.stopPropagation();
-      });
+      document.addEventListener('click', function() { filterDropdown.classList.remove('visible'); });
+      filterDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
     }
 
     // ===== Card Modal =====
@@ -1582,6 +2519,8 @@
     var modalClose = document.getElementById('card-modal-close');
     var btnSaveCard = document.getElementById('btn-save-card');
     var btnDeleteCard = document.getElementById('btn-delete-card');
+    var btnArchiveCard = document.getElementById('btn-archive-card');
+    var btnDuplicateCard = document.getElementById('btn-duplicate-card');
 
     if (modalOverlay) modalOverlay.addEventListener('click', closeCardModal);
     if (modalClose) modalClose.addEventListener('click', closeCardModal);
@@ -1603,16 +2542,16 @@
             var asnId = row.dataset.asnId;
             var typeVal = row.querySelector('[data-field="type"]').value.trim();
             var valVal = row.querySelector('[data-field="value"]').value.trim();
-            if (typeVal || valVal) {
-              card.assignments.push({ id: asnId, type: typeVal, value: valVal });
-            }
+            if (typeVal || valVal) card.assignments.push({ id: asnId, type: typeVal, value: valVal });
           });
         }
 
         updateCard(state.editingCardId, {
           title: titleInput.value.trim() || 'Untitled Card',
           description: descInput.value.trim(),
-          dueDate: dueInput.value || null
+          dueDate: dueInput.value || null,
+          priority: state.selectedPriority,
+          color: state.selectedColor
         });
 
         closeCardModal();
@@ -1632,7 +2571,89 @@
       });
     }
 
-    // ===== Assignments: Add button =====
+    if (btnArchiveCard) {
+      btnArchiveCard.addEventListener('click', function() {
+        if (state.editingCardId) archiveCard(state.editingCardId);
+      });
+    }
+
+    if (btnDuplicateCard) {
+      btnDuplicateCard.addEventListener('click', function() {
+        if (state.editingCardId) {
+          duplicateCard(state.editingCardId);
+          closeCardModal();
+        }
+      });
+    }
+
+    // ===== Clear Due Date =====
+    var btnClearDue = document.getElementById('btn-clear-due');
+    if (btnClearDue) {
+      btnClearDue.addEventListener('click', function() {
+        var dueInput = document.getElementById('card-edit-due-date');
+        if (dueInput) dueInput.value = '';
+      });
+    }
+
+    // ===== Priority Selector =====
+    var priorityBtns = document.querySelectorAll('.priority-btn');
+    priorityBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        state.selectedPriority = parseInt(this.dataset.priority);
+        updatePrioritySelector();
+      });
+    });
+
+    // ===== Card Color Picker =====
+    var colorSwatches = document.querySelectorAll('.color-swatch');
+    colorSwatches.forEach(function(sw) {
+      sw.addEventListener('click', function() {
+        state.selectedColor = this.dataset.color;
+        updateColorPicker();
+      });
+    });
+
+    // ===== Markdown Toggle =====
+    var mdToggle = document.getElementById('md-toggle-btn');
+    var descInput = document.getElementById('card-edit-description');
+    var mdPreview = document.getElementById('md-preview');
+    if (mdToggle && descInput && mdPreview) {
+      mdToggle.addEventListener('click', function() {
+        state.mdPreviewMode = !state.mdPreviewMode;
+        if (state.mdPreviewMode) {
+          mdPreview.innerHTML = parseMarkdown(descInput.value);
+          descInput.style.display = 'none';
+          mdPreview.style.display = 'block';
+          mdToggle.classList.add('active');
+          mdToggle.innerHTML = '<i class="fa fa-pencil"></i> <span>Edit</span>';
+        } else {
+          descInput.style.display = '';
+          mdPreview.style.display = 'none';
+          mdToggle.classList.remove('active');
+          mdToggle.innerHTML = '<i class="fa fa-eye"></i> <span>Preview</span>';
+        }
+      });
+    }
+
+    // ===== Subtasks =====
+    var btnAddSubtask = document.getElementById('btn-add-subtask');
+    var subtaskInput = document.getElementById('subtask-input');
+    if (btnAddSubtask && subtaskInput) {
+      btnAddSubtask.addEventListener('click', function() {
+        var text = subtaskInput.value.trim();
+        if (text && state.editingCardId) {
+          addSubtask(state.editingCardId, text);
+          subtaskInput.value = '';
+          var result = getCard(state.editingCardId);
+          if (result) renderSubtaskList(result.card);
+        }
+      });
+      subtaskInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); btnAddSubtask.click(); }
+      });
+    }
+
+    // ===== Assignments =====
     var btnAddAssignment = document.getElementById('btn-add-assignment');
     if (btnAddAssignment) {
       btnAddAssignment.addEventListener('click', function() {
@@ -1654,7 +2675,6 @@
       btnAddLabel.addEventListener('click', function(e) {
         e.stopPropagation();
         if (!state.editingCardId) return;
-
         if (state.labelPickerOpen) {
           labelPicker.style.display = 'none';
           state.labelPickerOpen = false;
@@ -1664,7 +2684,6 @@
           state.labelPickerOpen = true;
         }
       });
-
       document.addEventListener('click', function(e) {
         if (state.labelPickerOpen && !labelPicker.contains(e.target) && !btnAddLabel.contains(e.target)) {
           labelPicker.style.display = 'none';
@@ -1690,7 +2709,6 @@
         var colorInput = document.getElementById('new-label-color');
         var text = textInput.value.trim();
         var color = colorInput.value;
-
         if (text) {
           createLabel(text, color);
           renderLabelPicker(state.editingCardId);
@@ -1699,14 +2717,10 @@
           labelPickerNew.style.display = 'none';
         }
       });
-
       var newLabelText = document.getElementById('new-label-text');
       if (newLabelText) {
         newLabelText.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            newLabelSave.click();
-          }
+          if (e.key === 'Enter') { e.preventDefault(); newLabelSave.click(); }
         });
       }
     }
@@ -1718,7 +2732,6 @@
 
     if (labelModalOverlay) labelModalOverlay.addEventListener('click', closeLabelModal);
     if (labelModalClose) labelModalClose.addEventListener('click', closeLabelModal);
-
     if (btnAddLabelModal) {
       btnAddLabelModal.addEventListener('click', function() {
         var text = prompt(getTrans('kanban_new_label') || 'New label name:', '');
@@ -1735,48 +2748,68 @@
     if (createFirstBtn) {
       createFirstBtn.addEventListener('click', function() {
         var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
-        if (name && name.trim()) {
-          createBoard(name.trim());
-        } else {
-          createBoard('My Board');
-        }
+        if (name && name.trim()) createBoard(name.trim());
+        else createBoard('My Board');
       });
     }
 
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', function(e) {
+      // Escape closes modals/dropdowns
       if (e.key === 'Escape') {
-        var modal = document.getElementById('card-modal');
-        if (modal && modal.classList.contains('visible')) {
-          closeCardModal();
-          return;
-        }
-        var labelModal = document.getElementById('label-modal');
-        if (labelModal && labelModal.classList.contains('visible')) {
-          closeLabelModal();
-          return;
-        }
+        var cardModal = document.getElementById('card-modal');
+        if (cardModal && cardModal.classList.contains('visible')) { closeCardModal(); return; }
+        var lblModal = document.getElementById('label-modal');
+        if (lblModal && lblModal.classList.contains('visible')) { closeLabelModal(); return; }
+        var stModal = document.getElementById('stats-modal');
+        if (stModal && stModal.classList.contains('visible')) { closeStatsModal(); return; }
         closeBoardSelector();
-        var filterDropdown = document.getElementById('filter-dropdown-content');
-        if (filterDropdown) filterDropdown.classList.remove('visible');
+        var fd = document.getElementById('filter-dropdown-content');
+        if (fd) fd.classList.remove('visible');
+        var em = document.getElementById('kanban-export-menu');
+        if (em) em.style.display = 'none';
         if (state.labelPickerOpen) {
           var picker = document.getElementById('label-picker');
           if (picker) picker.style.display = 'none';
           state.labelPickerOpen = false;
         }
+        return;
       }
 
+      // Ignore shortcuts when typing in inputs
+      var tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      // Ctrl+S = export
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         exportData();
+        return;
       }
 
+      // Ctrl+N = new board
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
-        if (name && name.trim()) {
-          createBoard(name.trim());
-        }
+        if (name && name.trim()) createBoard(name.trim());
+        return;
+      }
+
+      // N = quick add card
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        quickAddCard();
+        return;
+      }
+
+      // A = toggle archive view
+      if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        state.showArchived = !state.showArchived;
+        var atBtn = document.getElementById('btn-archive-toggle');
+        if (atBtn) atBtn.classList.toggle('archive-active', state.showArchived);
+        renderBoard();
+        return;
       }
     });
 
