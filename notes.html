@@ -3,24 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS Notes — Privacy-first, offline markdown note editor with backlinks, tags, and knowledge graph.">
+  <meta name="description" content="orOS Notes — Privacy-first, offline markdown note editor with backlinks, tags, and knowledge graph. No tracking.">
+
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="theme-color" content="#c8a96e">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/notes.html">
+  <meta property="og:title" content="orOS Notes — Privacy-First Wiki Notes">
+  <meta property="og:description" content="Markdown notes with backlinks, tags, knowledge graph, and command palette. Works offline. No tracking.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/notes.html">
+  <meta name="twitter:title" content="orOS Notes — Privacy-First Wiki Notes">
+  <meta name="twitter:description" content="Markdown notes with backlinks, tags, knowledge graph, and command palette. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+
+  <meta name="keywords" content="notes, wiki notes, markdown editor, backlinks, wikilinks, knowledge graph, note taking, offline, privacy, open source">
+
+  <link rel="preconnect" href="https://koulaxizis.github.io">
+  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
+
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/notes.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/notes.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/notes.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/notes.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/notes.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/notes.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/notes.html">
+
   <title>orOS Notes</title>
 
-  <!-- Favicon -->
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
+    var cLink = document.createElement('link');
+    cLink.rel = 'canonical';
+    cLink.href = OROS_CONFIG.domain + window.location.pathname;
+    document.head.appendChild(cLink);
+  </script>
+
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
 
-  <!-- Fonts & Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css" rel="stylesheet">
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- Shared orOS styles (variables, theme, fonts) -->
+  <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
-
-  <!-- Notes-specific styles -->
   <link rel="stylesheet" href="assets/css/notes.css">
+
+  <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/notes.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
 </head>
-<body>
+<body class="noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS Notes to function. Please enable JavaScript.</div>
+  </noscript>
+
+  <div id="oros-header"></div>
 
   <!-- ===== TOOLBAR ===== -->
   <div class="notes-toolbar" id="notes-toolbar">
@@ -60,7 +116,6 @@
         <i class="fa fa-terminal"></i>
       </button>
 
-      <!-- Export Dropdown -->
       <div class="export-dropdown-wrapper">
         <button class="notes-action-btn" id="btn-export" title="Export / Import">
           <i class="fa fa-download"></i>
@@ -82,9 +137,7 @@
           <div class="export-item" data-scope="note" data-format="pdf">
             <i class="fa fa-file-pdf-o"></i> PDF (print)
           </div>
-
           <div class="export-divider"></div>
-
           <div class="export-group-label">All Notes</div>
           <div class="export-item" data-scope="all" data-format="json">
             <i class="fa fa-database"></i> Backup Database (.json)
@@ -101,9 +154,7 @@
           <div class="export-item" data-scope="all" data-format="pdf">
             <i class="fa fa-file-pdf-o"></i> PDF (print)
           </div>
-
           <div class="export-divider"></div>
-
           <div class="export-group-label">Data</div>
           <div class="export-item" id="export-import-item">
             <i class="fa fa-folder-open"></i> Import from file...
@@ -114,20 +165,10 @@
       <button class="notes-action-btn" id="btn-import" title="Import">
         <i class="fa fa-upload"></i>
       </button>
-      <button class="notes-action-btn" id="btn-settings" title="Settings">
-        <i class="fa fa-cog"></i>
-      </button>
-      <button class="notes-action-btn" id="btn-install" title="Install App" style="display:none;">
-        <i class="fa fa-download"></i>
-        <span>Install</span>
-      </button>
     </div>
   </div>
 
-  <!-- Hidden file input for import -->
   <input type="file" id="import-file-input" accept=".json,.md,.txt" style="display:none;">
-
-  <!-- Hidden print frame for PDF export -->
   <iframe id="print-frame" style="display:none;position:absolute;width:0;height:0;border:0;" aria-hidden="true"></iframe>
 
   <!-- ===== MAIN CONTAINER ===== -->
@@ -136,16 +177,10 @@
     <!-- ===== SIDEBAR ===== -->
     <aside class="notes-sidebar" id="notes-sidebar">
       <div class="sidebar-content">
-
-        <!-- Tree View -->
         <div class="sidebar-tree" id="sidebar-tree"></div>
-
-        <!-- Root Drop Zone -->
         <div class="sidebar-root-dropzone" id="sidebar-root-dropzone">
           <i class="fa fa-arrow-down"></i> Drop here to move to root
         </div>
-
-        <!-- Outline Panel -->
         <div class="sidebar-outline-panel" id="sidebar-outline-panel">
           <div class="tags-panel-header">
             <i class="fa fa-list-ul"></i> Outline
@@ -154,8 +189,6 @@
             <span class="outline-empty">No headers</span>
           </div>
         </div>
-
-        <!-- Tags Panel -->
         <div class="sidebar-tags-panel" id="sidebar-tags-panel">
           <div class="tags-panel-header">
             <i class="fa fa-tags"></i> Tags
@@ -164,14 +197,12 @@
             <span class="tags-panel-empty">No tags yet</span>
           </div>
         </div>
-
       </div>
     </aside>
 
     <!-- ===== MAIN EDITOR AREA ===== -->
     <main class="notes-main" id="notes-main">
 
-      <!-- Empty State -->
       <div class="notes-empty-state" id="notes-empty-state" style="display:flex;">
         <i class="fa fa-book empty-icon"></i>
         <h2>Welcome to orOS Notes</h2>
@@ -181,10 +212,7 @@
         </button>
       </div>
 
-      <!-- Editor Panel -->
       <div class="notes-editor-panel" id="notes-editor-panel" style="display:none;">
-
-        <!-- Editor Header -->
         <div class="editor-header">
           <input type="text" class="note-title-input" id="note-title-input" placeholder="Untitled Note">
           <div class="editor-actions">
@@ -200,7 +228,6 @@
           </div>
         </div>
 
-        <!-- Editor Tabs -->
         <div class="editor-tabs">
           <button class="tab-btn active" id="tab-write">Write</button>
           <button class="tab-btn" id="tab-preview">Preview</button>
@@ -218,30 +245,19 @@
           </div>
         </div>
 
-        <!-- Editor Body -->
         <div class="editor-body">
-
-          <!-- Left Pane: Editor -->
           <div class="editor-pane editor-pane-left">
             <textarea class="note-editor" id="note-editor" placeholder="Start writing... (Markdown supported)"></textarea>
-
-            <!-- Autocomplete Dropdown -->
             <div class="autocomplete-dropdown" id="autocomplete-dropdown">
               <div class="autocomplete-list" id="autocomplete-list"></div>
             </div>
           </div>
-
-          <!-- Divider -->
           <div class="editor-divider"></div>
-
-          <!-- Right Pane: Preview -->
           <div class="editor-pane editor-pane-right">
             <div class="note-preview" id="note-preview"></div>
           </div>
-
         </div>
 
-        <!-- Backlinks & Related Panel -->
         <div class="backlinks-panel" id="backlinks-panel">
           <div class="backlinks-header" id="backlinks-header">
             <i class="fa fa-link"></i>
@@ -265,7 +281,6 @@
           </div>
         </div>
 
-        <!-- Editor Footer -->
         <div class="editor-footer">
           <div class="note-meta">
             <span class="meta-item">
@@ -286,7 +301,6 @@
             <input type="text" class="note-tags-input" id="note-tags-input" placeholder="+ tag">
           </div>
         </div>
-
       </div>
     </main>
   </div>
@@ -351,9 +365,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Rename</h3>
-        <button class="modal-close" id="rename-modal-close">
-          <i class="fa fa-times"></i>
-        </button>
+        <button class="modal-close" id="rename-modal-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="modal-body">
         <label class="modal-label">New name:</label>
@@ -372,9 +384,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Open or Create Note</h3>
-        <button class="modal-close" id="link-picker-modal-close">
-          <i class="fa fa-times"></i>
-        </button>
+        <button class="modal-close" id="link-picker-modal-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="modal-body">
         <label class="modal-label">Note title:</label>
@@ -388,7 +398,7 @@
     </div>
   </div>
 
-  <!-- ===== COMMAND PALETTE MODAL (no backdrop-filter) ===== -->
+  <!-- ===== COMMAND PALETTE MODAL ===== -->
   <div class="command-palette-modal" id="command-palette-modal">
     <div class="command-palette-overlay" id="command-palette-overlay"></div>
     <div class="command-palette-content">
@@ -412,9 +422,7 @@
     <div class="modal-content" style="max-width:720px;width:90%;">
       <div class="modal-header">
         <h3>Knowledge Graph</h3>
-        <button class="modal-close" id="graph-modal-close">
-          <i class="fa fa-times"></i>
-        </button>
+        <button class="modal-close" id="graph-modal-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="modal-body" style="padding:0;position:relative;overflow:hidden;">
         <canvas id="graph-canvas" style="width:100%;height:500px;display:block;"></canvas>
@@ -433,86 +441,102 @@
     </div>
   </div>
 
-  <!-- ===== SETTINGS MODAL ===== -->
-  <div class="settings-modal" id="settings-modal">
+  <!-- ===== SHARED SETTINGS MODAL ===== -->
+  <div class="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
       <div class="settings-header">
-        <h2>Settings</h2>
-        <button class="settings-close">
-          <i class="fa fa-times"></i>
-        </button>
+        <h2 data-i18n="settings">Settings</h2>
+        <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
       <div class="settings-nav">
-        <button class="tab-btn active" data-tab="tab-general">General</button>
-        <button class="tab-btn" data-tab="tab-shortcuts">Shortcuts</button>
-        <button class="tab-btn" data-tab="tab-about">About</button>
+        <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
+        <button class="tab-btn" data-tab="notes-settings" data-i18n="tab_notes">Notes</button>
       </div>
       <div class="settings-body">
-
-        <!-- General Tab -->
-        <div class="tab-panel" id="tab-general" style="display:flex;flex-direction:column;gap:12px;">
-          <div class="toggle-row">
-            <span class="toggle-label">Default view mode</span>
-            <select class="setting-select" id="setting-default-view">
-              <option value="split">Split (Editor + Preview)</option>
-              <option value="editor">Editor Only</option>
-              <option value="preview">Preview Only</option>
-            </select>
+        <div class="tab-panel" id="global-settings" style="display:flex;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
+              <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="install_app">Install as App</span>
+              <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="beta-section">
+              <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
+              <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
+              <div class="beta-links">
+                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
+                <a href="https://koulaxizis.github.io/oros-beta/notes.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
+              </div>
+            </div>
           </div>
-          <div class="settings-divider"></div>
-          <div class="toggle-row">
-            <span class="toggle-label">Focus mode (dim preview &amp; backlinks while editing)</span>
-            <label class="switch">
-              <input type="checkbox" id="setting-focus-mode">
-              <span class="slider"></span>
-            </label>
+        </div>
+        <div class="tab-panel" id="notes-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label">Default view mode</span>
+              <select class="setting-select" id="setting-default-view">
+                <option value="split">Split (Editor + Preview)</option>
+                <option value="editor">Editor Only</option>
+                <option value="preview">Preview Only</option>
+              </select>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_focus_mode">Focus Mode</span>
+              <label class="switch"><input type="checkbox" id="setting-notes-focus-mode"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_new_note_btn">Hide New Note Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-new-note-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_new_folder_btn">Hide New Folder Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-new-folder-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_sidebar_toggle">Hide Sidebar Toggle</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-sidebar-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td>New Note</td><td><kbd>Ctrl+N</kbd></td></tr>
+                <tr><td>Command Palette</td><td><kbd>Ctrl+P</kbd></td></tr>
+                <tr><td>Daily Note</td><td><kbd>Ctrl+D</kbd></td></tr>
+                <tr><td>Export (MD)</td><td><kbd>Ctrl+E</kbd></td></tr>
+                <tr><td>Backup (JSON)</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td>Search</td><td><kbd>Ctrl+Shift+F</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <!-- Shortcuts Tab -->
-        <div class="tab-panel" id="tab-shortcuts" style="display:none;flex-direction:column;">
-          <table class="shortcut-table">
-            <thead>
-              <tr><th>Action</th><th>Shortcut</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>New Note</td><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td></tr>
-              <tr><td>Command Palette</td><td><kbd>Ctrl</kbd>+<kbd>P</kbd></td></tr>
-              <tr><td>Daily Note</td><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td></tr>
-              <tr><td>Export Current (MD)</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td></tr>
-              <tr><td>Backup Database</td><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td></tr>
-              <tr><td>Search</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd></td></tr>
-              <tr><td>Bold (with selection)</td><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td></tr>
-              <tr><td>Italic (with selection)</td><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td></tr>
-              <tr><td>Autocomplete (after <kbd>[[</kbd>)</td><td><kbd>Tab</kbd> / <kbd>Enter</kbd></td></tr>
-              <tr><td>Close modals / menus</td><td><kbd>Esc</kbd></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- About Tab -->
-        <div class="tab-panel" id="tab-about" style="display:none;flex-direction:column;gap:8px;">
-          <p style="font-size:14px;color:var(--text-primary,#e8e2d4);font-weight:700;margin:0;">orOS Notes v4.1</p>
-          <p style="font-size:12px;color:var(--text-muted,#8a8474);margin:0;">
-            Privacy-first, offline markdown note editor.<br>
-            All data stored locally in your browser.<br>
-            No tracking, no cookies, no servers.
-          </p>
-          <div class="settings-divider"></div>
-          <p style="font-size:11px;color:var(--text-muted,#8a8474);margin:0;">
-            Features: Backlinks, Tags, Wikilinks, Command Palette,<br>
-            Autocomplete, Focus Mode, Daily Notes, GFM Tables,<br>
-            Graph View, Multi-format Export (MD/TXT/DOC/PDF/JSON).
-          </p>
-        </div>
-
       </div>
     </div>
   </div>
 
-  <!-- ===== Scripts ===== -->
-  <script src="config.js"></script>
-  <script src="assets/js/notes.js"></script>
+  <div id="oros-footer"></div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register(
+          OROS_CONFIG.baseHref + 'service-worker.js',
+          { scope: OROS_CONFIG.baseHref }
+        ).catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
 </body>
 </html>
