@@ -1172,7 +1172,6 @@
     "notes_deleted_note": "Note supprimée",
     "notes_export_format": "Format d'exportation (txt/md):",
     "notes_invalid_file": "Fichier de notes invalide",
-    {
     "notes_imported": "Importé",
     "notes_import_failed": "Échec de l'importation",
     "notes_items": "éléments",
