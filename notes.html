@@ -91,6 +91,7 @@
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
   <script src="assets/js/notes.js" defer></script>
 </head>
 <body class="notes-page noscript">
@@ -120,7 +121,7 @@
       <div class="notes-search-box">
         <i class="fa fa-search search-icon"></i>
         <input type="text" class="notes-search-input" id="notes-search" 
-               placeholder="Search notes..." data-i18n-placeholder="notes_search_placeholder">
+               placeholder="Search notes… (use # for tags)" data-i18n-placeholder="notes_search_placeholder">
         <button class="notes-search-clear" id="notes-search-clear" style="display:none;">
           <i class="fa fa-times"></i>
         </button>
@@ -157,6 +158,9 @@
       <div class="sidebar-content">
         <div class="sidebar-tree" id="sidebar-tree">
           <!-- Tree rendered dynamically -->
+        </div>
+        <div class="sidebar-root-dropzone" id="sidebar-root-dropzone">
+          <i class="fa fa-arrow-up"></i> Drop here for root
         </div>
       </div>
     </aside>
@@ -197,7 +201,7 @@
         </div>
 
         <div class="editor-body">
-          <textarea class="note-editor" id="note-editor" placeholder="Start writing... Use [[wikilinks]] to connect notes." data-i18n-placeholder="notes_editor_placeholder"></textarea>
+          <textarea class="note-editor" id="note-editor" placeholder="Start writing... Use [[wikilinks]] to connect notes. Right-click selected text for formatting." data-i18n-placeholder="notes_editor_placeholder"></textarea>
           <div class="note-preview" id="note-preview"></div>
         </div>
 
@@ -208,7 +212,7 @@
               <span id="note-modified"></span>
             </span>
             <span class="meta-item">
-              <i class="fa fa-word-count"></i>
+              <i class="fa fa-font"></i>
               <span id="note-words">0 words</span>
             </span>
             <span class="meta-item">
@@ -216,19 +220,38 @@
               <span id="note-links">0 links</span>
             </span>
           </div>
+          <div class="note-tags-section">
+            <div class="note-tags-display" id="note-tags-display"></div>
+            <input type="text" id="note-tags-input" class="note-tags-input" 
+                   placeholder="Add tag…" data-i18n-placeholder="notes_tags_placeholder">
+          </div>
         </div>
       </div>
     </main>
 
   </div>
 
-  <!-- Context Menu -->
+  <!-- Tree Context Menu -->
   <div class="context-menu" id="context-menu">
     <div class="context-item" data-action="rename"><i class="fa fa-pencil"></i> <span data-i18n="ctx_rename">Rename</span></div>
     <div class="context-item" data-action="delete"><i class="fa fa-trash-o"></i> <span data-i18n="ctx_delete">Delete</span></div>
     <div class="context-divider"></div>
     <div class="context-item" data-action="cut"><i class="fa fa-cut"></i> <span data-i18n="ctx_cut">Cut</span></div>
     <div class="context-item" data-action="paste"><i class="fa fa-paste"></i> <span data-i18n="ctx_paste">Paste</span></div>
+  </div>
+
+  <!-- Editor Context Menu (right-click formatting) -->
+  <div class="context-menu editor-context-menu" id="editor-context-menu">
+    <div class="context-item" data-format="bold"><i class="fa fa-bold"></i> Bold</div>
+    <div class="context-item" data-format="italic"><i class="fa fa-italic"></i> Italic</div>
+    <div class="context-item" data-format="strike"><i class="fa fa-strikethrough"></i> Strikethrough</div>
+    <div class="context-item" data-format="code"><i class="fa fa-code"></i> Inline Code</div>
+    <div class="context-divider"></div>
+    <div class="context-item" data-format="wikilink"><i class="fa fa-link"></i> Wikilink</div>
+    <div class="context-divider"></div>
+    <div class="context-item" data-format="h1"><i class="fa fa-header"></i> Heading 1</div>
+    <div class="context-item" data-format="h2">Heading 2</div>
+    <div class="context-item" data-format="h3">Heading 3</div>
   </div>
 
   <!-- Rename Modal -->

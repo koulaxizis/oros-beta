@@ -2,7 +2,8 @@
 // orOS Notes — Full Implementation
 // Privacy-first, offline, vanilla JavaScript
 // Features: Folders, [[Wikilinks]], Markdown,
-// search, import/export JSON, tree hierarchy
+// search, import/export JSON, tree hierarchy,
+// tags, drag-drop, right-click formatting
 // ============================================
 
 (function() {
@@ -13,15 +14,19 @@
   var ACTIVE_NOTE_ID = 'oros_notes_active_id';
   var VIEW_MODE = 'oros_notes_view_mode';
   var SIDEBAR_COLLAPSED = 'oros_notes_sidebar_collapsed';
+  var IMPORT_EXPORT_PATH = 'oros_notes_last_path';
 
   // ========== STATE ==========
   var state = {
-    nodes: [], // tree structure: { id, type: 'folder'|'note', parentId, title, children?, content?, modified? }
+    nodes: [], // tree structure: { id, type: 'folder'|'note', parentId, title, children?, content?, tags?, modified? }
     activeNodeId: null,
     searchQuery: '',
     expandedFolders: {},
     contextTargetId: null,
-    pendingLinkId: null // for link picker modal
+    pendingLinkId: null, // for link picker modal
+    draggedNodeId: null, // for drag and drop
+    autoSaveTimer: null, // for auto-save
+    lastPath: localStorage.getItem(IMPORT_EXPORT_PATH) || '' // remember file path
   };
 
   // ========== ID GENERATOR ==========
@@ -86,6 +91,15 @@
       var sidebar = document.getElementById('notes-sidebar');
       if (sidebar) sidebar.classList.add('collapsed');
     }
+
+    // Load last path
+    var savedPath = localStorage.getItem(IMPORT_EXPORT_PATH);
+    if (savedPath) {
+      state.lastPath = savedPath;
+    }
+
+    // Start auto-save timer (every 30 seconds)
+    startAutoSaveTimer();
   }
 
   function saveData() {
@@ -95,6 +109,31 @@
       localStorage.setItem(SIDEBAR_COLLAPSED, document.getElementById('notes-sidebar').classList.contains('collapsed') ? 'true' : 'false');
     } catch(e) {
       showToast('Storage limit reached. Export and delete old notes.');
+    }
+  }
+
+  // ========== AUTO-SAVE TIMER ==========
+  function startAutoSaveTimer() {
+    // Every 30 seconds, create backup in localStorage
+    setInterval(function() {
+      try {
+        var backupKey = 'oros_notes_backup_' + new Date().toISOString().slice(0,10);
+        localStorage.setItem(backupKey, localStorage.getItem(STORAGE_KEY) || '');
+        // Trim old backups (keep last 7)
+        cleanupBackups();
+      } catch(e) {}
+    }, 30000); // 30 seconds
+  }
+
+  function cleanupBackups() {
+    var keys = Object.keys(localStorage);
+    var backupKeys = keys.filter(function(k) { return k.startsWith('oros_notes_backup_'); });
+    // Keep last 7
+    if (backupKeys.length > 7) {
+      backupKeys.sort();
+      for (var i = 0; i < backupKeys.length - 7; i++) {
+        localStorage.removeItem(backupKeys[i]);
+      }
     }
   }
 
@@ -176,13 +215,14 @@
     return folder;
   }
 
-  function createNote(parentId, title) {
+  function createNote(parentId, title, tags) {
     var note = {
       id: genId('note'),
       type: 'note',
       parentId: parentId || null,
       title: title || 'Untitled Note',
       content: '',
+      tags: tags || [],
       created: Date.now(),
       modified: Date.now()
     };
@@ -245,15 +285,95 @@
     }
   }
 
-  function updateNoteContent(content) {
+  // ========== TAGS OPERATIONS ==========
+  function updateTags(tags) {
     var note = getNode(state.activeNodeId);
     if (note) {
-      note.content = content;
+      note.tags = tags;
       note.modified = Date.now();
       saveData();
-      updateMetaInfo();
-      updateLinkCount();
+      updateTagDisplay();
     }
+  }
+
+  function parseTagsInput(input) {
+    return input.split(',').map(function(t) {
+      return t.trim().toLowerCase();
+    }).filter(function(t) {
+      return t && t.length > 0;
+    });
+  }
+
+  function updateTagDisplay() {
+    var note = getNode(state.activeNodeId);
+    var container = document.getElementById('note-tags-display');
+    if (!container || !note) return;
+
+    container.innerHTML = '';
+    (note.tags || []).forEach(function(tag) {
+      var badge = document.createElement('span');
+      badge.className = 'tag-badge';
+      badge.innerHTML = '#' + tag + '<i class="fa fa-times tag-remove"></i>';
+      badge.querySelector('.tag-remove').addEventListener('click', function() {
+        var newTags = (note.tags || []).filter(function(t) { return t !== tag; });
+        updateTags(newTags);
+      });
+      container.appendChild(badge);
+    });
+  }
+
+  // ========== NODE MOVING (DRAG AND DROP) ==========
+  function moveNode(nodeId, targetParentId, targetPosition) {
+    var node = getNode(nodeId);
+    if (!node) return;
+
+    // Anti-cycle check: don't allow moving a folder into its own subtree
+    if (node.type === 'folder') {
+      var currentParentId = targetParentId;
+      while (currentParentId) {
+        if (currentParentId === nodeId) {
+          showToast('Cannot move folder into itself');
+          return;
+        }
+        var parent = getNode(currentParentId);
+        currentParentId = parent ? parent.parentId : null;
+      }
+    }
+
+    var oldParent = getParentNode(nodeId);
+
+    // Remove from old parent
+    if (oldParent && oldParent.children) {
+      var idx = oldParent.children.findIndex(function(c) { return c.id === nodeId; });
+      if (idx !== -1) oldParent.children.splice(idx, 1);
+      oldParent.modified = Date.now();
+    } else {
+      var idx = state.nodes.findIndex(function(n) { return n.id === nodeId; });
+      if (idx !== -1) state.nodes.splice(idx, 1);
+    }
+
+    // Add to new parent
+    if (targetParentId) {
+      var newParent = getNode(targetParentId);
+      if (newParent && newParent.children) {
+        if (targetPosition === 'append') {
+          newParent.children.push(node);
+        } else {
+          // Insert at specific index (simplified: append for now)
+          newParent.children.push(node);
+        }
+        newParent.expanded = true;
+        newParent.modified = Date.now();
+      }
+    } else {
+      // Move to root
+      state.nodes.push(node);
+    }
+
+    node.modified = Date.now();
+    saveData();
+    renderTree();
+    showToast(node.type === 'folder' ? 'Folder moved' : 'Note moved');
   }
 
   // ========== RENDERING ==========
@@ -274,6 +394,9 @@
 
     // Apply search filter
     applySearchFilter();
+
+    // Render root dropzone
+    renderRootDropzone();
   }
 
   function renderTreeNode(node, depth) {
@@ -282,9 +405,27 @@
 
     var el = document.createElement('div');
     el.className = 'tree-item ' + node.type;
-    el.setAttribute('data-id', node.id); // FIX: Add data-id for highlighting
+    el.setAttribute('data-id', node.id);
+    el.setAttribute('draggable', 'true');
     if (node.id === state.activeNodeId) el.classList.add('active');
     if (node.modified > node.created && !node.isNew) el.classList.add('modified');
+
+    // Drag events
+    el.addEventListener('dragstart', function(e) {
+      state.draggedNodeId = node.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation();
+    });
+
+    el.addEventListener('dragend', function(e) {
+      el.classList.remove('dragging');
+      state.draggedNodeId = null;
+      document.querySelectorAll('.tree-item.drag-over').forEach(function(el) {
+        el.classList.remove('drag-over');
+      });
+      e.stopPropagation();
+    });
 
     // Expand toggle (folders only)
     var expand = document.createElement('span');
@@ -303,10 +444,16 @@
     title.className = 'tree-title';
     title.textContent = node.title;
     title.title = node.title;
-
     el.appendChild(expand);
     el.appendChild(icon);
     el.appendChild(title);
+
+    // Tag dot indicator (if has tags)
+    if (node.type === 'note' && node.tags && node.tags.length > 0) {
+      var tagDot = document.createElement('span');
+      tagDot.className = 'tree-tag-dot';
+      el.appendChild(tagDot);
+    }
 
     // Children container (folders only)
     var childrenEl = document.createElement('div');
@@ -321,6 +468,31 @@
 
     itemEl.appendChild(el);
     itemEl.appendChild(childrenEl);
+
+    // Drop zone for folders
+    el.addEventListener('dragover', function(e) {
+      if (node.type !== 'folder') return;
+      if (state.draggedNodeId && state.draggedNodeId !== node.id) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.classList.add('drag-over');
+      }
+      e.stopPropagation();
+    });
+
+    el.addEventListener('dragleave', function(e) {
+      el.classList.remove('drag-over');
+      e.stopPropagation();
+    });
+
+    el.addEventListener('drop', function(e) {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      if (state.draggedNodeId && state.draggedNodeId !== node.id) {
+        moveNode(state.draggedNodeId, node.id, 'append');
+      }
+      e.stopPropagation();
+    });
 
     // ===== EVENTS =====
     if (node.type === 'folder') {
@@ -360,6 +532,31 @@
     return itemEl;
   }
 
+  function renderRootDropzone() {
+    var dropzone = document.getElementById('sidebar-root-dropzone');
+    if (!dropzone) return;
+
+    dropzone.addEventListener('dragover', function(e) {
+      if (state.draggedNodeId) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        dropzone.classList.add('drag-over');
+      }
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      if (state.draggedNodeId) {
+        moveNode(state.draggedNodeId, null, 'append'); // null = root
+      }
+    });
+  }
+
   function renderEditorPanel() {
     var emptyState = document.getElementById('notes-empty-state');
     var editorPanel = document.getElementById('notes-editor-panel');
@@ -386,6 +583,7 @@
     syncPreview(editorContent.value);
     updateMetaInfo();
     updateLinkCount();
+    updateTagDisplay();
 
     // Save active ID
     localStorage.setItem(ACTIVE_NOTE_ID, note.id);
@@ -567,10 +765,32 @@
 
     items.forEach(function(item) {
       var titleEl = item.querySelector('.tree-title');
+      var tagDot = item.querySelector('.tree-tag-dot');
       if (!titleEl) return;
 
       var title = titleEl.textContent.toLowerCase();
-      var visible = !query || title.includes(query);
+      var hasTags = tagDot && item.querySelector('.tree-node');
+      
+      // Tag search (#tag)
+      var tagQuery = null;
+      if (query.startsWith('#')) {
+        tagQuery = query.slice(1);
+      }
+
+      var visible = false;
+      if (query === '') {
+        visible = true;
+      } else if (tagQuery !== null) {
+        // Search by tags
+        var nodeId = item.getAttribute('data-id');
+        var node = getNode(nodeId);
+        if (node && node.tags && node.tags.some(function(t) { return t.includes(tagQuery); })) {
+          visible = true;
+        }
+      } else {
+        // Normal title search
+        visible = title.includes(query);
+      }
 
       if (visible) {
         item.parentElement.style.display = '';
@@ -583,18 +803,48 @@
   }
 
   // ========== IMPORT / EXPORT ==========
-  function exportData() {
+  async function exportData() {
     var data = {
       version: '1.0',
       exportedAt: new Date().toISOString(),
       nodes: state.nodes
     };
 
+    // Use File System Access API if available
+    if (window.showSaveFilePicker) {
+      try {
+        var handle = await window.showSaveFilePicker({
+          suggestedName: 'notes_backup_' + new Date().toISOString().slice(0,10) + '.json',
+          types: [{
+            description: 'JSON Files',
+            accept: {'application/json': ['.json']}
+          }]
+        });
+        var writable = await handle.createWritable();
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+        
+        // Remember path (handle.name or directory)
+        var dirHandle = handle.directory || handle;
+        if (dirHandle) {
+          state.lastPath = dirHandle.name || 'Unknown';
+          localStorage.setItem(IMPORT_EXPORT_PATH, state.lastPath);
+        }
+        
+        showToast('Exported successfully');
+        return;
+      } catch(e) {
+        console.log('FS Access canceled, falling back to blob download');
+      }
+    }
+
+    // Fallback: blob download
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'notes_' + new Date().toISOString().slice(0,10) + '.json';
+    var fileName = 'notes_' + new Date().toISOString().slice(0,10) + '.json';
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -672,7 +922,7 @@
     reader.readAsText(file);
   }
 
-    // ========== TOGGLE / VIEW ==========
+  // ========== TOGGLE / VIEW ==========
   function toggleSidebar() {
     var sidebar = document.getElementById('notes-sidebar');
     if (sidebar) sidebar.classList.toggle('collapsed');
@@ -760,7 +1010,7 @@
     }
   }
 
-  // ========== CONTEXT MENU ==========
+  // ========== CONTEXT MENU (TREE) ==========
   function showContextMenu(x, y, nodeId) {
     state.contextTargetId = nodeId;
     var menu = document.getElementById('context-menu');
@@ -785,6 +1035,21 @@
     var menu = document.getElementById('context-menu');
     if (menu) menu.classList.remove('visible');
     state.contextTargetId = null;
+  }
+
+  // ========== CONTEXT MENU (EDITOR - FORMAT TEXT) ==========
+  function showEditorContextMenu(x, y) {
+    var menu = document.getElementById('editor-context-menu');
+    if (!menu) return;
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.classList.add('visible');
+  }
+
+  function hideEditorContextMenu() {
+    var menu = document.getElementById('editor-context-menu');
+    if (menu) menu.classList.remove('visible');
   }
 
   // ========== RENAME MODAL ==========
@@ -908,7 +1173,7 @@
     closeLinkPickerModal();
   }
 
-  // ========== EMPTY STATE (FIXED) ==========
+  // ========== EMPTY STATE ==========
   function toggleEmptyState() {
     var emptyState = document.getElementById('notes-empty-state');
     var editorPanel = document.getElementById('notes-editor-panel');
@@ -1108,7 +1373,7 @@
       noteTitleInput.addEventListener('input', function() {
         var note = getNode(state.activeNodeId);
         if (note) {
-          note.title = this.value;
+                    note.title = this.value;
           note.modified = Date.now();
           saveData();
           // Update tree title without full re-render
@@ -1142,6 +1407,40 @@
           wordsEl.textContent = words + ' ' + (getTrans('text_words') || 'words');
         }
       });
+
+      // Right-click context menu for formatting
+      noteEditor.addEventListener('contextmenu', function(e) {
+        var selection = noteEditor.selectionStart !== noteEditor.selectionEnd;
+        if (selection) {
+          e.preventDefault();
+          showEditorContextMenu(e.pageX, e.pageY);
+        }
+      });
+    }
+
+    // ===== Tags Input =====
+    var tagsInput = document.getElementById('note-tags-input');
+    if (tagsInput) {
+      tagsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          var newTags = parseTagsInput(this.value);
+          var note = getNode(state.activeNodeId);
+          if (note) {
+            // Merge new tags with existing
+            var currentTags = note.tags || [];
+            var merged = currentTags.concat(newTags.filter(function(t) {
+              return currentTags.indexOf(t) === -1;
+            }));
+            updateTags(merged);
+          }
+          this.value = '';
+        } else if (e.key === 'Backspace' && this.value === '' && note.tags && note.tags.length > 0) {
+          // Remove last tag on backspace when empty
+          var newTags = note.tags.slice(0, -1);
+          updateTags(newTags);
+        }
+      });
     }
 
     // ===== Context Menu =====
@@ -1151,6 +1450,13 @@
       if (contextMenu && contextMenu.classList.contains('visible')) {
         if (!contextMenu.contains(e.target)) {
           hideContextMenu();
+        }
+      }
+
+      var editorCtxMenu = document.getElementById('editor-context-menu');
+      if (editorCtxMenu && editorCtxMenu.classList.contains('visible')) {
+        if (!editorCtxMenu.contains(e.target)) {
+          hideEditorContextMenu();
         }
       }
     });
@@ -1178,7 +1484,6 @@
               deleteNode(nodeId);
               break;
             case 'cut':
-              // Placeholder for future cut functionality
               showToast('Cut coming soon');
               break;
             case 'paste':
@@ -1186,6 +1491,19 @@
               break;
           }
           hideContextMenu();
+        });
+      });
+    }
+
+    // ===== Editor Context Menu Actions =====
+    var editorCtxMenu = document.getElementById('editor-context-menu');
+    if (editorCtxMenu) {
+      var formatItems = editorCtxMenu.querySelectorAll('.context-item[data-format]');
+      formatItems.forEach(function(item) {
+        item.addEventListener('click', function() {
+          var format = this.dataset.format;
+          applyFormatToSelection(format);
+          hideEditorContextMenu();
         });
       });
     }
@@ -1252,6 +1570,7 @@
       // Escape
       if (e.key === 'Escape') {
         hideContextMenu();
+        hideEditorContextMenu();
         // Close any open dropdown
         var dropdowns = document.querySelectorAll('.dropdown-content.visible');
         dropdowns.forEach(function(d) { d.classList.remove('visible'); });
@@ -1283,6 +1602,24 @@
         var search = document.getElementById('notes-search');
         if (search) search.focus();
       }
+
+      // Ctrl+B bold formatting
+      if (e.ctrlKey && e.key === 'b') {
+        var editor = document.getElementById('note-editor');
+        if (document.activeElement === editor && editor.selectionStart !== editor.selectionEnd) {
+          e.preventDefault();
+          applyFormatToSelection('bold');
+        }
+      }
+
+      // Ctrl+I italic formatting
+      if (e.ctrlKey && e.key === 'i') {
+        var editor = document.getElementById('note-editor');
+        if (document.activeElement === editor && editor.selectionStart !== editor.selectionEnd) {
+          e.preventDefault();
+          applyFormatToSelection('italic');
+        }
+      }
     });
 
     // ===== Language Change Listener =====
@@ -1294,7 +1631,56 @@
     window.addEventListener('resize', function() {
       // Hide context menu on resize
       hideContextMenu();
+      hideEditorContextMenu();
     });
+  }
+
+  // ========== FORMAT SELECTION (EDITOR CONTEXT MENU) ==========
+  function applyFormatToSelection(format) {
+    var editor = document.getElementById('note-editor');
+    if (!editor) return;
+
+    var start = editor.selectionStart;
+    var end = editor.selectionEnd;
+    var selectedText = editor.value.substring(start, end);
+    var newText = selectedText;
+
+    switch(format) {
+      case 'bold':
+        newText = '**' + selectedText + '**';
+        break;
+      case 'italic':
+        newText = '*' + selectedText + '*';
+        break;
+      case 'strike':
+        newText = '~~' + selectedText + '~~';
+        break;
+      case 'code':
+        newText = '`' + selectedText + '`';
+        break;
+      case 'wikilink':
+        newText = '[[' + selectedText + ']]';
+        break;
+      case 'h1':
+        newText = '# ' + selectedText;
+        break;
+      case 'h2':
+        newText = '## ' + selectedText;
+        break;
+      case 'h3':
+        newText = '### ' + selectedText;
+        break;
+    }
+
+    editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
+
+    // Update position and save
+    var newCursorPos = start + newText.length;
+    editor.selectionStart = newCursorPos;
+    editor.selectionEnd = newCursorPos;
+    editor.focus();
+
+    updateNoteContent(editor.value);
   }
 
   function setActiveViewButton(btn) {
