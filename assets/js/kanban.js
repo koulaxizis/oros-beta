@@ -111,7 +111,7 @@
     var d = new Date(ts);
     var now = new Date();
     var diff = now - d;
-    if (diff < 60000) return 'just now';
+    if (diff < 60000) return 'just Now';
     if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
     if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
     if (diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
@@ -765,6 +765,11 @@
     if (current && nameEl) nameEl.textContent = current.title;
   }
 
+  function closeBoardSelector() {
+    var dropdown = document.getElementById('board-list');
+    if (dropdown) dropdown.classList.remove('visible');
+  }
+
   function startBoardRename(board, anchorEl) {
     var input = document.getElementById('board-rename-input');
     if (!input) return;
@@ -932,6 +937,7 @@
     titleEl.addEventListener('click', function() {
       var rect = titleEl.getBoundingClientRect();
       var editInput = document.getElementById('column-title-edit');
+      if (!editInput) return;
       editInput.value = col.title;
       editInput.style.display = 'block';
       editInput.style.left = rect.left + 'px';
@@ -1229,10 +1235,17 @@
     state.selectedColor = card.color || '';
 
     var modal = document.getElementById('card-modal');
-    document.getElementById('card-edit-title').value = card.title;
-    document.getElementById('card-edit-description').value = card.description || '';
-    document.getElementById('card-edit-due-date').value = card.dueDate || '';
-    document.getElementById('card-meta-created').textContent =
+    if (!modal) return;
+
+    var titleEl = document.getElementById('card-edit-title');
+    var descEl = document.getElementById('card-edit-description');
+    var dueEl = document.getElementById('card-edit-due-date');
+    var createdEl = document.getElementById('card-meta-created');
+
+    if (titleEl) titleEl.value = card.title;
+    if (descEl) descEl.value = card.description || '';
+    if (dueEl) dueEl.value = card.dueDate || '';
+    if (createdEl) createdEl.textContent =
       (getCurrentLang() === 'el' ? 'Δημιουργήθηκε: ' : 'Created: ') + new Date(card.created).toLocaleDateString();
 
     renderCardEditLabels(card);
@@ -1243,20 +1256,19 @@
 
     // Reset markdown preview
     state.mdPreviewMode = false;
-    var descInput = document.getElementById('card-edit-description');
     var mdPreview = document.getElementById('md-preview');
     var mdToggle = document.getElementById('md-toggle-btn');
-    if (descInput) descInput.style.display = '';
+    if (descEl) descEl.style.display = '';
     if (mdPreview) mdPreview.style.display = 'none';
     if (mdToggle) mdToggle.classList.remove('active');
 
     modal.classList.add('visible');
-    setTimeout(function() { document.getElementById('card-edit-title').focus(); }, 50);
+    if (titleEl) setTimeout(function() { titleEl.focus(); }, 50);
   }
 
   function closeCardModal() {
     var modal = document.getElementById('card-modal');
-    modal.classList.remove('visible');
+    if (modal) modal.classList.remove('visible');
     state.editingCardId = null;
     var picker = document.getElementById('label-picker');
     if (picker) picker.style.display = 'none';
@@ -1585,6 +1597,7 @@
     if (!modal) return;
 
     var body = document.getElementById('stats-modal-body');
+    if (!body) return;
     body.innerHTML = '';
 
     var totalCards = 0;
@@ -1693,7 +1706,7 @@
         row.className = 'stats-bar-row';
         row.innerHTML =
           '<div class="stats-bar-label">' + escapeHtml(key) + '</div>' +
-          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pts + '%; background:var(--accent-gold);"></div></div>' +
+          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%; background:var(--accent-gold);"></div></div>' +
           '<div class="stats-bar-value">' + cnt + '</div>';
         lblSection.appendChild(row);
       });
@@ -1741,6 +1754,8 @@
       settings: state.settings,
       currentBoardId: state.currentBoardId
     };
+
+    var blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json    });
 
     var blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
@@ -1945,7 +1960,7 @@
         }
 
         if (data.checklists) {
-                    var cardChecklists = data.checklists.filter(function(ch) { return ch.idCard === tc.id; });
+          var cardChecklists = data.checklists.filter(function(ch) { return ch.idCard === tc.id; });
           cardChecklists.forEach(function(ch) {
             (ch.checkItems || []).forEach(function(ci) {
               card.subtasks.push({
@@ -2090,7 +2105,7 @@
     if (lines.length < 2) { showToast('CSV too empty'); return; }
 
     var headers = parseCSVLine(lines[0]);
-    var colIdx = {}, titleIdx = -1, descIdx = -1, dueIdx = -1, priIdx = -1, labelsIdx = -1;
+    var colIdx = null, titleIdx = -1, descIdx = -1, dueIdx = -1, priIdx = -1, labelsIdx = -1;
 
     headers.forEach(function(h, i) {
       var hl = h.toLowerCase().trim();
@@ -2116,7 +2131,7 @@
 
     for (var r = 1; r < lines.length; r++) {
       var vals = parseCSVLine(lines[r]);
-      var colName = (typeof colIdx === 'number' && typeof colIdx === 'undefined' ? null : colIdx >= 0) ? (colIdx >= 0 ? vals[colIdx] : 'Default') : 'Default';
+      var colName = colIdx >= 0 ? vals[colIdx] : 'Default';
       if (!colName) colName = 'Default';
       
       if (!colMap[colName]) {
@@ -2346,7 +2361,8 @@
           exportData();
         } else if (e.key === 'b') {
           e.preventDefault();
-          document.getElementById('btn-export').click();
+          var btn = document.getElementById('btn-export');
+          if (btn) btn.click();
         }
         return;
       }
@@ -2373,6 +2389,12 @@
   }
 
   // ========== INITIALIZATION ==========
+  function safeAddListener(id, event, handler) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(event, handler);
+    else console.warn('kanban.js: Element "' + id + '" not found in DOM — skipping ' + event + ' listener.');
+  }
+
   function init() {
     loadData();
 
@@ -2383,7 +2405,8 @@
 
     renderAll();
 
-    document.getElementById('btn-new-board').addEventListener('click', function() {
+    // ===== TOOLBAR BUTTONS =====
+    safeAddListener('btn-new-board', 'click', function() {
       var name = prompt(getTrans('kanban_new_board_prompt') || 'Enter board name:');
       if (name && name.trim()) {
         var template = 'basic';
@@ -2393,115 +2416,143 @@
       }
     });
 
-    document.getElementById('btn-export').addEventListener('click', function() {
+    safeAddListener('btn-export', 'click', function() {
       var menu = document.getElementById('export-options');
-      if (menu.style.display === 'block') { menu.style.display = 'none'; }
-      else { menu.style.display = 'block'; }
+      if (menu) {
+        if (menu.style.display === 'block') { menu.style.display = 'none'; }
+        else { menu.style.display = 'block'; }
+      }
     });
 
-    document.getElementById('btn-import').addEventListener('click', function() {
+    safeAddListener('btn-import', 'click', function() {
       var input = document.getElementById('import-file');
       if (input) input.click();
     });
 
-    document.getElementById('import-file').addEventListener('change', function(e) {
+    safeAddListener('import-file', 'change', function(e) {
       if (e.target.files && e.target.files[0]) {
         importData(e.target.files[0]);
         e.target.value = '';
       }
     });
 
-    document.getElementById('btn-stats').addEventListener('click', openStatsModal);
+    safeAddListener('btn-stats', 'click', openStatsModal);
 
-    document.getElementById('btn-archive-toggle').addEventListener('click', function() {
+    safeAddListener('btn-archive-toggle', 'click', function() {
       state.showArchived = !state.showArchived;
       this.classList.toggle('archive-active', state.showArchived);
       renderBoard();
     });
 
-    document.getElementById('board-selector-btn').addEventListener('click', function(e) {
+    safeAddListener('btn-labels', 'click', function() {
+      openLabelModal();
+    });
+
+    safeAddListener('btn-help', 'click', function() {
+      showToast(getTrans('kanban_shortcuts_help') || 'Shortcuts: N=New, /=Search, Ctrl+S=Export, ?:Help');
+    });
+
+    // ===== BOARD SELECTOR =====
+    safeAddListener('board-selector-btn', 'click', function(e) {
       e.stopPropagation();
       var dropdown = document.getElementById('board-list');
       if (dropdown) dropdown.classList.toggle('visible');
     });
 
-    document.getElementById('filter-btn').addEventListener('click', function(e) {
+    safeAddListener('board-selector-dropdown', 'click', function(e) {
+      e.stopPropagation();
+    });
+
+    // ===== FILTER =====
+    safeAddListener('filter-btn', 'click', function(e) {
       e.stopPropagation();
       var dropdown = document.getElementById('filter-dropdown-content');
       if (dropdown) dropdown.classList.toggle('visible');
     });
 
-    document.getElementById('btn-labels').addEventListener('click', function() {
-      openLabelModal();
+    safeAddListener('filter-dropdown-content', 'click', function(e) {
+      e.stopPropagation();
     });
 
-    document.getElementById('btn-help').addEventListener('click', function() {
-      showToast(getTrans('kanban_shortcuts_help') || 'Shortcuts: N=New, /=Search, Ctrl+S=Export, ?:Help');
-    });
-
-    document.getElementById('btn-add-column').addEventListener('click', function() {
+    // ===== ADD COLUMN =====
+    safeAddListener('btn-add-column', 'click', function() {
       createColumn(getTrans('kanban_new_column') || 'New Column');
     });
 
-    document.getElementById('card-modal-close').addEventListener('click', closeCardModal);
-    document.getElementById('card-modal-overlay').addEventListener('click', closeCardModal);
+    // ===== CARD MODAL =====
+    safeAddListener('card-modal-close', 'click', closeCardModal);
 
-    document.getElementById('card-edit-title').addEventListener('blur', function() {
-      if (!state.editingCardId) return;
-      var title = this.value.trim();
-      if (title) updateCard(state.editingCardId, { title: title });
-    });
-    document.getElementById('card-edit-title').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    var cardOverlay = document.getElementById('card-modal-overlay');
+    if (cardOverlay) cardOverlay.addEventListener('click', closeCardModal);
+
+    safeAddListener('card-modal', 'click', function(e) {
+      if (e.target.id === 'card-modal') closeCardModal();
     });
 
-    document.getElementById('card-edit-description').addEventListener('input', function() {
-      if (!state.editingCardId) return;
-      var desc = this.value;
-      updateCard(state.editingCardId, { description: desc });
-      if (state.mdPreviewMode) {
-        var preview = document.getElementById('md-preview');
-        if (preview) preview.innerHTML = parseMarkdown(desc);
-      }
-    });
+    var titleInput = document.getElementById('card-edit-title');
+    if (titleInput) {
+      titleInput.addEventListener('blur', function() {
+        if (!state.editingCardId) return;
+        var title = this.value.trim();
+        if (title) updateCard(state.editingCardId, { title: title });
+      });
+      titleInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      });
+    }
 
-    document.getElementById('card-edit-description').addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      showFormatMenu(e.clientX, e.clientY, this);
-    });
+    var descInput = document.getElementById('card-edit-description');
+    if (descInput) {
+      descInput.addEventListener('input', function() {
+        if (!state.editingCardId) return;
+        var desc = this.value;
+        updateCard(state.editingCardId, { description: desc });
+        if (state.mdPreviewMode) {
+          var preview = document.getElementById('md-preview');
+          if (preview) preview.innerHTML = parseMarkdown(desc);
+        }
+      });
+      descInput.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showFormatMenu(e.clientX, e.clientY, this);
+      });
+    }
 
-    document.getElementById('md-toggle-btn').addEventListener('click', function() {
+    safeAddListener('md-toggle-btn', 'click', function() {
       state.mdPreviewMode = !state.mdPreviewMode;
-      var descInput = document.getElementById('card-edit-description');
+      var dInput = document.getElementById('card-edit-description');
       var mdPreview = document.getElementById('md-preview');
       if (state.mdPreviewMode) {
-        descInput.style.display = 'none';
-        mdPreview.style.display = '';
-        mdPreview.innerHTML = parseMarkdown(descInput.value);
+        if (dInput) dInput.style.display = 'none';
+        if (mdPreview) { mdPreview.style.display = ''; mdPreview.innerHTML = parseMarkdown(dInput ? dInput.value : ''); }
         this.classList.add('active');
       } else {
-        descInput.style.display = '';
-        mdPreview.style.display = 'none';
+        if (dInput) dInput.style.display = '';
+        if (mdPreview) mdPreview.style.display = 'none';
         this.classList.remove('active');
       }
     });
 
-    document.getElementById('card-edit-due-date').addEventListener('change', function() {
+    safeAddListener('card-edit-due-date', 'change', function() {
       if (!state.editingCardId) return;
       updateCard(state.editingCardId, { dueDate: this.value || null });
       renderBoard();
     });
 
-    document.getElementById('card-edit-due-date').addEventListener('keydown', function(e) {
+    safeAddListener('card-edit-due-date', 'keydown', function(e) {
       if (e.key === 'Enter') { this.blur(); }
     });
 
-    document.getElementById('btn-clear-due').addEventListener('click', function() {
-      document.getElementById('card-edit-due-date').value = '';
-      document.getElementById('card-edit-due-date').dispatchEvent(new Event('change'));
+    safeAddListener('btn-clear-due', 'click', function() {
+      var dueInput = document.getElementById('card-edit-due-date');
+      if (dueInput) {
+        dueInput.value = '';
+        dueInput.dispatchEvent(new Event('change'));
+      }
     });
 
+    // ===== PRIORITY BUTTONS =====
     document.querySelectorAll('.priority-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var pri = parseInt(this.dataset.priority);
@@ -2514,6 +2565,7 @@
       });
     });
 
+    // ===== COLOR SWATCHES =====
     document.querySelectorAll('.color-swatch').forEach(function(swatch) {
       swatch.addEventListener('click', function() {
         var color = this.dataset.color;
@@ -2526,8 +2578,10 @@
       });
     });
 
-    document.getElementById('btn-add-subtask').addEventListener('click', function() {
+    // ===== SUBTASKS =====
+    safeAddListener('btn-add-subtask', 'click', function() {
       var input = document.getElementById('subtask-input');
+      if (!input) return;
       var text = input.value.trim();
       if (text && state.editingCardId) {
         addSubtask(state.editingCardId, text);
@@ -2538,14 +2592,16 @@
       }
     });
 
-    document.getElementById('subtask-input').addEventListener('keydown', function(e) {
+    safeAddListener('subtask-input', 'keydown', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        document.getElementById('btn-add-subtask').click();
+        var btn = document.getElementById('btn-add-subtask');
+        if (btn) btn.click();
       }
     });
 
-    document.getElementById('btn-add-assignment').addEventListener('click', function() {
+    // ===== ASSIGNMENTS =====
+    safeAddListener('btn-add-assignment', 'click', function() {
       var typeInput = document.createElement('input');
       typeInput.type = 'text';
       typeInput.className = 'assignment-input';
@@ -2591,9 +2647,10 @@
       removeBtn.addEventListener('click', function() { row.remove(); });
     });
 
-    document.getElementById('btn-show-labels').addEventListener('click', function() {
+    // ===== LABELS IN MODAL =====
+    safeAddListener('btn-show-labels', 'click', function() {
       var picker = document.getElementById('label-picker');
-      if (state.editingCardId) {
+      if (state.editingCardId && picker) {
         renderLabelPicker(state.editingCardId);
         if (picker.style.display === 'none' || !picker.style.display) {
           picker.style.display = 'block';
@@ -2605,7 +2662,8 @@
       }
     });
 
-    document.getElementById('card-delete-btn').addEventListener('click', function() {
+    // ===== CARD MODAL FOOTER =====
+    safeAddListener('card-delete-btn', 'click', function() {
       if (!state.editingCardId) return;
       var result = getCard(state.editingCardId);
       if (result && confirm(getTrans('kanban_delete_confirm') || 'Delete this card?')) {
@@ -2615,36 +2673,34 @@
       }
     });
 
-    document.getElementById('btn-archive-card').addEventListener('click', function() {
+    safeAddListener('btn-archive-card', 'click', function() {
       if (state.editingCardId) {
         archiveCard(state.editingCardId);
-        showToast(getTrans('kanban_archived') || 'Card archived');
       }
     });
 
-    document.getElementById('btn-duplicate-card').addEventListener('click', function() {
+    safeAddListener('btn-duplicate-card', 'click', function() {
       if (state.editingCardId) {
         duplicateCard(state.editingCardId);
-        showToast(getTrans('kanban_duplicated') || 'Card duplicated');
       }
     });
 
-    document.getElementById('btn-save-card').addEventListener('click', function() {
+    safeAddListener('btn-save-card', 'click', function() {
       closeCardModal();
       showToast(getTrans('kanban_saved') || 'Card saved');
     });
 
-    document.getElementById('card-modal').addEventListener('click', function(e) {
-      if (e.target.id === 'card-modal') closeCardModal();
-    });
+    // ===== LABEL MODAL =====
+    safeAddListener('label-modal-close', 'click', closeLabelModal);
 
-    document.getElementById('label-modal-close').addEventListener('click', closeLabelModal);
-    document.getElementById('label-modal-overlay').addEventListener('click', closeLabelModal);
-    document.getElementById('label-modal').addEventListener('click', function(e) {
+    var labelOverlay = document.getElementById('label-modal-overlay');
+    if (labelOverlay) labelOverlay.addEventListener('click', closeLabelModal);
+
+    safeAddListener('label-modal', 'click', function(e) {
       if (e.target.id === 'label-modal') closeLabelModal();
     });
 
-    document.getElementById('btn-add-label-modal').addEventListener('click', function() {
+    safeAddListener('btn-add-label-modal', 'click', function() {
       var text = prompt(getTrans('kanban_label_name') || 'Label name:');
       if (text) {
         var color = prompt(getTrans('kanban_label_color') || 'Color (hex):', '#6d4aff');
@@ -2655,65 +2711,75 @@
       }
     });
 
-    document.getElementById('btn-close-stats').addEventListener('click', closeStatsModal);
-    document.getElementById('stats-modal').addEventListener('click', function(e) {
+    // ===== STATS MODAL =====
+    safeAddListener('btn-close-stats', 'click', closeStatsModal);
+
+    safeAddListener('stats-modal', 'click', function(e) {
       if (e.target.id === 'stats-modal') closeStatsModal();
     });
 
-    document.getElementById('filter-dropdown-content').addEventListener('click', function(e) {
-      e.stopPropagation();
-    });
+    // ===== EXPORT OPTIONS =====
+    safeAddListener('export-csv', 'click', exportCSV);
+    safeAddListener('export-full', 'click', exportData);
 
-    document.getElementById('board-selector-dropdown').addEventListener('click', function(e) {
-      e.stopPropagation();
-    });
-
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.board-selector')) {
-        document.getElementById('board-list').classList.remove('visible');
-      }
-      if (!e.target.closest('.kanban-filter-dropdown')) {
-        document.getElementById('filter-dropdown-content').classList.remove('visible');
-      }
-      if (!e.target.closest('.kanban-export-group')) {
-        document.getElementById('export-options').style.display = 'none';
-      }
-    });
-
-    document.getElementById('export-csv').addEventListener('click', exportCSV);
-    document.getElementById('export-full').addEventListener('click', exportData);
-
-    document.querySelector('.kanban-search-input').addEventListener('input', function() {
-      state.searchQuery = this.value;
-      applySearchFilter();
-    });
-
-    document.querySelector('.kanban-search-clear').addEventListener('click', function() {
-      var input = document.querySelector('.kanban-search-input');
-      if (input) {
-        input.value = '';
-        state.searchQuery = '';
-        input.dispatchEvent(new Event('input'));
-      }
-    });
-
-    renderFilterDropdown();
-    setupKeyboardShortcuts();
-
-    document.getElementById('column-title-edit').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
-    });
-
+    // ===== SEARCH =====
     var searchInput = document.querySelector('.kanban-search-input');
     if (searchInput) {
-      searchInput.addEventListener('focus', function() {
-        var clear = document.querySelector('.kanban-search-clear');
-        if (clear) clear.style.display = state.searchQuery ? 'inline-block' : 'none';
+      searchInput.addEventListener('input', function() {
+        state.searchQuery = this.value;
+        applySearchFilter();
       });
     }
 
+    var searchClear = document.querySelector('.kanban-search-clear');
+    if (searchClear) {
+      searchClear.addEventListener('click', function() {
+        var sInput = document.querySelector('.kanban-search-input');
+        if (sInput) {
+          sInput.value = '';
+          state.searchQuery = '';
+          sInput.dispatchEvent(new Event('input'));
+        }
+      });
+    }
+
+    // ===== COLUMN TITLE EDIT =====
+    safeAddListener('column-title-edit', 'keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    // ===== GLOBAL CLICK: CLOSE MENUS =====
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.board-selector')) {
+        var bl = document.getElementById('board-list');
+        if (bl) bl.classList.remove('visible');
+      }
+      if (!e.target.closest('.kanban-filter-dropdown')) {
+        var fd = document.getElementById('filter-dropdown-content');
+        if (fd) fd.classList.remove('visible');
+      }
+      if (!e.target.closest('.kanban-export-group')) {
+        var eo = document.getElementById('export-options');
+        if (eo) eo.style.display = 'none';
+      }
+    });
+
+    // ===== ESCAPE KEY (GLOBAL) =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeCardModal();
+        closeLabelModal();
+        closeStatsModal();
+        hideAllMenus();
+      }
+    });
+
+    // ===== INIT UI =====
+    renderFilterDropdown();
+    setupKeyboardShortcuts();
+    toggleEmptyState();
+
     logActivity('app_loaded', 'Kanban app initialized');
-    showToast(getTrans('kanban_welcome') || 'Welcome to orOS Kanban!');
   }
 
   function toggleEmptyState() {
