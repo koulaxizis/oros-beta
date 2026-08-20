@@ -47,6 +47,8 @@
 .fa-header:before        { content: '\f1dc'; }
 .fa-list-ul:before       { content: '\f03a'; }
 .fa-list-ol:before       { content: '\f0cb'; }
+.fa-code:before          { content: '\f121'; }
+.fa-font:before          { content: '\f031'; }
 
 /* ===== TOOLBAR — TOOLS ===== */
 .fa-bullseye:before      { content: '\f140'; }
@@ -78,7 +80,7 @@
 
 /* ===== CONVERTER ===== */
 .fa-text-width:before    { content: '\f035'; }
-.fa-arrow-down:before    { content: '\f063'; }
+.fa-arrow-down:before     { content: '\f063'; }
 
 /* ===== LANDING PAGE TOOL CARDS ===== */
 .fa-book:before          { content: '\f02d'; }
@@ -94,10 +96,17 @@
 
 /* ===== NOTES ICONS ===== */
 .fa-folder:before        { content: '\f07b'; }
+.fa-folder-o:before      { content: '\f114'; }
+.fa-folder-open-o:before { content: '\f115'; }
 .fa-file-text-o:before   { content: '\f0f6'; }
+.fa-file-text:before     { content: '\f15c'; }
 .fa-chevron-right:before { content: '\f054'; }
 .fa-bars:before          { content: '\f0c9'; }
 .fa-share-square-o:before { content: '\f14d'; }
+.fa-columns:before       { content: '\f0db'; }
+.fa-edit:before           { content: '\f044'; }
+.fa-link:before           { content: '\f0c1'; }
+.fa-clock-o:before        { content: '\f017'; }
 
 /* ===== UTILITY ===== */
 .fa-arrow-up:before      { content: '\f062'; }

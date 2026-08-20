@@ -1,9 +1,6 @@
 // ============================================
-// orOS Kanban — Full Implementation (Fixed v1.0)
-// Privacy-first, offline, vanilla JavaScript
-// Features: Multi-board, DnD cards/columns,
-// labels, due dates, assignments, search, filters,
-// import/export, auto-save, persistent settings
+// orOS Kanban — Full Implementation (Fixed v1.5)
+// Changes: Removed auto-save, full export/import, real-time card count
 // ============================================
 
 (function() {
@@ -26,7 +23,6 @@
     draggingColumn: null,
     labelPickerOpen: false,
     settings: {
-      autoSave: false,
       lastImportPath: '',
       lastExportPath: ''
     }
@@ -88,7 +84,6 @@
       state.labels = [];
     }
 
-    // Load settings
     try {
       var settingsRaw = localStorage.getItem(SETTINGS_KEY);
       if (settingsRaw) {
@@ -96,12 +91,10 @@
       }
     } catch(e) {}
 
-    // Ensure default labels exist
     if (state.labels.length === 0) {
       state.labels = DEFAULT_LABELS.slice();
     }
 
-    // Trigger i18n after load (delayed to allow DOM to be ready)
     setTimeout(function() {
       applyTranslations();
     }, 100);
@@ -113,11 +106,6 @@
         boards: state.boards,
         labels: state.labels
       }));
-      
-      // Auto-save to file if enabled
-      if (state.settings.autoSave) {
-        scheduleAutoSave();
-      }
     } catch(e) {
       showToast('Storage limit reached. Try exporting and deleting old boards.');
     }
@@ -127,45 +115,6 @@
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
     } catch(e) {}
-  }
-
-  // ========== AUTO-SAVE ==========
-  var autoSaveTimer = null;
-  
-  function scheduleAutoSave() {
-    if (autoSaveTimer) clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(function() {
-      doAutoSave();
-    }, 5000); // 5 seconds delay after changes
-  }
-
-  function doAutoSave() {
-    var board = getCurrentBoard();
-    if (!board) return;
-    
-    var exportObj = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      board: board,
-      labels: state.labels
-    };
-    
-    var jsonStr = JSON.stringify(exportObj, null, 2);
-    var blob = new Blob([jsonStr], { type: 'application/json' });
-    
-    // Store blob URL for quick download
-    if (state.settings.lastExportUrl) {
-      URL.revokeObjectURL(state.settings.lastExportUrl);
-    }
-    state.settings.lastExportUrl = URL.createObjectURL(blob);
-    saveSettings();
-    
-    // Optionally show subtle indicator
-    var btn = document.getElementById('btn-autosave');
-    if (btn) {
-      btn.classList.add('autosave-active');
-      setTimeout(function() { btn.classList.remove('autosave-active'); }, 500);
-    }
   }
 
   // ========== BOARD OPERATIONS ==========
@@ -188,7 +137,6 @@
       columns: []
     };
 
-    // Default template: 3 columns
     board.columns.push({
       id: genId('col'),
       title: 'To Do',
@@ -227,10 +175,8 @@
     var idx = state.boards.indexOf(board);
     state.boards.splice(idx, 1);
 
-    // Re-order remaining
     state.boards.forEach(function(b, i) { b.order = i; });
 
-    // Switch to next board
     if (state.currentBoardId === boardId) {
       state.currentBoardId = state.boards.length > 0 ? state.boards[0].id : null;
     }
@@ -290,7 +236,6 @@
     var idx = board.columns.indexOf(col);
     board.columns.splice(idx, 1);
 
-    // Re-order
     board.columns.forEach(function(c, i) { c.order = i; });
 
     saveData();
@@ -375,17 +320,14 @@
     var card = fromCol.cards.find(function(c) { return c.id === cardId; });
     if (!card) return;
 
-    // Remove from source
     var fromIdx = fromCol.cards.indexOf(card);
     fromCol.cards.splice(fromIdx, 1);
 
-    // Insert into target
     if (toIndex === undefined || toIndex === null) {
       toIndex = toCol.cards.length;
     }
     toCol.cards.splice(toIndex, 0, card);
 
-    // Re-order both columns
     fromCol.cards.forEach(function(c, i) { c.order = i; });
     toCol.cards.forEach(function(c, i) { c.order = i; });
 
@@ -397,13 +339,13 @@
     var result = getCard(cardId);
     if (!result) return;
     var card = result.card;
-    
+
     var assignment = {
       id: genId('asn'),
       type: type,
       value: value
     };
-    
+
     card.assignments = card.assignments || [];
     card.assignments.push(assignment);
     saveData();
@@ -414,7 +356,7 @@
     if (!result) return;
     var card = result.card;
     if (!card.assignments) return;
-    
+
     var asn = card.assignments.find(function(a) { return a.id === asnId; });
     if (asn) {
       for (var key in updates) {
@@ -429,7 +371,7 @@
     if (!result) return;
     var card = result.card;
     if (!card.assignments) return;
-    
+
     card.assignments = card.assignments.filter(function(a) { return a.id !== asnId; });
     saveData();
   }
@@ -451,7 +393,6 @@
     if (idx === -1) return;
     state.labels.splice(idx, 1);
 
-    // Remove from all cards
     state.boards.forEach(function(board) {
       board.columns.forEach(function(col) {
         col.cards.forEach(function(card) {
@@ -467,7 +408,6 @@
     var label = state.labels.find(function(l) { return l.id === labelId; });
     if (label) {
       label.text = newText;
-      // Update all cards with this label
       state.boards.forEach(function(board) {
         board.columns.forEach(function(col) {
           col.cards.forEach(function(card) {
@@ -580,6 +520,7 @@
         });
         container.appendChild(placeholder);
       }
+      renderBoardSelector();
       return;
     }
 
@@ -598,6 +539,7 @@
     });
     container.appendChild(addPlaceholder);
 
+    renderBoardSelector();
     applySearchFilter();
   }
 
@@ -918,11 +860,9 @@
 
     var inner = '';
 
-    // Body content (title, due date, description)
     var bodyContent = '<div class="card-body-content">';
     bodyContent += '<div class="card-title">' + escapeHtml(card.title) + '</div>';
 
-    // Due date
     if (card.dueDate) {
       var dueClass = '';
       var dueText = formatDate(card.dueDate);
@@ -941,12 +881,10 @@
       bodyContent += '<div class="card-due-date' + dueClass + '"><i class="fa fa-calendar"></i> ' + dueText + '</div>';
     }
 
-    // Description indicator
     if (card.description) {
       bodyContent += '<div class="card-description-indicator"><i class="fa fa-align-left"></i></div>';
     }
 
-    // Assignments (NEW)
     if (card.assignments && card.assignments.length > 0) {
       bodyContent += '<div class="card-assignments">';
       card.assignments.forEach(function(asn) {
@@ -961,7 +899,6 @@
     bodyContent += '</div>';
     inner += bodyContent;
 
-    // Labels at bottom
     if (card.labels && card.labels.length > 0) {
       inner += '<div class="card-labels">';
       card.labels.forEach(function(lbl) {
@@ -972,7 +909,6 @@
 
     cardEl.innerHTML = inner;
 
-    // ===== CARD EVENTS =====
     cardEl.addEventListener('click', function(e) {
       if (cardEl.classList.contains('dragging')) return;
       openCardModal(card.id);
@@ -1030,8 +966,6 @@
     var titleInput = document.getElementById('card-edit-title');
     var descInput = document.getElementById('card-edit-description');
     var dueInput = document.getElementById('card-edit-due-date');
-    var labelsContainer = document.getElementById('card-edit-labels');
-    var assignmentsContainer = document.getElementById('card-edit-assignments');
     var metaCreated = document.getElementById('card-meta-created');
 
     titleInput.value = card.title;
@@ -1107,7 +1041,6 @@
     });
   }
 
-    // ========== ASSIGNMENTS UI ==========
   function renderCardEditAssignments(card) {
     var container = document.getElementById('card-edit-assignments');
     if (!container) return;
@@ -1145,7 +1078,6 @@
       removeBtn.innerHTML = '<i class="fa fa-times"></i>';
       removeBtn.title = 'Remove assignment';
 
-      // Save on blur
       typeInput.addEventListener('blur', function() {
         updateAssignment(state.editingCardId, asn.id, { type: this.value.trim() });
       });
@@ -1153,7 +1085,6 @@
         updateAssignment(state.editingCardId, asn.id, { value: this.value.trim() });
       });
 
-      // Enter key moves to next field
       typeInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); valueInput.focus(); }
       });
@@ -1298,7 +1229,6 @@
       colorInput.value = lbl.color;
       colorInput.addEventListener('change', function() {
         lbl.color = this.value;
-        // Update all cards with this label
         state.boards.forEach(function(board) {
           board.columns.forEach(function(col) {
             col.cards.forEach(function(card) {
@@ -1357,63 +1287,54 @@
     }
   }
 
-  // ========== IMPORT / EXPORT ==========
+  // ========== EXPORT (FULL BACKUP — ALL DATA) ==========
   function exportData() {
-    var board = getCurrentBoard();
-    if (!board) {
-      showToast(getTrans('kanban_no_board') || 'No board to export');
+    if (state.boards.length === 0) {
+      showToast(getTrans('kanban_no_board') || 'No data to export');
       return;
     }
 
     var exportObj = {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
-      board: board,
-      labels: state.labels
+      boards: state.boards,
+      labels: state.labels,
+      settings: state.settings,
+      currentBoardId: state.currentBoardId
     };
 
     var blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'kanban_' + board.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_' +
-                 new Date().toISOString().slice(0,10) + '.json';
+    a.download = 'orOS_Kanban_Backup_' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    // Remember export action
     state.settings.lastExportPath = a.download;
     saveSettings();
-
-    showToast(getTrans('toast_downloaded') || 'Exported');
+    showToast(getTrans('toast_downloaded') || 'Backup exported');
   }
 
+  // ========== IMPORT (FULL RESTORE FROM BACKUP) ==========
   function importData(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       try {
         var data = JSON.parse(e.target.result);
 
-        // Support our own format (with "board" key) or generic board (direct object)
-        var boardData = null;
-        var labelsData = null;
-
-        if (data.board && data.board.id) {
-          boardData = data.board;
-          labelsData = data.labels;
-        } else if (data.id && data.columns) {
-          boardData = data;
-          labelsData = data.labels || [];
-        } else if (data.boards && Array.isArray(data.boards)) {
-          // Bulk import multiple boards
+        // v2.0 format: { boards, labels, settings, currentBoardId }
+        if (data.boards && Array.isArray(data.boards)) {
           data.boards.forEach(function(b) {
-            var existingB = state.boards.find(function(ex) { return ex.id === b.id; });
-            if (existingB) b.id = genId('board');
-            b.order = state.boards.length;
+            var existing = state.boards.find(function(ex) { return ex.id === b.id; });
+            if (existing) {
+              b.id = genId('board');
+            }
             state.boards.push(b);
           });
+
           if (data.labels) {
             data.labels.forEach(function(lbl) {
               var exists = state.labels.find(function(l) {
@@ -1424,46 +1345,60 @@
               }
             });
           }
-          state.currentBoardId = state.boards.length > 0 ? state.boards[state.boards.length - 1].id : null;
+
+          if (data.settings) {
+            state.settings = Object.assign({}, state.settings, data.settings);
+          }
+
+          state.currentBoardId = state.boards.length > 0
+            ? state.boards[state.boards.length - 1].id
+            : null;
+
           saveData();
+          saveSettings();
           renderAll();
           showToast((getTrans('notes_imported') || 'Imported') + ' (' + data.boards.length + ' boards)');
           return;
-        } else {
-          showToast(getTrans('notes_invalid_file') || 'Invalid file');
-          return;
         }
 
-        if (!boardData || !boardData.id) {
-          showToast(getTrans('notes_invalid_file') || 'Invalid file');
-          return;
-        }
+        // v1.0 format: single { board, labels }
+        if (data.board && data.board.id) {
+          var boardData = data.board;
+          var existingB = state.boards.find(function(b) { return b.id === boardData.id; });
+          if (existingB) boardData.id = genId('board');
+          boardData.order = state.boards.length;
 
-        // Check for duplicate ID
-        var existing = state.boards.find(function(b) { return b.id === boardData.id; });
-        if (existing) {
-          boardData.id = genId('board');
-        }
-
-        boardData.order = state.boards.length;
-
-        // Merge labels
-        if (labelsData) {
-          labelsData.forEach(function(lbl) {
-            var exists = state.labels.find(function(l) {
-              return l.text === lbl.text && l.color === lbl.color;
+          if (data.labels) {
+            data.labels.forEach(function(lbl) {
+              var exists = state.labels.find(function(l) {
+                return l.text === lbl.text && l.color === lbl.color;
+              });
+              if (!exists) {
+                state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
+              }
             });
-            if (!exists) {
-              state.labels.push({ id: genId('lbl'), color: lbl.color, text: lbl.text });
-            }
-          });
+          }
+
+          state.boards.push(boardData);
+          state.currentBoardId = boardData.id;
+          saveData();
+          renderAll();
+          showToast(getTrans('toast_opened') || 'Board imported');
+          return;
         }
 
-        state.boards.push(boardData);
-        state.currentBoardId = boardData.id;
-        saveData();
-        renderAll();
-        showToast(getTrans('toast_opened') || 'Board imported');
+        // Legacy: direct board object
+        if (data.id && data.columns) {
+          data.order = state.boards.length;
+          state.boards.push(data);
+          state.currentBoardId = data.id;
+          saveData();
+          renderAll();
+          showToast(getTrans('toast_opened') || 'Board imported');
+          return;
+        }
+
+        showToast(getTrans('notes_invalid_file') || 'Invalid file');
       } catch(err) {
         showToast(getTrans('notes_import_failed') || 'Failed to import');
       }
@@ -1507,10 +1442,8 @@
     if (dropdown) dropdown.classList.remove('visible');
   }
 
-  // ========== TRANSLATION APPLIER (FIXED: no infinite recursion) ==========
+  // ========== TRANSLATION APPLIER ==========
   function applyTranslations() {
-    // Manual translation of data-i18n attributes in kanban components
-    // DO NOT dispatch 'oros-language-changed' event here — it would cause infinite recursion
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');
       var val = getTrans(key);
@@ -1556,7 +1489,6 @@
       });
     }
 
-    // Add board from dropdown
     var addBoardDropdownBtn = document.getElementById('btn-add-board-dropdown');
     if (addBoardDropdownBtn) {
       addBoardDropdownBtn.addEventListener('click', function() {
@@ -1575,26 +1507,6 @@
         var name = prompt(getTrans('kanban_column_name') || 'Column name:', 'New Column');
         if (name && name.trim()) {
           createColumn(name.trim());
-        }
-      });
-    }
-
-        // ===== Auto-save toggle =====
-    var autoSaveBtn = document.getElementById('btn-autosave');
-    if (autoSaveBtn) {
-      if (state.settings.autoSave) {
-        autoSaveBtn.classList.add('autosave-active');
-      }
-      autoSaveBtn.addEventListener('click', function() {
-        state.settings.autoSave = !state.settings.autoSave;
-        saveSettings();
-        if (state.settings.autoSave) {
-          autoSaveBtn.classList.add('autosave-active');
-          showToast(getCurrentLang() === 'el' ? 'Αυτόματη αποθήκευση ενεργή' : 'Auto-save enabled');
-          doAutoSave();
-        } else {
-          autoSaveBtn.classList.remove('autosave-active');
-          showToast(getCurrentLang() === 'el' ? 'Αυτόματη αποθήκευση ανενεργή' : 'Auto-save disabled');
         }
       });
     }
@@ -1682,7 +1594,6 @@
         var descInput = document.getElementById('card-edit-description');
         var dueInput = document.getElementById('card-edit-due-date');
 
-        // Gather assignments from DOM
         var result = getCard(state.editingCardId);
         if (result) {
           var card = result.card;
@@ -1762,7 +1673,6 @@
       });
     }
 
-    // New label creation in picker
     var labelPickerAdd = document.getElementById('label-picker-add');
     var labelPickerNew = document.getElementById('label-picker-new');
     var newLabelSave = document.getElementById('new-label-save');
@@ -1870,7 +1780,7 @@
       }
     });
 
-    // ===== Language Change Listener (FIXED: no recursion) =====
+    // ===== Language Change Listener =====
     window.addEventListener('oros-language-changed', function() {
       renderAll();
       renderFilterDropdown();
@@ -1889,15 +1799,8 @@
       state.currentBoardId = state.boards[0].id;
       renderAll();
     }
-
-    // Apply saved auto-save state
-    if (state.settings.autoSave) {
-      var btn = document.getElementById('btn-autosave');
-      if (btn) btn.classList.add('autosave-active');
-    }
   }
 
-  // FIXED: With defer, DOM is always ready — call init directly
   init();
 
 })();
