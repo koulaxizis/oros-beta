@@ -1,10 +1,8 @@
 // ============================================
-// orOS Notes — Full Implementation v4
-// Privacy-first, offline, vanilla JavaScript
-// Features: Backlinks, Checkboxes, Pinning,
-// Outline, Command Palette, Autocomplete,
-// Focus Mode, Daily Notes, GFM Tables,
-// Related Notes, Multi-format Export
+// orOS Notes — Full Implementation v4.1
+// Bugfixes: command palette blur, checkbox
+// rendering, autocomplete visibility,
+// export dropdown structure & backup
 // ============================================
 
 (function() {
@@ -30,6 +28,7 @@
     graphNodes: [],
     graphEdges: [],
     commandPaletteIndex: 0,
+    commandPaletteResults: [],
     autocompleteResults: [],
     autocompleteIndex: 0,
     focusMode: false
@@ -91,7 +90,6 @@
       if (sidebar) sidebar.classList.add('collapsed');
     }
 
-    // Load focus mode setting
     var focusEnabled = localStorage.getItem('focus_mode_enabled') === 'true';
     if (focusEnabled) {
       var select = document.getElementById('setting-focus-mode');
@@ -261,8 +259,8 @@
       var idx = parent.children.findIndex(function(c) { return c.id === id; });
       if (idx !== -1) parent.children.splice(idx, 1);
     } else {
-      var idx = state.nodes.findIndex(function(n) { return n.id === id; });
-      if (idx !== -1) state.nodes.splice(idx, 1);
+      var idx2 = state.nodes.findIndex(function(n) { return n.id === id; });
+      if (idx2 !== -1) state.nodes.splice(idx2, 1);
     }
   }
 
@@ -400,8 +398,8 @@
       if (idx !== -1) oldParent.children.splice(idx, 1);
       oldParent.modified = Date.now();
     } else {
-      var idx = state.nodes.findIndex(function(n) { return n.id === nodeId; });
-      if (idx !== -1) state.nodes.splice(idx, 1);
+      var idx2 = state.nodes.findIndex(function(n) { return n.id === nodeId; });
+      if (idx2 !== -1) state.nodes.splice(idx2, 1);
     }
 
     if (targetParentId) {
@@ -427,7 +425,7 @@
   // ========== DAILY NOTE ==========
   function createOrOpenDailyNote() {
     var today = new Date();
-    var dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    var dateStr = today.toISOString().split('T')[0];
     var dailyTitle = dateStr;
 
     var existing = getNotes().find(function(n) {
@@ -439,7 +437,7 @@
       renderAll();
     } else {
       var note = createNote(null, dailyTitle);
-      var template = '# ' + dateStr + '\n\n## Tasks\n- [ ]\n\n## Notes\n\n## Meetings\n';
+      var template = '# ' + dateStr + '\n\n## Tasks\n- [ ] \n\n## Notes\n\n## Meetings\n';
       note.content = template;
       note.modified = Date.now();
       saveData();
@@ -464,7 +462,6 @@
 
     container.innerHTML = '';
 
-    // Pinned notes first (root level only)
     var pinnedNotes = getPinnedNotes();
     pinnedNotes.forEach(function(note) {
       container.appendChild(renderTreeNode(note, 0));
@@ -476,7 +473,6 @@
       container.appendChild(divider);
     }
 
-    // Regular root items
     state.nodes.forEach(function(node) {
       container.appendChild(renderTreeNode(node, 0));
     });
@@ -496,7 +492,6 @@
     el.setAttribute('draggable', 'true');
     if (node.id === state.activeNodeId) el.classList.add('active');
 
-    // Drag events
     el.addEventListener('dragstart', function(e) {
       state.draggedNodeId = node.id;
       el.classList.add('dragging');
@@ -638,7 +633,6 @@
     var editorPanel = document.getElementById('notes-editor-panel');
     var editorTitle = document.getElementById('note-title-input');
     var editorContent = document.getElementById('note-editor');
-    var editorPreview = document.getElementById('note-preview');
 
     var note = getNode(state.activeNodeId);
 
@@ -681,13 +675,35 @@
 
     renderEditorPanel();
   }
-  
-    // ========== MARKDOWN PARSER (with checkboxes + GFM tables) ==========
+
+  // ============================================
+  // FIX #3: MARKDOWN PARSER
+  // Checkboxes rendered WITHOUT bullet dashes
+  // Task-list items are extracted BEFORE
+  // the regular list regex runs
+  // ============================================
   function parseMarkdown(text) {
     var html = escapeHtml(text);
 
-    // Code blocks (before other patterns)
-    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    // Extract code blocks first (protect from other transforms)
+    var codeBlocks = [];
+    html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
+      codeBlocks.push(code);
+      return '\x00CODEBLOCK' + (codeBlocks.length - 1) + '\x00';
+    });
+
+    // Extract task-list items BEFORE regular list parsing
+    // This prevents the `- ` regex from catching them as bullets
+    var taskListItems = [];
+    html = html.replace(/^- \[([ x])\] (.+)$/gim, function(m, checked, content) {
+      var idx = taskListItems.length;
+      var isChecked = checked.toLowerCase() === 'x';
+      taskListItems.push({
+        content: content,
+        checked: isChecked
+      });
+      return '\x00TASKITEM' + idx + '\x00';
+    });
 
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -715,42 +731,49 @@
     html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
 
     // Blockquotes
-    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
 
     // Horizontal rule
     html = html.replace(/^---$/gm, '<hr>');
 
-    // Task list items (checkboxes) — must run before regular lists
-    html = html.replace(/^\- \[ \] (.+)$/gm, '<ul class="task-list"><li class="unchecked"><input type="checkbox">$1</li>');
-    html = html.replace(/^\- \[x\] (.+)$/gim, '<ul class="task-list"><li class="checked"><input type="checkbox" checked>$1</li>');
-
-    // Close task-list uls
-    html = html.replace(/(<ul class="task-list">.*?<\/li>\n?)(?!<li)/gs, function(m) {
-      return m + '</ul>';
-    });
-
-    // Merge consecutive task-list items
-    html = html.replace(/(<\/ul>\n?<ul class="task-list">)/g, '');
-
-    // Regular unordered lists
-    html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
+    // Regular unordered lists — will NOT catch task items (they're placeholdered)
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m) {
-      if (m.indexOf('task-list') !== -1) return m;
       return '<ul>' + m + '</ul>';
     });
 
     // Ordered lists
-    html = html.replace(/^\d+\. (.+)$/gm, '<ol_start><li>$1</li>');
-    html = html.replace(/<ol_start>(<li>.*<\/li>\n?)+/g, function(m) {
-      return '<ol>' + m.replace(/<ol_start>/g, '') + '</ol>';
+    html = html.replace(/^\d+\. (.+)$/gm, '<ol_item><li>$1</li>');
+    html = html.replace(/(<ol_item>(?:<li>.*<\/li>\n?)+)/g, function(m) {
+      return '<ol>' + m.replace(/<ol_item>/g, '') + '</ol>';
     });
 
-    // Paragraphs
+    // Restore task-list items as proper HTML
+    html = html.replace(/\x00TASKITEM(\d+)\x00/g, function(m, idxStr) {
+      var idx = parseInt(idxStr, 10);
+      var item = taskListItems[idx];
+      if (!item) return m;
+      var checkedAttr = item.checked ? ' checked' : '';
+      var cls = item.checked ? 'checked' : 'unchecked';
+      return '<ul class="task-list"><li class="' + cls + '"><input type="checkbox"' + checkedAttr + '>' + item.content + '</li></ul>';
+    });
+
+    // Merge consecutive task-list uls into one
+    html = html.replace(/(<\/ul>\n?<ul class="task-list">)/g, '');
+
+    // Restore code blocks
+    html = html.replace(/\x00CODEBLOCK(\d+)\x00/g, function(m, idxStr) {
+      var idx = parseInt(idxStr, 10);
+      return '<pre><code>' + codeBlocks[idx] + '</code></pre>';
+    });
+
+    // Paragraphs — wrap orphan text lines
     html = html.replace(/^(?!<[hopu]|<blockquote|<hr|<pre|<li|<\/)[^\n]+$/gm, function(m) {
       if (m.trim()) return '<p>' + m + '</p>';
       return m;
     });
 
+    // Merge consecutive paragraphs
     html = html.replace(/(<p>.*?<\/p>\s*)+/g, function(m) {
       return m.replace(/\s*<\/p>\s*<p>\s*/g, '</p><p>');
     });
@@ -759,14 +782,11 @@
   }
 
   function parseGfmTables(html) {
-    // Match table blocks: header row | separator | body rows
-    var tableRegex = /(^|.+\n)((?:\|[^\n]+\n))(?:\|[-:\s|]+\n)((?:\|[^\n]+\n?)+)/gm;
-    return html.replace(tableRegex, function(match, prefix, headerRow, bodyRows) {
-      // Parse header
+    var tableRegex = /((?:\|[^\n]+\n))(?:\|[-:\s|]+\n)((?:\|[^\n]+\n?)+)/gm;
+    return html.replace(tableRegex, function(match, headerRow, bodyRows) {
       var headers = headerRow.trim().split('|').map(function(h) { return h.trim(); }).filter(function(h) { return h.length > 0; });
       var headerHtml = '<thead><tr>' + headers.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead>';
 
-      // Parse body
       var rows = bodyRows.trim().split('\n');
       var bodyHtml = '<tbody>';
       rows.forEach(function(row) {
@@ -839,11 +859,9 @@
     var editor = document.getElementById('note-editor');
     if (!editor) return;
 
-    // Find which checkbox index this is
     var allCheckboxes = document.querySelectorAll('.note-preview .task-list input[type="checkbox"]');
     var clickedIndex = Array.prototype.indexOf.call(allCheckboxes, checkboxEl);
 
-    // Find the corresponding - [ ] or - [x] in textarea
     var lines = editor.value.split('\n');
     var checkboxLineIndex = 0;
     for (var i = 0; i < lines.length; i++) {
@@ -1071,7 +1089,11 @@
     });
   }
 
-  // ========== MULTI-FORMAT EXPORT ==========
+  // ============================================
+  // FIX #5: MULTI-FORMAT EXPORT
+  // Complete rewrite: unified .visible class,
+  // grouped dropdown, JSON backup + import
+  // ============================================
   function exportData(scope, format) {
     if (scope === 'note') {
       exportSingleNote(format);
@@ -1147,6 +1169,8 @@
       nodes: state.nodes
     };
 
+    var jsonStr = JSON.stringify(data, null, 2);
+
     if (window.showSaveFilePicker) {
       window.showSaveFilePicker({
         suggestedName: 'notes_backup_' + new Date().toISOString().slice(0,10) + '.json',
@@ -1154,15 +1178,18 @@
       }).then(function(handle) {
         return handle.createWritable();
       }).then(function(writable) {
-        return writable.write(JSON.stringify(data, null, 2)).then(function() { return writable.close(); });
+        return writable.write(jsonStr).then(function() { return writable.close(); });
       }).then(function() {
-        showToast('Exported successfully');
+        showToast('Backup exported successfully');
       }).catch(function(e) {
-        if (e.name !== 'AbortError') downloadBlob(JSON.stringify(data, null, 2), 'notes_backup.json', 'application/json');
+        if (e.name !== 'AbortError') {
+          downloadBlob(jsonStr, 'notes_backup.json', 'application/json');
+          showToast('Backup exported');
+        }
       });
     } else {
-      downloadBlob(JSON.stringify(data, null, 2), 'notes_backup.json', 'application/json');
-      showToast('Exported');
+      downloadBlob(jsonStr, 'notes_backup.json', 'application/json');
+      showToast('Backup exported');
     }
   }
 
@@ -1215,13 +1242,13 @@
     frame.srcdoc = html;
     frame.onload = function() {
       try {
+        frame.contentWindow.focus();
         frame.contentWindow.print();
       } catch(e) {
         showToast('Print failed. Try opening in new tab.');
       }
     };
 
-    // Fallback for srcdoc issues
     setTimeout(function() {
       try {
         if (frame.contentDocument && frame.contentDocument.body) {
@@ -1290,7 +1317,6 @@
           renderAll();
           showToast((getTrans('notes_imported') || 'Imported') + ': ' + importedCount + ' items');
         } else if (ext === 'md' || ext === 'txt') {
-          // Single note import
           var content = e.target.result;
           var title = file.name.replace(/\.(md|txt)$/i, '');
           var note = createNote(null, title);
@@ -1306,6 +1332,15 @@
     };
     reader.readAsText(file);
   }
+  
+      // Bind import item inside export dropdown
+    var exportImportItem = document.getElementById('export-import-item');
+    if (exportImportItem && importInput) {
+      exportImportItem.addEventListener('click', function() {
+        importInput.click();
+        hideExportDropdown();
+      });
+    }
 
   // ========== TOGGLE / VIEW ==========
   function toggleSidebar() {
@@ -1377,8 +1412,8 @@
     } else if (tabName === 'preview') {
       if (tabPreview) tabPreview.classList.add('active');
       applyViewMode('preview');
-      var editor = document.getElementById('note-editor');
-      if (editor) syncPreview(editor.value);
+      var ed = document.getElementById('note-editor');
+      if (ed) syncPreview(ed.value);
     }
   }
 
@@ -1455,7 +1490,6 @@
       positions[node.id] = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
     });
 
-    // Edges
     ctx.strokeStyle = 'rgba(200, 169, 110, 0.3)';
     ctx.lineWidth = 1;
     edges.forEach(function(edge) {
@@ -1469,7 +1503,6 @@
       }
     });
 
-    // Nodes
     nodes.forEach(function(node) {
       var pos = positions[node.id];
       if (!pos) return;
@@ -1499,22 +1532,26 @@
   function openGraphModal() {
     var modal = document.getElementById('graph-modal');
     if (!modal) return;
-    modal.style.display = 'flex';
+    modal.classList.add('visible');
     setTimeout(renderGraph, 50);
   }
 
   function closeGraphModal() {
     var modal = document.getElementById('graph-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('visible');
   }
 
-  // ========== COMMAND PALETTE ==========
+  // ============================================
+  // FIX #1: COMMAND PALETTE
+  // Uses .visible class consistently,
+  // overlay has NO backdrop-filter
+  // ============================================
   function openCommandPalette() {
     var modal = document.getElementById('command-palette-modal');
     var input = document.getElementById('command-palette-input');
     if (!modal || !input) return;
 
-    modal.style.display = 'flex';
+    modal.classList.add('visible');
     input.value = '';
     state.commandPaletteIndex = 0;
 
@@ -1524,7 +1561,7 @@
 
   function closeCommandPalette() {
     var modal = document.getElementById('command-palette-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('visible');
   }
 
   function getCommands() {
@@ -1546,15 +1583,18 @@
       { label: 'Graph View', icon: 'fa-share-square-o', type: 'command', action: openGraphModal },
       { label: 'Toggle Sidebar', icon: 'fa-bars', type: 'command', action: toggleSidebar },
       { label: 'Toggle Focus Mode', icon: 'fa-bullseye', type: 'command', action: toggleFocusMode },
-      { label: 'Export All (JSON)', icon: 'fa-download', type: 'command', action: function() { exportAllNotes('json'); }},
-      { label: 'Export All (Markdown)', icon: 'fa-file-text-o', type: 'command', action: function() { exportAllNotes('md'); }},
-      { label: 'Export All (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportAllNotes('pdf'); }},
-      { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
-      { label: 'Export Current Note (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportSingleNote('pdf'); }},
+      { label: 'Backup Database (JSON)', icon: 'fa-database', type: 'command', action: function() { exportJsonBackup(); }},
       { label: 'Import Notes', icon: 'fa-folder-open', type: 'command', action: function() {
         var input = document.getElementById('import-file-input');
         if (input) input.click();
-      }}
+      }},
+      { label: 'Export All (Markdown)', icon: 'fa-file-text-o', type: 'command', action: function() { exportAllNotes('md'); }},
+      { label: 'Export All (Text)', icon: 'fa-file-o', type: 'command', action: function() { exportAllNotes('txt'); }},
+      { label: 'Export All (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportAllNotes('doc'); }},
+      { label: 'Export All (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportAllNotes('pdf'); }},
+      { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
+      { label: 'Export Current Note (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportSingleNote('doc'); }},
+      { label: 'Export Current Note (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportSingleNote('pdf'); }}
     ];
   }
 
@@ -1568,7 +1608,6 @@
     var results = [];
     var lowerQuery = query.toLowerCase().trim();
 
-    // Commands (show all if no query, or if query starts with '>')
     if (query === '' || query.startsWith('>')) {
       var cmdQuery = query.startsWith('>') ? query.slice(1).trim() : '';
       var lowerCmdQuery = cmdQuery.toLowerCase();
@@ -1584,7 +1623,6 @@
       });
     }
 
-    // Notes (fuzzy search)
     if (query !== '' && !query.startsWith('>')) {
       notes.forEach(function(note) {
         if (note.title.toLowerCase().includes(lowerQuery) ||
@@ -1598,7 +1636,6 @@
         }
       });
 
-      // Tag search
       if (lowerQuery.startsWith('#')) {
         var tagQ = lowerQuery.slice(1);
         notes.forEach(function(note) {
@@ -1640,7 +1677,7 @@
   }
 
   function updateCommandPaletteSelection() {
-    var items = document.querySelectorAll('.cmd-item');
+    var items = document.querySelectorAll('#command-palette-results .cmd-item');
     items.forEach(function(item, i) {
       item.classList.toggle('selected', i === state.commandPaletteIndex);
     });
@@ -1657,7 +1694,6 @@
     }
     updateCommandPaletteSelection();
 
-    // Scroll into view
     var selected = document.querySelector('.cmd-item.selected');
     if (selected) selected.scrollIntoView({ block: 'nearest' });
   }
@@ -1670,7 +1706,11 @@
     closeCommandPalette();
   }
 
-  // ========== AUTOCOMPLETE ([[ ) ==========
+  // ============================================
+  // FIX #4: AUTOCOMPLETE
+  // position: fixed so it escapes overflow:hidden
+  // Proper coordinates from getCBoundingClientRect
+  // ============================================
   function handleAutocomplete() {
     var editor = document.getElementById('note-editor');
     var dropdown = document.getElementById('autocomplete-dropdown');
@@ -1679,30 +1719,25 @@
     var cursorPos = editor.selectionStart;
     var textBefore = editor.value.substring(0, cursorPos);
 
-    // Look for [[ that's not yet closed
     var lastOpen = textBefore.lastIndexOf('[[');
     if (lastOpen === -1) {
       hideAutocomplete();
       return;
     }
 
-    // Check if ]] appeared after [[ (closed)
     var textAfterOpen = textBefore.substring(lastOpen + 2);
     if (textAfterOpen.includes(']]')) {
       hideAutocomplete();
       return;
     }
 
-    // Get the query (what's typed after [[)
     var query = textAfterOpen.trim();
 
-    // If cursor moved past the [[ area or newline, hide
     if (query.includes('\n')) {
       hideAutocomplete();
       return;
     }
 
-    // Find matching notes
     var notes = getNotes();
     var matching = notes.filter(function(n) {
       return n.title.toLowerCase().includes(query.toLowerCase());
@@ -1717,6 +1752,7 @@
     state.autocompleteIndex = 0;
 
     var listEl = document.getElementById('autocomplete-list');
+    if (!listEl) return;
     listEl.innerHTML = '';
 
     matching.forEach(function(note, i) {
@@ -1732,7 +1768,8 @@
       }
       item.innerHTML = '<i class="fa fa-file-text-o"></i>' + escapeHtml(note.title) + tagHtml;
 
-      item.addEventListener('click', function() {
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
         insertAutocomplete(note.title, lastOpen, cursorPos);
       });
       item.addEventListener('mouseenter', function() {
@@ -1742,16 +1779,20 @@
       listEl.appendChild(item);
     });
 
-    // Position dropdown below cursor
-    // Approximate position using textarea metrics
-    var lineHeight = 21;
+    // Position using fixed coordinates from textarea bounding rect
+    var rect = editor.getBoundingClientRect();
+    var lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 21;
+
     var linesBefore = textBefore.split('\n').length - 1;
     var charsInLastLine = textBefore.length - textBefore.lastIndexOf('\n') - 1;
-    var charWidth = 7.2;
+    var charWidth = parseFloat(getComputedStyle(editor).fontSize) * 0.55;
 
     dropdown.style.display = 'block';
-    dropdown.style.left = Math.min(charsInLastLine * charWidth + 16, editor.clientWidth - 220) + 'px';
-    dropdown.style.top = ((linesBefore + 1) * lineHeight + 16 - editor.scrollTop) + 'px';
+    dropdown.style.left = Math.min(
+      rect.left + charsInLastLine * charWidth + 18,
+      window.innerWidth - 260
+    ) + 'px';
+    dropdown.style.top = (rect.top + (linesBefore + 1) * lineHeight + 4 - editor.scrollTop) + 'px';
   }
 
   function updateAutocompleteSelection() {
@@ -1771,7 +1812,6 @@
     var editor = document.getElementById('note-editor');
     if (!editor) return;
 
-    // Replace [[query with [[NoteTitle]]
     var before = editor.value.substring(0, openPos);
     var after = editor.value.substring(cursorPos);
     var insertion = '[[' + noteTitle + ']]';
@@ -1908,7 +1948,7 @@
 
     input.value = noteName;
     state.pendingLinkId = noteName;
-    modal.style.display = 'flex';
+    modal.classList.add('visible');
     renderNoteResults(noteName);
 
     setTimeout(function() { input.focus(); input.select(); }, 50);
@@ -1916,7 +1956,7 @@
 
   function closeLinkPickerModal() {
     var modal = document.getElementById('link-picker-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('visible');
     state.pendingLinkId = null;
   }
 
@@ -2026,21 +2066,19 @@
     if (preview && preview.style.display !== 'none') syncPreview(editor.value);
   }
 
-  // ========== EXPORT DROPDOWN ==========
+  // ============================================
+  // FIX #5: EXPORT DROPDOWN
+  // Unified: uses .visible class only
+  // ============================================
   function toggleExportDropdown() {
     var dropdown = document.getElementById('export-dropdown');
     if (!dropdown) return;
-
-    if (dropdown.style.display === 'none' || dropdown.classList.contains('visible')) {
-      dropdown.classList.toggle('visible');
-    } else {
-      dropdown.classList.add('visible');
-    }
+    dropdown.classList.toggle('visible');
   }
 
   function hideExportDropdown() {
     var dropdown = document.getElementById('export-dropdown');
-    if (dropdown) { dropdown.style.display = 'none'; dropdown.classList.remove('visible'); }
+    if (dropdown) dropdown.classList.remove('visible');
   }
 
   // ========== SETTINGS MODAL ==========
@@ -2056,7 +2094,7 @@
     if (focusCb) focusCb.checked = localStorage.getItem('focus_mode_enabled') === 'true';
   }
 
-  function closeSettingsModal() {
+    function closeSettingsModal() {
     var modal = document.getElementById('settings-modal');
     if (modal) modal.classList.remove('visible');
   }
@@ -2148,7 +2186,8 @@
     if (btnGraph) btnGraph.addEventListener('click', openGraphModal);
     if (btnCmdPalette) btnCmdPalette.addEventListener('click', openCommandPalette);
 
-    // Graph modal close
+    // ===== Graph Modal Close =====
+    var graphModal = document.getElementById('graph-modal');
     var graphOverlay = document.getElementById('graph-modal-overlay');
     var graphClose = document.getElementById('graph-modal-close');
     if (graphOverlay) graphOverlay.addEventListener('click', closeGraphModal);
@@ -2211,32 +2250,30 @@
     var btnMdToggle = document.getElementById('btn-markdown-toggle');
     if (btnMdToggle) btnMdToggle.addEventListener('click', toggleMarkdownPreview);
 
-    // ===== Export Dropdown =====
+    // ===== FIX #5: Export Dropdown (class-based toggle) =====
     var btnExport = document.getElementById('btn-export');
-    var exportDropdown = document.getElementById('export-dropdown');
-
     if (btnExport) {
       btnExport.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (exportDropdown) {
-          var isVisible = exportDropdown.style.display === 'block';
-          exportDropdown.style.display = isVisible ? 'none' : 'block';
-        }
+        toggleExportDropdown();
       });
     }
 
+    // Bind export items (current note + all notes + backup)
+    var exportDropdown = document.getElementById('export-dropdown');
     if (exportDropdown) {
       exportDropdown.querySelectorAll('.export-item').forEach(function(item) {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+          e.stopPropagation();
           var scope = this.getAttribute('data-scope');
           var format = this.getAttribute('data-format');
           exportData(scope, format);
-          exportDropdown.style.display = 'none';
+          hideExportDropdown();
         });
       });
     }
 
-    // ===== Export Current Note (quick button) =====
+    // ===== Export Current Note (quick button in editor footer) =====
     var btnExportNote = document.getElementById('btn-export-note');
     if (btnExportNote) btnExportNote.addEventListener('click', function() { exportSingleNote('md'); });
 
@@ -2290,11 +2327,10 @@
           wordsEl.textContent = words + ' ' + (getTrans('text_words') || 'words');
         }
 
-        // Autocomplete check
+        // FIX #4: Autocomplete check on every input
         handleAutocomplete();
       });
 
-      // Right-click formatting
       noteEditor.addEventListener('contextmenu', function(e) {
         if (noteEditor.selectionStart !== noteEditor.selectionEnd) {
           e.preventDefault();
@@ -2302,7 +2338,7 @@
         }
       });
 
-      // Tab/Arrow keys for autocomplete
+      // Keyboard handling for autocomplete
       noteEditor.addEventListener('keydown', function(e) {
         var dropdown = document.getElementById('autocomplete-dropdown');
         var acVisible = dropdown && dropdown.style.display === 'block';
@@ -2368,7 +2404,7 @@
       });
     }
 
-    // ===== Context Menus =====
+    // ===== Context Menus: global close =====
     var contextMenu = document.getElementById('context-menu');
     var editorCtxMenu = document.getElementById('editor-context-menu');
 
@@ -2379,10 +2415,16 @@
       if (editorCtxMenu && editorCtxMenu.classList.contains('visible')) {
         if (!editorCtxMenu.contains(e.target)) hideEditorContextMenu();
       }
-      // Close export dropdown
+      // Close export dropdown on outside click
       var exportDD = document.getElementById('export-dropdown');
-      if (exportDD && exportDD.style.display === 'block') {
-        if (!e.target.closest('.export-dropdown-wrapper')) exportDD.style.display = 'none';
+      if (exportDD && exportDD.classList.contains('visible')) {
+        if (!e.target.closest('.export-dropdown-wrapper')) hideExportDropdown();
+      }
+      // Hide autocomplete on outside click
+      var ac = document.getElementById('autocomplete-dropdown');
+      if (ac && ac.style.display === 'block' && !ac.contains(e.target)) {
+        // keep it visible if click is inside editor (handled by input event)
+        if (!e.target.closest('#note-editor')) hideAutocomplete();
       }
     });
 
@@ -2431,7 +2473,7 @@
       });
     }
 
-    // ===== Modals =====
+    // ===== Rename Modal =====
     var renameOverlay = document.getElementById('rename-modal-overlay');
     var renameClose = document.getElementById('rename-modal-close');
     var renameCancel = document.getElementById('rename-cancel');
@@ -2449,6 +2491,7 @@
       });
     }
 
+    // ===== Link Picker Modal =====
     var lpOverlay = document.getElementById('link-picker-modal-overlay');
     var lpClose = document.getElementById('link-picker-modal-close');
     var lpCancel = document.getElementById('link-picker-cancel');
@@ -2467,7 +2510,7 @@
       });
     }
 
-    // ===== Command Palette =====
+    // ===== FIX #1: Command Palette (class-based) =====
     var cpOverlay = document.getElementById('command-palette-overlay');
     var cpInput = document.getElementById('command-palette-input');
 
@@ -2486,45 +2529,56 @@
 
     // ===== Settings Modal =====
     setupSettingsModal();
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('#btn-settings')) openSettingsModal();
-    }, true);
+    var btnSettings = document.getElementById('btn-settings');
+    if (btnSettings) btnSettings.addEventListener('click', function() { openSettingsModal(); });
 
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', function(e) {
-      var inModal = document.querySelector('.modal.visible') ||
-                   (document.getElementById('link-picker-modal') && document.getElementById('link-picker-modal').style.display === 'flex') ||
-                   (document.getElementById('graph-modal') && document.getElementById('graph-modal').style.display === 'flex') ||
-                   (document.getElementById('command-palette-modal') && document.getElementById('command-palette-modal').style.display === 'flex') ||
-                   (document.getElementById('settings-modal') && document.getElementById('settings-modal').classList.contains('visible'));
+      var cpModal = document.getElementById('command-palette-modal');
+      var inCommandPalette = cpModal && cpModal.classList.contains('visible');
 
-      // Escape always closes modals
+      // Escape always closes everything
       if (e.key === 'Escape') {
         hideContextMenu();
         hideEditorContextMenu();
         closeGraphModal();
         closeCommandPalette();
+        closeSettingsModal();
+        closeRenameModal();
+        closeLinkPickerModal();
         hideAutocomplete();
-        var exportDD = document.getElementById('export-dropdown');
-        if (exportDD) exportDD.style.display = 'none';
-        var dropdowns = document.querySelectorAll('.dropdown-content.visible');
-        dropdowns.forEach(function(d) { d.classList.remove('visible'); });
+        hideExportDropdown();
+        return;
       }
 
+      // Don't intercept when command palette is open
+      if (inCommandPalette) return;
+
+      var inModal = document.querySelector('.modal.visible') ||
+                   (document.getElementById('link-picker-modal') && document.getElementById('link-picker-modal').classList.contains('visible')) ||
+                   (document.getElementById('graph-modal') && document.getElementById('graph-modal').classList.contains('visible')) ||
+                   (document.getElementById('settings-modal') && document.getElementById('settings-modal').classList.contains('visible'));
       if (inModal) return;
 
-      // Ctrl+P command palette
-      if (e.ctrlKey && e.key === 'p') {
+      var ed = document.getElementById('note-editor');
+      var inEditor = (document.activeElement === ed);
+
+      // Ctrl+P — command palette
+      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         openCommandPalette();
         return;
       }
 
-      // Ctrl+S export
-      if (e.ctrlKey && e.key === 's') { e.preventDefault(); exportAllNotes('json'); return; }
+      // Ctrl+S — JSON backup of whole database
+      if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        exportJsonBackup();
+        return;
+      }
 
-      // Ctrl+N new note
-      if (e.ctrlKey && e.key === 'n') {
+      // Ctrl+N — new note
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         var activeNode = getNode(state.activeNodeId);
         var parentId = (activeNode && activeNode.type === 'folder') ? activeNode.id : null;
@@ -2532,41 +2586,39 @@
         return;
       }
 
-      // Ctrl+D daily note
-      if (e.ctrlKey && e.key === 'd') {
+      // Ctrl+D — daily note
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         createOrOpenDailyNote();
         return;
       }
 
-      // Ctrl+E export current
-      if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportSingleNote('md'); return; }
+      // Ctrl+E — export current note as MD
+      if (e.ctrlKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        exportSingleNote('md');
+        return;
+      }
 
-      // Ctrl+Shift+F search
-      if (e.ctrlKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+      // Ctrl+Shift+F — focus search
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         var search = document.getElementById('notes-search');
         if (search) search.focus();
         return;
       }
 
-      // Ctrl+B bold
-      if (e.ctrlKey && e.key === 'b') {
-        var ed = document.getElementById('note-editor');
-        if (document.activeElement === ed && ed.selectionStart !== ed.selectionEnd) {
-          e.preventDefault();
-          applyFormatToSelection('bold');
-        }
+      // Ctrl+B — bold (only in editor with selection)
+      if (e.ctrlKey && e.key.toLowerCase() === 'b' && inEditor && ed.selectionStart !== ed.selectionEnd) {
+        e.preventDefault();
+        applyFormatToSelection('bold');
         return;
       }
 
-      // Ctrl+I italic
-      if (e.ctrlKey && e.key === 'i') {
-        var ed = document.getElementById('note-editor');
-        if (document.activeElement === ed && ed.selectionStart !== ed.selectionEnd) {
-          e.preventDefault();
-          applyFormatToSelection('italic');
-        }
+      // Ctrl+I — italic (only in editor with selection)
+      if (e.ctrlKey && e.key.toLowerCase() === 'i' && inEditor && ed.selectionStart !== ed.selectionEnd) {
+        e.preventDefault();
+        applyFormatToSelection('italic');
         return;
       }
     });
@@ -2578,6 +2630,7 @@
     window.addEventListener('resize', function() {
       hideContextMenu();
       hideEditorContextMenu();
+      hideAutocomplete();
     });
   }
 

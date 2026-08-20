@@ -1,8 +1,9 @@
 // ============================================
 // orOS Kanban — Full Implementation v2.0
-// Features: Multi-format import, board rename/reorder,
-// subtasks, archive, priority, card colors, markdown,
-// statistics, quick-add, duplicate, CSV export, activity log
+// Features: Multi-format import (Trello/Brisqi/Kanri/CSV),
+// board rename/reorder, subtasks, archive, priority,
+// card colors, markdown, statistics, quick-add,
+// duplicate, CSV export, activity log, context menu
 // ============================================
 
 (function() {
@@ -175,7 +176,6 @@
         detail: detail,
         ts: Date.now()
       });
-      // Keep last 50 per board
       if (logs[boardId].length > 50) logs[boardId] = logs[boardId].slice(0, 50);
       localStorage.setItem(ACTIVITY_KEY, JSON.stringify(logs));
     } catch(e) {}
@@ -342,17 +342,12 @@
     copy.title = board.title + ' (copy)';
     copy.order = state.boards.length;
 
-    // Regenerate all IDs
     copy.columns.forEach(function(col) {
       col.id = genId('col');
       col.cards.forEach(function(card) {
         card.id = genId('card');
-        if (card.subtasks) {
-          card.subtasks.forEach(function(st) { st.id = genId('st'); });
-        }
-        if (card.assignments) {
-          card.assignments.forEach(function(a) { a.id = genId('asn'); });
-        }
+        if (card.subtasks) card.subtasks.forEach(function(st) { st.id = genId('st'); });
+        if (card.assignments) card.assignments.forEach(function(a) { a.id = genId('asn'); });
       });
     });
 
@@ -576,11 +571,7 @@
     if (!result) return;
     var card = result.card;
     card.subtasks = card.subtasks || [];
-    card.subtasks.push({
-      id: genId('st'),
-      text: text,
-      completed: false
-    });
+    card.subtasks.push({ id: genId('st'), text: text, completed: false });
     saveData();
   }
 
@@ -745,50 +736,25 @@
 
       // Reorder up
       var upBtn = item.querySelector('.board-reorder-btn.up');
-      if (upBtn) {
-        upBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          reorderBoard(board.id, 'up');
-        });
-      }
+      if (upBtn) upBtn.addEventListener('click', function(e) { e.stopPropagation(); reorderBoard(board.id, 'up'); });
 
       // Reorder down
       var downBtn = item.querySelector('.board-reorder-btn.down');
-      if (downBtn) {
-        downBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          reorderBoard(board.id, 'down');
-        });
-      }
+      if (downBtn) downBtn.addEventListener('click', function(e) { e.stopPropagation(); reorderBoard(board.id, 'down'); });
 
-      // Rename
+      // Rename (pencil)
       var renameBtn = item.querySelector('.board-rename-btn');
-      if (renameBtn) {
-        renameBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          startBoardRename(board, renameBtn);
-        });
-      }
+      if (renameBtn) renameBtn.addEventListener('click', function(e) { e.stopPropagation(); startBoardRename(board, renameBtn); });
 
-      // Double-click name to rename
+      // Double-click name
       var nameSpan = item.querySelector('.board-list-item-name');
-      if (nameSpan) {
-        nameSpan.addEventListener('dblclick', function(e) {
-          e.stopPropagation();
-          startBoardRename(board, nameSpan);
-        });
-      }
+      if (nameSpan) nameSpan.addEventListener('dblclick', function(e) { e.stopPropagation(); startBoardRename(board, nameSpan); });
 
       // Delete
       var delBtn = item.querySelector('.board-list-item-delete');
-      if (delBtn) {
-        delBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          deleteBoard(board.id);
-        });
-      }
+      if (delBtn) delBtn.addEventListener('click', function(e) { e.stopPropagation(); deleteBoard(board.id); });
 
-      // Disable reorder buttons at edges
+      // Edge disable
       if (idx === 0) upBtn.style.visibility = 'hidden';
       if (idx === boards.length - 1) downBtn.style.visibility = 'hidden';
 
@@ -796,9 +762,7 @@
     });
 
     var current = getCurrentBoard();
-    if (current && nameEl) {
-      nameEl.textContent = current.title;
-    }
+    if (current && nameEl) nameEl.textContent = current.title;
   }
 
   function startBoardRename(board, anchorEl) {
@@ -816,9 +780,7 @@
 
     function finishEdit() {
       var newTitle = input.value.trim();
-      if (newTitle && newTitle !== board.title) {
-        renameBoard(board.id, newTitle);
-      }
+      if (newTitle && newTitle !== board.title) renameBoard(board.id, newTitle);
       input.style.display = 'none';
       input.removeEventListener('blur', finishEdit);
       input.removeEventListener('keydown', onKeydown);
@@ -844,12 +806,10 @@
     var board = getCurrentBoard();
     container.innerHTML = '';
 
-    // Archive bar
     if (state.showArchived && board) {
       var archiveBar = document.createElement('div');
       archiveBar.className = 'archive-bar';
-      archiveBar.innerHTML =
-        '<i class="fa fa-archive"></i> ' +
+      archiveBar.innerHTML = '<i class="fa fa-archive"></i> ' +
         (getCurrentLang() === 'el' ? 'Προβολή αρχειοθετημένων καρτών' : 'Showing archived cards');
       container.appendChild(archiveBar);
     }
@@ -1338,7 +1298,8 @@
       checkbox.addEventListener('change', function() {
         toggleSubtask(state.editingCardId, st.id);
         textInput.classList.toggle('completed', checkbox.checked);
-        updateSubtaskProgressOnCard();
+        var result = getCard(state.editingCardId);
+        if (result) renderBoard();
       });
 
       textInput.addEventListener('blur', function() {
@@ -1359,12 +1320,6 @@
       item.appendChild(delBtn);
       container.appendChild(item);
     });
-  }
-
-  function updateSubtaskProgressOnCard() {
-    // Just re-render the board to update progress bars
-    var board = getCurrentBoard();
-    if (board) renderBoard();
   }
 
   function renderCardEditLabels(card) {
@@ -1632,7 +1587,6 @@
     var body = document.getElementById('stats-modal-body');
     body.innerHTML = '';
 
-    // Calculate stats
     var totalCards = 0;
     var archivedCards = 0;
     var overdueCards = 0;
@@ -1665,7 +1619,6 @@
 
     var activeCards = totalCards - archivedCards;
 
-    // KPI grid
     var grid = document.createElement('div');
     grid.className = 'stats-grid';
     grid.innerHTML =
@@ -1675,7 +1628,6 @@
       '<div class="stat-card"><div class="stat-value">' + overdueCards + '</div><div class="stat-label">Overdue</div></div>';
     body.appendChild(grid);
 
-    // Subtask progress
     if (totalSubtasks > 0) {
       var stSection = document.createElement('div');
       stSection.innerHTML = '<div class="stats-section-title">Subtask Completion</div>';
@@ -1690,7 +1642,6 @@
       body.appendChild(stSection);
     }
 
-    // Cards per column
     var colSection = document.createElement('div');
     colSection.innerHTML = '<div class="stats-section-title">Cards per Column</div>';
     var maxCards = 1;
@@ -1711,7 +1662,6 @@
     });
     body.appendChild(colSection);
 
-    // Priority distribution
     if (priorityCounts[1] + priorityCounts[2] + priorityCounts[3] > 0) {
       var priSection = document.createElement('div');
       priSection.innerHTML = '<div class="stats-section-title">Priority Distribution</div>';
@@ -1731,7 +1681,6 @@
       body.appendChild(priSection);
     }
 
-    // Label distribution
     var labelKeys = Object.keys(labelCounts);
     if (labelKeys.length > 0) {
       var lblSection = document.createElement('div');
@@ -1744,14 +1693,13 @@
         row.className = 'stats-bar-row';
         row.innerHTML =
           '<div class="stats-bar-label">' + escapeHtml(key) + '</div>' +
-          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%; background:var(--accent-gold);"></div></div>' +
+          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pts + '%; background:var(--accent-gold);"></div></div>' +
           '<div class="stats-bar-value">' + cnt + '</div>';
         lblSection.appendChild(row);
       });
       body.appendChild(lblSection);
     }
 
-    // Activity log
     var logs = getActivityLog(board.id);
     if (logs.length > 0) {
       var logSection = document.createElement('div');
@@ -1778,7 +1726,7 @@
     if (modal) modal.classList.remove('visible');
   }
 
-  // ========== EXPORT (FULL BACKUP — ALL DATA) ==========
+  // ========== EXPORT (FULL BACKUP) ==========
   function exportData() {
     if (state.boards.length === 0) {
       showToast(getTrans('kanban_no_board') || 'No data to export');
@@ -1866,25 +1814,18 @@
       try {
         var content = e.target.result;
 
-        // Try JSON first
         if (file.name.endsWith('.json') || content.trim().startsWith('{') || content.trim().startsWith('[')) {
           var data = JSON.parse(content);
 
-          // Detect format
           if (data.boards && Array.isArray(data.boards)) {
-            // orOS native v2.0
             importNative(data);
           } else if (data.lists && Array.isArray(data.lists)) {
-            // Trello
             importFromTrello(data);
           } else if (data.columns && Array.isArray(data.columns) && data.id) {
-            // Brisqi or Kanri single board
             importFromBrisqiOrKanri(data);
           } else if (data.board && data.board.id) {
-            // orOS v1.0
             importNativeV1(data);
           } else if (data.id && data.columns) {
-            // Legacy direct board object
             importLegacyBoard(data);
           } else {
             showToast('Unrecognized JSON format');
@@ -1892,7 +1833,6 @@
           return;
         }
 
-        // Try CSV
         if (file.name.endsWith('.csv') || content.includes(',')) {
           importFromCSV(content);
           return;
@@ -1930,7 +1870,7 @@
   function importNativeV1(data) {
     var boardData = data.board;
     var existingB = state.boards.find(function(b) { return b.id === boardData.id; });
-	    if (existingB) boardData.id = genId('board');
+    if (existingB) boardData.id = genId('board');
     boardData.order = state.boards.length;
 
     if (data.labels) {
@@ -1965,22 +1905,13 @@
       columns: []
     };
 
-    // Map Trello lists → columns
     var lists = (data.lists || []).filter(function(l) { return !l.closed; });
     lists.sort(function(a, b) { return (a.pos || 0) - (b.pos || 0); });
 
     lists.forEach(function(list, idx) {
-      var col = {
-        id: genId('col'),
-        title: list.name || 'Column',
-        order: idx,
-        cards: []
-      };
+      var col = { id: genId('col'), title: list.name || 'Column', order: idx, cards: [] };
 
-      // Find cards for this list
-      var trelloCards = (data.cards || []).filter(function(c) {
-        return c.idList === list.id && !c.closed;
-      });
+      var trelloCards = (data.cards || []).filter(function(c) { return c.idList === list.id && !c.closed; });
       trelloCards.sort(function(a, b) { return (a.pos || 0) - (b.pos || 0); });
 
       trelloCards.forEach(function(tc, cardIdx) {
@@ -2000,7 +1931,6 @@
           order: cardIdx
         };
 
-        // Map Trello labels
         if (tc.labels && tc.labels.length > 0) {
           tc.labels.forEach(function(tl) {
             var color = TRELLO_COLORS[tl.color] || '#6d4aff';
@@ -2014,31 +1944,27 @@
           });
         }
 
-        // Map Trello checklists → subtasks
         if (data.checklists) {
-          var cardChecklists = data.checklists.filter(function(cl) { return cl.idCard === tc.id; });
-          cardChecklists.forEach(function(cl) {
-            if (cl.checkItems) {
-              cl.checkItems.forEach(function(ci) {
-                card.subtasks.push({
-                  id: genId('st'),
-                  text: ci.name,
-                  completed: ci.state === 'complete'
-                });
+                    var cardChecklists = data.checklists.filter(function(ch) { return ch.idCard === tc.id; });
+          cardChecklists.forEach(function(ch) {
+            (ch.checkItems || []).forEach(function(ci) {
+              card.subtasks.push({
+                id: genId('st'),
+                text: ci.name || '',
+                completed: ci.state === 'complete'
               });
-            }
+            });
           });
         }
 
-        // Map Trello members → assignments
-        if (tc.idMembers && tc.idMembers.length > 0 && data.members) {
-          tc.idMembers.forEach(function(memberId) {
-            var member = data.members.find(function(m) { return m.id === memberId; });
+        if (tc.idMembers && tc.idMembers.length > 0) {
+          tc.idMembers.forEach(function(memId) {
+            var member = (data.members || []).find(function(m) { return m.id === memId; });
             if (member) {
               card.assignments.push({
                 id: genId('asn'),
-                type: 'Assignee',
-                value: member.fullName || member.username || 'Unknown'
+                type: 'Member',
+                value: member.fullName || member.username || memId
               });
             }
           });
@@ -2054,7 +1980,6 @@
     state.currentBoardId = board.id;
     saveData();
     renderAll();
-    logActivity('imported', 'Trello board: ' + board.title);
     showToast('Trello board imported (' + lists.length + ' columns)');
   }
 
@@ -2067,86 +1992,67 @@
       columns: []
     };
 
-    var cols = data.columns || [];
-    cols.sort(function(a, b) { return (a.order || a.position || 0) - (b.order || b.position || 0); });
+    var columns = data.columns || [];
+    columns.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
 
-    cols.forEach(function(srcCol, idx) {
+    columns.forEach(function(colData, idx) {
       var col = {
         id: genId('col'),
-        title: srcCol.title || 'Column',
+        title: colData.title || 'Column',
         order: idx,
         cards: []
       };
 
-      var srcCards = srcCol.cards || [];
-      srcCards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+      var cards = colData.cards || [];
+      cards.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
 
-      srcCards.forEach(function(sc, cardIdx) {
+      cards.forEach(function(cd, cardIdx) {
         var card = {
           id: genId('card'),
-          title: sc.title || 'Untitled',
-          description: sc.description || '',
+          title: cd.title || 'Untitled',
+          description: cd.description || '',
           labels: [],
           assignments: [],
           subtasks: [],
-          dueDate: null,
-          priority: 0,
-          color: '',
-          archived: sc.archived || false,
-          created: sc.createdAt ? new Date(sc.createdAt).getTime() : Date.now(),
-          modified: sc.updatedAt ? new Date(sc.updatedAt).getTime() : Date.now(),
+          dueDate: cd.dueDate || null,
+          priority: cd.priority || 0,
+          color: cd.color || '',
+          archived: cd.archived || false,
+          created: cd.created || Date.now(),
+          modified: Date.now(),
           order: cardIdx
         };
 
-        // Due date
-        if (sc.dueDate) {
-          var dd = new Date(sc.dueDate);
-          if (!isNaN(dd.getTime())) card.dueDate = dd.toISOString().split('T')[0];
-        }
-
-        // Color
-        if (sc.color) card.color = sc.color;
-
-        // Tags → labels
-        if (sc.tags && Array.isArray(sc.tags)) {
-          sc.tags.forEach(function(tag) {
-            var tagText = typeof tag === 'string' ? tag : (tag.name || tag.text || 'tag');
-            var tagColor = (typeof tag === 'object' && tag.color) ? tag.color : '#6d4aff';
-            var existing = state.labels.find(function(l) { return l.text === tagText && l.color === tagColor; });
+        if (cd.labels) {
+          cd.labels.forEach(function(lblData) {
+            var existing = state.labels.find(function(l) { 
+              return l.text === lblData.text && l.color === lblData.color; 
+            });
             if (!existing) {
-              existing = { id: genId('lbl'), color: tagColor, text: tagText };
+              existing = { id: genId('lbl'), color: lblData.color, text: lblData.text };
               state.labels.push(existing);
             }
             card.labels.push({ id: existing.id, color: existing.color, text: existing.text });
           });
         }
 
-        // Subtasks / checklists
-        if (sc.subtasks && Array.isArray(sc.subtasks)) {
-          sc.subtasks.forEach(function(st) {
+        if (cd.subtasks) {
+          cd.subtasks.forEach(function(st) {
             card.subtasks.push({
               id: genId('st'),
-              text: st.title || st.text || '',
+              text: st.text || '',
               completed: st.completed || false
             });
           });
         }
-        if (sc.checklist && Array.isArray(sc.checklist)) {
-          sc.checklist.forEach(function(item) {
-            card.subtasks.push({
-              id: genId('st'),
-              text: item.title || item.text || '',
-              completed: item.completed || false
-            });
-          });
-        }
 
-        // Assignee
-        if (sc.assignee) {
-          card.assignments.push({
-            id: genId('asn'),
-            type: 'Assignee',
-            value: typeof sc.assignee === 'string' ? sc.assignee : (sc.assignee.name || sc.assignee.email || 'Unknown')
+        if (cd.assignments) {
+          cd.assignments.forEach(function(asn) {
+            card.assignments.push({
+              id: genId('asn'),
+              type: asn.type || 'Assignment',
+              value: asn.value || ''
+            });
           });
         }
 
@@ -2156,684 +2062,714 @@
       board.columns.push(col);
     });
 
+    if (data.labels) {
+      data.labels.forEach(function(lblData) {
+        var exists = state.labels.find(function(l) {
+          return l.text === lblData.text && l.color === lblData.color;
+        });
+        if (!exists) {
+          state.labels.push({
+            id: genId('lbl'),
+            color: lblData.color || '#6d4aff',
+            text: lblData.text || 'label'
+          });
+        }
+      });
+    }
+
     state.boards.push(board);
     state.currentBoardId = board.id;
     saveData();
     renderAll();
-    logActivity('imported', 'Brisqi/Kanri board: ' + board.title);
-    showToast('Board imported (' + cols.length + ' columns)');
+    showToast('Brisqi/Kanri board imported (' + columns.length + ' columns)');
   }
 
   // ========== IMPORT: CSV ==========
   function importFromCSV(content) {
-    var lines = content.split(/\r?\n/).filter(function(l) { return l.trim(); });
-    if (lines.length < 2) { showToast('CSV is empty'); return; }
+    var lines = content.split('\n').filter(function(l) { return l.trim(); });
+    if (lines.length < 2) { showToast('CSV too empty'); return; }
 
-    // Parse header
-    var headers = parseCSVLine(lines[0]).map(function(h) { return h.toLowerCase().trim(); });
+    var headers = parseCSVLine(lines[0]);
+    var colIdx = {}, titleIdx = -1, descIdx = -1, dueIdx = -1, priIdx = -1, labelsIdx = -1;
 
-    // Find column indices
-    var titleIdx = findHeader(headers, ['card title', 'title', 'name', 'task']);
-    var colIdx = findHeader(headers, ['column', 'list', 'status', 'stage']);
-    var descIdx = findHeader(headers, ['description', 'desc', 'details']);
-    var dueIdx = findHeader(headers, ['due date', 'due', 'deadline']);
-    var labelsIdx = findHeader(headers, ['labels', 'tags']);
-    var priIdx = findHeader(headers, ['priority']);
-    var asnIdx = findHeader(headers, ['assignments', 'assignee', 'assigned']);
+    headers.forEach(function(h, i) {
+      var hl = h.toLowerCase().trim();
+      if (hl === 'column' || hl === 'list' || hl === 'stack') colIdx = i;
+      if (hl === 'title' || hl === 'name') titleIdx = i;
+      if (hl === 'description' || hl === 'desc') descIdx = i;
+      if (hl === 'due date' || hl === 'duedate' || hl === 'due') dueIdx = i;
+      if (hl === 'priority' || hl === 'pri') priIdx = i;
+      if (hl === 'labels' || hl === 'tags') labelsIdx = i;
+    });
 
-    if (titleIdx === -1) { showToast('CSV must have a Title/Name column'); return; }
+    if (titleIdx === -1) { showToast('No title column found in CSV'); return; }
 
-    // Group cards by column
-    var columnsMap = {};
-    var columnOrder = [];
-
-    for (var i = 1; i < lines.length; i++) {
-      var cells = parseCSVLine(lines[i]);
-      var cardTitle = cells[titleIdx] || 'Untitled';
-      var colName = colIdx >= 0 ? (cells[colIdx] || 'Imported') : 'Imported';
-
-      if (!columnsMap[colName]) {
-        columnsMap[colName] = [];
-        columnOrder.push(colName);
-      }
-
-      var card = {
-        id: genId('card'),
-        title: cardTitle,
-        description: descIdx >= 0 ? (cells[descIdx] || '') : '',
-        labels: [],
-        assignments: [],
-        subtasks: [],
-        dueDate: null,
-        priority: 0,
-        color: '',
-        archived: false,
-        created: Date.now(),
-        modified: Date.now(),
-        order: columnsMap[colName].length
-      };
-
-      if (dueIdx >= 0 && cells[dueIdx]) {
-        var parsed = new Date(cells[dueIdx]);
-        if (!isNaN(parsed.getTime())) card.dueDate = parsed.toISOString().split('T')[0];
-      }
-
-      if (labelsIdx >= 0 && cells[labelsIdx]) {
-        var tagList = cells[labelsIdx].split(/[;,]/);
-        tagList.forEach(function(tag) {
-          tag = tag.trim();
-          if (!tag) return;
-          var existing = state.labels.find(function(l) { return l.text === tag; });
-          if (!existing) {
-            existing = { id: genId('lbl'), color: '#6d4aff', text: tag };
-            state.labels.push(existing);
-          }
-          card.labels.push({ id: existing.id, color: existing.color, text: existing.text });
-        });
-      }
-
-      if (priIdx >= 0 && cells[priIdx]) {
-        var priText = cells[priIdx].toLowerCase().trim();
-        if (priText === 'high' || priText === '3') card.priority = 3;
-        else if (priText === 'medium' || priText === 'med' || priText === '2') card.priority = 2;
-        else if (priText === 'low' || priText === '1') card.priority = 1;
-      }
-
-      if (asnIdx >= 0 && cells[asnIdx]) {
-        card.assignments.push({ id: genId('asn'), type: 'Assignee', value: cells[asnIdx] });
-      }
-
-      columnsMap[colName].push(card);
-    }
-
-    // Build board
     var board = {
       id: genId('board'),
-      title: 'CSV Import ' + new Date().toISOString().slice(0, 10),
+      title: 'Imported from CSV',
       order: state.boards.length,
       columns: []
     };
 
-    columnOrder.forEach(function(colName, idx) {
-      board.columns.push({
-        id: genId('col'),
-        title: colName,
-        order: idx,
-        cards: columnsMap[colName]
-      });
-    });
+    var colMap = {};
+    var labelSet = {};
+
+    for (var r = 1; r < lines.length; r++) {
+      var vals = parseCSVLine(lines[r]);
+      var colName = (typeof colIdx === 'number' && typeof colIdx === 'undefined' ? null : colIdx >= 0) ? (colIdx >= 0 ? vals[colIdx] : 'Default') : 'Default';
+      if (!colName) colName = 'Default';
+      
+      if (!colMap[colName]) {
+        colMap[colName] = { id: genId('col'), title: colName, order: Object.keys(colMap).length, cards: [] };
+        board.columns.push(colMap[colName]);
+      }
+
+      var card = {
+        id: genId('card'),
+        title: titleIdx >= 0 ? vals[titleIdx] : 'Untitled',
+        description: descIdx >= 0 ? (vals[descIdx] || '') : '',
+        labels: [],
+        assignments: [],
+        subtasks: [],
+        dueDate: dueIdx >= 0 ? vals[dueIdx] : null,
+        priority: priIdx >= 0 ? parseInt(vals[priIdx]) || 0 : 0,
+        color: '',
+        archived: false,
+        created: Date.now(),
+        modified: Date.now(),
+        order: colMap[colName].cards.length
+      };
+
+      if (labelsIdx >= 0 && vals[labelsIdx]) {
+        vals[labelsIdx].split(';').forEach(function(lbl) {
+          lbl = lbl.trim();
+          if (!lbl) return;
+          if (!labelSet[lbl]) {
+            labelSet[lbl] = { id: genId('lbl'), color: '#6d4aff', text: lbl };
+            state.labels.push(labelSet[lbl]);
+          }
+          card.labels.push({ id: labelSet[lbl].id, color: labelSet[lbl].color, text: labelSet[lbl].text });
+        });
+      }
+
+      colMap[colName].cards.push(card);
+    }
 
     state.boards.push(board);
     state.currentBoardId = board.id;
     saveData();
     renderAll();
-    logActivity('imported', 'CSV board: ' + board.title);
-    showToast('CSV imported (' + (lines.length - 1) + ' cards, ' + columnOrder.length + ' columns)');
+    showToast('CSV imported (' + (r - 1) + ' cards, ' + Object.keys(colMap).length + ' columns)');
   }
 
   function parseCSVLine(line) {
     var result = [];
     var current = '';
     var inQuotes = false;
-
     for (var i = 0; i < line.length; i++) {
       var ch = line[i];
       if (ch === '"') {
-        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-        else { inQuotes = !inQuotes; }
-      } else if (ch === ',' && !inQuotes) {
-        result.push(current);
-        current = '';
-      } else {
-        current += ch;
-      }
+        if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+      else current += ch;
     }
     result.push(current);
-    return result;
+    return result.map(function(v) { return v.trim(); });
   }
 
-  function findHeader(headers, candidates) {
-    for (var i = 0; i < candidates.length; i++) {
-      var idx = headers.indexOf(candidates[i]);
-      if (idx !== -1) return idx;
+  // ========== CONTEXT MENU ==========
+  function showFormatMenu(x, y, inputElement) {
+    hideAllMenus();
+
+    var menu = document.createElement('div');
+    menu.className = 'format-context-menu';
+    menu.id = 'format-context-menu-temp';
+
+    var cmds = [
+      { icon: 'fa-bold', label: getTrans('kanban_bold') || 'Bold', cmd: '**' },
+      { icon: 'fa-italic', label: getTrans('kanban_italic') || 'Italic', cmd: '*' },
+      { icon: 'fa-strikethrough', label: getTrans('kanban_strikethrough') || 'Strikethrough', cmd: '~~' },
+      { icon: 'fa-code', label: getTrans('kanban_code') || 'Code', cmd: '`' },
+      { divider: true },
+      { icon: 'fa-header', label: getTrans('kanban_h3') || 'Heading', cmd: '### ' },
+      { icon: 'fa-list-ul', label: getTrans('kanban_bullet_list') || 'Bullet List', cmd: '- ' }
+    ];
+
+    cmds.forEach(function(c) {
+      if (c.divider) {
+        var div = document.createElement('div');
+        div.className = 'format-divider';
+        menu.appendChild(div);
+      } else {
+        var btn = document.createElement('button');
+        btn.className = 'format-cmd';
+        btn.innerHTML = '<i class="fa ' + c.icon + '"></i> ' + c.label;
+        btn.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          applyFormatting(inputElement, c.cmd);
+          hideAllMenus();
+        });
+        menu.appendChild(btn);
+      }
+    });
+
+    document.body.appendChild(menu);
+
+    var rect = menu.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 10;
+    if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 10;
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = '';
+
+    setTimeout(function() {
+      document.addEventListener('click', hideAllMenusOnce);
+      window.addEventListener('scroll', hideAllMenusOnce);
+    }, 0);
+  }
+
+  function hideAllMenus() {
+    var temp = document.getElementById('format-context-menu-temp');
+    if (temp) temp.remove();
+    document.querySelectorAll('.board-selector-dropdown, .filter-dropdown-content, .kanban-export-menu').forEach(function(el) {
+      el.classList.remove('visible');
+    });
+    state.labelPickerOpen = false;
+    var picker = document.getElementById('label-picker');
+    if (picker) picker.style.display = 'none';
+  }
+
+  function hideAllMenusOnce() {
+    hideAllMenus();
+    document.removeEventListener('click', hideAllMenusOnce);
+    window.removeEventListener('scroll', hideAllMenusOnce);
+  }
+
+  function applyFormatting(inputEl, marker) {
+    if (!inputEl || inputEl.tagName !== 'TEXTAREA') return;
+
+    var start = inputEl.selectionStart;
+    var end = inputEl.selectionEnd;
+    var text = inputEl.value;
+
+    var before = text.substring(0, start);
+    var selected = text.substring(start, end);
+    var after = text.substring(end);
+
+    var newText;
+    var newCursorPos;
+
+    if (marker === '**') {
+      if (selected.length > 0) {
+        newText = before + marker + selected + marker + after;
+        newCursorPos = end + marker.length * 2;
+      } else {
+        newText = before + marker + marker + after;
+        newCursorPos = start + marker.length;
+      }
+    } else if (marker === '*') {
+      if (selected.length > 0) {
+        newText = before + marker + selected + marker + after;
+        newCursorPos = end + marker.length * 2;
+      } else {
+        newText = before + marker + marker + after;
+        newCursorPos = start + marker.length;
+      }
+    } else if (marker === '~~') {
+      if (selected.length > 0) {
+        newText = before + marker + selected + marker + after;
+        newCursorPos = end + marker.length * 2;
+      } else {
+        newText = before + marker + marker + after;
+        newCursorPos = start + marker.length;
+      }
+    } else if (marker === '`') {
+      if (selected.length > 0) {
+        newText = before + marker + selected + marker + after;
+        newCursorPos = end + marker.length * 2;
+      } else {
+        newText = before + marker + marker + after;
+        newCursorPos = start + marker.length;
+      }
+    } else if (marker === '### ') {
+      if (before.endsWith('\n')) {
+        newText = before + marker + after;
+        newCursorPos = start + marker.length;
+      } else {
+        newText = before + '\n' + marker + after;
+        newCursorPos = start + marker.length + 1;
+      }
+    } else if (marker === '- ') {
+      if (before.endsWith('\n')) {
+        newText = before + marker + after;
+        newCursorPos = start + marker.length;
+      } else if (before.length === 0) {
+        newText = marker + after;
+        newCursorPos = marker.length;
+      } else {
+        newText = before + '\n' + marker + after;
+        newCursorPos = start + marker.length + 1;
+      }
     }
-    return -1;
-  }
 
-  // ========== EMPTY STATE ==========
-  function toggleEmptyState() {
-    var emptyState = document.getElementById('kanban-empty-state');
-    var boardArea = document.getElementById('kanban-board-area');
-    var toolbar = document.getElementById('kanban-toolbar');
+    inputEl.value = newText;
+    inputEl.focus();
 
-    if (state.boards.length === 0) {
-      if (emptyState) emptyState.style.display = 'flex';
-      if (boardArea) boardArea.style.display = 'none';
-      if (toolbar) toolbar.style.display = 'none';
+    if (selected.length > 0) {
+      inputEl.setSelectionRange(newCursorPos - marker.length * 2, newCursorPos);
     } else {
-      if (emptyState) emptyState.style.display = 'none';
-      if (boardArea) boardArea.style.display = '';
-      if (toolbar) toolbar.style.display = '';
+      inputEl.setSelectionRange(newCursorPos, newCursorPos);
     }
+
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  function closeBoardSelector() {
-    var dropdown = document.getElementById('board-selector-dropdown');
-    if (dropdown) dropdown.classList.remove('visible');
-  }
-
-  // ========== TRANSLATION APPLIER ==========
-  function applyTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(function(el) {
-      var key = el.getAttribute('data-i18n');
-      var val = getTrans(key);
-      if (val && val !== key) el.textContent = val;
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-      var key = el.getAttribute('data-i18n-placeholder');
-      var val = getTrans(key);
-      if (val && val !== key) el.setAttribute('placeholder', val);
-    });
-    document.querySelectorAll('[data-i18n-aria]').forEach(function(el) {
-      var key = el.getAttribute('data-i18n-aria');
-      var val = getTrans(key);
-      if (val && val !== key) el.setAttribute('aria-label', val);
-    });
-  }
-
-  // ========== QUICK ADD ==========
-  function quickAddCard() {
-    var board = getCurrentBoard();
-    if (!board) return;
-
-    // Find first column
-    var cols = board.columns.slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-    if (cols.length === 0) { showToast('Create a column first'); return; }
-
-    // Show inline prompt via toast-like overlay
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-panel,#252320);border:1px solid var(--border-color);border-radius:8px;padding:16px;z-index:20000;display:flex;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Quick add card...';
-    input.style.cssText = 'background:var(--bg-dark,#1b1a18);border:1px solid var(--border-color);color:var(--text-primary);padding:8px 12px;border-radius:4px;font-size:14px;outline:none;width:280px;font-family:var(--font-primary);';
-    var btnAdd = document.createElement('button');
-    btnAdd.textContent = 'Add';
-    btnAdd.style.cssText = 'background:var(--accent-gold);color:#1b1a18;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:700;font-family:var(--font-primary);';
-
-    overlay.appendChild(input);
-    overlay.appendChild(btnAdd);
-    document.body.appendChild(overlay);
-    input.focus();
-
-    function close() { document.body.removeChild(overlay); }
-    function submit() {
-      var title = input.value.trim();
-      if (title) {
-        createCard(cols[0].id, title);
-        showToast('Card added to "' + cols[0].title + '"');
-      }
-      close();
-    }
-
-    btnAdd.addEventListener('click', submit);
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); submit(); }
-      else if (e.key === 'Escape') { close(); }
-    });
-  }
-
-  // ========== SETUP ==========
-  function setup() {
-
-    // ===== Board Selector =====
-    var boardBtn = document.getElementById('board-selector-btn');
-    var boardDropdown = document.getElementById('board-selector-dropdown');
-
-    if (boardBtn && boardDropdown) {
-      boardBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        boardDropdown.classList.toggle('visible');
-      });
-      document.addEventListener('click', function() { boardDropdown.classList.remove('visible'); });
-      boardDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-
-    var addBoardDropdownBtn = document.getElementById('btn-add-board-dropdown');
-    if (addBoardDropdownBtn) {
-      addBoardDropdownBtn.addEventListener('click', function() {
-        var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
-        if (name && name.trim()) {
-          createBoard(name.trim());
-          closeBoardSelector();
-        }
-      });
-    }
-
-    // ===== Add Column =====
-    var addColBtn = document.getElementById('btn-add-column');
-    if (addColBtn) {
-      addColBtn.addEventListener('click', function() {
-        var name = prompt(getTrans('kanban_column_name') || 'Column name:', 'New Column');
-        if (name && name.trim()) createColumn(name.trim());
-      });
-    }
-
-    // ===== Import =====
-    var importBtn = document.getElementById('btn-import');
-    var importInput = document.getElementById('import-file-input');
-    if (importBtn && importInput) {
-      importBtn.addEventListener('click', function() { importInput.click(); });
-      importInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-          importData(this.files[0]);
-          state.settings.lastImportPath = this.files[0].name;
-          saveSettings();
-          this.value = '';
-        }
-      });
-    }
-
-    // ===== Export Menu =====
-    var exportBtn = document.getElementById('btn-export');
-    var exportMenu = document.getElementById('kanban-export-menu');
-    if (exportBtn && exportMenu) {
-      exportBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        exportMenu.style.display = exportMenu.style.display === 'none' ? 'block' : 'none';
-      });
-      document.addEventListener('click', function() { exportMenu.style.display = 'none'; });
-      exportMenu.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-
-    var exportJsonBtn = document.getElementById('btn-export-json');
-    if (exportJsonBtn) exportJsonBtn.addEventListener('click', function() {
-      exportData();
-      exportMenu.style.display = 'none';
-    });
-
-    var exportCsvBtn = document.getElementById('btn-export-csv');
-    if (exportCsvBtn) exportCsvBtn.addEventListener('click', function() {
-      exportCSV();
-      exportMenu.style.display = 'none';
-    });
-
-    // ===== Archive Toggle =====
-    var archiveToggle = document.getElementById('btn-archive-toggle');
-    if (archiveToggle) {
-      archiveToggle.addEventListener('click', function() {
-        state.showArchived = !state.showArchived;
-        archiveToggle.classList.toggle('archive-active', state.showArchived);
-        renderBoard();
-      });
-    }
-
-    // ===== Stats Button =====
-    var statsBtn = document.getElementById('btn-stats');
-    if (statsBtn) {
-      statsBtn.addEventListener('click', openStatsModal);
-    }
-
-    var statsModalClose = document.getElementById('stats-modal-close');
-    var statsModalOverlay = document.getElementById('stats-modal-overlay');
-    if (statsModalClose) statsModalClose.addEventListener('click', closeStatsModal);
-    if (statsModalOverlay) statsModalOverlay.addEventListener('click', closeStatsModal);
-
-    // ===== Search =====
-    var searchInput = document.getElementById('kanban-search');
-    var searchClear = document.getElementById('kanban-search-clear');
-    if (searchInput) {
-      searchInput.addEventListener('input', function() {
-        state.searchQuery = this.value;
-        if (searchClear) searchClear.style.display = this.value ? 'block' : 'none';
-        applySearchFilter();
-      });
-    }
-    if (searchClear) {
-      searchClear.addEventListener('click', function() {
-        if (searchInput) {
-          searchInput.value = '';
-          state.searchQuery = '';
-          searchClear.style.display = 'none';
-          applySearchFilter();
-          searchInput.focus();
-        }
-      });
-    }
-
-    // ===== Filter Dropdown =====
-    var filterBtn = document.getElementById('filter-btn');
-    var filterDropdown = document.getElementById('filter-dropdown-content');
-    if (filterBtn && filterDropdown) {
-      filterBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        renderFilterDropdown();
-        filterDropdown.classList.toggle('visible');
-      });
-      document.addEventListener('click', function() { filterDropdown.classList.remove('visible'); });
-      filterDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-
-    // ===== Card Modal =====
-    var modalOverlay = document.getElementById('card-modal-overlay');
-    var modalClose = document.getElementById('card-modal-close');
-    var btnSaveCard = document.getElementById('btn-save-card');
-    var btnDeleteCard = document.getElementById('btn-delete-card');
-    var btnArchiveCard = document.getElementById('btn-archive-card');
-    var btnDuplicateCard = document.getElementById('btn-duplicate-card');
-
-    if (modalOverlay) modalOverlay.addEventListener('click', closeCardModal);
-    if (modalClose) modalClose.addEventListener('click', closeCardModal);
-
-    if (btnSaveCard) {
-      btnSaveCard.addEventListener('click', function() {
-        if (!state.editingCardId) return;
-
-        var titleInput = document.getElementById('card-edit-title');
-        var descInput = document.getElementById('card-edit-description');
-        var dueInput = document.getElementById('card-edit-due-date');
-
-        var result = getCard(state.editingCardId);
-        if (result) {
-          var card = result.card;
-          card.assignments = [];
-          var rows = document.querySelectorAll('#card-edit-assignments .assignment-row');
-          rows.forEach(function(row) {
-            var asnId = row.dataset.asnId;
-            var typeVal = row.querySelector('[data-field="type"]').value.trim();
-            var valVal = row.querySelector('[data-field="value"]').value.trim();
-            if (typeVal || valVal) card.assignments.push({ id: asnId, type: typeVal, value: valVal });
-          });
-        }
-
-        updateCard(state.editingCardId, {
-          title: titleInput.value.trim() || 'Untitled Card',
-          description: descInput.value.trim(),
-          dueDate: dueInput.value || null,
-          priority: state.selectedPriority,
-          color: state.selectedColor
-        });
-
-        closeCardModal();
-        showToast(getTrans('text_saved') || 'Saved');
-      });
-    }
-
-    if (btnDeleteCard) {
-      btnDeleteCard.addEventListener('click', function() {
-        if (!state.editingCardId) return;
-        var msg = getCurrentLang() === 'el' ? 'Διαγραφή κάρτας;' : 'Delete this card?';
-        if (confirm(msg)) {
-          deleteCard(state.editingCardId);
-          closeCardModal();
-          showToast(getCurrentLang() === 'el' ? 'Η κάρτα διαγράφηκε' : 'Card deleted');
-        }
-      });
-    }
-
-    if (btnArchiveCard) {
-      btnArchiveCard.addEventListener('click', function() {
-        if (state.editingCardId) archiveCard(state.editingCardId);
-      });
-    }
-
-    if (btnDuplicateCard) {
-      btnDuplicateCard.addEventListener('click', function() {
-        if (state.editingCardId) {
-          duplicateCard(state.editingCardId);
-          closeCardModal();
-        }
-      });
-    }
-
-    // ===== Clear Due Date =====
-    var btnClearDue = document.getElementById('btn-clear-due');
-    if (btnClearDue) {
-      btnClearDue.addEventListener('click', function() {
-        var dueInput = document.getElementById('card-edit-due-date');
-        if (dueInput) dueInput.value = '';
-      });
-    }
-
-    // ===== Priority Selector =====
-    var priorityBtns = document.querySelectorAll('.priority-btn');
-    priorityBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        state.selectedPriority = parseInt(this.dataset.priority);
-        updatePrioritySelector();
-      });
-    });
-
-    // ===== Card Color Picker =====
-    var colorSwatches = document.querySelectorAll('.color-swatch');
-    colorSwatches.forEach(function(sw) {
-      sw.addEventListener('click', function() {
-        state.selectedColor = this.dataset.color;
-        updateColorPicker();
-      });
-    });
-
-    // ===== Markdown Toggle =====
-    var mdToggle = document.getElementById('md-toggle-btn');
-    var descInput = document.getElementById('card-edit-description');
-    var mdPreview = document.getElementById('md-preview');
-    if (mdToggle && descInput && mdPreview) {
-      mdToggle.addEventListener('click', function() {
-        state.mdPreviewMode = !state.mdPreviewMode;
-        if (state.mdPreviewMode) {
-          mdPreview.innerHTML = parseMarkdown(descInput.value);
-          descInput.style.display = 'none';
-          mdPreview.style.display = 'block';
-          mdToggle.classList.add('active');
-          mdToggle.innerHTML = '<i class="fa fa-pencil"></i> <span>Edit</span>';
-        } else {
-          descInput.style.display = '';
-          mdPreview.style.display = 'none';
-          mdToggle.classList.remove('active');
-          mdToggle.innerHTML = '<i class="fa fa-eye"></i> <span>Preview</span>';
-        }
-      });
-    }
-
-    // ===== Subtasks =====
-    var btnAddSubtask = document.getElementById('btn-add-subtask');
-    var subtaskInput = document.getElementById('subtask-input');
-    if (btnAddSubtask && subtaskInput) {
-      btnAddSubtask.addEventListener('click', function() {
-        var text = subtaskInput.value.trim();
-        if (text && state.editingCardId) {
-          addSubtask(state.editingCardId, text);
-          subtaskInput.value = '';
-          var result = getCard(state.editingCardId);
-          if (result) renderSubtaskList(result.card);
-        }
-      });
-      subtaskInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); btnAddSubtask.click(); }
-      });
-    }
-
-    // ===== Assignments =====
-    var btnAddAssignment = document.getElementById('btn-add-assignment');
-    if (btnAddAssignment) {
-      btnAddAssignment.addEventListener('click', function() {
-        if (!state.editingCardId) return;
-        addAssignment(state.editingCardId, '', '');
-        var result = getCard(state.editingCardId);
-        if (result) renderCardEditAssignments(result.card);
-        var container = document.getElementById('card-edit-assignments');
-        var lastRow = container.querySelector('.assignment-row:last-child [data-field="type"]');
-        if (lastRow) lastRow.focus();
-      });
-    }
-
-    // ===== Label Picker =====
-    var btnAddLabel = document.getElementById('btn-add-label');
-    var labelPicker = document.getElementById('label-picker');
-
-    if (btnAddLabel && labelPicker) {
-      btnAddLabel.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (!state.editingCardId) return;
-        if (state.labelPickerOpen) {
-          labelPicker.style.display = 'none';
-          state.labelPickerOpen = false;
-        } else {
-          renderLabelPicker(state.editingCardId);
-          labelPicker.style.display = 'block';
-          state.labelPickerOpen = true;
-        }
-      });
-      document.addEventListener('click', function(e) {
-        if (state.labelPickerOpen && !labelPicker.contains(e.target) && !btnAddLabel.contains(e.target)) {
-          labelPicker.style.display = 'none';
-          state.labelPickerOpen = false;
-        }
-      });
-    }
-
-    var labelPickerAdd = document.getElementById('label-picker-add');
-    var labelPickerNew = document.getElementById('label-picker-new');
-    var newLabelSave = document.getElementById('new-label-save');
-
-    if (labelPickerAdd && labelPickerNew) {
-      labelPickerAdd.addEventListener('click', function(e) {
-        e.stopPropagation();
-        labelPickerNew.style.display = labelPickerNew.style.display === 'none' ? 'flex' : 'none';
-      });
-    }
-
-    if (newLabelSave) {
-      newLabelSave.addEventListener('click', function() {
-        var textInput = document.getElementById('new-label-text');
-        var colorInput = document.getElementById('new-label-color');
-        var text = textInput.value.trim();
-        var color = colorInput.value;
-        if (text) {
-          createLabel(text, color);
-          renderLabelPicker(state.editingCardId);
-          renderFilterDropdown();
-          textInput.value = '';
-          labelPickerNew.style.display = 'none';
-        }
-      });
-      var newLabelText = document.getElementById('new-label-text');
-      if (newLabelText) {
-        newLabelText.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') { e.preventDefault(); newLabelSave.click(); }
-        });
-      }
-    }
-
-    // ===== Label Management Modal =====
-    var labelModalOverlay = document.getElementById('label-modal-overlay');
-    var labelModalClose = document.getElementById('label-modal-close');
-    var btnAddLabelModal = document.getElementById('btn-add-label-modal');
-
-    if (labelModalOverlay) labelModalOverlay.addEventListener('click', closeLabelModal);
-    if (labelModalClose) labelModalClose.addEventListener('click', closeLabelModal);
-    if (btnAddLabelModal) {
-      btnAddLabelModal.addEventListener('click', function() {
-        var text = prompt(getTrans('kanban_new_label') || 'New label name:', '');
-        if (text && text.trim()) {
-          createLabel(text.trim(), '#6d4aff');
-          renderLabelManageList();
-          renderFilterDropdown();
-        }
-      });
-    }
-
-    // ===== Create First Board =====
-    var createFirstBtn = document.getElementById('btn-create-first-board');
-    if (createFirstBtn) {
-      createFirstBtn.addEventListener('click', function() {
-        var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
-        if (name && name.trim()) createBoard(name.trim());
-        else createBoard('My Board');
-      });
-    }
-
-    // ===== Keyboard Shortcuts =====
+  // ========== KEYBOARD SHORTCUTS ==========
+  function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
-      // Escape closes modals/dropdowns
-      if (e.key === 'Escape') {
-        var cardModal = document.getElementById('card-modal');
-        if (cardModal && cardModal.classList.contains('visible')) { closeCardModal(); return; }
-        var lblModal = document.getElementById('label-modal');
-        if (lblModal && lblModal.classList.contains('visible')) { closeLabelModal(); return; }
-        var stModal = document.getElementById('stats-modal');
-        if (stModal && stModal.classList.contains('visible')) { closeStatsModal(); return; }
-        closeBoardSelector();
-        var fd = document.getElementById('filter-dropdown-content');
-        if (fd) fd.classList.remove('visible');
-        var em = document.getElementById('kanban-export-menu');
-        if (em) em.style.display = 'none';
-        if (state.labelPickerOpen) {
-          var picker = document.getElementById('label-picker');
-          if (picker) picker.style.display = 'none';
-          state.labelPickerOpen = false;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        if (e.key === 'Escape') {
+          closeCardModal();
+          closeLabelModal();
+          closeStatsModal();
+          hideAllMenus();
         }
         return;
       }
 
-      // Ignore shortcuts when typing in inputs
-      var tag = e.target.tagName.toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
-
-      // Ctrl+S = export
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        exportData();
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 's') {
+          e.preventDefault();
+          exportData();
+        } else if (e.key === 'b') {
+          e.preventDefault();
+          document.getElementById('btn-export').click();
+        }
         return;
       }
 
-      // Ctrl+N = new board
-      if (e.ctrlKey && e.key === 'n') {
-        e.preventDefault();
-        var name = prompt(getTrans('kanban_board_name') || 'Board name:', 'My Board');
-        if (name && name.trim()) createBoard(name.trim());
-        return;
-      }
+      if (state.editingCardId) return;
 
-      // N = quick add card
-      if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault();
-        quickAddCard();
-        return;
+      switch (e.key.toLowerCase()) {
+        case 'n':
+          e.preventDefault();
+          var placeholder = document.querySelector('.add-column-placeholder');
+          if (placeholder) placeholder.click();
+          break;
+        case '/':
+          e.preventDefault();
+          var search = document.querySelector('.kanban-search-input');
+          if (search) search.focus();
+          break;
+        case '?':
+          e.preventDefault();
+          showToast('Shortcuts: N=New column, /=Search, Ctrl+S=Export, Ctrl+B=Export Menu');
+          break;
       }
-
-      // A = toggle archive view
-      if (e.key === 'a' || e.key === 'A') {
-        e.preventDefault();
-        state.showArchived = !state.showArchived;
-        var atBtn = document.getElementById('btn-archive-toggle');
-        if (atBtn) atBtn.classList.toggle('archive-active', state.showArchived);
-        renderBoard();
-        return;
-      }
-    });
-
-    // ===== Language Change Listener =====
-    window.addEventListener('oros-language-changed', function() {
-      renderAll();
-      renderFilterDropdown();
-      applyTranslations();
     });
   }
 
-  // ========== INIT ==========
+  // ========== INITIALIZATION ==========
   function init() {
     loadData();
-    setup();
+
+    var board = getCurrentBoard();
+    if (!board) {
+      createBoard(getTrans('kanban_default_title') || 'My First Board', 'basic');
+    }
+
+    renderAll();
+
+    document.getElementById('btn-new-board').addEventListener('click', function() {
+      var name = prompt(getTrans('kanban_new_board_prompt') || 'Enter board name:');
+      if (name && name.trim()) {
+        var template = 'basic';
+        if (name.toLowerCase().includes('scrum') || name.toLowerCase().includes('agile')) template = 'scrum';
+        else if (name.toLowerCase().includes('personal')) template = 'personal';
+        createBoard(name.trim(), template);
+      }
+    });
+
+    document.getElementById('btn-export').addEventListener('click', function() {
+      var menu = document.getElementById('export-options');
+      if (menu.style.display === 'block') { menu.style.display = 'none'; }
+      else { menu.style.display = 'block'; }
+    });
+
+    document.getElementById('btn-import').addEventListener('click', function() {
+      var input = document.getElementById('import-file');
+      if (input) input.click();
+    });
+
+    document.getElementById('import-file').addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        importData(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('btn-stats').addEventListener('click', openStatsModal);
+
+    document.getElementById('btn-archive-toggle').addEventListener('click', function() {
+      state.showArchived = !state.showArchived;
+      this.classList.toggle('archive-active', state.showArchived);
+      renderBoard();
+    });
+
+    document.getElementById('board-selector-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var dropdown = document.getElementById('board-list');
+      if (dropdown) dropdown.classList.toggle('visible');
+    });
+
+    document.getElementById('filter-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var dropdown = document.getElementById('filter-dropdown-content');
+      if (dropdown) dropdown.classList.toggle('visible');
+    });
+
+    document.getElementById('btn-labels').addEventListener('click', function() {
+      openLabelModal();
+    });
+
+    document.getElementById('btn-help').addEventListener('click', function() {
+      showToast(getTrans('kanban_shortcuts_help') || 'Shortcuts: N=New, /=Search, Ctrl+S=Export, ?:Help');
+    });
+
+    document.getElementById('btn-add-column').addEventListener('click', function() {
+      createColumn(getTrans('kanban_new_column') || 'New Column');
+    });
+
+    document.getElementById('card-modal-close').addEventListener('click', closeCardModal);
+    document.getElementById('card-modal-overlay').addEventListener('click', closeCardModal);
+
+    document.getElementById('card-edit-title').addEventListener('blur', function() {
+      if (!state.editingCardId) return;
+      var title = this.value.trim();
+      if (title) updateCard(state.editingCardId, { title: title });
+    });
+    document.getElementById('card-edit-title').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    document.getElementById('card-edit-description').addEventListener('input', function() {
+      if (!state.editingCardId) return;
+      var desc = this.value;
+      updateCard(state.editingCardId, { description: desc });
+      if (state.mdPreviewMode) {
+        var preview = document.getElementById('md-preview');
+        if (preview) preview.innerHTML = parseMarkdown(desc);
+      }
+    });
+
+    document.getElementById('card-edit-description').addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showFormatMenu(e.clientX, e.clientY, this);
+    });
+
+    document.getElementById('md-toggle-btn').addEventListener('click', function() {
+      state.mdPreviewMode = !state.mdPreviewMode;
+      var descInput = document.getElementById('card-edit-description');
+      var mdPreview = document.getElementById('md-preview');
+      if (state.mdPreviewMode) {
+        descInput.style.display = 'none';
+        mdPreview.style.display = '';
+        mdPreview.innerHTML = parseMarkdown(descInput.value);
+        this.classList.add('active');
+      } else {
+        descInput.style.display = '';
+        mdPreview.style.display = 'none';
+        this.classList.remove('active');
+      }
+    });
+
+    document.getElementById('card-edit-due-date').addEventListener('change', function() {
+      if (!state.editingCardId) return;
+      updateCard(state.editingCardId, { dueDate: this.value || null });
+      renderBoard();
+    });
+
+    document.getElementById('card-edit-due-date').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { this.blur(); }
+    });
+
+    document.getElementById('btn-clear-due').addEventListener('click', function() {
+      document.getElementById('card-edit-due-date').value = '';
+      document.getElementById('card-edit-due-date').dispatchEvent(new Event('change'));
+    });
+
+    document.querySelectorAll('.priority-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var pri = parseInt(this.dataset.priority);
+        state.selectedPriority = pri;
+        updatePrioritySelector();
+        if (state.editingCardId) {
+          updateCard(state.editingCardId, { priority: pri });
+          renderBoard();
+        }
+      });
+    });
+
+    document.querySelectorAll('.color-swatch').forEach(function(swatch) {
+      swatch.addEventListener('click', function() {
+        var color = this.dataset.color;
+        state.selectedColor = color;
+        updateColorPicker();
+        if (state.editingCardId) {
+          updateCard(state.editingCardId, { color: color || '' });
+          renderBoard();
+        }
+      });
+    });
+
+    document.getElementById('btn-add-subtask').addEventListener('click', function() {
+      var input = document.getElementById('subtask-input');
+      var text = input.value.trim();
+      if (text && state.editingCardId) {
+        addSubtask(state.editingCardId, text);
+        var result = getCard(state.editingCardId);
+        if (result) renderSubtaskList(result.card);
+        input.value = '';
+        renderBoard();
+      }
+    });
+
+    document.getElementById('subtask-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('btn-add-subtask').click();
+      }
+    });
+
+    document.getElementById('btn-add-assignment').addEventListener('click', function() {
+      var typeInput = document.createElement('input');
+      typeInput.type = 'text';
+      typeInput.className = 'assignment-input';
+      typeInput.placeholder = 'Type';
+
+      var valueInput = document.createElement('input');
+      valueInput.type = 'text';
+      valueInput.className = 'assignment-input';
+      valueInput.placeholder = 'Value';
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove-assignment';
+      removeBtn.innerHTML = '<i class="fa fa-times"></i>';
+
+      var row = document.createElement('div');
+      row.className = 'assignment-row';
+      row.dataset.asnId = 'new';
+      row.appendChild(typeInput);
+      row.appendChild(valueInput);
+      row.appendChild(removeBtn);
+
+      var container = document.getElementById('card-edit-assignments');
+      if (container) {
+        container.appendChild(row);
+        typeInput.focus();
+      }
+
+      var saveAssignment = function() {
+        var typeVal = typeInput.value.trim();
+        var valVal = valueInput.value.trim();
+        if (typeVal && valVal && state.editingCardId) {
+          addAssignment(state.editingCardId, typeVal, valVal);
+          var result = getCard(state.editingCardId);
+          if (result) renderCardEditAssignments(result.card);
+          row.remove();
+          renderBoard();
+        }
+      };
+
+      typeInput.addEventListener('blur', function() { valueInput.focus(); });
+      typeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); valueInput.focus(); } });
+      valueInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); saveAssignment(); } });
+      removeBtn.addEventListener('click', function() { row.remove(); });
+    });
+
+    document.getElementById('btn-show-labels').addEventListener('click', function() {
+      var picker = document.getElementById('label-picker');
+      if (state.editingCardId) {
+        renderLabelPicker(state.editingCardId);
+        if (picker.style.display === 'none' || !picker.style.display) {
+          picker.style.display = 'block';
+          state.labelPickerOpen = true;
+        } else {
+          picker.style.display = 'none';
+          state.labelPickerOpen = false;
+        }
+      }
+    });
+
+    document.getElementById('card-delete-btn').addEventListener('click', function() {
+      if (!state.editingCardId) return;
+      var result = getCard(state.editingCardId);
+      if (result && confirm(getTrans('kanban_delete_confirm') || 'Delete this card?')) {
+        deleteCard(state.editingCardId);
+        closeCardModal();
+        showToast(getTrans('kanban_card_deleted') || 'Card deleted');
+      }
+    });
+
+    document.getElementById('btn-archive-card').addEventListener('click', function() {
+      if (state.editingCardId) {
+        archiveCard(state.editingCardId);
+        showToast(getTrans('kanban_archived') || 'Card archived');
+      }
+    });
+
+    document.getElementById('btn-duplicate-card').addEventListener('click', function() {
+      if (state.editingCardId) {
+        duplicateCard(state.editingCardId);
+        showToast(getTrans('kanban_duplicated') || 'Card duplicated');
+      }
+    });
+
+    document.getElementById('btn-save-card').addEventListener('click', function() {
+      closeCardModal();
+      showToast(getTrans('kanban_saved') || 'Card saved');
+    });
+
+    document.getElementById('card-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'card-modal') closeCardModal();
+    });
+
+    document.getElementById('label-modal-close').addEventListener('click', closeLabelModal);
+    document.getElementById('label-modal-overlay').addEventListener('click', closeLabelModal);
+    document.getElementById('label-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'label-modal') closeLabelModal();
+    });
+
+    document.getElementById('btn-add-label-modal').addEventListener('click', function() {
+      var text = prompt(getTrans('kanban_label_name') || 'Label name:');
+      if (text) {
+        var color = prompt(getTrans('kanban_label_color') || 'Color (hex):', '#6d4aff');
+        if (!color) color = '#6d4aff';
+        createLabel(text, color);
+        renderLabelManageList();
+        renderFilterDropdown();
+      }
+    });
+
+    document.getElementById('btn-close-stats').addEventListener('click', closeStatsModal);
+    document.getElementById('stats-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'stats-modal') closeStatsModal();
+    });
+
+    document.getElementById('filter-dropdown-content').addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    document.getElementById('board-selector-dropdown').addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.board-selector')) {
+        document.getElementById('board-list').classList.remove('visible');
+      }
+      if (!e.target.closest('.kanban-filter-dropdown')) {
+        document.getElementById('filter-dropdown-content').classList.remove('visible');
+      }
+      if (!e.target.closest('.kanban-export-group')) {
+        document.getElementById('export-options').style.display = 'none';
+      }
+    });
+
+    document.getElementById('export-csv').addEventListener('click', exportCSV);
+    document.getElementById('export-full').addEventListener('click', exportData);
+
+    document.querySelector('.kanban-search-input').addEventListener('input', function() {
+      state.searchQuery = this.value;
+      applySearchFilter();
+    });
+
+    document.querySelector('.kanban-search-clear').addEventListener('click', function() {
+      var input = document.querySelector('.kanban-search-input');
+      if (input) {
+        input.value = '';
+        state.searchQuery = '';
+        input.dispatchEvent(new Event('input'));
+      }
+    });
+
+    renderFilterDropdown();
+    setupKeyboardShortcuts();
+
+    document.getElementById('column-title-edit').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    var searchInput = document.querySelector('.kanban-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('focus', function() {
+        var clear = document.querySelector('.kanban-search-clear');
+        if (clear) clear.style.display = state.searchQuery ? 'inline-block' : 'none';
+      });
+    }
+
+    logActivity('app_loaded', 'Kanban app initialized');
+    showToast(getTrans('kanban_welcome') || 'Welcome to orOS Kanban!');
+  }
+
+  function toggleEmptyState() {
+    var empty = document.getElementById('kanban-empty-state');
+    var area = document.getElementById('kanban-board-area');
+    if (!empty || !area) return;
 
     if (state.boards.length === 0) {
-      toggleEmptyState();
+      empty.style.display = '';
+      area.style.display = 'none';
     } else {
-      state.currentBoardId = state.boards[0].id;
-      renderAll();
+      empty.style.display = 'none';
+      area.style.display = '';
     }
   }
 
-  init();
+  function applyTranslations() {
+    var lang = getCurrentLang();
+    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
 
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.dataset.i18n;
+      if (t[key]) el.textContent = t[key];
+    });
+
+    var btnAdd = document.querySelector('.btn-add-card');
+    if (btnAdd) btnAdd.textContent = (t.kanban_add_card || 'Add Card');
+
+    var placeholder = document.querySelector('.add-column-placeholder');
+    if (placeholder) placeholder.innerHTML = '<i class="fa fa-plus"></i> ' + (t.kanban_add_column || 'Add Column');
+
+    document.querySelectorAll('.btn-confirm-add-card').forEach(function(btn) {
+      btn.textContent = t.kanban_add || 'Add';
+    });
+    document.querySelectorAll('.btn-cancel-add-card').forEach(function(btn) {
+      btn.textContent = t.kanban_cancel || 'Cancel';
+    });
+  }
+
+  window.kanbanApp = {
+    init: init,
+    exportData: exportData,
+    importData: importData,
+    openCardModal: openCardModal,
+    closeCardModal: closeCardModal,
+    openStatsModal: openStatsModal,
+    createBoard: createBoard,
+    createColumn: createColumn,
+    createCard: createCard,
+    getCurrentBoard: getCurrentBoard,
+    getTrans: getTrans
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

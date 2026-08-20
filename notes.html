@@ -109,28 +109,61 @@
         <button class="view-btn" id="btn-view-editor" title="Editor only" data-i18n-title="view_editor_only"><i class="fa fa-edit"></i></button>
         <button class="view-btn" id="btn-view-preview" title="Preview only" data-i18n-title="view_preview_only"><i class="fa fa-file-text"></i></button>
       </div>
-      <!-- Export Dropdown -->
-      <div class="export-dropdown-wrapper">
-        <button class="notes-action-btn" id="btn-export" title="Export" data-i18n-aria="aria_export"><i class="fa fa-download"></i> <i class="fa fa-caret-down"></i></button>
-        <div class="export-dropdown" id="export-dropdown" style="display:none;">
-          <div class="export-group-label">All Notes</div>
-          <div class="export-item" data-scope="all" data-format="json"><i class="fa fa-file-code-o"></i> JSON Backup</div>
-          <div class="export-item" data-scope="all" data-format="md"><i class="fa fa-file-text-o"></i> Markdown (combined)</div>
-          <div class="export-item" data-scope="all" data-format="txt"><i class="fa fa-file-o"></i> Plain Text (combined)</div>
-          <div class="export-item" data-scope="all" data-format="doc"><i class="fa fa-file-word-o"></i> Word Document</div>
-          <div class="export-item" data-scope="all" data-format="pdf"><i class="fa fa-file-pdf-o"></i> PDF (print)</div>
-          <div class="context-divider"></div>
-          <div class="export-group-label">Current Note</div>
-          <div class="export-item" data-scope="note" data-format="md"><i class="fa fa-file-text-o"></i> Markdown</div>
-          <div class="export-item" data-scope="note" data-format="txt"><i class="fa fa-file-o"></i> Plain Text</div>
-          <div class="export-item" data-scope="note" data-format="doc"><i class="fa fa-file-word-o"></i> Word Document</div>
-          <div class="export-item" data-scope="note" data-format="pdf"><i class="fa fa-file-pdf-o"></i> PDF (print)</div>
-        </div>
-      </div>
-      <button class="notes-action-btn" id="btn-import" title="Import notes" data-i18n-aria="aria_import"><i class="fa fa-folder-open"></i></button>
-      <input type="file" id="import-file-input" accept=".json,.md,.txt" style="display:none;">
+      
+	  <!-- ===== Export Dropdown (replaces old export button area in toolbar) ===== -->
+<div class="export-dropdown-wrapper">
+  <button class="notes-action-btn" id="btn-export" title="Export">
+    <i class="fa fa-download"></i>
+    <span>Export</span>
+    <i class="fa fa-caret-down" style="font-size:10px;"></i>
+  </button>
+
+  <div class="export-dropdown" id="export-dropdown">
+
+    <div class="export-group-label">Current Note</div>
+    <div class="export-item" data-scope="note" data-format="md">
+      <i class="fa fa-file-text-o"></i> Markdown (.md)
+    </div>
+    <div class="export-item" data-scope="note" data-format="txt">
+      <i class="fa fa-file-o"></i> Plain Text (.txt)
+    </div>
+    <div class="export-item" data-scope="note" data-format="doc">
+      <i class="fa fa-file-word-o"></i> Word (.doc)
+    </div>
+    <div class="export-item" data-scope="note" data-format="pdf">
+      <i class="fa fa-file-pdf-o"></i> PDF (print)
+    </div>
+
+    <div class="export-divider"></div>
+
+    <div class="export-group-label">All Notes</div>
+    <div class="export-item" data-scope="all" data-format="json">
+      <i class="fa fa-database"></i> Backup Database (.json)
+    </div>
+    <div class="export-item" data-scope="all" data-format="md">
+      <i class="fa fa-file-text-o"></i> Markdown (.md)
+    </div>
+    <div class="export-item" data-scope="all" data-format="txt">
+      <i class="fa fa-file-o"></i> Plain Text (.txt)
+    </div>
+    <div class="export-item" data-scope="all" data-format="doc">
+      <i class="fa fa-file-word-o"></i> Word (.doc)
+    </div>
+    <div class="export-item" data-scope="all" data-format="pdf">
+      <i class="fa fa-file-pdf-o"></i> PDF (print)
+    </div>
+
+    <div class="export-divider"></div>
+
+    <div class="export-group-label">Import</div>
+    <div class="export-item" id="export-import-item">
+      <i class="fa fa-folder-open"></i> Import from file...
     </div>
   </div>
+</div>
+
+<!-- Hidden print frame for PDF export -->
+<iframe id="print-frame" style="display:none;position:absolute;width:0;height:0;border:0;"></iframe>
 
   <!-- Main Container -->
   <div class="notes-container" id="notes-container">
