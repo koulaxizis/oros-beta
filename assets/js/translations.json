@@ -1172,6 +1172,7 @@
     "notes_deleted_note": "Note supprimée",
     "notes_export_format": "Format d'exportation (txt/md):",
     "notes_invalid_file": "Fichier de notes invalide",
+    {
     "notes_imported": "Importé",
     "notes_import_failed": "Échec de l'importation",
     "notes_items": "éléments",
@@ -1284,7 +1285,7 @@
     "btn_close_tt": "Schließen",
     "text_goal_reached": "Ziel erreicht!",
     "text_goal_locked": " Editor gesperrt.",
-	    "text_goal_set": "Ziel gesetzt",
+    "text_goal_set": "Ziel gesetzt",
     "text_goal_cleared": "Ziel gelöscht",
     "meta_panel_title": "Metadaten",
     "meta_label_title": "Titel",

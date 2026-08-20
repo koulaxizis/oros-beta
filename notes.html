@@ -6,13 +6,19 @@
   <meta name="description" content="orOS Notes — Privacy-first, offline markdown note editor with backlinks, tags, and knowledge graph.">
   <title>orOS Notes</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css" rel="stylesheet">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="notes.css">
+  <!-- Shared orOS styles (variables, theme, fonts) -->
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <!-- Notes-specific styles -->
+  <link rel="stylesheet" href="assets/css/notes.css">
 </head>
 <body>
 
@@ -54,7 +60,7 @@
         <i class="fa fa-terminal"></i>
       </button>
 
-      <!-- ===== FIX #5: Export Dropdown (grouped, with backup + import) ===== -->
+      <!-- Export Dropdown -->
       <div class="export-dropdown-wrapper">
         <button class="notes-action-btn" id="btn-export" title="Export / Import">
           <i class="fa fa-download"></i>
@@ -118,10 +124,10 @@
     </div>
   </div>
 
-  <!-- ===== HIDDEN FILE INPUT FOR IMPORT ===== -->
+  <!-- Hidden file input for import -->
   <input type="file" id="import-file-input" accept=".json,.md,.txt" style="display:none;">
 
-  <!-- ===== HIDDEN PRINT FRAME FOR PDF EXPORT ===== -->
+  <!-- Hidden print frame for PDF export -->
   <iframe id="print-frame" style="display:none;position:absolute;width:0;height:0;border:0;" aria-hidden="true"></iframe>
 
   <!-- ===== MAIN CONTAINER ===== -->
@@ -219,7 +225,7 @@
           <div class="editor-pane editor-pane-left">
             <textarea class="note-editor" id="note-editor" placeholder="Start writing... (Markdown supported)"></textarea>
 
-            <!-- Autocomplete Dropdown (FIX #4: position fixed) -->
+            <!-- Autocomplete Dropdown -->
             <div class="autocomplete-dropdown" id="autocomplete-dropdown">
               <div class="autocomplete-list" id="autocomplete-list"></div>
             </div>
@@ -382,7 +388,7 @@
     </div>
   </div>
 
-  <!-- ===== COMMAND PALETTE MODAL (FIX #1: no backdrop-filter) ===== -->
+  <!-- ===== COMMAND PALETTE MODAL (no backdrop-filter) ===== -->
   <div class="command-palette-modal" id="command-palette-modal">
     <div class="command-palette-overlay" id="command-palette-overlay"></div>
     <div class="command-palette-content">
@@ -506,6 +512,7 @@
   </div>
 
   <!-- ===== Scripts ===== -->
-  <script src="notes.js"></script>
+  <script src="config.js"></script>
+  <script src="assets/js/notes.js"></script>
 </body>
 </html>
