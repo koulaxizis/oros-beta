@@ -46,20 +46,19 @@
     setTimeout(function() { toast.classList.remove('visible'); }, 2500);
   }
 
-  function getTrans(key) {
-    if (translations[currentLang] && translations[currentLang][key]) {
-      return translations[currentLang][key];
-    }
-    if (translations.en && translations.en[key]) {
-      return translations.en[key];
-    }
-    return key;
+     function getTrans(key) {
+    var lang = localStorage.getItem('oros-language') || 'en';
+    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
+    if (t[key]) return t[key];
+    var tEn = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS.en) || {};
+    return tEn[key] || key;
   }
 
   function setLanguage(lang) {
-    currentLang = lang;
     localStorage.setItem('oros-language', lang);
+    currentLang = lang;
     refreshTranslations();
+    window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
   }
 
   function refreshTranslations() {
@@ -76,7 +75,28 @@
         }
       }
     }
-    
+    var placeholders = document.querySelectorAll('[data-i18n-placeholder]');
+    for (var j = 0; j < placeholders.length; j++) {
+      var phEl = placeholders[j];
+      var phKey = phEl.getAttribute('data-i18n-placeholder');
+      var phValue = getTrans(phKey);
+      if (phValue && phValue !== phKey) {
+        phEl.setAttribute('placeholder', phValue);
+      }
+    }
+  }
+
+  function loadTranslations() {
+    currentLang = localStorage.getItem('oros-language') || 'en';
+    refreshTranslations();
+    window.addEventListener('oros-language-changed', function() {
+      currentLang = localStorage.getItem('oros-language') || 'en';
+      refreshTranslations();
+    });
+    window.addEventListener('load', function() {
+      refreshTranslations();
+    });
+  }
     // Also update placeholder attributes
     var placeholders = document.querySelectorAll('[data-i18n-placeholder]');
     for (var j = 0; j < placeholders.length; j++) {
@@ -89,12 +109,15 @@
     }
   }
 
-  // FIX: Removed fetch, now uses window.OROS_TRANSLATIONS from main.js
-  function loadTranslations() {
-    // Check if OROS_TRANSLATIONS is already loaded by main.js
-    if (window.OROS_TRANSLATIONS) {
-      translations = window.OROS_TRANSLATIONS;
-      var stored = localStorage.getItem('oros-language') || 'en';
+    function loadTranslations() {
+    currentLang = localStorage.getItem('oros-language') || 'en';
+    refreshTranslations();
+    // Re-refresh after main.js has loaded (OROS_TRANSLATIONS may not be ready yet)
+    window.addEventListener('load', function() {
+      currentLang = localStorage.getItem('oros-language') || 'en';
+      refreshTranslations();
+    });
+  }
       
       // Ensure we have fallback English
       if (!translations.en) {
@@ -102,6 +125,10 @@
       }
       
       setLanguage(stored);
+	      window.addEventListener('oros-language-changed', function() {
+      currentLang = localStorage.getItem('oros-language') || 'en';
+      refreshTranslations();
+    });
       console.log('Kanban: Using OROS_TRANSLATIONS from main.js');
     } else {
       // Fallback: minimal English translations if OROS_TRANSLATIONS not available
