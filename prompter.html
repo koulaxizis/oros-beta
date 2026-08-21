@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="orOS Prompter — 100 writing prompts across 10 techniques. Micro-fiction, haiku, poetry, songs, theatrical, novels. Works offline. No tracking.">
+
+  <!-- SEO Meta Tags -->
+  <meta name="author" content="Christos Koulaxizis">
+  <meta name="robots" content="index, follow">
+  <meta name="googlebot" content="index, follow">
+  <meta name="theme-color" content="#c8a96e">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/prompter.html">
+  <meta property="og:title" content="orOS Prompter — Writing Prompts & Inspiration">
+  <meta property="og:description" content="100 writing prompts across 10 techniques. Micro-fiction, haiku, poetry, songs, theatrical, novels. Works offline. No tracking.">
+  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="orOS">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/prompter.html">
+  <meta name="twitter:title" content="orOS Prompter — Writing Prompts & Inspiration">
+  <meta name="twitter:description" content="100 writing prompts across 10 techniques. Works offline. No tracking.">
+  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:creator" content="@koulaxizis">
+
+  <!-- Additional SEO -->
+  <meta name="keywords" content="writing prompts, creative writing, micro-fiction, haiku, poetry, song lyrics, aphorism, theatrical, monologue, inspiration, offline, privacy, open source">
+
+  <!-- Resource Hints -->
+  <link rel="preconnect" href="https://koulaxizis.github.io">
+  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
+
+  <!-- hreflang -->
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/prompter.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/prompter.html?lang=el">
+  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/prompter.html?lang=es">
+  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/prompter.html?lang=it">
+  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/prompter.html?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/prompter.html?lang=de">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/prompter.html">
+
+  <title>orOS Prompter</title>
+  <script src="config.js"></script>
+  <script>
+    document.write('<base href="' + (OROS_CONFIG.baseHref || '/') + '">');
+    var cLink = document.createElement('link');
+    cLink.rel = 'canonical';
+    cLink.href = OROS_CONFIG.domain + window.location.pathname;
+    document.head.appendChild(cLink);
+  </script>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="assets/css/icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/prompter.css">
+
+  <script src="assets/js/global-settings.js" defer></script>
+  <script src="assets/js/seo.js" defer></script>
+  <script src="assets/js/components/header.js" defer></script>
+  <script src="assets/js/components/footer.js" defer></script>
+  <script src="assets/js/prompter.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body class="prompter-page noscript">
+  <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required for orOS Prompter to function. Please enable JavaScript.</div>
+  </noscript>
+
+  <div id="oros-header"></div>
+
+  <div id="prompter-wrapper">
+
+    <div class="prompter-hero">
+      <div class="prompter-hero-content">
+        <h1 data-i18n="prompter_title">Prompter</h1>
+        <p class="prompter-subtitle" data-i18n="prompter_subtitle">100 writing prompts · 10 techniques · Endless inspiration</p>
+        <button class="random-prompt-btn" id="btn-random-prompt">
+          <i class="fa fa-random"></i>
+          <span data-i18n="prompter_random">Random Prompt</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="prompter-controls">
+      <div class="search-wrap">
+        <i class="fa fa-search search-icon"></i>
+        <input type="text" id="prompt-search" data-i18n-placeholder="prompter_search_placeholder" placeholder="Search prompts...">
+      </div>
+      <div class="filter-chips" id="filter-chips"></div>
+      <button class="favorites-toggle" id="btn-favorites-toggle">
+        <i class="fa fa-star-o"></i>
+        <span data-i18n="prompter_favorites">Favorites</span>
+      </button>
+    </div>
+
+    <div class="random-prompt-display" id="random-prompt-display" style="display:none;">
+      <div class="random-prompt-card">
+        <div class="random-prompt-header">
+          <span class="random-prompt-category" id="random-category-badge"></span>
+          <div class="random-prompt-actions">
+            <button class="mini-btn" id="btn-reroll" title="Another"><i class="fa fa-refresh"></i></button>
+            <button class="mini-btn" id="btn-random-copy" title="Copy"><i class="fa fa-clipboard"></i></button>
+            <button class="mini-btn" id="btn-random-close" title="Close"><i class="fa fa-times"></i></button>
+          </div>
+        </div>
+        <p class="random-prompt-text" id="random-prompt-text"></p>
+        <button class="open-in-writer-btn" id="btn-open-in-writer">
+          <i class="fa fa-pencil"></i>
+          <span data-i18n="prompter_open_in_writer">Open in Writer</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="prompts-grid" id="prompts-grid"></div>
+
+    <div class="prompts-empty" id="prompts-empty" style="display:none;">
+      <i class="fa fa-search"></i>
+      <p data-i18n="prompter_no_results">No prompts found</p>
+    </div>
+
+  </div>
+
+  <div class="settings-modal">
+    <div class="settings-modal-overlay"></div>
+    <div class="settings-modal-content">
+      <div class="settings-header">
+        <h2 data-i18n="settings">Settings</h2>
+        <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="settings-nav">
+        <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
+        <button class="tab-btn" data-tab="prompter-settings" data-i18n="tab_prompter">Prompter</button>
+      </div>
+      <div class="settings-body">
+        <div class="tab-panel" id="global-settings" style="display:flex;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
+              <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="install_app">Install as App</span>
+              <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="beta-section">
+              <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
+              <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
+              <div class="beta-links">
+                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
+                <a href="https://koulaxizis.github.io/oros-beta/prompter.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="prompter-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_random_btn">Hide Random Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-random-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_filter_bar">Hide Filter Bar</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-filter-bar"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_fav_toggle">Hide Favorites Toggle</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-fav-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td data-i18n="prompter_random">Random Prompt</td><td><kbd>R</kbd></td></tr>
+                <tr><td data-i18n="prompter_favorites">Favorites</td><td><kbd>F</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="oros-footer"></div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register(
+          OROS_CONFIG.baseHref + 'service-worker.js',
+          { scope: OROS_CONFIG.baseHref }
+        ).catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

@@ -125,3 +125,14 @@
 .fa-scissors:before        { content: '\f0c4'; }
 .fa-clipboard:before       { content: '\f0ea'; }
 .fa-check-square-o:before  { content: '\f046'; }
+/* ===== PROMPTER ICONS ===== */
+.fa-random:before         { content: '\f074'; }
+.fa-quote-left:before     { content: '\f10d'; }
+.fa-quote-right:before    { content: '\f10e'; }
+.fa-music:before          { content: '\f001'; }
+.fa-lightbulb-o:before    { content: '\f0eb'; }
+.fa-comment:before        { content: '\f075'; }
+.fa-envelope:before       { content: '\f0e0'; }
+.fa-star:before           { content: '\f005'; }
+.fa-star-o:before         { content: '\f006'; }
+.fa-filter:before         { content: '\f0b0'; }

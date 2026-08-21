@@ -139,9 +139,6 @@
           </div>
           <div class="export-divider"></div>
           <div class="export-group-label">All Notes</div>
-          <div class="export-item" data-scope="all" data-format="json">
-            <i class="fa fa-database"></i> Backup Database (.json)
-          </div>
           <div class="export-item" data-scope="all" data-format="md">
             <i class="fa fa-file-text-o"></i> Markdown (.md)
           </div>
@@ -156,8 +153,8 @@
           </div>
           <div class="export-divider"></div>
           <div class="export-group-label">Data</div>
-          <div class="export-item" id="export-import-item">
-            <i class="fa fa-folder-open"></i> Import from file...
+          <div class="export-item" data-scope="all" data-format="json">
+            <i class="fa fa-database"></i> Backup Database (.json)
           </div>
         </div>
       </div>
@@ -216,7 +213,6 @@
         <div class="editor-header">
           <input type="text" class="note-title-input" id="note-title-input" placeholder="Untitled Note">
           <div class="editor-actions">
-            <!-- REMOVED: btn-focus-mode button entirely -->
             <button class="editor-action-btn" id="btn-export-note" title="Quick Export (MD)">
               <i class="fa fa-share-square-o"></i>
             </button>
@@ -230,17 +226,6 @@
           <button class="tab-btn active" id="tab-write">Write</button>
           <button class="tab-btn" id="tab-preview">Preview</button>
           <div style="flex:1;"></div>
-          <div class="view-toggle">
-            <button class="view-btn active" id="btn-view-split" title="Split View">
-              <i class="fa fa-columns"></i>
-            </button>
-            <button class="view-btn" id="btn-view-editor" title="Editor Only">
-              <i class="fa fa-pencil"></i>
-            </button>
-            <button class="view-btn" id="btn-view-preview" title="Preview Only">
-              <i class="fa fa-eye"></i>
-            </button>
-          </div>
         </div>
 
         <div class="editor-body">
@@ -297,6 +282,17 @@
           <div class="note-tags-section">
             <div class="note-tags-display" id="note-tags-display"></div>
             <input type="text" class="note-tags-input" id="note-tags-input" placeholder="+ tag">
+            <div class="view-toggle-small">
+              <button class="view-btn-small active" id="btn-view-split" title="Split View">
+                <i class="fa fa-columns"></i>
+              </button>
+              <button class="view-btn-small" id="btn-view-editor" title="Editor Only">
+                <i class="fa fa-pencil"></i>
+              </button>
+              <button class="view-btn-small" id="btn-view-preview" title="Preview Only">
+                <i class="fa fa-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -476,7 +472,7 @@
         <div class="tab-panel" id="notes-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
-              <span class="toggle-label">Default view mode</span>
+              <span class="toggle-label" data-i18n="default_view_mode">Default view mode</span>
               <select class="setting-select" id="setting-default-view">
                 <option value="split">Split (Editor + Preview)</option>
                 <option value="editor">Editor Only</option>
@@ -484,7 +480,26 @@
               </select>
             </div>
             <div class="settings-divider"></div>
-            <!-- REMOVED: Focus Mode toggle entirely -->
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="backlinks_default_state">Linked References default state</span>
+              <select class="setting-select" id="setting-backlinks-default">
+                <option value="open">Open on load</option>
+                <option value="closed">Closed on load</option>
+              </select>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="sidebar_sort_order">Sidebar sort order</span>
+              <select class="setting-select" id="setting-sidebar-sort">
+                <option value="recent-modified">Recent Modified</option>
+                <option value="recent-created">Recent Created</option>
+                <option value="alpha-asc">Alphabetical A-Z</option>
+                <option value="alpha-desc">Alphabetical Z-A</option>
+                <option value="folders-first">Folders First, then Notes</option>
+                <option value="notes-first">Notes First, then Folders</option>
+              </select>
+            </div>
+            <div class="settings-divider"></div>
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_hide_new_note_btn">Hide New Note Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-new-note-btn"><span class="slider"></span></label>

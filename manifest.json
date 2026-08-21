@@ -98,7 +98,14 @@
       "description": "Wiki-style notes with wikilinks",
       "url": "./notes.html",
       "icons": [{ "src": "icons/shortcut-notes.png", "sizes": "96x96", "type": "image/png" }]
-    }
+    },
+	{
+  "name": "Prompter",
+  "short_name": "Prompter",
+  "description": "Writing prompts & inspiration",
+  "url": "./prompter.html",
+  "icons": [{ "src": "icons/shortcut-prompter.png", "sizes": "96x96", "type": "image/png" }]
+}
   ],
   "prefer_related_applications": false
 }

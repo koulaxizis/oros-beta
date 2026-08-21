@@ -42,7 +42,11 @@ var CACHE_URLS = [
   './assets/fonts/nunito-extrabold.woff2',
   './assets/fonts/forkawesome-webfont.woff2',
   './assets/fonts/forkawesome-webfont.woff',
-  './assets/fonts/forkawesome-webfont.ttf'
+  './assets/fonts/forkawesome-webfont.ttf',
+  './prompter.html',
+'./assets/css/prompter.css',
+'./assets/js/prompter.js',
+'./assets/js/prompts.json',
 ];
 
 // ========== INSTALL ==========
