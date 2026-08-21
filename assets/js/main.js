@@ -1,5 +1,15 @@
 // Fixed: zen-mode key consistency (oros_zen_mode throughout)
 // Fixed: #7 — Zen Mode toggle/header sync via oros-zen-mode-changed event
+// Fixed: Early theme application to prevent FOUC (Flash Of Unstyled Content)
+
+// ===== EARLY THEME APPLICATION (runs immediately, before DOMContentLoaded) =====
+(function applyStoredTheme() {
+  var saved = localStorage.getItem('oros-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
@@ -37,6 +47,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== THEME TOGGLE ==========
   var themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
+    // Initialize icon based on stored/current theme
+    var storedTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'dark';
+    var themeIcon = themeToggle.querySelector('i');
+    if (themeIcon) {
+      themeIcon.className = storedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+    }
+
     themeToggle.addEventListener('click', function() {
       var current = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'dark';
       var newTheme = current === 'light' ? 'dark' : 'light';
@@ -124,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
         body.setAttribute('data-zen', 'true');
       }
 
-      // FIXED: Using oros_zen_mode consistently
       localStorage.setItem('oros_zen_mode', isZen ? 'false' : 'true');
 
       window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
@@ -134,9 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ========== ZEN MODE TOAST + SYNC (all pages) ==========
-  // FIX #7: Sync #toggle-zen-mode checkbox whenever zen state changes
   window.addEventListener('oros-zen-mode-changed', function(e) {
-    // FIX #7: Sync the settings checkbox with current state
     var zenToggle = document.getElementById('toggle-zen-mode');
     if (zenToggle) zenToggle.checked = e.detail.enabled;
 
@@ -334,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }));
     });
   }
-
-  var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
+  
+    var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
   if (typewriterSoundToggle) {
     typewriterSoundToggle.checked = localStorage.getItem('oros_typewriter_sound') === 'true';
     typewriterSoundToggle.addEventListener('change', function() {
@@ -384,7 +398,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (target) {
           target.style.display = hidden ? 'none' : '';
         }
-        // Dispatch for cross-page sync
         window.dispatchEvent(new CustomEvent('oros-converter-toggle-changed', {
           detail: { key: toggle.key, hidden: hidden, element: toggle.element }
         }));
@@ -395,11 +408,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== ZEN MODE TOGGLE FROM SETTINGS ==========
   var zenModeToggle = document.getElementById('toggle-zen-mode');
   if (zenModeToggle) {
-    // FIXED: Using oros_zen_mode consistently
     zenModeToggle.checked = localStorage.getItem('oros_zen_mode') === 'true';
     zenModeToggle.addEventListener('change', function() {
       var enabled = this.checked;
-      // FIXED: Using oros_zen_mode consistently
       localStorage.setItem('oros_zen_mode', enabled ? 'true' : 'false');
       if (enabled) {
         document.body.setAttribute('data-zen', 'true');
@@ -433,7 +444,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ========== APPLY ZEN MODE ON LOAD ==========
-  // FIXED: Using oros_zen_mode consistently
   if (localStorage.getItem('oros_zen_mode') === 'true') {
     document.body.setAttribute('data-zen', 'true');
   }
