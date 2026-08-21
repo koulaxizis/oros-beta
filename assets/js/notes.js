@@ -1,13 +1,15 @@
 // ============================================
-// orOS Notes — Full Implementation v4.3 (FOCUS MODE REMOVED)
-// Changes from v4.2:
-//   - Removed enableFocusMode(), disableFocusMode(), toggleFocusMode()
-//   - Removed focusMode from state
-//   - Removed all focus-mode class manipulation
-//   - Removed btn-focus-mode binding
-//   - Removed focus mode from settings modal setup
-//   - Removed "Toggle Focus Mode" from command palette
-//   - Removed focus_mode_enabled localStorage loading
+// orOS Notes — Full Implementation v4.4
+// Changes from v4.3:
+//   - Sidebar collapse expands editor (CSS-driven)
+//   - View icons moved to editor footer
+//   - Editor tabs bar (Write/Preview) removed
+//   - Backlinks default state setting (open/closed on load)
+//   - Sidebar sort order setting
+//   - More UI element hide/show toggles
+//   - Default view mode properly persisted
+//   - Settings included in JSON backup/restore
+//   - All focus mode remnants removed
 // ============================================
 
 (function() {
@@ -19,6 +21,32 @@
   var VIEW_MODE = 'oros_notes_view_mode';
   var DEFAULT_VIEW_MODE = 'oros_notes_default_view';
   var SIDEBAR_COLLAPSED = 'oros_notes_sidebar_collapsed';
+  var BACKLINKS_DEFAULT_STATE = 'oros_notes_backlinks_default';
+  var BACKLINKS_USER_STATE = 'oros_notes_backlinks_user_state';
+  var SIDEBAR_SORT_ORDER = 'oros_notes_sidebar_sort';
+
+  // ========== SETTING KEYS (for JSON backup/restore) ==========
+  var SETTING_KEYS = [
+    'oros_notes_view_mode',
+    'oros_notes_default_view',
+    'oros_notes_sidebar_collapsed',
+    'oros_notes_backlinks_default',
+    'oros_notes_backlinks_user_state',
+    'oros_notes_sidebar_sort',
+    'oros_hide_new_note_btn',
+    'oros_hide_new_folder_btn',
+    'oros_hide_sidebar_toggle',
+    'oros_hide_outline_panel',
+    'oros_hide_tags_panel',
+    'oros_hide_root_dropzone',
+    'oros_hide_meta_info',
+    'oros_hide_graph_btn',
+    'oros_hide_export_btn',
+    'oros_hide_daily_btn',
+    'oros_hide_backlinks_panel',
+    'oros-language',
+    'oros-zen-mode'
+  ];
 
   // ========== STATE ==========
   var state = {
@@ -93,7 +121,6 @@
       var sidebar = document.getElementById('notes-sidebar');
       if (sidebar) sidebar.classList.add('collapsed');
     }
-    // REMOVED: focus mode loading
   }
 
   function saveData() {
@@ -104,6 +131,13 @@
       localStorage.setItem(SIDEBAR_COLLAPSED, sidebar ? (sidebar.classList.contains('collapsed') ? 'true' : 'false') : 'false');
     } catch(e) {
       showToast('Storage limit reached. Export and delete old notes.');
+    }
+  }
+
+  function saveBacklinksState() {
+    var panel = document.getElementById('backlinks-panel');
+    if (panel) {
+      localStorage.setItem(BACKLINKS_USER_STATE, panel.classList.contains('collapsed') ? 'collapsed' : 'open');
     }
   }
 
@@ -444,6 +478,51 @@
     showToast('Daily note opened/created');
   }
 
+  // ========== SORT NODES ==========
+  function sortNodes(nodes) {
+    var sortOrder = localStorage.getItem(SIDEBAR_SORT_ORDER) || 'recent-modified';
+    var sorted = nodes.slice();
+
+    switch(sortOrder) {
+      case 'recent-modified':
+        sorted.sort(function(a, b) { return (b.modified || 0) - (a.modified || 0); });
+        break;
+      case 'recent-created':
+        sorted.sort(function(a, b) { return (b.created || 0) - (a.created || 0); });
+        break;
+      case 'alpha-asc':
+        sorted.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
+        break;
+      case 'alpha-desc':
+        sorted.sort(function(a, b) { return (b.title || '').localeCompare(a.title || ''); });
+        break;
+      case 'folders-first':
+        sorted.sort(function(a, b) {
+          if (a.type === 'folder' && b.type !== 'folder') return -1;
+          if (a.type !== 'folder' && b.type === 'folder') return 1;
+          return (b.modified || 0) - (a.modified || 0);
+        });
+        break;
+      case 'notes-first':
+        sorted.sort(function(a, b) {
+          if (a.type === 'note' && b.type !== 'note') return -1;
+          if (a.type !== 'note' && b.type === 'note') return 1;
+          return (b.modified || 0) - (a.modified || 0);
+        });
+        break;
+      default:
+        sorted.sort(function(a, b) { return (b.modified || 0) - (a.modified || 0); });
+    }
+
+    sorted.forEach(function(node) {
+      if (node.children && node.children.length > 0) {
+        node.children = sortNodes(node.children);
+      }
+    });
+
+    return sorted;
+  }
+
   // ========== RENDERING ==========
   function renderAll() {
     renderTree();
@@ -471,7 +550,8 @@
       container.appendChild(divider);
     }
 
-    state.nodes.forEach(function(node) {
+    var sortedNodes = sortNodes(state.nodes);
+    sortedNodes.forEach(function(node) {
       container.appendChild(renderTreeNode(node, 0));
     });
 
@@ -537,7 +617,8 @@
     if (node.expanded) el.classList.add('tree-expanded');
 
     if (node.type === 'folder' && node.children) {
-      node.children.forEach(function(child) {
+      var sortedChildren = sortNodes(node.children);
+      sortedChildren.forEach(function(child) {
         childrenEl.appendChild(renderTreeNode(child, depth + 1));
       });
     }
@@ -1082,7 +1163,7 @@
   }
 
   // ============================================
-  // MULTI-FORMAT EXPORT
+  // MULTI-FORMAT EXPORT (UPDATED WITH SETTINGS)
   // ============================================
   function exportData(scope, format) {
     if (scope === 'note') {
@@ -1153,10 +1234,17 @@
   }
 
   function exportJsonBackup() {
+    var settings = {};
+    SETTING_KEYS.forEach(function(key) {
+      var val = localStorage.getItem(key);
+      if (val !== null) settings[key] = val;
+    });
+
     var data = {
       version: '2.0',
       exportedAt: new Date().toISOString(),
-      nodes: state.nodes
+      nodes: state.nodes,
+      settings: settings
     };
 
     var jsonStr = JSON.stringify(data, null, 2);
@@ -1265,7 +1353,7 @@
     return title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'untitled';
   }
 
-  // ========== IMPORT ==========
+  // ========== IMPORT (UPDATED WITH SETTINGS RESTORE) ==========
   function importData(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -1277,6 +1365,14 @@
           if (!data.nodes || !Array.isArray(data.nodes)) {
             showToast(getTrans('notes_invalid_file') || 'Invalid notes file');
             return;
+          }
+
+          // Restore settings if present
+          if (data.settings) {
+            Object.keys(data.settings).forEach(function(key) {
+              localStorage.setItem(key, data.settings[key]);
+            });
+            showToast('Settings restored');
           }
 
           var existingTitles = getAllNodes().map(function(n) { return n.title.toLowerCase(); });
@@ -1305,6 +1401,10 @@
           mergeNodes(data.nodes, null);
           saveData();
           renderAll();
+          
+          // Re-apply settings
+          loadAndApplySettings();
+          
           showToast((getTrans('notes_imported') || 'Imported') + ': ' + importedCount + ' items');
         } else if (ext === 'md' || ext === 'txt') {
           var content = e.target.result;
@@ -1321,6 +1421,38 @@
       }
     };
     reader.readAsText(file);
+  }
+
+  function loadAndApplySettings() {
+    // Apply default view mode
+    var defaultMode = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
+    applyViewMode(defaultMode);
+    
+    // Set view buttons state
+    document.querySelectorAll('.view-btn').forEach(function(btn) {
+      btn.classList.remove('active');
+      if ((defaultMode === 'split' && btn.id === 'btn-view-split') ||
+          (defaultMode === 'editor' && btn.id === 'btn-view-editor') ||
+          (defaultMode === 'preview' && btn.id === 'btn-view-preview')) {
+        btn.classList.add('active');
+      }
+    });
+    
+    // Set backlinks default state
+    var backlinksDefault = localStorage.getItem(BACKLINKS_DEFAULT_STATE) || 'open';
+    var panel = document.getElementById('backlinks-panel');
+    if (panel) {
+      if (backlinksDefault === 'closed') {
+        panel.classList.add('collapsed');
+      } else {
+        panel.classList.remove('collapsed');
+      }
+    }
+    
+    // Apply sidebar sort order
+    var sortOrder = localStorage.getItem(SIDEBAR_SORT_ORDER) || 'recent-modified';
+    var sortSelect = document.getElementById('setting-sidebar-sort');
+    if (sortSelect) sortSelect.value = sortOrder;
   }
 
   // ========== TOGGLE / VIEW ==========
@@ -1510,9 +1642,7 @@
     }, 150);
   }
   
-    // ============================================
-  // COMMAND PALETTE (Focus Mode command removed)
-  // ============================================
+  // ========== COMMAND PALETTE ==========
   function openCommandPalette() {
     var modal = document.getElementById('command-palette-modal');
     var input = document.getElementById('command-palette-input');
@@ -1549,7 +1679,6 @@
       { label: 'Daily Note', icon: 'fa-calendar', type: 'command', action: createOrOpenDailyNote },
       { label: 'Graph View', icon: 'fa-share-square-o', type: 'command', action: openGraphModal },
       { label: 'Toggle Sidebar', icon: 'fa-bars', type: 'command', action: toggleSidebar },
-      // REMOVED: "Toggle Focus Mode" command
       { label: 'Backup Database (JSON)', icon: 'fa-database', type: 'command', action: function() { exportJsonBackup(); }},
       { label: 'Import Notes', icon: 'fa-folder-open', type: 'command', action: function() {
         var input = document.getElementById('import-file-input');
@@ -1559,7 +1688,7 @@
       { label: 'Export All (Text)', icon: 'fa-file-o', type: 'command', action: function() { exportAllNotes('txt'); }},
       { label: 'Export All (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportAllNotes('doc'); }},
       { label: 'Export All (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportAllNotes('pdf'); }},
-            { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
+      { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
       { label: 'Export Current Note (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportSingleNote('doc'); }},
       { label: 'Export Current Note (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportSingleNote('pdf'); }}
     ];
@@ -2050,10 +2179,20 @@
     if (!modal) return;
     modal.classList.add('visible');
 
-    var select = document.getElementById('setting-default-view');
-    if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
+    var viewSelect = document.getElementById('setting-default-view');
+    if (viewSelect) {
+      viewSelect.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
+    }
 
-    // REMOVED: Focus mode checkbox loading
+    var backlinksDefaultSelect = document.getElementById('setting-backlinks-default');
+    if (backlinksDefaultSelect) {
+      backlinksDefaultSelect.value = localStorage.getItem(BACKLINKS_DEFAULT_STATE) || 'open';
+    }
+
+    var sortSelect = document.getElementById('setting-sidebar-sort');
+    if (sortSelect) {
+      sortSelect.value = localStorage.getItem(SIDEBAR_SORT_ORDER) || 'recent-modified';
+    }
   }
 
   function closeSettingsModal() {
@@ -2065,22 +2204,46 @@
     var modal = document.getElementById('settings-modal');
     if (!modal) return;
 
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(m) {
-        if (m.attributeName === 'class' && modal.classList.contains('visible')) {
-          var select = document.getElementById('setting-default-view');
-          if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
-          // REMOVED: Focus mode checkbox
-        }
-      });
-    });
-    observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
-
+    // View mode selector
     var viewSelect = document.getElementById('setting-default-view');
     if (viewSelect) {
+      viewSelect.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
       viewSelect.addEventListener('change', function() {
-        localStorage.setItem(DEFAULT_VIEW_MODE, this.value);
+        var mode = this.value;
+        localStorage.setItem(DEFAULT_VIEW_MODE, mode);
+        applyViewMode(mode);
         showToast('Default view saved');
+      });
+    }
+
+    // Backlinks default state
+    var backlinksSelect = document.getElementById('setting-backlinks-default');
+    if (backlinksSelect) {
+      backlinksSelect.value = localStorage.getItem(BACKLINKS_DEFAULT_STATE) || 'open';
+      backlinksSelect.addEventListener('change', function() {
+        var state = this.value;
+        localStorage.setItem(BACKLINKS_DEFAULT_STATE, state);
+        var panel = document.getElementById('backlinks-panel');
+        if (panel) {
+          if (state === 'closed') {
+            panel.classList.add('collapsed');
+          } else {
+            panel.classList.remove('collapsed');
+          }
+        }
+        showToast('Backlinks default saved');
+      });
+    }
+
+    // Sidebar sort order
+    var sortSelect = document.getElementById('setting-sidebar-sort');
+    if (sortSelect) {
+      sortSelect.value = localStorage.getItem(SIDEBAR_SORT_ORDER) || 'recent-modified';
+      sortSelect.addEventListener('change', function() {
+        var order = this.value;
+        localStorage.setItem(SIDEBAR_SORT_ORDER, order);
+        renderTree();
+        showToast('Sort order saved');
       });
     }
   }
@@ -2102,6 +2265,11 @@
     btn.classList.add('active');
   }
 
+  function setActiveViewButtonSmall(btn) {
+    document.querySelectorAll('.view-btn-small').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+
   // ========== TOOLBAR VISIBILITY ==========
   function applyToolbarVisibility() {
     var hideNewNote = localStorage.getItem('oros_hide_new_note_btn') === 'true';
@@ -2116,6 +2284,34 @@
 
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     if (btnToggleSidebar) btnToggleSidebar.style.display = hideSidebarToggle ? 'none' : '';
+
+    var btnGraph = document.getElementById('btn-graph');
+    if (btnGraph) btnGraph.style.display = localStorage.getItem('oros_hide_graph_btn') === 'true' ? 'none' : '';
+
+    var btnDailyNote = document.getElementById('btn-daily-note');
+    if (btnDailyNote) btnDailyNote.style.display = localStorage.getItem('oros_hide_daily_btn') === 'true' ? 'none' : '';
+  }
+
+  // ========== ZEN MODE ==========
+  function toggleZenMode() {
+    var zenEnabled = localStorage.getItem('oros-zen-mode') === 'true';
+    document.body.setAttribute('data-zen', zenEnabled);
+    
+    var btn = document.getElementById('toggle-zen-mode');
+    if (btn) btn.checked = zenEnabled;
+  }
+
+  function setupZenMode() {
+    var btn = document.getElementById('toggle-zen-mode');
+    if (!btn) return;
+    
+    btn.checked = localStorage.getItem('oros-zen-mode') === 'true';
+    btn.addEventListener('change', function() {
+      var enabled = this.checked;
+      localStorage.setItem('oros-zen-mode', enabled);
+      document.body.setAttribute('data-zen', enabled);
+      showToast(enabled ? 'Zen Mode On' : 'Zen Mode Off');
+    });
   }
 
   // ========== SETUP ==========
@@ -2163,10 +2359,6 @@
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     if (btnToggleSidebar) btnToggleSidebar.addEventListener('click', toggleSidebar);
 
-    // ===== REMOVED: Focus Mode Button =====
-    // var btnFocusMode = document.getElementById('btn-focus-mode');
-    // This button no longer exists in HTML
-
     // ===== Search =====
     var searchInput = document.getElementById('notes-search');
     var searchClear = document.getElementById('notes-search-clear');
@@ -2191,14 +2383,29 @@
       });
     }
 
-    // ===== View Toggles =====
+    // ===== View Toggles (in footer now) =====
     var btnViewSplit = document.getElementById('btn-view-split');
     var btnViewEditor = document.getElementById('btn-view-editor');
     var btnViewPreview = document.getElementById('btn-view-preview');
 
-    if (btnViewSplit) btnViewSplit.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('split'); });
-    if (btnViewEditor) btnViewEditor.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('editor'); });
-    if (btnViewPreview) btnViewPreview.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('preview'); });
+    if (btnViewSplit) {
+      btnViewSplit.addEventListener('click', function() { 
+        setActiveViewButtonSmall(this); 
+        applyViewMode('split'); 
+      });
+    }
+    if (btnViewEditor) {
+      btnViewEditor.addEventListener('click', function() { 
+        setActiveViewButtonSmall(this); 
+        applyViewMode('editor'); 
+      });
+    }
+    if (btnViewPreview) {
+      btnViewPreview.addEventListener('click', function() { 
+        setActiveViewButtonSmall(this); 
+        applyViewMode('preview'); 
+      });
+    }
 
     // ===== Editor Tabs =====
     var tabWrite = document.getElementById('tab-write');
@@ -2240,15 +2447,6 @@
           }
           hideExportDropdown();
         });
-      });
-    }
-
-    var exportImportItem = document.getElementById('export-import-item');
-    if (exportImportItem && importInput) {
-      exportImportItem.addEventListener('click', function(e) {
-        e.stopPropagation();
-        importInput.click();
-        hideExportDropdown();
       });
     }
 
@@ -2347,7 +2545,7 @@
           if (newTags.length > 0) {
             var currentTags = note.tags || [];
             var merged = currentTags.concat(newTags.filter(function(t) {
-              return currentTags.indexOf(t) === -1;
+                            return currentTags.indexOf(t) === -1;
             }));
             updateTags(merged);
           }
@@ -2366,6 +2564,7 @@
     if (backlinksHeader && backlinksPanel) {
       backlinksHeader.addEventListener('click', function() {
         backlinksPanel.classList.toggle('collapsed');
+        saveBacklinksState();
       });
     }
 
@@ -2526,6 +2725,9 @@
       });
     }
 
+    // ===== Zen Mode Setup =====
+    setupZenMode();
+
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', function(e) {
       var cpModal = document.getElementById('command-palette-modal');
@@ -2600,6 +2802,15 @@
         return;
       }
 
+      // F9 — Zen Mode
+      if (e.key === 'F9' && !inEditor) {
+        e.preventDefault();
+        var zenBtn = document.getElementById('toggle-zen-mode');
+        if (zenBtn) zenBtn.checked = !zenBtn.checked;
+        zenBtn.dispatchEvent(new Event('change'));
+        return;
+      }
+
       // Ctrl+B — bold
       if (e.ctrlKey && e.key.toLowerCase() === 'b' && inEditor && ed.selectionStart !== ed.selectionEnd) {
         e.preventDefault();
@@ -2634,10 +2845,21 @@
     renderAll();
     applyToolbarVisibility();
 
-    var savedMode = localStorage.getItem(VIEW_MODE) || localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
-    applyViewMode(savedMode);
+    // Apply default view mode on load
+    loadAndApplySettings();
 
+    // Set active state for view buttons
+    var savedMode = localStorage.getItem(VIEW_MODE) || localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
     document.querySelectorAll('.view-btn').forEach(function(btn) {
+      btn.classList.remove('active');
+      if ((savedMode === 'split' && btn.id === 'btn-view-split') ||
+          (savedMode === 'editor' && btn.id === 'btn-view-editor') ||
+          (savedMode === 'preview' && btn.id === 'btn-view-preview')) {
+        btn.classList.add('active');
+      }
+    });
+
+    document.querySelectorAll('.view-btn-small').forEach(function(btn) {
       btn.classList.remove('active');
       if ((savedMode === 'split' && btn.id === 'btn-view-split') ||
           (savedMode === 'editor' && btn.id === 'btn-view-editor') ||
