@@ -1,44 +1,24 @@
 // ============================================
-// orOS Notes — Full Implementation v5.0
-// Changes from v4.3:
-//   #1 Sidebar collapse: uses display:none (added CSS class .collapsed)
-//   #2 Added many UI visibility toggles in settings
-//   #3 Backlinks panel collapse state persisted
-//   #4 First tree item padding-top added (CSS)
-//   #5 Sort mode dropdown + sorting logic
-//   #6 Removed editor-tabs bar; moved view buttons to footer
-//   #7 Export menu restructured; Import separate; Backup under Data
-//   #8 Default view mode persists across sessions
-//   #9 Settings saved in JSON backup and restored on import
+// orOS Notes — Full Implementation v4.3 (FOCUS MODE REMOVED)
+// Changes from v4.2:
+//   - Removed enableFocusMode(), disableFocusMode(), toggleFocusMode()
+//   - Removed focusMode from state
+//   - Removed all focus-mode class manipulation
+//   - Removed btn-focus-mode binding
+//   - Removed focus mode from settings modal setup
+//   - Removed "Toggle Focus Mode" from command palette
+//   - Removed focus_mode_enabled localStorage loading
 // ============================================
 
 (function() {
   'use strict';
 
   // ========== STORAGE KEYS ==========
-  var STORAGE_KEY = 'oros_notes_data_v5';
+  var STORAGE_KEY = 'oros_notes_data_v4';
   var ACTIVE_NOTE_ID = 'oros_notes_active_id';
   var VIEW_MODE = 'oros_notes_view_mode';
   var DEFAULT_VIEW_MODE = 'oros_notes_default_view';
   var SIDEBAR_COLLAPSED = 'oros_notes_sidebar_collapsed';
-  var BACKLINKS_COLLAPSED = 'oros_notes_backlinks_collapsed';
-  var SORT_MODE = 'oros_notes_sort_mode';
-
-  // UI Visibility keys
-  var HIDE_NEW_NOTE_BTN = 'oros_hide_new_note_btn';
-  var HIDE_NEW_FOLDER_BTN = 'oros_hide_new_folder_btn';
-  var HIDE_SIDEBAR_TOGGLE = 'oros_hide_sidebar_toggle';
-  var HIDE_DAILY_NOTE_BTN = 'oros_hide_daily_note_btn';
-  var HIDE_GRAPH_BTN = 'oros_hide_graph_btn';
-  var HIDE_COMMAND_PALETTE_BTN = 'oros_hide_command_palette_btn';
-  var HIDE_SEARCH_BAR = 'oros_hide_search_bar';
-  var HIDE_IMPORT_BTN = 'oros_hide_import_btn';
-  var HIDE_EXPORT_BTN = 'oros_hide_export_btn';
-  var HIDE_OUTLINE = 'oros_hide_outline';
-  var HIDE_TAGS_PANEL = 'oros_hide_tags_panel';
-  var HIDE_BACKLINKS = 'oros_hide_backlinks';
-  var HIDE_META_INFO = 'oros_hide_meta_info';
-  var HIDE_TAGS_INPUT = 'oros_hide_tags_input';
 
   // ========== STATE ==========
   var state = {
@@ -105,54 +85,23 @@
     var savedActive = localStorage.getItem(ACTIVE_NOTE_ID);
     if (savedActive) state.activeNodeId = savedActive;
 
-    // FIX #8: Apply default view mode preference on load (not session view mode)
-    var savedDefaultView = localStorage.getItem(DEFAULT_VIEW_MODE);
-    if (savedDefaultView) {
-      applyViewMode(savedDefaultView);
-      var activeBtn = document.querySelector('.view-btn.active');
-      if (activeBtn) activeBtn.classList.remove('active');
-      if (savedDefaultView === 'split' && document.getElementById('btn-view-split'))
-        document.getElementById('btn-view-split').classList.add('active');
-      if (savedDefaultView === 'editor' && document.getElementById('btn-view-editor'))
-        document.getElementById('btn-view-editor').classList.add('active');
-      if (savedDefaultView === 'preview' && document.getElementById('btn-view-preview'))
-        document.getElementById('btn-view-preview').classList.add('active');
-    }
+    var savedMode = localStorage.getItem(VIEW_MODE);
+    if (savedMode) applyViewMode(savedMode);
 
-    // #1: Sidebar collapsed state
     var sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED) === 'true';
     if (sidebarCollapsed) {
       var sidebar = document.getElementById('notes-sidebar');
       if (sidebar) sidebar.classList.add('collapsed');
     }
-
-    // #3: Backlinks collapsed state
-    var backlinksCollapsed = localStorage.getItem(BACKLINKS_COLLAPSED) === 'true';
-    if (backlinksCollapsed) {
-      var backlinksPanel = document.getElementById('backlinks-panel');
-      if (backlinksPanel) backlinksPanel.classList.add('collapsed');
-    }
-
-    // #5: Sort mode
-    var savedSortMode = localStorage.getItem(SORT_MODE);
-    if (savedSortMode) {
-      var sortSelect = document.getElementById('sort-mode-select');
-      if (sortSelect) sortSelect.value = savedSortMode;
-    }
+    // REMOVED: focus mode loading
   }
 
   function saveData() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.nodes));
       localStorage.setItem(ACTIVE_NOTE_ID, state.activeNodeId || '');
-      
       var sidebar = document.getElementById('notes-sidebar');
       localStorage.setItem(SIDEBAR_COLLAPSED, sidebar ? (sidebar.classList.contains('collapsed') ? 'true' : 'false') : 'false');
-      
-      var backlinksPanel = document.getElementById('backlinks-panel');
-      localStorage.setItem(BACKLINKS_COLLAPSED, backlinksPanel ? (backlinksPanel.classList.contains('collapsed') ? 'true' : 'false') : 'false');
-      
-      localStorage.setItem(SORT_MODE, document.getElementById('sort-mode-select')?.value || 'manual');
     } catch(e) {
       showToast('Storage limit reached. Export and delete old notes.');
     }
@@ -208,55 +157,6 @@
 
   function getPinnedNotes() {
     return getNotes().filter(function(n) { return n.pinned === true; });
-  }
-
-  // #5: Sorting logic
-  function getSortedNodes(nodes, mode) {
-    if (!mode || mode === 'manual') return nodes;
-
-    // Make a shallow copy to avoid mutating original order
-    var sorted = [].concat(nodes);
-
-    switch(mode) {
-      case 'folders-first':
-        sorted.sort(function(a, b) {
-          if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
-          return a.title.localeCompare(b.title);
-        });
-        break;
-      case 'notes-first':
-        sorted.sort(function(a, b) {
-          if (a.type !== b.type) return a.type === 'note' ? -1 : 1;
-          return a.title.localeCompare(b.title);
-        });
-        break;
-      case 'recent-created':
-        sorted.sort(function(a, b) {
-          if (a.type !== b.type) return a.type === 'note' ? -1 : 1;
-          return (b.created || 0) - (a.created || 0);
-        });
-        break;
-      case 'recent-modified':
-        sorted.sort(function(a, b) {
-          if (a.type !== b.type) return a.type === 'note' ? -1 : 1;
-          return (b.modified || 0) - (a.modified || 0);
-        });
-        break;
-      case 'alpha':
-        sorted.sort(function(a, b) {
-          return a.title.localeCompare(b.title);
-        });
-        break;
-    }
-
-    // Recursively sort children
-    sorted.forEach(function(node) {
-      if (node.children && node.children.length > 0) {
-        node.children = getSortedNodes(node.children, mode);
-      }
-    });
-
-    return sorted;
   }
 
   function createFolder(parentId, title) {
@@ -560,10 +460,7 @@
 
     container.innerHTML = '';
 
-    var sortMode = document.getElementById('sort-mode-select')?.value || 'manual';
-
     var pinnedNotes = getPinnedNotes();
-    // Pinned notes always first, sorted manually among themselves
     pinnedNotes.forEach(function(note) {
       container.appendChild(renderTreeNode(note, 0));
     });
@@ -574,9 +471,7 @@
       container.appendChild(divider);
     }
 
-    // Get sorted nodes based on sort mode
-    var nodesToRender = getSortedNodes(state.nodes, sortMode);
-    nodesToRender.forEach(function(node) {
+    state.nodes.forEach(function(node) {
       container.appendChild(renderTreeNode(node, 0));
     });
 
@@ -642,9 +537,7 @@
     if (node.expanded) el.classList.add('tree-expanded');
 
     if (node.type === 'folder' && node.children) {
-      var sortMode = document.getElementById('sort-mode-select')?.value || 'manual';
-      var sortedChildren = getSortedNodes(node.children, sortMode);
-      sortedChildren.forEach(function(child) {
+      node.children.forEach(function(child) {
         childrenEl.appendChild(renderTreeNode(child, depth + 1));
       });
     }
@@ -682,7 +575,7 @@
         if (e.target.closest('.tree-expand') || e.target === el || e.target.closest('.tree-icon') || e.target.closest('.tree-title')) {
           node.expanded = !node.expanded;
           el.classList.toggle('tree-expanded');
-          icon.className = 'tree-icon fa ' + (node.expanded ? 'fa-folder-open-o' : 'fa-folder_o');
+          icon.className = 'tree-icon fa ' + (node.expanded ? 'fa-folder-open-o' : 'fa-folder-o');
           saveData();
         }
       });
@@ -1189,15 +1082,13 @@
   }
 
   // ============================================
-  // MULTI-FORMAT EXPORT (Updated structure)
+  // MULTI-FORMAT EXPORT
   // ============================================
   function exportData(scope, format) {
     if (scope === 'note') {
       exportSingleNote(format);
-    } else if (scope === 'all') {
+    } else {
       exportAllNotes(format);
-    } else if (scope === 'backup') {
-      exportJsonBackup();
     }
   }
 
@@ -1205,6 +1096,9 @@
     var notes = getNotes();
 
     switch(format) {
+      case 'json':
+        exportJsonBackup();
+        break;
       case 'md':
         var mdContent = notes.map(function(n) {
           return '# ' + n.title + '\n\n' + (n.content || '') + '\n\n---\n';
@@ -1258,15 +1152,11 @@
     }
   }
 
-  // #9: Include settings in JSON backup
   function exportJsonBackup() {
-    var settings = collectAllSettings();
-
     var data = {
-      version: '3.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
-      nodes: state.nodes,
-      settings: settings
+      nodes: state.nodes
     };
 
     var jsonStr = JSON.stringify(data, null, 2);
@@ -1291,41 +1181,6 @@
       downloadBlob(jsonStr, 'notes_backup.json', 'application/json');
       showToast('Backup exported');
     }
-  }
-
-  // #9: Collect all settings
-  function collectAllSettings() {
-    return {
-      default_view_mode: localStorage.getItem(DEFAULT_VIEW_MODE),
-      sort_mode: localStorage.getItem(SORT_MODE),
-      backlinks_collapsed: localStorage.getItem(BACKLINKS_COLLAPSED),
-      sidebar_collapsed: localStorage.getItem(SIDEBAR_COLLAPSED),
-      hide_new_note_btn: localStorage.getItem(HIDE_NEW_NOTE_BTN),
-      hide_new_folder_btn: localStorage.getItem(HIDE_NEW_FOLDER_BTN),
-      hide_sidebar_toggle: localStorage.getItem(HIDE_SIDEBAR_TOGGLE),
-      hide_daily_note_btn: localStorage.getItem(HIDE_DAILY_NOTE_BTN),
-      hide_graph_btn: localStorage.getItem(HIDE_GRAPH_BTN),
-      hide_command_palette_btn: localStorage.getItem(HIDE_COMMAND_PALETTE_BTN),
-      hide_search_bar: localStorage.getItem(HIDE_SEARCH_BAR),
-      hide_import_btn: localStorage.getItem(HIDE_IMPORT_BTN),
-      hide_export_btn: localStorage.getItem(HIDE_EXPORT_BTN),
-      hide_outline: localStorage.getItem(HIDE_OUTLINE),
-      hide_tags_panel: localStorage.getItem(HIDE_TAGS_PANEL),
-      hide_backlinks: localStorage.getItem(HIDE_BACKLINKS),
-      hide_meta_info: localStorage.getItem(HIDE_META_INFO),
-      hide_tags_input: localStorage.getItem(HIDE_TAGS_INPUT)
-    };
-  }
-
-  // #9: Load settings from backup
-  function restoreSettings(settings) {
-    if (!settings || typeof settings !== 'object') return;
-    
-    Object.keys(settings).forEach(function(key) {
-      if (settings[key] !== null && settings[key] !== undefined) {
-        localStorage.setItem('oros_notes_' + key, settings[key]);
-      }
-    });
   }
 
   function generateDocHtml(notes, isAll) {
@@ -1410,7 +1265,7 @@
     return title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'untitled';
   }
 
-  // ========== IMPORT (with settings restoration) ==========
+  // ========== IMPORT ==========
   function importData(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -1422,11 +1277,6 @@
           if (!data.nodes || !Array.isArray(data.nodes)) {
             showToast(getTrans('notes_invalid_file') || 'Invalid notes file');
             return;
-          }
-
-          // #9: Restore settings if present
-          if (data.settings) {
-            restoreSettings(data.settings);
           }
 
           var existingTitles = getAllNodes().map(function(n) { return n.title.toLowerCase(); });
@@ -1453,10 +1303,7 @@
           }
 
           mergeNodes(data.nodes, null);
-          
-          // Reload UI to reflect restored settings
-          loadData();
-          applyUIVisibilityFromSettings();
+          saveData();
           renderAll();
           showToast((getTrans('notes_imported') || 'Imported') + ': ' + importedCount + ' items');
         } else if (ext === 'md' || ext === 'txt') {
@@ -1479,13 +1326,8 @@
   // ========== TOGGLE / VIEW ==========
   function toggleSidebar() {
     var sidebar = document.getElementById('notes-sidebar');
-    if (sidebar) {
-      sidebar.classList.toggle('collapsed');
-      // #1: Save collapsed state
-      localStorage.setItem(SIDEBAR_COLLAPSED, sidebar.classList.contains('collapsed') ? 'true' : 'false');
-      // Force recalculate flex layout
-      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 50);
-    }
+    if (sidebar) sidebar.classList.toggle('collapsed');
+    localStorage.setItem(SIDEBAR_COLLAPSED, sidebar ? (sidebar.classList.contains('collapsed') ? 'true' : 'false') : 'false');
   }
 
   function applyViewMode(mode) {
@@ -1506,16 +1348,22 @@
         container.classList.add('view-editor-only');
         if (editorTextarea) editorTextarea.style.display = '';
         if (previewDiv) previewDiv.style.display = 'none';
+        if (tabWrite) tabWrite.classList.add('active');
+        if (tabPreview) tabPreview.classList.remove('active');
         break;
       case 'preview':
         container.classList.add('view-preview-only');
         editorBody.classList.add('full-width');
         if (editorTextarea) editorTextarea.style.display = 'none';
         if (previewDiv) { previewDiv.style.display = 'block'; previewDiv.classList.add('visible'); }
+        if (tabWrite) tabWrite.classList.remove('active');
+        if (tabPreview) tabPreview.classList.add('active');
         break;
-      default: // split
+      default:
         if (editorTextarea) editorTextarea.style.display = '';
         if (previewDiv) { previewDiv.style.display = 'block'; previewDiv.classList.add('visible'); }
+        if (tabWrite) tabWrite.classList.add('active');
+        if (tabPreview) tabPreview.classList.remove('active');
     }
 
     localStorage.setItem(VIEW_MODE, mode);
@@ -1532,7 +1380,22 @@
   }
 
   function switchTab(tabName) {
-    // REMOVED: Tabs no longer exist in HTML, but keeping for backwards compat
+    var tabWrite = document.getElementById('tab-write');
+    var tabPreview = document.getElementById('tab-preview');
+    if (tabWrite) tabWrite.classList.remove('active');
+    if (tabPreview) tabPreview.classList.remove('active');
+
+    if (tabName === 'write') {
+      if (tabWrite) tabWrite.classList.add('active');
+      applyViewMode('editor');
+      var editor = document.getElementById('note-editor');
+      if (editor) editor.focus();
+    } else if (tabName === 'preview') {
+      if (tabPreview) tabPreview.classList.add('active');
+      applyViewMode('preview');
+      var ed = document.getElementById('note-editor');
+      if (ed) syncPreview(ed.value);
+    }
   }
 
   // ========== GRAPH VIEW ==========
@@ -1635,6 +1498,7 @@
     if (modal) modal.classList.remove('visible');
   }
 
+  // ========== RESIZE HANDLER FOR GRAPH ==========
   var graphResizeTimeout = null;
   function handleGraphResize() {
     if (graphResizeTimeout) clearTimeout(graphResizeTimeout);
@@ -1647,7 +1511,7 @@
   }
   
     // ============================================
-  // COMMAND PALETTE
+  // COMMAND PALETTE (Focus Mode command removed)
   // ============================================
   function openCommandPalette() {
     var modal = document.getElementById('command-palette-modal');
@@ -1685,6 +1549,7 @@
       { label: 'Daily Note', icon: 'fa-calendar', type: 'command', action: createOrOpenDailyNote },
       { label: 'Graph View', icon: 'fa-share-square-o', type: 'command', action: openGraphModal },
       { label: 'Toggle Sidebar', icon: 'fa-bars', type: 'command', action: toggleSidebar },
+      // REMOVED: "Toggle Focus Mode" command
       { label: 'Backup Database (JSON)', icon: 'fa-database', type: 'command', action: function() { exportJsonBackup(); }},
       { label: 'Import Notes', icon: 'fa-folder-open', type: 'command', action: function() {
         var input = document.getElementById('import-file-input');
@@ -1694,7 +1559,7 @@
       { label: 'Export All (Text)', icon: 'fa-file-o', type: 'command', action: function() { exportAllNotes('txt'); }},
       { label: 'Export All (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportAllNotes('doc'); }},
       { label: 'Export All (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportAllNotes('pdf'); }},
-      { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
+            { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
       { label: 'Export Current Note (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportSingleNote('doc'); }},
       { label: 'Export Current Note (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportSingleNote('pdf'); }}
     ];
@@ -2185,19 +2050,10 @@
     if (!modal) return;
     modal.classList.add('visible');
 
-    // Load current values
     var select = document.getElementById('setting-default-view');
     if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
 
-    var sortSelect = document.getElementById('setting-sort-mode');
-    if (sortSelect) sortSelect.value = localStorage.getItem(SORT_MODE) || 'manual';
-
-    // Load all toggles
-    var toggleConfigs = getToggleConfigs();
-    toggleConfigs.forEach(function(cfg) {
-      var el = document.getElementById(cfg.id);
-      if (el) el.checked = localStorage.getItem(cfg.key) === 'true';
-    });
+    // REMOVED: Focus mode checkbox loading
   }
 
   function closeSettingsModal() {
@@ -2205,81 +2061,21 @@
     if (modal) modal.classList.remove('visible');
   }
 
-  // #2: Toggle configurations (all UI visibility toggles)
-  function getToggleConfigs() {
-    return [
-      { id: 'toggle-hide-new-note-btn', key: HIDE_NEW_NOTE_BTN, target: 'toolbar', class: 'hide-new-note-btn' },
-      { id: 'toggle-hide-new-folder-btn', key: HIDE_NEW_FOLDER_BTN, target: 'toolbar', class: 'hide-new-folder-btn' },
-      { id: 'toggle-hide-sidebar-toggle', key: HIDE_SIDEBAR_TOGGLE, target: 'toolbar', class: 'hide-sidebar-toggle' },
-      { id: 'toggle-hide-daily-note-btn', key: HIDE_DAILY_NOTE_BTN, target: 'toolbar', class: 'hide-daily-note-btn' },
-      { id: 'toggle-hide-graph-btn', key: HIDE_GRAPH_BTN, target: 'toolbar', class: 'hide-graph-btn' },
-      { id: 'toggle-hide-command-palette-btn', key: HIDE_COMMAND_PALETTE_BTN, target: 'toolbar', class: 'hide-command-palette-btn' },
-      { id: 'toggle-hide-search-bar', key: HIDE_SEARCH_BAR, target: 'toolbar', class: 'hide-search-bar' },
-      { id: 'toggle-hide-import-btn', key: HIDE_IMPORT_BTN, target: 'toolbar', class: 'hide-import-btn' },
-      { id: 'toggle-hide-export-btn', key: HIDE_EXPORT_BTN, target: 'toolbar', class: 'hide-export-btn' },
-      { id: 'toggle-hide-outline', key: HIDE_OUTLINE, target: 'right-pane', class: 'hide-outline' },
-      { id: 'toggle-hide-tags-panel', key: HIDE_TAGS_PANEL, target: 'sidebar', class: 'hide-tags-panel' },
-      { id: 'toggle-hide-backlinks', key: HIDE_BACKLINKS, target: 'right-pane', class: 'hide-backlinks' },
-      { id: 'toggle-hide-meta-info', key: HIDE_META_INFO, target: 'footer', class: 'hide-meta-info' },
-      { id: 'toggle-hide-tags-input', key: HIDE_TAGS_INPUT, target: 'footer', class: 'hide-tags-input' }
-    ];
-  }
-
-  // #2: Apply UI visibility from settings
-  function applyUIVisibilityFromSettings() {
-    var toolbar = document.getElementById('notes-toolbar');
-    var rightPane = document.querySelector('.editor-pane-right');
-    var sidebar = document.getElementById('notes-sidebar');
-    var footer = document.getElementById('editor-footer');
-
-    getToggleConfigs().forEach(function(cfg) {
-      var hidden = localStorage.getItem(cfg.key) === 'true';
-
-      if (cfg.target === 'toolbar' && toolbar) {
-        toolbar.classList.toggle(cfg.class, hidden);
-      }
-      if (cfg.target === 'right-pane' && rightPane) {
-        rightPane.classList.toggle(cfg.class, hidden);
-      }
-      if (cfg.target === 'sidebar' && sidebar) {
-        sidebar.classList.toggle(cfg.class, hidden);
-      }
-      if (cfg.target === 'footer' && footer) {
-        footer.classList.toggle(cfg.class, hidden);
-      }
-    });
-  }
-
-  // Legacy name kept for backwards compat
-  function applyToolbarVisibility() {
-    applyUIVisibilityFromSettings();
-  }
-
   function setupSettingsModal() {
     var modal = document.getElementById('settings-modal');
     if (!modal) return;
 
-    // Observer to load values when modal opens
     var observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(m) {
         if (m.attributeName === 'class' && modal.classList.contains('visible')) {
           var select = document.getElementById('setting-default-view');
           if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
-
-          var sortSelect = document.getElementById('setting-sort-mode');
-          if (sortSelect) sortSelect.value = localStorage.getItem(SORT_MODE) || 'manual';
-
-          var toggleConfigs = getToggleConfigs();
-          toggleConfigs.forEach(function(cfg) {
-            var el = document.getElementById(cfg.id);
-            if (el) el.checked = localStorage.getItem(cfg.key) === 'true';
-          });
+          // REMOVED: Focus mode checkbox
         }
       });
     });
     observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
 
-    // Default view mode select
     var viewSelect = document.getElementById('setting-default-view');
     if (viewSelect) {
       viewSelect.addEventListener('change', function() {
@@ -2287,60 +2083,6 @@
         showToast('Default view saved');
       });
     }
-
-    // Sort mode select
-    var sortSelect = document.getElementById('setting-sort-mode');
-    if (sortSelect) {
-      sortSelect.addEventListener('change', function() {
-        localStorage.setItem(SORT_MODE, this.value);
-        var sidebarSelect = document.getElementById('sort-mode-select');
-        if (sidebarSelect) sidebarSelect.value = this.value;
-        renderTree();
-        showToast('Sort order saved');
-      });
-    }
-
-    // Toggle: backlinks collapsed on startup
-    var backlinksToggle = document.getElementById('toggle-backlinks-collapsed');
-    if (backlinksToggle) {
-      backlinksToggle.checked = localStorage.getItem(BACKLINKS_COLLAPSED) === 'true';
-      backlinksToggle.addEventListener('change', function() {
-        localStorage.setItem(BACKLINKS_COLLAPSED, this.checked ? 'true' : 'false');
-        var backlinksPanel = document.getElementById('backlinks-panel');
-        if (backlinksPanel) backlinksPanel.classList.toggle('collapsed', this.checked);
-      });
-    }
-
-    // Bind all UI visibility toggles
-    getToggleConfigs().forEach(function(cfg) {
-      var el = document.getElementById(cfg.id);
-      if (!el) return;
-
-      el.checked = localStorage.getItem(cfg.key) === 'true';
-
-      el.addEventListener('change', function() {
-        var hidden = this.checked;
-        localStorage.setItem(cfg.key, hidden ? 'true' : 'false');
-        applyUIVisibilityFromSettings();
-      });
-    });
-
-    // Settings tabs
-    document.querySelectorAll('.settings-nav .tab-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.settings-nav .tab-btn').forEach(function(b) { b.classList.remove('active'); });
-        document.querySelectorAll('.settings-tab-panel').forEach(function(p) { p.style.display = 'none'; });
-        this.classList.add('active');
-        var panel = document.querySelector('[data-panel="' + this.dataset.tab + '"]');
-        if (panel) panel.style.display = '';
-      });
-    });
-
-    // Settings modal overlay/close
-    var settingsOverlay = document.getElementById('settings-modal-overlay');
-    var settingsClose = document.getElementById('settings-close');
-    if (settingsOverlay) settingsOverlay.addEventListener('click', closeSettingsModal);
-    if (settingsClose) settingsClose.addEventListener('click', closeSettingsModal);
   }
 
   // ========== UTILITY ==========
@@ -2358,6 +2100,22 @@
   function setActiveViewButton(btn) {
     document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
+  }
+
+  // ========== TOOLBAR VISIBILITY ==========
+  function applyToolbarVisibility() {
+    var hideNewNote = localStorage.getItem('oros_hide_new_note_btn') === 'true';
+    var hideNewFolder = localStorage.getItem('oros_hide_new_folder_btn') === 'true';
+    var hideSidebarToggle = localStorage.getItem('oros_hide_sidebar_toggle') === 'true';
+
+    var btnNewNote = document.getElementById('btn-new-note');
+    if (btnNewNote) btnNewNote.style.display = hideNewNote ? 'none' : '';
+
+    var btnNewFolder = document.getElementById('btn-new-folder');
+    if (btnNewFolder) btnNewFolder.style.display = hideNewFolder ? 'none' : '';
+
+    var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    if (btnToggleSidebar) btnToggleSidebar.style.display = hideSidebarToggle ? 'none' : '';
   }
 
   // ========== SETUP ==========
@@ -2389,6 +2147,7 @@
     if (btnCmdPalette) btnCmdPalette.addEventListener('click', openCommandPalette);
 
     // ===== Graph Modal Close =====
+    var graphModal = document.getElementById('graph-modal');
     var graphOverlay = document.getElementById('graph-modal-overlay');
     var graphClose = document.getElementById('graph-modal-close');
     if (graphOverlay) graphOverlay.addEventListener('click', closeGraphModal);
@@ -2404,17 +2163,9 @@
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     if (btnToggleSidebar) btnToggleSidebar.addEventListener('click', toggleSidebar);
 
-    // ===== Sort Mode Select (sidebar) =====
-    var sortSelect = document.getElementById('sort-mode-select');
-    if (sortSelect) {
-      sortSelect.addEventListener('change', function() {
-        localStorage.setItem(SORT_MODE, this.value);
-        var settingsSort = document.getElementById('setting-sort-mode');
-        if (settingsSort) settingsSort.value = this.value;
-        renderTree();
-        saveData();
-      });
-    }
+    // ===== REMOVED: Focus Mode Button =====
+    // var btnFocusMode = document.getElementById('btn-focus-mode');
+    // This button no longer exists in HTML
 
     // ===== Search =====
     var searchInput = document.getElementById('notes-search');
@@ -2440,7 +2191,7 @@
       });
     }
 
-    // ===== View Toggles (moved to footer) =====
+    // ===== View Toggles =====
     var btnViewSplit = document.getElementById('btn-view-split');
     var btnViewEditor = document.getElementById('btn-view-editor');
     var btnViewPreview = document.getElementById('btn-view-preview');
@@ -2448,6 +2199,12 @@
     if (btnViewSplit) btnViewSplit.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('split'); });
     if (btnViewEditor) btnViewEditor.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('editor'); });
     if (btnViewPreview) btnViewPreview.addEventListener('click', function() { setActiveViewButton(this); applyViewMode('preview'); });
+
+    // ===== Editor Tabs =====
+    var tabWrite = document.getElementById('tab-write');
+    var tabPreview = document.getElementById('tab-preview');
+    if (tabWrite) tabWrite.addEventListener('click', function() { switchTab('write'); });
+    if (tabPreview) tabPreview.addEventListener('click', function() { switchTab('preview'); });
 
     // ===== Import =====
     var importInput = document.getElementById('import-file-input');
@@ -2478,13 +2235,20 @@
           e.stopPropagation();
           var scope = this.getAttribute('data-scope');
           var format = this.getAttribute('data-format');
-          if (scope === 'backup') {
-            exportJsonBackup();
-          } else if (scope && format) {
+          if (scope && format) {
             exportData(scope, format);
           }
           hideExportDropdown();
         });
+      });
+    }
+
+    var exportImportItem = document.getElementById('export-import-item');
+    if (exportImportItem && importInput) {
+      exportImportItem.addEventListener('click', function(e) {
+        e.stopPropagation();
+        importInput.click();
+        hideExportDropdown();
       });
     }
 
@@ -2602,17 +2366,6 @@
     if (backlinksHeader && backlinksPanel) {
       backlinksHeader.addEventListener('click', function() {
         backlinksPanel.classList.toggle('collapsed');
-        // #3: Persist collapse state
-        localStorage.setItem(BACKLINKS_COLLAPSED, backlinksPanel.classList.contains('collapsed') ? 'true' : 'false');
-      });
-    }
-
-    // ===== Outline Panel Toggle =====
-    var outlineHeader = document.getElementById('outline-header');
-    var outlineSection = document.getElementById('outline-section');
-    if (outlineHeader && outlineSection) {
-      outlineHeader.addEventListener('click', function() {
-        outlineSection.classList.toggle('collapsed');
       });
     }
 
@@ -2739,6 +2492,40 @@
     // ===== Settings Modal =====
     setupSettingsModal();
 
+    // ===== Toolbar visibility toggles =====
+    var toggleHideNewNote = document.getElementById('toggle-hide-new-note-btn');
+    if (toggleHideNewNote) {
+      toggleHideNewNote.checked = localStorage.getItem('oros_hide_new_note_btn') === 'true';
+      toggleHideNewNote.addEventListener('change', function() {
+        var hidden = this.checked;
+        localStorage.setItem('oros_hide_new_note_btn', hidden ? 'true' : 'false');
+        var btn = document.getElementById('btn-new-note');
+        if (btn) btn.style.display = hidden ? 'none' : '';
+      });
+    }
+
+    var toggleHideNewFolder = document.getElementById('toggle-hide-new-folder-btn');
+    if (toggleHideNewFolder) {
+      toggleHideNewFolder.checked = localStorage.getItem('oros_hide_new_folder_btn') === 'true';
+      toggleHideNewFolder.addEventListener('change', function() {
+        var hidden = this.checked;
+        localStorage.setItem('oros_hide_new_folder_btn', hidden ? 'true' : 'false');
+        var btn = document.getElementById('btn-new-folder');
+        if (btn) btn.style.display = hidden ? 'none' : '';
+      });
+    }
+
+    var toggleHideSidebar = document.getElementById('toggle-hide-sidebar-toggle');
+    if (toggleHideSidebar) {
+      toggleHideSidebar.checked = localStorage.getItem('oros_hide_sidebar_toggle') === 'true';
+      toggleHideSidebar.addEventListener('change', function() {
+        var hidden = this.checked;
+        localStorage.setItem('oros_hide_sidebar_toggle', hidden ? 'true' : 'false');
+        var btn = document.getElementById('btn-toggle-sidebar');
+        if (btn) btn.style.display = hidden ? 'none' : '';
+      });
+    }
+
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', function(e) {
       var cpModal = document.getElementById('command-palette-modal');
@@ -2845,10 +2632,9 @@
     loadData();
     setup();
     renderAll();
-    applyUIVisibilityFromSettings();
+    applyToolbarVisibility();
 
-    // #8: Use DEFAULT_VIEW_MODE as the authority for startup view
-    var savedMode = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
+    var savedMode = localStorage.getItem(VIEW_MODE) || localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
     applyViewMode(savedMode);
 
     document.querySelectorAll('.view-btn').forEach(function(btn) {
