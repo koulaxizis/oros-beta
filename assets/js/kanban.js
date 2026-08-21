@@ -202,9 +202,9 @@
       resetBoardToDefaults();
     }
 
-    updateCurrentBoardName();
+        updateCurrentBoardName();
     renderColumns();
-    renderLabelsList();
+    updateFilterDropdown();
   }
 
   function resetBoardToDefaults() {
