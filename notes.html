@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS Notes — Privacy-first note-taking app with wikilinks, tags, and graph view.">
   <title>orOS Notes</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="notes.css">
-  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="assets/css/icons.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="notes.css">
 </head>
 <body>
   <!-- ===== HEADER ===== -->
@@ -377,7 +378,11 @@
   </div>
 
   <!-- ===== SCRIPTS ===== -->
-  <script src="../assets/js/main.js"></script>
-  <script src="notes.js"></script>
+  <script src="config.js"></script>
+<script src="assets/js/global-settings.js" defer></script>
+<script src="assets/js/components/header.js" defer></script>
+<script src="assets/js/components/footer.js" defer></script>
+<script src="assets/js/main.js" defer></script>
+<script src="notes.js" defer></script>
 </body>
 </html>
