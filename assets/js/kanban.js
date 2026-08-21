@@ -1,7 +1,10 @@
 /* ============================================
-   orOS Kanban — Complete JavaScript (v2.1 — FIXED)
-   Single file, no splits needed
-   FIX: Translations now use window.OROS_TRANSLATIONS (no fetch)
+   orOS Kanban — Complete JavaScript (v2.2 — FIXED)
+   Fixes:
+   - getTrans returns null (not key) when no translation
+   - Theme toggle button wired
+   - Search selectors match HTML
+   - No dependency on translations being loaded at init
    ============================================ */
 
 (function(global) {
@@ -21,7 +24,6 @@
     autoSaveEnabled: true
   };
 
-  var translations = {};
   var currentLang = 'en';
 
   // ===== UTILITIES =====
@@ -30,7 +32,7 @@
     if (el) {
       el.addEventListener(eventType, handler);
     } else {
-      console.warn('kanban.js: Element "' + id + '" not found in DOM — skipping ' + eventType + ' listener.');
+      console.warn('kanban.js: Element "' + id + '" not found — skipping ' + eventType + ' listener.');
     }
   }
 
@@ -46,12 +48,18 @@
     setTimeout(function() { toast.classList.remove('visible'); }, 2500);
   }
 
+  /*
+   * CRITICAL FIX: Returns null when no translation found.
+   * Previous version returned the key string itself,
+   * which is truthy and prevented fallbacks from working.
+   */
   function getTrans(key) {
     var lang = localStorage.getItem('oros-language') || 'en';
     var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
     if (t[key]) return t[key];
     var tEn = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS.en) || {};
-    return tEn[key] || key;
+    if (tEn[key]) return tEn[key];
+    return null;
   }
 
   function setLanguage(lang) {
@@ -67,7 +75,7 @@
       var el = elements[i];
       var key = el.getAttribute('data-i18n');
       var translated = getTrans(key);
-      if (translated && translated !== key) {
+      if (translated) {
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
           if (el.placeholder !== '') el.placeholder = translated;
         } else if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
@@ -80,7 +88,7 @@
       var phEl = placeholders[j];
       var phKey = phEl.getAttribute('data-i18n-placeholder');
       var phValue = getTrans(phKey);
-      if (phValue && phValue !== phKey) {
+      if (phValue) {
         phEl.setAttribute('placeholder', phValue);
       }
     }
@@ -93,6 +101,7 @@
       currentLang = localStorage.getItem('oros-language') || 'en';
       refreshTranslations();
     });
+    // Retry after window load in case translations loaded late
     window.addEventListener('load', function() {
       refreshTranslations();
     });
@@ -105,20 +114,6 @@
   function deepClone(obj) {
     try { return JSON.parse(JSON.stringify(obj)); }
     catch (e) { return obj; }
-  }
-
-  function formatDate(ts) {
-    if (!ts) return '';
-    var d = new Date(ts);
-    var now = new Date();
-    var diff = now - d;
-    var mins = Math.floor(diff / 60000);
-    var hours = Math.floor(mins / 60);
-    var days = Math.floor(hours / 24);
-    if (days > 0) return d.toLocaleDateString();
-    if (hours > 0) return hours + 'h ago';
-    if (mins > 0) return mins + 'm ago';
-    return 'just Now';
   }
 
   function sanitizeText(str) {
@@ -237,6 +232,7 @@
     document.body.classList.toggle('light-mode', next === 'light');
     document.body.classList.toggle('dark-mode', next === 'dark');
     localStorage.setItem('oros-theme', next);
+    showToast(next === 'dark' ? 'Dark mode' : 'Light mode');
   }
 
   // ===== INITIALIZATION =====
@@ -259,11 +255,16 @@
     setupKanbanSettingsToggles();
 
     setInterval(saveToStorage, 30000);
-    console.log('orOS Kanban initialized successfully');
+    console.log('orOS Kanban initialized (v2.2)');
   }
 
   // ===== BOARD MANAGEMENT =====
   function createNewBoard(name) {
+    /*
+     * FIX: getTrans now returns null, so || works correctly.
+     * Previous: getTrans('kanban_new_board') returned 'kanban_new_board' (truthy string)
+     * Now: returns null, so fallback to 'New Board' kicks in.
+     */
     var boardName = name || getTrans('kanban_new_board') || 'New Board';
     var newBoard = {
       id: generateId(),
@@ -292,7 +293,8 @@
   }
 
   function deleteBoard(boardId) {
-    if (!confirm(getTrans('kanban_confirm_delete_board') || 'Delete this board? This cannot be undone.')) return;
+    var msg = getTrans('kanban_confirm_delete_board') || 'Delete this board? This cannot be undone.';
+    if (!confirm(msg)) return;
     var idx = state.boards.findIndex(function(b) { return b.id === boardId; });
     if (idx === -1) return;
     state.boards.splice(idx, 1);
@@ -494,7 +496,8 @@
       input.id = 'column-title-edit';
       input.className = 'column-title-edit';
       document.body.appendChild(input);
-    }
+	  
+	      }
 
     var board = getCurrentBoard();
     if (!board) return;
@@ -1429,7 +1432,7 @@
       boards: state.boards,
       currentBoardId: state.currentBoardId,
       exportedAt: Date.now(),
-      version: '2.1'
+      version: '2.2'
     };
 
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1579,7 +1582,7 @@
     };
     if (overlay) overlay.onclick = function() {
       if (modal) modal.classList.remove('visible');
-      if (overlay) overlay.classList.remove('visible');
+      overlay.classList.remove('visible');
     };
   }
 
@@ -1617,7 +1620,7 @@
 
     if (overlay) overlay.onclick = function() {
       if (modal) modal.classList.remove('visible');
-      if (overlay) overlay.classList.remove('visible');
+      overlay.classList.remove('visible');
       if (header) header.textContent = 'Board Statistics';
     };
     var closeBtn = document.getElementById('btn-close-stats');
@@ -1843,6 +1846,10 @@
     safeAddListener('btn-labels', 'click', openLabelManagement);
     safeAddListener('btn-help', 'click', showHelp);
 
+    // Theme toggle — NEW in v2.2
+    safeAddListener('btn-theme-toggle', 'click', toggleTheme);
+
+    // Global click: close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
       if (!e.target.closest('.board-selector')) {
         var bl = document.getElementById('board-list');
@@ -1855,10 +1862,13 @@
       if (!e.target.closest('.kanban-export-group')) {
         var eo = document.getElementById('export-options');
         if (eo) eo.style.display = 'none';
+        var eg = document.querySelector('.kanban-export-group');
+        if (eg) eg.classList.remove('open');
       }
     });
 
-    var searchInput = document.querySelector('.kanban-search-input');
+    // Search — FIX: uses ID selectors to match HTML
+    var searchInput = document.getElementById('kanban-search-box');
     if (searchInput) {
       var debounceTimer;
       searchInput.addEventListener('input', function() {
@@ -1871,7 +1881,7 @@
       });
     }
 
-    var searchClear = document.querySelector('.kanban-search-clear');
+    var searchClear = document.getElementById('kanban-search-clear');
     if (searchClear) {
       searchClear.addEventListener('click', function() {
         if (searchInput) {
@@ -1882,7 +1892,7 @@
     }
   }
 
-    // ===== WINDOW RESIZE =====
+  // ===== WINDOW RESIZE =====
   var resizeTimer;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimer);

@@ -4,13 +4,19 @@
    v2.1 additions: header layout, modals, buttons, theme support
    ============================================ */
 
+/* ===== RESET & BASE ===== */
+* {
+  box-sizing: border-box;
+}
+
 /* ===== BODY LAYOUT ===== */
 body.kanban-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body.kanban-page.dark-mode {
@@ -30,10 +36,16 @@ body.kanban-page.dark-mode {
   --border-hover: rgba(255,255,255,0.15);
   --danger: #e57373;
   --success: #81c784;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --font-primary: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  --transition: 0.15s ease;
 }
 
 /* ===== LIGHT THEME SUPPORT ===== */
-[data-theme="light"].kanban-page {
+[data-theme="light"].kanban-page,
+[data-theme="light"] body.kanban-page {
   --bg-dark: #faf9f7;
   --bg-surface: #f0efed;
   --bg-toolbar: #e8e6e3;
@@ -55,6 +67,18 @@ body.kanban-page.dark-mode {
 [data-theme="light"] .rich-editor {
   background: transparent;
   caret-color: var(--accent-gold);
+}
+
+/* ===== APP CONTAINER — CRITICAL FIX ===== */
+/* Fixed: Removed height:100vh, added flex:1 for proper flex child sizing */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-top: 56px;
+  overflow: hidden;
+  width: 100%;
 }
 
 /* ===== TOOLBAR ===== */
@@ -176,6 +200,11 @@ body.kanban-page.dark-mode {
   overflow-y: auto;
 }
 
+.board-list-items {
+  /* Ensure this container exists */
+  min-height: 1px;
+}
+
 .board-list-item {
   display: flex !important;
   align-items: center;
@@ -214,7 +243,9 @@ body.kanban-page.dark-mode {
   margin-left: auto;
 }
 
-.board-reorder-btn {
+.board-reorder-btn,
+.board-rename-btn,
+.board-list-item-delete {
   background: var(--bg-dark, #1b1a18);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
@@ -227,45 +258,18 @@ body.kanban-page.dark-mode {
   transition: all var(--transition);
 }
 
-.board-reorder-btn:hover {
-  opacity: 1;
-  color: var(--accent-gold);
-  border-color: var(--accent-gold);
-}
-
-.board-rename-btn {
-  background: var(--bg-dark, #1b1a18);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 3px 5px;
-  font-size: 11px;
-  cursor: pointer;
-  opacity: 0.8;
-  border-radius: 3px;
-  line-height: 1;
-  transition: all var(--transition);
-}
-
+.board-reorder-btn:hover,
 .board-rename-btn:hover {
   opacity: 1;
   color: var(--accent-gold);
   border-color: var(--accent-gold);
 }
 
-.board-list-item-delete {
-  background: var(--bg-dark, #1b1a18);
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  padding: 3px 5px;
-  cursor: pointer;
-  font-size: 11px;
-  opacity: 0.8;
-  border-radius: 3px;
-  line-height: 1;
-  transition: all var(--transition);
+.board-list-item-delete:hover { 
+  opacity: 1; 
+  color: var(--danger); 
+  border-color: var(--danger); 
 }
-
-.board-list-item-delete:hover { opacity: 1; color: var(--danger); border-color: var(--danger); }
 
 .board-rename-input {
   position: fixed;
@@ -431,7 +435,10 @@ body.kanban-page.dark-mode {
 .kanban-action-btn.archive-active { background: var(--accent-gold); border-color: var(--accent-gold); color: #1b1a18; }
 
 /* ===== EXPORT MENU ===== */
-.kanban-export-group { position: relative; display: inline-flex; }
+.kanban-export-group { 
+  position: relative; 
+  display: inline-flex; 
+}
 
 .kanban-export-menu {
   position: absolute;
@@ -465,18 +472,22 @@ body.kanban-page.dark-mode {
   font-family: var(--font-primary);
   font-size: 13px;
   transition: background var(--transition);
+  text-align: left;
 }
 
 .export-option:hover { background: var(--bg-hover); color: var(--accent-gold); }
 
-/* ===== BOARD AREA ===== */
+/* ===== BOARD AREA — CRITICAL FIX ===== */
+/* Fixed: min-height:0 ensures flex child can shrink */
 .kanban-board-area {
   flex: 1;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
   background: var(--bg-dark, #1b1a18);
   -webkit-overflow-scrolling: touch;
   position: relative;
+  width: 100%;
 }
 
 .kanban-columns {
@@ -939,34 +950,60 @@ body.kanban-page.dark-mode {
 
 .add-column-placeholder:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
 
-/* ===== CARD MODAL ===== */
-.card-modal,
-.modal {
+/* ===== MODALS — CLEAN REWRITE ===== */
+.modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-modal.visible,
-.modal.visible { display: flex; }
-
-.modal-overlay,
-.card-modal-overlay,
-.label-modal-overlay,
-.stats-modal-overlay {
-  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: none;
+}
+
+.modal-overlay.visible { display: block; }
+
+#card-modal,
+#label-modal,
+#stats-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  background: var(--bg-panel, #252320);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+#card-modal.visible,
+#label-modal.visible,
+#stats-modal.visible {
+  display: flex;
+}
+
+#card-modal {
+  width: 90%;
+  max-width: 560px;
+  max-height: 85vh;
+}
+
+#label-modal {
+  width: 90%;
+  max-width: 480px;
+  max-height: 75vh;
+}
+
+#stats-modal {
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
 }
 
 .modal-header,
@@ -989,6 +1026,7 @@ body.kanban-page.dark-mode {
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  flex: 1;
 }
 
 .modal-body,
@@ -1004,249 +1042,15 @@ body.kanban-page.dark-mode {
 .card-modal-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 12px 20px;
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
+  gap: 8px;
 }
 
 .spacer { flex: 1; }
 
-/* ===== MODAL CONTENT WRAPPERS ===== */
-.card-modal-content,
-.label-modal-content,
-.stats-modal-content,
-.modal > .modal-header ~ .modal-body,
-.modal > .modal-header ~ .modal-body ~ .modal-footer {
-  position: relative;
-}
-
-#card-modal,
-#label-modal,
-#stats-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-#card-modal > .modal-header + .modal-body,
-#label-modal > .modal-header + .modal-body,
-#stats-modal > .modal-header + .modal-body {
-  position: relative;
-}
-
-#card-modal,
-#label-modal,
-#stats-modal {
-  background: transparent;
-}
-
-#card-modal .modal-header,
-#card-modal .modal-body,
-#card-modal .modal-footer,
-#label-modal .modal-header,
-#label-modal .modal-body,
-#stats-modal .modal-header,
-#stats-modal .modal-body {
-  position: relative;
-  z-index: 1;
-}
-
-/* Wrap modal inner content visually */
-#card-modal::before,
-#label-modal::before,
-#stats-modal::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 560px;
-  max-height: 85vh;
-  background: var(--bg-panel, #252320);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg, 12px);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-  overflow: hidden;
-  z-index: 0;
-}
-
-#label-modal::before {
-  max-width: 480px;
-  max-height: 75vh;
-}
-
-#stats-modal::before {
-  max-width: 600px;
-  max-height: 85vh;
-}
-
-#card-modal.visible,
-#label-modal.visible,
-#stats-modal.visible {
-  display: block;
-}
-
-#card-modal .modal-header,
-#label-modal .modal-header,
-#stats-modal .modal-header {
-  position: relative;
-  z-index: 1;
-  max-width: 90%;
-  width: 100%;
-  margin: 0 auto;
-  border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
-}
-
-#card-modal .modal-body,
-#label-modal .modal-body,
-#stats-modal .modal-body {
-  position: relative;
-  z-index: 1;
-  max-width: 90%;
-  width: 100%;
-  margin: 0 auto;
-}
-
-#card-modal .modal-footer {
-  position: relative;
-  z-index: 1;
-  max-width: 90%;
-  width: 100%;
-  margin: 0 auto;
-  border-radius: 0 0 var(--radius-lg, 12px) var(--radius-lg, 12px);
-}
-
-/* Flexbox for inner content */
-#card-modal,
-#label-modal,
-#stats-modal {
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-#card-modal.visible,
-#label-modal.visible,
-#stats-modal.visible {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Override ::before approach — use direct wrapper styling */
-.modal.card-modal,
-.modal.label-modal,
-.modal.stats-modal {
-  background: transparent;
-}
-
-.modal.card-modal > .modal-header,
-.modal.label-modal > .modal-header,
-.modal.stats-modal > .modal-header,
-.modal.card-modal > .modal-body,
-.modal.label-modal > .modal-body,
-.modal.stats-modal > .modal-body,
-.modal.card-modal > .modal-footer {
-  position: relative;
-  z-index: 2;
-  width: 90%;
-  max-width: 560px;
-  box-sizing: border-box;
-}
-
-.modal.label-modal > .modal-header,
-.modal.label-modal > .modal-body {
-  max-width: 480px;
-}
-
-.modal.stats-modal > .modal-header,
-.modal.stats-modal > .modal-body {
-  max-width: 600px;
-}
-
-/* Remove ::before pseudo (clean approach) */
-.modal.card-modal::before,
-.modal.label-modal::before,
-.modal.stats-modal::before {
-  content: none;
-}
-
-/* ===== CLEAN MODAL LAYOUT ===== */
-.modal.card-modal,
-.modal.label-modal,
-.modal.stats-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-}
-
-.modal.card-modal.visible,
-.modal.label-modal.visible,
-.modal.stats-modal.visible {
-  display: flex;
-}
-
-/* Inner visual container — simulated */
-.modal.card-modal .modal-header,
-.modal.card-modal .modal-body,
-.modal.card-modal .modal-footer,
-.modal.label-modal .modal-header,
-.modal.label-modal .modal-body,
-.modal.stats-modal .modal-header,
-.modal.stats-modal .modal-body {
-  background: var(--bg-panel, #252320);
-  border-left: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-}
-
-.modal.card-modal .modal-header,
-.modal.label-modal .modal-header,
-.modal.stats-modal .modal-header {
-  border-top: 1px solid var(--border-color);
-  border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
-}
-
-.modal.card-modal .modal-footer {
-  border-bottom: 1px solid var(--border-color);
-  border-radius: 0 0 var(--radius-lg, 12px) var(--radius-lg, 12px);
-}
-
-.modal.card-modal .modal-body,
-.modal.label-modal .modal-body,
-.modal.stats-modal .modal-body {
-  border-bottom: 0;
-}
-
-/* Ensure max-height with scrolling */
-.modal.card-modal .modal-body {
-  max-height: calc(85vh - 120px);
-}
-
-.modal.label-modal .modal-body {
-  max-height: calc(75vh - 80px);
-}
-
-.modal.stats-modal .modal-body {
-  max-height: calc(85vh - 80px);
-}
-
-/* ===== MODAL CLOSE BUTTON ===== */
 .modal-close {
   background: none;
   border: none;
@@ -1273,6 +1077,7 @@ body.kanban-page.dark-mode {
   font-weight: 700;
   outline: none;
   box-sizing: border-box;
+  margin-bottom: 12px;
 }
 
 .card-edit-input:focus { border-color: var(--accent-gold); }
@@ -1306,6 +1111,7 @@ body.kanban-page.dark-mode {
   font-size: 13px;
   outline: none;
   color-scheme: dark;
+  box-sizing: border-box;
 }
 
 .card-edit-date:focus { border-color: var(--accent-gold); }
@@ -1314,7 +1120,7 @@ body.kanban-page.dark-mode {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 .card-edit-section label {
@@ -1325,8 +1131,7 @@ body.kanban-page.dark-mode {
   letter-spacing: 0.5px;
 }
 
-.card-edit-section .due-date-row,
-.card-edit-section > div:has(.card-edit-date) {
+.card-edit-section .due-date-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1344,17 +1149,19 @@ body.kanban-page.dark-mode {
   line-height: 1.6;
   color: var(--text-primary);
   overflow-x: auto;
+  margin-top: 8px;
 }
 
-.md-preview h3, .md-preview h4, .markdown-preview h3, .markdown-preview h4 { margin: 8px 0 4px; font-weight: 700; }
-.md-preview h3, .markdown-preview h3 { font-size: 15px; }
-.md-preview h4, .markdown-preview h4 { font-size: 14px; }
+.md-preview h1, .md-preview h2, .md-preview h3,
+.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 { margin: 8px 0 4px; font-weight: 700; }
+.md-preview h1, .markdown-preview h1 { font-size: 17px; }
+.md-preview h2, .markdown-preview h2 { font-size: 15px; }
+.md-preview h3, .markdown-preview h3 { font-size: 14px; }
 .md-preview ul, .markdown-preview ul { margin: 4px 0; padding-left: 20px; }
 .md-preview li, .markdown-preview li { margin: 2px 0; }
 .md-preview code, .markdown-preview code { background: var(--bg-panel, #252320); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
 .md-preview pre, .markdown-preview pre { background: var(--bg-panel, #252320); padding: 8px; border-radius: var(--radius-sm); overflow-x: auto; margin: 8px 0; }
 .md-preview pre code, .markdown-preview pre code { background: none; padding: 0; }
-.md-preview a, .markdown-preview a { color: var(--accent-gold); text-decoration: underline; }
 .md-preview strong, .markdown-preview strong { font-weight: 700; }
 .md-preview em, .markdown-preview em { font-style: italic; }
 .md-preview del, .markdown-preview del { text-decoration: line-through; opacity: 0.7; }
@@ -1370,6 +1177,7 @@ body.kanban-page.dark-mode {
   font-family: var(--font-primary);
   transition: all var(--transition);
   align-self: flex-start;
+  margin-top: 8px;
 }
 
 .md-toggle-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
@@ -1493,6 +1301,19 @@ body.kanban-page.dark-mode {
   align-items: center;
 }
 
+.assignment-select {
+  background: var(--bg-dark, #1b1a18);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.assignment-select:focus { border-color: var(--accent-gold); }
+
 .assignment-input {
   background: var(--bg-dark, #1b1a18);
   border: 1px solid var(--border-color);
@@ -1542,10 +1363,6 @@ body.kanban-page.dark-mode {
 /* ===== LABELS IN MODAL ===== */
 .card-labels-editor { display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; }
 
-.card-labels-editor .card-label { cursor: pointer; position: relative; padding-right: 20px; }
-.card-labels-editor .card-label::after { content: '×'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.7; }
-.card-labels-editor .card-label:hover::after { opacity: 1; }
-
 .btn-show-labels {
   display: flex;
   align-items: center;
@@ -1573,6 +1390,7 @@ body.kanban-page.dark-mode {
   border-radius: var(--radius-sm);
   padding: 8px;
   z-index: 998;
+  margin-top: 8px;
 }
 
 .label-picker-list { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
@@ -1595,7 +1413,7 @@ body.kanban-page.dark-mode {
 
 /* ===== CARD META ===== */
 .card-meta-info,
-.card-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 12px; margin-top: 8px; }
+.card-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 12px; margin-top: 16px; }
 
 /* ===== LABEL MANAGEMENT MODAL ===== */
 .label-manage-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
@@ -1668,6 +1486,13 @@ body.kanban-page.dark-mode {
 
 .btn-add-label-modal:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
 
+.label-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
 /* ===== STATS MODAL ===== */
 .stats-content { display: flex; flex-direction: column; gap: 4px; }
 
@@ -1682,68 +1507,6 @@ body.kanban-page.dark-mode {
 .stats-bar-track { flex: 1; height: 20px; background: var(--bg-dark, #1b1a18); border-radius: 4px; overflow: hidden; }
 .stats-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
 .stats-bar-value { width: 30px; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
-
-.activity-log { max-height: 200px; overflow-y: auto; }
-.activity-entry { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px dotted var(--border-color); font-size: 12px; }
-.activity-time { color: var(--text-muted); flex-shrink: 0; width: 70px; }
-.activity-text { color: var(--text-secondary); }
-
-/* ===== FORMAT CONTEXT MENU ===== */
-.format-context-menu {
-  position: fixed;
-  z-index: 20000;
-  background: var(--bg-panel, #252320);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md, 8px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-  padding: 4px;
-  min-width: 140px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.format-cmd {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  padding: 6px 10px;
-  cursor: pointer;
-  font-family: var(--font-primary);
-  font-size: 13px;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition);
-  text-align: left;
-}
-
-.format-cmd:hover {
-  background: var(--bg-hover);
-  color: var(--accent-gold);
-}
-
-.format-cmd i { width: 16px; text-align: center; }
-.format-divider { height: 1px; background: var(--border-color); margin: 2px 4px; }
-
-/* ===== DRAG PLACEHOLDER ===== */
-.drag-placeholder {
-  height: 50px;
-  background: rgba(200, 169, 110, 0.15);
-  border: 2px dashed var(--accent-gold);
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-
-/* ===== APP CONTAINER ===== */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  margin-top: 56px;
-  overflow: hidden;
-}
 
 /* ===== TOOLBAR BUTTONS ===== */
 .toolbar-btn {
@@ -1829,13 +1592,6 @@ body.kanban-page.dark-mode {
     gap: 6px;
   }
 
-  .kanban-toolbar-left,
-  .kanban-toolbar-center,
-  .kanban-toolbar-right {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
   .kanban-header {
     height: 48px;
     padding: 0 8px;
@@ -1871,19 +1627,13 @@ body.kanban-page.dark-mode {
   .kanban-column { width: 240px; min-width: 240px; }
   .add-column-placeholder { width: 240px; min-width: 240px; }
 
-  .modal.card-modal > .modal-header,
-  .modal.card-modal > .modal-body,
-  .modal.card-modal > .modal-footer,
-  .modal.label-modal > .modal-header,
-  .modal.label-modal > .modal-body,
-  .modal.stats-modal > .modal-header,
-  .modal.stats-modal > .modal-body {
+  #card-modal,
+  #label-modal,
+  #stats-modal {
     width: 95%;
   }
 
-  .modal.card-modal .modal-body {
-    padding: 12px;
-  }
+  .card-edit-section .modal-body { padding: 12px; }
 
   .assignment-row { grid-template-columns: 1fr; gap: 4px; }
   .btn-remove-assignment { justify-self: end; }
@@ -1892,7 +1642,7 @@ body.kanban-page.dark-mode {
 /* ===== PRINT ===== */
 @media print {
   .kanban-toolbar, .kanban-header, .modal, .modal-overlay,
-  .format-context-menu, .zentool-toast, #oros-header, #oros-footer { display: none !important; }
+  .zentool-toast, #oros-header, #oros-footer { display: none !important; }
   .kanban-board-area { overflow: visible; }
   .kanban-columns { width: 100%; }
   .kanban-column { page-break-inside: avoid; }
