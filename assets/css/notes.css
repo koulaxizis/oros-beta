@@ -1,8 +1,8 @@
 /* ============================================
-   orOS Notes — Styles v4.1 (bugfixes)
+   orOS Notes — Styles v4.2 (bugfixes)
    Fixes: command palette blur, checkbox
    rendering, autocomplete visibility,
-   export dropdown structure
+   export dropdown structure, zen mode layout
    ============================================ */
 
 /* ===== PAGE LAYOUT ===== */
@@ -1358,10 +1358,42 @@
 .btn-install:hover:not(:disabled) { border-color: var(--accent-gold, #c8a96e); color: var(--accent-gold, #c8a96e); }
 .btn-install:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ===== ZEN MODE ===== */
+/* ===== ZEN MODE (FIXED: full viewport expansion) ===== */
+/* FIX: Use display:none instead of transform for sidebar —
+   transform leaves 280px flex space occupied, pushing
+   editor to the right. display:none releases the space. */
 [data-zen="true"] .notes-toolbar { display: none !important; }
-[data-zen="true"] .notes-container { height: 100vh; margin-top: -52px; }
-[data-zen="true"] .notes-sidebar { transform: translateX(-280px); }
+[data-zen="true"] .notes-container {
+  height: 100vh;
+  margin-top: 0;
+}
+[data-zen="true"] .notes-sidebar {
+  display: none !important;
+}
+[data-zen="true"] .notes-main {
+  width: 100%;
+  flex: 1;
+}
+[data-zen="true"] .note-editor,
+[data-zen="true"] .note-preview {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 64px;
+}
+[data-zen="true"] .editor-header,
+[data-zen="true"] .editor-tabs,
+[data-zen="true"] .editor-footer {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+[data-zen="true"] .backlinks-panel {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
 
 /* ===== PRINT STYLES (PDF export) ===== */
 @media print {
@@ -1396,6 +1428,12 @@
   .editor-pane { width: 100%; }
   .command-palette-content { max-width: 95%; margin-top: 5vh; }
   .backlinks-panel { max-height: 120px; }
+  [data-zen="true"] .note-editor,
+  [data-zen="true"] .note-preview { padding: 24px 20px; }
+  [data-zen="true"] .editor-header,
+  [data-zen="true"] .editor-tabs,
+  [data-zen="true"] .editor-footer,
+  [data-zen="true"] .backlinks-panel { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
