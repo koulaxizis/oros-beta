@@ -46,7 +46,7 @@
     setTimeout(function() { toast.classList.remove('visible'); }, 2500);
   }
 
-     function getTrans(key) {
+  function getTrans(key) {
     var lang = localStorage.getItem('oros-language') || 'en';
     var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
     if (t[key]) return t[key];
@@ -96,84 +96,6 @@
     window.addEventListener('load', function() {
       refreshTranslations();
     });
-  }
-    // Also update placeholder attributes
-    var placeholders = document.querySelectorAll('[data-i18n-placeholder]');
-    for (var j = 0; j < placeholders.length; j++) {
-      var phEl = placeholders[j];
-      var phKey = phEl.getAttribute('data-i18n-placeholder');
-      var phValue = getTrans(phKey);
-      if (phValue && phValue !== phKey) {
-        phEl.setAttribute('placeholder', phValue);
-      }
-    }
-  }
-
-    function loadTranslations() {
-    currentLang = localStorage.getItem('oros-language') || 'en';
-    refreshTranslations();
-    // Re-refresh after main.js has loaded (OROS_TRANSLATIONS may not be ready yet)
-    window.addEventListener('load', function() {
-      currentLang = localStorage.getItem('oros-language') || 'en';
-      refreshTranslations();
-    });
-  }
-      
-      // Ensure we have fallback English
-      if (!translations.en) {
-        translations.en = {};
-      }
-      
-      setLanguage(stored);
-	      window.addEventListener('oros-language-changed', function() {
-      currentLang = localStorage.getItem('oros-language') || 'en';
-      refreshTranslations();
-    });
-      console.log('Kanban: Using OROS_TRANSLATIONS from main.js');
-    } else {
-      // Fallback: minimal English translations if OROS_TRANSLATIONS not available
-      console.warn('Kanban: window.OROS_TRANSLATIONS not found, using fallback');
-      translations = {
-        en: {
-          kanban_new_board: 'New Board',
-          kanban_add_board: 'Board created',
-          kanban_confirm_delete_board: 'Delete this board? This cannot be undone.',
-          kanban_add_card: 'Add Card',
-          kanban_add_column: 'Add Column',
-          kanban_column_name: 'Column name:',
-          kanban_imported: 'Board imported',
-          tooltip_save: 'Save (Ctrl+S)',
-          tooltip_open: 'Open file',
-          tooltip_clear: 'Clear all content',
-          toolbar_bold: 'Bold',
-          toolbar_italic: 'Italic',
-          toolbar_underline: 'Underline',
-          toolbar_h1: 'Heading 1',
-          toolbar_h2: 'Heading 2',
-          toolbar_h3: 'Heading 3',
-          toolbar_bullet_list: 'Bullet list',
-          toolbar_number_list: 'Numbered list',
-          toolbar_align_left: 'Align left',
-          toolbar_align_center: 'Align center',
-          toolbar_align_right: 'Align right',
-          toolbar_align_justify: 'Justify',
-          tooltip_goal: 'Writing goal tracker (Ctrl+G)',
-          tooltip_outline: 'Document outline',
-          tooltip_metadata: 'Document metadata',
-          tooltip_find: 'Find and replace (Ctrl+F)',
-          tooltip_word_freq: 'Word frequency',
-          tooltip_lorem_ipsum: 'Insert sample text',
-          tooltip_export: 'Export document',
-          export_md: 'Markdown (.md)',
-          export_txt: 'Plain Text (.txt)',
-          export_rtf: 'Rich Text (.rtf)',
-          export_doc: 'Microsoft Word (.doc)',
-          export_pdf: 'PDF (.pdf)'
-        }
-      };
-      var stored = localStorage.getItem('oros-language') || 'en';
-      setLanguage(stored);
-    }
   }
 
   function generateId() {
@@ -425,7 +347,6 @@
       return;
     }
 
-    // Update current board name in header
     var nameEl = document.getElementById('current-board-name');
     if (nameEl) {
       var cb = getCurrentBoard();
@@ -622,7 +543,6 @@
     if (emptyState) emptyState.style.display = 'none';
     columnsContainer.innerHTML = '';
 
-    // Update board name in header
     var nameEl = document.getElementById('current-board-name');
     if (nameEl) nameEl.textContent = board.name;
 
@@ -1735,7 +1655,7 @@
       }
 
       if (e.ctrlKey || e.metaKey) {
-                if (e.key === 's') {
+        if (e.key === 's') {
           e.preventDefault();
           if (state.editingCardId !== null) saveCard();
           else exportData();
@@ -1923,7 +1843,6 @@
     safeAddListener('btn-labels', 'click', openLabelManagement);
     safeAddListener('btn-help', 'click', showHelp);
 
-    // Global click: close menus
     document.addEventListener('click', function(e) {
       if (!e.target.closest('.board-selector')) {
         var bl = document.getElementById('board-list');
@@ -1939,7 +1858,6 @@
       }
     });
 
-    // Search
     var searchInput = document.querySelector('.kanban-search-input');
     if (searchInput) {
       var debounceTimer;
@@ -1964,7 +1882,7 @@
     }
   }
 
-  // ===== WINDOW RESIZE =====
+    // ===== WINDOW RESIZE =====
   var resizeTimer;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimer);
