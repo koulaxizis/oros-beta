@@ -4,14 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="orOS Kanban — Privacy-first drag & drop project board. Offline, no tracking.">
-  
-  <!-- SEO Meta Tags -->
+
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#6d4aff">
-  
-  <!-- Open Graph / Facebook -->
+
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
   <meta property="og:title" content="orOS Kanban — Privacy-First Project Board">
@@ -19,23 +17,19 @@
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
-  
-  <!-- Twitter Card -->
+
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/kanban.html">
   <meta name="twitter:title" content="orOS Kanban — Privacy-First Project Board">
   <meta name="twitter:description" content="Drag & drop kanban board. Offline, no tracking, local storage only.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
   <meta name="twitter:creator" content="@koulaxizis">
-  
-  <!-- Additional SEO -->
+
   <meta name="keywords" content="kanban, project management, drag and drop, offline, privacy, open source">
-  
-  <!-- Resource Hints -->
+
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
-  
-  <!-- hreflang -->
+
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/kanban.html">
   <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=el">
   <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=es">
@@ -43,22 +37,9 @@
   <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=fr">
   <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/kanban.html?lang=de">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/kanban.html">
-  
+
   <title>orOS Kanban</title>
   <script src="config.js"></script>
-  <script>
-    // Service Worker registration - only if configured
-    if ('serviceWorker' in navigator && typeof OROS_CONFIG !== 'undefined' && OROS_CONFIG.baseHref) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register(
-          OROS_CONFIG.baseHref + 'service-worker.js',
-          { scope: OROS_CONFIG.baseHref }
-        ).catch(function(err) {
-          console.warn('SW registration skipped:', err.message);
-        });
-      });
-    }
-  </script>
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
@@ -73,12 +54,10 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
-  <!-- Shared scripts (must load before kanban.js) -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
-  <!-- kanban.js loads translations from window.OROS_TRANSLATIONS -->
   <script src="assets/js/translations-loader.js" defer></script>
   <script src="assets/js/kanban.js" defer></script>
   <script src="assets/js/main.js" defer></script>
@@ -90,13 +69,16 @@
     <div class="noscript-message">JavaScript is required for orOS Kanban to function. Please enable JavaScript.</div>
   </noscript>
 
+  <!-- Shared header (populated by header.js — fixed, 56px) -->
   <div id="oros-header"></div>
 
+  <!-- App container — matches editor/converter pattern -->
   <div class="app-container">
-    <!-- Header -->
-    <header class="kanban-header">
-      <div class="header-left">
-        <!-- Board selector with proper wrapper -->
+
+    <!-- Unified toolbar (replaces .kanban-header + old .kanban-toolbar) -->
+    <div class="kanban-toolbar">
+      <div class="kanban-toolbar-left">
+        <!-- Board selector -->
         <div class="board-selector">
           <button id="board-selector-btn" class="board-selector-btn" title="Select Board">
             <i class="fa fa-folder-open"></i>
@@ -107,26 +89,37 @@
             <div class="board-list-items"></div>
           </div>
         </div>
-        
-        <input type="text" id="board-rename-input" class="board-rename-input" style="display:none;">
+
+        <!-- Add Column -->
+        <button id="btn-add-column" class="toolbar-btn">
+          <i class="fa fa-plus"></i> Add Column
+        </button>
       </div>
-      
-      <div class="header-center">
-        <input type="text" id="kanban-search-box" class="kanban-search-input" placeholder="Search cards...">
-        <button id="kanban-search-clear" class="kanban-search-clear"><i class="fa fa-times"></i></button>
+
+      <div class="kanban-toolbar-center">
+        <!-- Search -->
+        <div class="kanban-search-box">
+          <i class="fa fa-search search-icon"></i>
+          <input type="text" id="kanban-search-box" class="kanban-search-input" placeholder="Search cards...">
+          <button id="kanban-search-clear" class="kanban-search-clear"><i class="fa fa-times"></i></button>
+        </div>
+
+        <!-- Filter -->
+        <div id="filter-btn" class="kanban-filter-dropdown">
+          <button class="filter-toggle"><i class="fa fa-filter"></i> Filter</button>
+          <div id="filter-dropdown-content" class="filter-content"></div>
+        </div>
       </div>
-      
-      <div class="header-right">
+
+      <div class="kanban-toolbar-right">
         <button id="btn-new-board" class="header-btn" title="New Board">
           <i class="fa fa-plus"></i>
         </button>
-        
         <button id="btn-import" class="header-btn" title="Import Board">
           <i class="fa fa-upload"></i>
         </button>
         <input type="file" id="import-file" accept=".json" style="display:none;">
-        
-        <!-- Export group with wrapper -->
+
         <div class="kanban-export-group">
           <button id="btn-export" class="header-btn" title="Export Board">
             <i class="fa fa-download"></i>
@@ -136,37 +129,26 @@
             <button id="export-csv" class="export-option">Export as CSV</button>
           </div>
         </div>
-        
+
         <button id="btn-stats" class="header-btn" title="Statistics">
           <i class="fa fa-bar-chart"></i>
         </button>
-        
         <button id="btn-archive-toggle" class="header-btn" title="Show Archived">
           <i class="fa fa-archive"></i>
         </button>
-        
         <button id="btn-labels" class="header-btn" title="Manage Labels">
           <i class="fa fa-tags"></i>
         </button>
-        
         <button id="btn-help" class="header-btn" title="Keyboard Shortcuts">
           <i class="fa fa-question-circle"></i>
         </button>
-        
-        <!-- Theme toggle -->
         <button id="btn-theme-toggle" class="header-btn" title="Toggle Theme">
           <i class="fa fa-adjust"></i>
         </button>
       </div>
-    </header>
-
-    <!-- Filter Dropdown -->
-    <div id="filter-btn" class="kanban-filter-dropdown">
-      <button class="filter-toggle"><i class="fa fa-filter"></i> Filter</button>
-      <div id="filter-dropdown-content" class="filter-content"></div>
     </div>
 
-    <!-- Main Board Area -->
+    <!-- Board area (scrollable) -->
     <main id="kanban-board-area" class="kanban-board-area">
       <div id="kanban-empty-state" class="empty-state">
         <div class="empty-icon"><i class="fa fa-tasks"></i></div>
@@ -174,15 +156,6 @@
         <p>Create your first board to get started.</p>
         <button id="kanban-create-first-board" class="btn-primary">Create Board</button>
       </div>
-      
-      <!-- Toolbar above columns, outside scrollable area -->
-      <div class="kanban-toolbar">
-        <button id="btn-add-column" class="toolbar-btn">
-          <i class="fa fa-plus"></i> Add Column
-        </button>
-        <div class="toolbar-spacer"></div>
-      </div>
-      
       <div id="kanban-columns" class="kanban-columns"></div>
     </main>
 
@@ -194,31 +167,33 @@
         <button id="card-modal-close" class="modal-close"><i class="fa fa-times"></i></button>
       </div>
       <div class="modal-body card-modal-body">
-        <input type="text" id="card-edit-title" class="card-edit-input card-modal-title-input" placeholder="Card title...">
-        
-        <textarea id="card-edit-description" class="card-edit-textarea card-edit-description" placeholder="Description... Use **bold**, *italic*, ~~strikethrough~~, ```code``, ## Heading, - List"></textarea>
+        <input type="text" id="card-edit-title" class="card-edit-input" placeholder="Card title...">
+
+        <textarea id="card-edit-description" class="card-edit-textarea" placeholder="Description... Use **bold**, *italic*, ~~strikethrough~~, ```code```, ## Heading, - List"></textarea>
         <div id="md-preview" class="markdown-preview" style="display:none;"></div>
         <button id="md-toggle-btn" class="md-toggle-btn">Markdown Preview</button>
-        
+
         <div class="card-edit-section">
           <label>Due Date:</label>
-          <input type="date" id="card-edit-due-date" class="card-edit-date card-edit-date-input">
-          <button id="btn-clear-due" class="btn-small btn-clear-due">Clear</button>
+          <div class="due-date-row">
+            <input type="date" id="card-edit-due-date" class="card-edit-date">
+            <button id="btn-clear-due" class="btn-small">Clear</button>
+          </div>
         </div>
-        
+
         <div class="card-edit-section">
           <label>Priority:</label>
-          <div class="priority-buttons priority-selector">
+          <div class="priority-buttons">
             <button class="priority-btn" data-priority="0">None</button>
             <button class="priority-btn" data-priority="1">Low</button>
             <button class="priority-btn" data-priority="2">Medium</button>
             <button class="priority-btn" data-priority="3">High</button>
           </div>
         </div>
-        
+
         <div class="card-edit-section">
           <label>Color:</label>
-          <div class="color-picker card-color-picker">
+          <div class="color-picker">
             <div class="color-swatch" data-color="" title="No color"></div>
             <div class="color-swatch" data-color="#4caf50" title="Green"></div>
             <div class="color-swatch" data-color="#f44336" title="Red"></div>
@@ -229,48 +204,48 @@
             <div class="color-swatch" data-color="#03a9f4" title="Cyan"></div>
           </div>
         </div>
-        
+
         <div class="card-edit-section">
           <label>Labels:</label>
           <div id="card-edit-labels" class="card-labels-editor"></div>
-          <button id="btn-show-labels" class="btn-small btn-show-labels">Manage Labels</button>
+          <button id="btn-show-labels" class="btn-small">Manage Labels</button>
         </div>
-        
+
         <div id="label-picker" class="label-picker" style="display:none;">
           <div id="label-picker-list"></div>
         </div>
-        
+
         <div class="card-edit-section">
           <label>Subtasks:</label>
           <div id="subtask-list" class="subtask-list"></div>
           <div class="subtask-add-row">
             <input type="text" id="subtask-input" class="subtask-input" placeholder="New subtask...">
-            <button id="btn-add-subtask" class="btn-small btn-add-subtask">Add</button>
+            <button id="btn-add-subtask" class="btn-small">Add</button>
           </div>
         </div>
-        
+
         <div class="card-edit-section">
           <label>Assignments:</label>
-          <div id="card-edit-assignments" class="assignments-list card-edit-assignments"></div>
-          <button id="btn-add-assignment" class="btn-small btn-add-assignment">Add Assignment</button>
+          <div id="card-edit-assignments" class="assignments-list"></div>
+          <button id="btn-add-assignment" class="btn-small">Add Assignment</button>
         </div>
-        
-        <div class="card-meta-info card-meta">
+
+        <div class="card-meta-info">
           <span id="card-meta-created"></span>
           <span id="card-meta-modified"></span>
         </div>
       </div>
       <div class="modal-footer card-modal-footer">
-        <button id="btn-duplicate-card" class="btn-secondary btn-duplicate-card">Duplicate</button>
-        <button id="btn-archive-card" class="btn-secondary btn-archive-card">Archive</button>
-        <button id="card-delete-btn" class="btn-danger btn-delete-card">Delete</button>
+        <button id="btn-duplicate-card" class="btn-secondary">Duplicate</button>
+        <button id="btn-archive-card" class="btn-secondary">Archive</button>
+        <button id="card-delete-btn" class="btn-danger">Delete</button>
         <div class="spacer"></div>
-        <button id="btn-save-card" class="btn-primary btn-save-card">Save</button>
+        <button id="btn-save-card" class="btn-primary">Save</button>
       </div>
     </div>
 
     <!-- Label Management Modal -->
-    <div id="label-modal-overlay" class="modal-overlay label-modal-overlay"></div>
+    <div id="label-modal-overlay" class="modal-overlay"></div>
     <div id="label-modal" class="modal label-modal">
       <div class="modal-header label-modal-header">
         <h3>Manage Labels</h3>
@@ -278,12 +253,12 @@
       </div>
       <div class="modal-body label-modal-body">
         <div id="label-modal-body" class="label-manage-list"></div>
-        <button id="btn-add-label-modal" class="btn-primary btn-add-label-modal">Add New Label</button>
+        <button id="btn-add-label-modal" class="btn-primary">Add New Label</button>
       </div>
     </div>
 
     <!-- Statistics Modal -->
-    <div id="stats-modal-overlay" class="modal-overlay stats-modal-overlay"></div>
+    <div id="stats-modal-overlay" class="modal-overlay"></div>
     <div id="stats-modal" class="modal stats-modal">
       <div class="modal-header stats-modal-header">
         <h3>Board Statistics</h3>
@@ -298,6 +273,20 @@
     <input type="text" id="column-title-edit" class="column-title-edit" style="display:none;">
   </div>
 
+  <!-- Shared footer (populated by footer.js — fixed, 56px) -->
   <div id="oros-footer"></div>
+
+  <script>
+    if ('serviceWorker' in navigator && typeof OROS_CONFIG !== 'undefined' && OROS_CONFIG.baseHref) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register(
+          OROS_CONFIG.baseHref + 'service-worker.js',
+          { scope: OROS_CONFIG.baseHref }
+        ).catch(function(err) {
+          console.warn('SW registration skipped:', err.message);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
