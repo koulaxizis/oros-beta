@@ -1,4 +1,5 @@
 // Fixed: zen-mode key consistency (oros_zen_mode throughout)
+// Fixed: #7 — Zen Mode toggle/header sync via oros-zen-mode-changed event
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
@@ -132,8 +133,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ========== ZEN MODE TOAST (all pages) ==========
+  // ========== ZEN MODE TOAST + SYNC (all pages) ==========
+  // FIX #7: Sync #toggle-zen-mode checkbox whenever zen state changes
   window.addEventListener('oros-zen-mode-changed', function(e) {
+    // FIX #7: Sync the settings checkbox with current state
+    var zenToggle = document.getElementById('toggle-zen-mode');
+    if (zenToggle) zenToggle.checked = e.detail.enabled;
+
     if (e.detail.enabled) {
       var lang = localStorage.getItem('oros-language') || 'en';
       var msg = lang === 'el'
