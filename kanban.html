@@ -54,11 +54,11 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/kanban.css">
 
+  <!-- Same script order as editor/converter — NO translations-loader.js -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
-  <script src="assets/js/translations-loader.js" defer></script>
   <script src="assets/js/kanban.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
@@ -69,16 +69,15 @@
     <div class="noscript-message">JavaScript is required for orOS Kanban to function. Please enable JavaScript.</div>
   </noscript>
 
-  <!-- Shared header (populated by header.js — fixed, 56px) -->
+  <!-- Shared header (populated by header.js — fixed, 56px, includes settings gear + theme toggle) -->
   <div id="oros-header"></div>
 
   <!-- App container — matches editor/converter pattern -->
   <div class="app-container">
 
-    <!-- Unified toolbar (replaces .kanban-header + old .kanban-toolbar) -->
+    <!-- Unified toolbar (sticky inside container, like editor's .main-toolbar) -->
     <div class="kanban-toolbar">
       <div class="kanban-toolbar-left">
-        <!-- Board selector -->
         <div class="board-selector">
           <button id="board-selector-btn" class="board-selector-btn" title="Select Board">
             <i class="fa fa-folder-open"></i>
@@ -90,21 +89,18 @@
           </div>
         </div>
 
-        <!-- Add Column -->
         <button id="btn-add-column" class="toolbar-btn">
           <i class="fa fa-plus"></i> Add Column
         </button>
       </div>
 
       <div class="kanban-toolbar-center">
-        <!-- Search -->
         <div class="kanban-search-box">
           <i class="fa fa-search search-icon"></i>
           <input type="text" id="kanban-search-box" class="kanban-search-input" placeholder="Search cards...">
           <button id="kanban-search-clear" class="kanban-search-clear"><i class="fa fa-times"></i></button>
         </div>
 
-        <!-- Filter -->
         <div id="filter-btn" class="kanban-filter-dropdown">
           <button class="filter-toggle"><i class="fa fa-filter"></i> Filter</button>
           <div id="filter-dropdown-content" class="filter-content"></div>
@@ -142,13 +138,10 @@
         <button id="btn-help" class="header-btn" title="Keyboard Shortcuts">
           <i class="fa fa-question-circle"></i>
         </button>
-        <button id="btn-theme-toggle" class="header-btn" title="Toggle Theme">
-          <i class="fa fa-adjust"></i>
-        </button>
       </div>
     </div>
 
-    <!-- Board area (scrollable) -->
+    <!-- Board area -->
     <main id="kanban-board-area" class="kanban-board-area">
       <div id="kanban-empty-state" class="empty-state">
         <div class="empty-icon"><i class="fa fa-tasks"></i></div>
@@ -266,6 +259,87 @@
       </div>
       <div class="modal-body stats-modal-body">
         <div id="stats-modal-body" class="stats-content"></div>
+      </div>
+    </div>
+
+    <!-- Settings Modal — matches editor/converter pattern -->
+    <div class="settings-modal">
+      <div class="settings-modal-overlay"></div>
+      <div class="settings-modal-content">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="settings-nav">
+          <button class="tab-btn active" data-tab="global-settings">Global</button>
+          <button class="tab-btn" data-tab="kanban-settings">Kanban</button>
+        </div>
+        <div class="settings-body">
+          <!-- Global Tab -->
+          <div class="tab-panel" id="global-settings" style="display:flex;">
+            <div class="toggles-container">
+              <div class="toggle-row">
+                <span class="toggle-label">Zen Mode</span>
+                <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Install as App</span>
+                <button class="btn-install" id="btn-install" disabled>Install</button>
+              </div>
+              <div class="settings-divider"></div>
+              <div class="toggle-row">
+                <span class="toggle-label">Theme</span>
+                <button id="btn-theme-toggle" class="btn-small"><i class="fa fa-adjust"></i> Toggle</button>
+              </div>
+              <div class="settings-divider"></div>
+              <div class="beta-section">
+                <div class="beta-header">Beta Channel</div>
+                <p class="beta-warning">This is a beta version. Features may change.</p>
+                <div class="beta-links">
+                  <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn">GitHub Repository</a>
+                  <a href="https://koulaxizis.github.io/oros-beta/kanban.html" target="_blank" rel="noopener" class="beta-btn">Live Beta</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Kanban Tab -->
+          <div class="tab-panel" id="kanban-settings" style="display:none;">
+            <div class="toggles-container">
+              <div class="toggle-row">
+                <span class="toggle-label">Auto-save</span>
+                <label class="switch"><input type="checkbox" id="kanban-auto-save-toggle"><span class="slider"></span></label>
+              </div>
+              <div class="settings-divider"></div>
+              <div class="toggle-row">
+                <span class="toggle-label">Hide Add Column Button</span>
+                <label class="switch"><input type="checkbox" id="toggle-hide-add-column-btn"><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Hide Import Button</span>
+                <label class="switch"><input type="checkbox" id="toggle-hide-import-btn"><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Hide Export Button</span>
+                <label class="switch"><input type="checkbox" id="toggle-hide-export-btn"><span class="slider"></span></label>
+              </div>
+              <div class="settings-divider"></div>
+              <table class="shortcut-table">
+                <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+                <tbody>
+                  <tr><td>Save / Export board</td><td><kbd>Ctrl+S</kbd></td></tr>
+                  <tr><td>Export menu</td><td><kbd>Ctrl+B</kbd></td></tr>
+                  <tr><td>Save card (in modal)</td><td><kbd>Ctrl+Enter</kbd></td></tr>
+                  <tr><td>Delete card (in modal)</td><td><kbd>Ctrl+Delete</kbd></td></tr>
+                  <tr><td>Edit card</td><td><kbd>Click card</kbd></td></tr>
+                  <tr><td>Rename column</td><td><kbd>Double-click title</kbd></td></tr>
+                  <tr><td>Move card</td><td><kbd>Drag &amp; drop</kbd></td></tr>
+                  <tr><td>Move column</td><td><kbd>Drag column header</kbd></td></tr>
+                  <tr><td>Close modal / dropdown</td><td><kbd>Esc</kbd></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
