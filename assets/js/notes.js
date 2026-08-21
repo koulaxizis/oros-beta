@@ -1,8 +1,13 @@
 // ============================================
-// orOS Notes — Full Implementation v4.2 (ALL FIXES APPLIED)
-// Fixes: #1-ID mismatch, #2-focus-blur, #3-PWA, 
-// #4-toggles binding, #5-dead code, #6-duplicate handlers,
-// #8-backlinks transition, #9-autocomplete, #10-graph resize
+// orOS Notes — Full Implementation v4.3 (FOCUS MODE REMOVED)
+// Changes from v4.2:
+//   - Removed enableFocusMode(), disableFocusMode(), toggleFocusMode()
+//   - Removed focusMode from state
+//   - Removed all focus-mode class manipulation
+//   - Removed btn-focus-mode binding
+//   - Removed focus mode from settings modal setup
+//   - Removed "Toggle Focus Mode" from command palette
+//   - Removed focus_mode_enabled localStorage loading
 // ============================================
 
 (function() {
@@ -30,8 +35,7 @@
     commandPaletteIndex: 0,
     commandPaletteResults: [],
     autocompleteResults: [],
-    autocompleteIndex: 0,
-    focusMode: false
+    autocompleteIndex: 0
   };
 
   // ========== ID GENERATOR ==========
@@ -89,14 +93,7 @@
       var sidebar = document.getElementById('notes-sidebar');
       if (sidebar) sidebar.classList.add('collapsed');
     }
-
-    var focusEnabled = localStorage.getItem('focus_mode_enabled') === 'true';
-    if (focusEnabled) {
-      // FIX #1: Changed ID from 'setting-focus-mode' to 'setting-notes-focus-mode'
-      var select = document.getElementById('setting-notes-focus-mode');
-      if (select) select.checked = true;
-      enableFocusMode();
-    }
+    // REMOVED: focus mode loading
   }
 
   function saveData() {
@@ -678,9 +675,7 @@
   }
   
     // ============================================
-  // FIX #3: MARKDOWN PARSER
-  // Checkboxes extracted BEFORE regular
-  // list parsing — prevents double bullets
+  // MARKDOWN PARSER
   // ============================================
   function parseMarkdown(text) {
     var html = escapeHtml(text);
@@ -735,7 +730,7 @@
     // Horizontal rule
     html = html.replace(/^---$/gm, '<hr>');
 
-    // Regular unordered lists — will NOT catch task items (placeholdered)
+    // Regular unordered lists
     html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m) {
       return '<ul>' + m + '</ul>';
@@ -1087,9 +1082,7 @@
   }
 
   // ============================================
-  // FIX #3: MULTI-FORMAT EXPORT
-  // Complete rewrite: unified .visible class,
-  // grouped dropdown, JSON backup + import
+  // MULTI-FORMAT EXPORT
   // ============================================
   function exportData(scope, format) {
     if (scope === 'note') {
@@ -1405,31 +1398,6 @@
     }
   }
 
-  // ========== FOCUS MODE ==========
-  function enableFocusMode() {
-    state.focusMode = true;
-    var main = document.getElementById('notes-main');
-    // FIX #2: Added 'focus-blur' class to match CSS requirement
-    if (main) main.classList.add('focus-mode', 'focus-blur');
-    var btn = document.getElementById('btn-focus-mode');
-    if (btn) btn.classList.add('active');
-    localStorage.setItem('focus_mode_enabled', 'true');
-  }
-
-  function disableFocusMode() {
-    state.focusMode = false;
-    var main = document.getElementById('notes-main');
-    if (main) main.classList.remove('focus-mode', 'focus-blur');
-    var btn = document.getElementById('btn-focus-mode');
-    if (btn) btn.classList.remove('active');
-    localStorage.setItem('focus_mode_enabled', 'false');
-  }
-
-  function toggleFocusMode() {
-    if (state.focusMode) disableFocusMode();
-    else enableFocusMode();
-  }
-
   // ========== GRAPH VIEW ==========
   function buildGraphData() {
     var notes = getNotes();
@@ -1531,7 +1499,6 @@
   }
 
   // ========== RESIZE HANDLER FOR GRAPH ==========
-  // FIX #10: Graph canvas redraw on window resize
   var graphResizeTimeout = null;
   function handleGraphResize() {
     if (graphResizeTimeout) clearTimeout(graphResizeTimeout);
@@ -1544,8 +1511,7 @@
   }
   
     // ============================================
-  // FIX #1: COMMAND PALETTE (ID corrected)
-  // Uses .visible class, NO backdrop-filter
+  // COMMAND PALETTE (Focus Mode command removed)
   // ============================================
   function openCommandPalette() {
     var modal = document.getElementById('command-palette-modal');
@@ -1583,7 +1549,7 @@
       { label: 'Daily Note', icon: 'fa-calendar', type: 'command', action: createOrOpenDailyNote },
       { label: 'Graph View', icon: 'fa-share-square-o', type: 'command', action: openGraphModal },
       { label: 'Toggle Sidebar', icon: 'fa-bars', type: 'command', action: toggleSidebar },
-      { label: 'Toggle Focus Mode', icon: 'fa-bullseye', type: 'command', action: toggleFocusMode },
+      // REMOVED: "Toggle Focus Mode" command
       { label: 'Backup Database (JSON)', icon: 'fa-database', type: 'command', action: function() { exportJsonBackup(); }},
       { label: 'Import Notes', icon: 'fa-folder-open', type: 'command', action: function() {
         var input = document.getElementById('import-file-input');
@@ -1593,7 +1559,7 @@
       { label: 'Export All (Text)', icon: 'fa-file-o', type: 'command', action: function() { exportAllNotes('txt'); }},
       { label: 'Export All (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportAllNotes('doc'); }},
       { label: 'Export All (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportAllNotes('pdf'); }},
-      { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
+            { label: 'Export Current Note (MD)', icon: 'fa-file-text-o', type: 'command', action: function() { exportSingleNote('md'); }},
       { label: 'Export Current Note (Word)', icon: 'fa-file-word-o', type: 'command', action: function() { exportSingleNote('doc'); }},
       { label: 'Export Current Note (PDF)', icon: 'fa-file-pdf-o', type: 'command', action: function() { exportSingleNote('pdf'); }}
     ];
@@ -1707,10 +1673,7 @@
     closeCommandPalette();
   }
 
-  // ============================================
-  // FIX #4: AUTOCOMPLETE
-  // Improved position calculation using range.getClientRects()
-  // ============================================
+  // ========== AUTOCOMPLETE ==========
   function handleAutocomplete() {
     var editor = document.getElementById('note-editor');
     var dropdown = document.getElementById('autocomplete-dropdown');
@@ -1779,21 +1742,17 @@
       listEl.appendChild(item);
     });
 
-    // FIX #9: More accurate positioning using character approximation
     var rect = editor.getBoundingClientRect();
     var lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 21;
     var fontSize = parseFloat(getComputedStyle(editor).fontSize) || 14;
 
     var linesBefore = textBefore.split('\n').length - 1;
-    
-    // Estimate horizontal position based on character count and font size
     var charsInLastLine = textBefore.length - textBefore.lastIndexOf('\n') - 1;
-    var charWidthEstimate = fontSize * 0.57; // Adjusted for Nunito proportionality
+    var charWidthEstimate = fontSize * 0.57;
 
     var xPos = rect.left + (charsInLastLine * charWidthEstimate) + rect.width;
     var yPos = rect.top + ((linesBefore + 1) * lineHeight);
 
-        // Clamp to viewport
     xPos = Math.min(xPos, window.innerWidth - 280);
     yPos = Math.min(yPos, window.innerHeight - 220);
 
@@ -2073,9 +2032,7 @@
     if (preview && preview.style.display !== 'none') syncPreview(editor.value);
   }
 
-  // ============================================
-  // FIX #5: EXPORT DROPDOWN (class-based toggle)
-  // ============================================
+  // ========== EXPORT DROPDOWN ==========
   function toggleExportDropdown() {
     var dropdown = document.getElementById('export-dropdown');
     if (!dropdown) return;
@@ -2088,8 +2045,6 @@
   }
 
   // ========== SETTINGS MODAL ==========
-  // FIX #6: Simplified — main.js handles open/close/tabs.
-  // notes.js only handles Notes-specific toggles + field population.
   function openSettingsModal() {
     var modal = document.getElementById('settings-modal');
     if (!modal) return;
@@ -2098,9 +2053,7 @@
     var select = document.getElementById('setting-default-view');
     if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
 
-    // FIX #1: Corrected ID
-    var focusCb = document.getElementById('setting-notes-focus-mode');
-    if (focusCb) focusCb.checked = localStorage.getItem('focus_mode_enabled') === 'true';
+    // REMOVED: Focus mode checkbox loading
   }
 
   function closeSettingsModal() {
@@ -2112,38 +2065,22 @@
     var modal = document.getElementById('settings-modal');
     if (!modal) return;
 
-    // FIX #6: Use MutationObserver to detect when main.js opens the modal,
-    // then populate Notes-specific fields. Avoids duplicate click handlers.
     var observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(m) {
         if (m.attributeName === 'class' && modal.classList.contains('visible')) {
           var select = document.getElementById('setting-default-view');
           if (select) select.value = localStorage.getItem(DEFAULT_VIEW_MODE) || 'split';
-
-          // FIX #1: Corrected ID
-          var focusCb = document.getElementById('setting-notes-focus-mode');
-          if (focusCb) focusCb.checked = localStorage.getItem('focus_mode_enabled') === 'true';
+          // REMOVED: Focus mode checkbox
         }
       });
     });
     observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
 
-    // Notes-specific: default view mode dropdown
     var viewSelect = document.getElementById('setting-default-view');
     if (viewSelect) {
       viewSelect.addEventListener('change', function() {
         localStorage.setItem(DEFAULT_VIEW_MODE, this.value);
         showToast('Default view saved');
-      });
-    }
-
-    // Notes-specific: focus mode checkbox
-    // FIX #1: Corrected ID
-    var focusCb = document.getElementById('setting-notes-focus-mode');
-    if (focusCb) {
-      focusCb.addEventListener('change', function() {
-        if (this.checked) enableFocusMode();
-        else disableFocusMode();
       });
     }
   }
@@ -2165,10 +2102,7 @@
     btn.classList.add('active');
   }
 
-  // ============================================
-  // FIX #4: Apply saved toolbar visibility
-  // Restores toggle states from localStorage on init
-  // ============================================
+  // ========== TOOLBAR VISIBILITY ==========
   function applyToolbarVisibility() {
     var hideNewNote = localStorage.getItem('oros_hide_new_note_btn') === 'true';
     var hideNewFolder = localStorage.getItem('oros_hide_new_folder_btn') === 'true';
@@ -2183,10 +2117,9 @@
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     if (btnToggleSidebar) btnToggleSidebar.style.display = hideSidebarToggle ? 'none' : '';
   }
-  
-    // ========== SETUP ==========
-  function setup() {
 
+  // ========== SETUP ==========
+  function setup() {
     // ===== Toolbar Buttons =====
     var btnNewNote = document.getElementById('btn-new-note');
     var btnNewFolder = document.getElementById('btn-new-folder');
@@ -2230,9 +2163,9 @@
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     if (btnToggleSidebar) btnToggleSidebar.addEventListener('click', toggleSidebar);
 
-    // ===== Focus Mode =====
-    var btnFocusMode = document.getElementById('btn-focus-mode');
-    if (btnFocusMode) btnFocusMode.addEventListener('click', toggleFocusMode);
+    // ===== REMOVED: Focus Mode Button =====
+    // var btnFocusMode = document.getElementById('btn-focus-mode');
+    // This button no longer exists in HTML
 
     // ===== Search =====
     var searchInput = document.getElementById('notes-search');
@@ -2273,8 +2206,6 @@
     if (tabWrite) tabWrite.addEventListener('click', function() { switchTab('write'); });
     if (tabPreview) tabPreview.addEventListener('click', function() { switchTab('preview'); });
 
-    // FIX #5: Removed btn-markdown-toggle reference (dead code — no such element in HTML)
-
     // ===== Import =====
     var importInput = document.getElementById('import-file-input');
     if (importInput) {
@@ -2312,7 +2243,6 @@
       });
     }
 
-    // Bind import item inside export dropdown
     var exportImportItem = document.getElementById('export-import-item');
     if (exportImportItem && importInput) {
       exportImportItem.addEventListener('click', function(e) {
@@ -2322,7 +2252,7 @@
       });
     }
 
-    // ===== Export Current Note (quick button) =====
+    // ===== Export Current Note =====
     var btnExportNote = document.getElementById('btn-export-note');
     if (btnExportNote) btnExportNote.addEventListener('click', function() { exportSingleNote('md'); });
 
@@ -2430,7 +2360,7 @@
       });
     }
 
-    // ===== FIX #8: Backlinks Panel Toggle — no display:none, let CSS transition handle it =====
+    // ===== Backlinks Panel Toggle =====
     var backlinksHeader = document.getElementById('backlinks-header');
     var backlinksPanel = document.getElementById('backlinks-panel');
     if (backlinksHeader && backlinksPanel) {
@@ -2466,7 +2396,7 @@
       }
     });
 
-    // Tree context menu actions
+    // ===== Tree context menu actions =====
     if (contextMenu) {
       contextMenu.querySelectorAll('.context-item').forEach(function(item) {
         item.addEventListener('click', function() {
@@ -2495,7 +2425,7 @@
       });
     }
 
-    // Editor context menu actions
+    // ===== Editor context menu actions =====
     if (editorCtxMenu) {
       editorCtxMenu.querySelectorAll('.context-item[data-format]').forEach(function(item) {
         item.addEventListener('click', function() {
@@ -2559,15 +2489,10 @@
       });
     }
 
-    // ===== Settings Modal (FIX #6: only Notes-specific bindings) =====
+    // ===== Settings Modal =====
     setupSettingsModal();
-    // FIX #6: btn-settings is handled by main.js — removed duplicate binding.
 
-    // ===== FIX #3: PWA Install — removed broken handler =====
-    // main.js already handles beforeinstallprompt and #btn-install click.
-    // The previous notes.js handler checked window.pwaInstallPrompt which was never set.
-
-    // ===== FIX #4: Notes-specific toolbar visibility toggles =====
+    // ===== Toolbar visibility toggles =====
     var toggleHideNewNote = document.getElementById('toggle-hide-new-note-btn');
     if (toggleHideNewNote) {
       toggleHideNewNote.checked = localStorage.getItem('oros_hide_new_note_btn') === 'true';
@@ -2606,7 +2531,6 @@
       var cpModal = document.getElementById('command-palette-modal');
       var inCommandPalette = cpModal && cpModal.classList.contains('visible');
 
-      // Escape always closes everything
       if (e.key === 'Escape') {
         hideContextMenu();
         hideEditorContextMenu();
@@ -2676,14 +2600,14 @@
         return;
       }
 
-      // Ctrl+B — bold (only in editor with selection)
+      // Ctrl+B — bold
       if (e.ctrlKey && e.key.toLowerCase() === 'b' && inEditor && ed.selectionStart !== ed.selectionEnd) {
         e.preventDefault();
         applyFormatToSelection('bold');
         return;
       }
 
-      // Ctrl+I — italic (only in editor with selection)
+      // Ctrl+I — italic
       if (e.ctrlKey && e.key.toLowerCase() === 'i' && inEditor && ed.selectionStart !== ed.selectionEnd) {
         e.preventDefault();
         applyFormatToSelection('italic');
@@ -2694,7 +2618,7 @@
     // ===== Language Change =====
     window.addEventListener('oros-language-changed', function() { renderAll(); });
 
-    // ===== Resize (FIX #10: includes graph redraw) =====
+    // ===== Resize =====
     window.addEventListener('resize', function() {
       hideContextMenu();
       hideEditorContextMenu();
