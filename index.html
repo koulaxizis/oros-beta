@@ -45,10 +45,6 @@
   <!-- hreflang for multi-language -->
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/index.html">
   <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/index.html?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/index.html?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/index.html?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/index.html?lang=fr">
-   <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/index.html?lang=de">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/index.html">
   
   <!-- Structured Data -->
@@ -64,7 +60,7 @@
       "url": "https://koulaxizis.gr"
     },
     "description": "Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more.",
-    "inLanguage": ["en", "el", "es", "it", "fr", "de"],
+    "inLanguage": ["en", "el"],
     "potentialAction": {
       "@type": "SearchAction",
       "target": "https://koulaxizis.github.io/oros-beta/?q={search_term_string}",
@@ -75,7 +71,7 @@
 
   <title>orOS — The Artist's Operating System</title>
   <script src="config.js"></script>
-    <script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(
@@ -128,32 +124,32 @@
         <a href="editor.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
           <div class="tool-icon"><i class="fa fa-pencil"></i></div>
           <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
-          <p class="tool-desc" data-i18n="editor_desc">Simple text editor with autosave</p>
+          <p class="tool-desc" data-i18n="editor_desc">Write with autosave &amp; stats</p>
         </a>
         <a href="converter.html" class="tool-card" aria-label="Open Case Converter — text transformation tool">
           <div class="tool-icon"><i class="fa fa-text-width"></i></div>
           <h2 class="tool-name" data-i18n="converter_name">Case Converter</h2>
-          <p class="tool-desc" data-i18n="converter_desc">Transform text case with advanced options</p>
+          <p class="tool-desc" data-i18n="converter_desc">Transform text case easily</p>
         </a>
         <a href="kanban.html" class="tool-card" aria-label="Open Kanban — drag and drop kanban board">
           <div class="tool-icon"><i class="fa fa-list-ul"></i></div>
           <h2 class="tool-name" data-i18n="kanban_name">Kanban</h2>
-          <p class="tool-desc" data-i18n="kanban_desc">Drag & drop project board</p>
+          <p class="tool-desc" data-i18n="kanban_desc">Visual drag &amp; drop board</p>
         </a>
-                <a href="notes.html" class="tool-card" aria-label="Open Notes — wiki-style note taking app">
+        <a href="notes.html" class="tool-card" aria-label="Open Notes — wiki-style note taking app">
           <div class="tool-icon"><i class="fa fa-sticky-note-o"></i></div>
           <h2 class="tool-name" data-i18n="notes_name">Notes</h2>
-          <p class="tool-desc" data-i18n="notes_desc">Wiki notes with [[wikilinks]]</p>
+          <p class="tool-desc" data-i18n="notes_desc">Linked wiki-style notes</p>
         </a>
-		<a href="prompter.html" class="tool-card" aria-label="Open Prompter — writing prompts and inspiration">
-  <div class="tool-icon"><i class="fa fa-lightbulb-o"></i></div>
-  <h2 class="tool-name" data-i18n="prompter_name">Prompter</h2>
-  <p class="tool-desc" data-i18n="prompter_desc">100 writing prompts · 10 techniques</p>
-</a>
-<a href="characters.html" class="tool-card" aria-label="Open Characters — character design and relationship mapping">
+        <a href="prompter.html" class="tool-card" aria-label="Open Prompter — writing prompts and inspiration">
+          <div class="tool-icon"><i class="fa fa-lightbulb-o"></i></div>
+          <h2 class="tool-name" data-i18n="prompter_name">Prompter</h2>
+          <p class="tool-desc" data-i18n="prompter_desc">Writing prompts &amp; techniques</p>
+        </a>
+        <a href="characters.html" class="tool-card" aria-label="Open Characters — character design and relationship mapping">
           <div class="tool-icon"><i class="fa fa-users"></i></div>
           <h2 class="tool-name" data-i18n="characters_name">Characters</h2>
-          <p class="tool-desc" data-i18n="characters_desc">Character design · Relationships · Cast builder</p>
+          <p class="tool-desc" data-i18n="characters_desc">Design characters &amp; relationships</p>
         </a>
       </div>
     </div>
@@ -166,258 +162,15 @@
         <h2 data-i18n="settings">Settings</h2>
         <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
-      <div class="settings-nav">
-        <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
-        <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
-        <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
-        <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
-        <button class="tab-btn" data-tab="notes-settings" data-i18n="tab_notes">Notes</button>
-		<button class="tab-btn" data-tab="prompter-settings" data-i18n="tab_prompter">Prompter</button>
-      </div>
       <div class="settings-body">
-        <div class="tab-panel" id="global-settings" style="display:flex;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
-              <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="install_app">Install as App</span>
-              <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="beta-section">
-              <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
-              <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
-              <div class="beta-links">
-                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
-              </div>
-            </div>
+        <div class="toggles-container">
+          <div class="toggle-row">
+            <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
+            <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
           </div>
-        </div>
-        <div class="tab-panel" id="writer-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_reading_progress">Reading Progress Bar</span>
-              <label class="switch"><input type="checkbox" id="toggle-reading-progress"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_smart_typography">Smart Typography</span>
-              <label class="switch"><input type="checkbox" id="toggle-smart-typography"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_focus_mode">Focus Mode</span>
-              <label class="switch"><input type="checkbox" id="toggle-focus-mode"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_quick_toolbar">Quick Format Toolbar</span>
-              <label class="switch"><input type="checkbox" id="toggle-quick-tbar"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_typewriter_sound">Typewriter Sound</span>
-              <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_stats">Hide Stats Overlay</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_save_indicator">Hide Save Indicator</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-save-indicator"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_goal_btn">Hide Goal Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-goal-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_outline_btn">Hide Outline Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-outline-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_metadata_btn">Hide Metadata Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-metadata-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_find_btn">Hide Find Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-find-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_wordfreq_btn">Hide Word Frequency Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-wordfreq-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Goal</td><td><kbd>Ctrl+G</kbd></td></tr>
-                <tr><td>Find</td><td><kbd>Ctrl+F</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="tab-panel" id="converter-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_copy_btn">Hide Copy Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-copy-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_save_btn">Hide Save Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-save-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_open_btn">Hide Open Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-open-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_clear_btn">Hide Clear Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-clear-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_undo_btn">Hide Undo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-undo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_redo_btn">Hide Redo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-redo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_reset_btn">Hide Reset Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-reset-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_options">Hide Options Dropdown</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-options"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_stats_btn">Hide Stats Panel</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
-                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
-                <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
-                <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
-                <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
-                <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="tab-panel" id="kanban-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_add_column_btn">Hide Add Column Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-add-column-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_import_btn">Hide Import Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-import-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_export_btn">Hide Export Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-export-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Export Board</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>New Board</td><td><kbd>Ctrl+N</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="tab-panel" id="notes-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_new_note_btn">Hide New Note Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-new-note-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_new_folder_btn">Hide New Folder Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-new-folder-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_sidebar_toggle">Hide Sidebar Toggle</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-sidebar-toggle"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Export All</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>New Note</td><td><kbd>Ctrl+N</kbd></td></tr>
-                <tr><td>Export Note</td><td><kbd>Ctrl+E</kbd></td></tr>
-                <tr><td>Search</td><td><kbd>Ctrl+Shift+F</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="tab-panel" id="prompter-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_random_btn">Hide Random Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-random-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_filter_bar">Hide Filter Bar</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-filter-bar"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_fav_toggle">Hide Favorites Toggle</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-fav-toggle"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_completed_toggle">Hide Completed Toggle</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-completed-toggle"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_daily_btn">Hide Daily Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-daily-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_custom_btn">Hide Custom Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-custom-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_multi_btn">Hide Multi-Prompt Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-multi-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td data-i18n="prompter_random">Random Prompt</td><td><kbd>R</kbd></td></tr>
-                <tr><td data-i18n="prompter_favorites">Favorites</td><td><kbd>F</kbd></td></tr>
-                <tr><td data-i18n="prompter_completed">Completed</td><td><kbd>C</kbd></td></tr>
-                <tr><td data-i18n="prompter_daily">Today's Prompt</td><td><kbd>D</kbd></td></tr>
-                <tr><td data-i18n="prompter_multi">Multi-Prompt</td><td><kbd>M</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Navigate Cards</td><td><kbd>←</kbd> <kbd>→</kbd></td></tr>
-                <tr><td>Open in Writer</td><td><kbd>Enter</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
+          <div class="toggle-row">
+            <span class="toggle-label" data-i18n="install_app">Install as App</span>
+            <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
           </div>
         </div>
       </div>
@@ -426,7 +179,7 @@
 
   <div id="oros-footer"></div>
   
-    <!-- ===== BETA WARNING POPUP ===== -->
+  <!-- ===== BETA WARNING POPUP ===== -->
   <div class="beta-popup-overlay" id="beta-popup-overlay">
     <div class="beta-popup">
       <div class="beta-popup-icon">

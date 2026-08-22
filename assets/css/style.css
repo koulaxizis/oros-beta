@@ -1340,3 +1340,51 @@ body:not(.js-enabled) .noscript-message {
   .beta-popup-title { font-size: 1.1rem; }
   .beta-popup-body p { font-size: 13px; }
 }
+
+/* ===== GLOBAL SCROLLBAR STYLING ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Override for inner panels (keep 6px) */
+.rich-editor::-webkit-scrollbar,
+.panel-body::-webkit-scrollbar,
+.wordfreq-list::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* ===== TOOLS GRID UNIFORM DESCRIPTIONS ===== */
+.tool-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  opacity: 0.75;
+  min-height: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
