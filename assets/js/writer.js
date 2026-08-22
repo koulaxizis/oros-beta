@@ -19,7 +19,6 @@
   var btnPrev = document.getElementById('btn-fr-prev');
   var btnNext = document.getElementById('btn-fr-next');
   var frResults = document.getElementById('fr_results');
-  var btnSave = document.getElementById('btn-save');
   var btnOpen = document.getElementById('btn-open');
   var btnClear = document.getElementById('btn-clear');
   var btnExport = document.getElementById('btn-export');
@@ -1168,13 +1167,12 @@
 
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      saveCurrentTabContent();
-      saveCurrentTabMetadata(true);
-      hasUnsavedChanges = false;
-      showToast(getTrans('text_saved'));
-    }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    saveCurrentTabMetadata(true);
+    hasUnsavedChanges = false;
+    showToast(getTrans('text_saved'));
+}
     else if (e.ctrlKey && e.key === 'g') {
       e.preventDefault();
       toggleGoalBar();
@@ -1375,12 +1373,6 @@
   // ============================================
   // EVENT LISTENERS
   // ============================================
-
-  if (btnSave) btnSave.addEventListener('click', function() {
-    saveCurrentTabMetadata(true);
-    hasUnsavedChanges = false;
-    showToast(getTrans('text_saved'));
-  });
 
   if (btnMetadata) btnMetadata.addEventListener('click', toggleMetadataPanel);
   if (btnCloseMetadata) btnCloseMetadata.addEventListener('click', function() {

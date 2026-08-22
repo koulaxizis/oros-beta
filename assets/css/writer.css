@@ -883,3 +883,43 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===== SIDE PANEL LAYERING FIX ===== */
+
+/* Main toolbar stays below panels */
+.main-toolbar {
+  position: relative;
+  z-index: 100;
+}
+
+/* Goal bar and find bar above toolbar */
+.goal-bar,
+.find-replace-bar {
+  position: relative;
+  z-index: 200;
+}
+
+/* Side panels above everything except dialogs */
+.side-panel {
+  position: fixed;
+  top: 152px;
+  z-index: 1000;
+}
+
+/* Stats overlay stays low */
+.stats-overlay {
+  z-index: 90;
+}
+
+/* Dialogs always on top */
+.dialog-overlay {
+  z-index: 5000;
+}
+
+/* Responsive panel offset */
+@media screen and (max-width: 768px) {
+  .side-panel {
+    /* Mobile: header (48px) + tab bar (~36px) + wrapped toolbar (~92px) ≈ 176px */
+    top: 180px;
+  }
+}
