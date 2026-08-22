@@ -1008,32 +1008,51 @@
 
     var reader = new FileReader();
     reader.onload = function(e) {
-      var content = e.target.result;
-      if (extension === 'docx' && typeof mammoth !== 'undefined') {
-        mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(result) {
-          richEditor.innerHTML = result.value;
-          saveCurrentTabContent();
-          updateStats();
-          showToast(getTrans('toast_opened'));
-        }).catch(function(err) {
-          console.error('DOCX conversion error:', err);
-          showToast('Error converting DOCX');
-        });
-      } else {
-        // For .txt, .md, .rtf — treat as text
-        richEditor.innerHTML = content.replace(/\n/g, '<br>');
-        saveCurrentTabContent();
-        updateStats();
-        showToast(getTrans('toast_opened'));
-      }
-    };
+  var content = e.target.result;
+  if (extension === 'docx' && typeof mammoth !== 'undefined') {
+    mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(result) {
+      richEditor.innerHTML = result.value;
+      saveCurrentTabContent();
+      updateStats();
+      showToast(getTrans('toast_opened'));
+    }).catch(function(err) {
+      console.error('DOCX conversion error:', err);
+      showToast('Error converting DOCX');
+    });
+  } else if (extension === 'rtf' && typeof parseRTF !== 'undefined') {
+    // Parse RTF to HTML using self-hosted RTF parser
+    try {
+      var html = parseRTF(content);
+      richEditor.innerHTML = html;
+      saveCurrentTabContent();
+      updateStats();
+      showToast(getTrans('toast_opened'));
+    } catch(err) {
+      console.error('RTF parsing error:', err);
+      // Fallback to plain text
+      richEditor.innerHTML = content.replace(/\n/g, '<br>');
+      saveCurrentTabContent();
+      updateStats();
+      showToast(getTrans('toast_opened'));
+    }
+  } else {
+    // For .txt, .md — treat as text
+    richEditor.innerHTML = content.replace(/\n/g, '<br>');
+    saveCurrentTabContent();
+    updateStats();
+    showToast(getTrans('toast_opened'));
+  }
+};
     reader.onerror = function() { showToast('Error reading file'); };
     
     if (extension === 'docx' && typeof mammoth !== 'undefined') {
-      reader.readAsArrayBuffer(file);
-    } else {
-      reader.readAsText(file);
-    }
+  reader.readAsArrayBuffer(file);
+} else if (extension === 'rtf' && typeof parseRTF !== 'undefined') {
+  reader.readAsText(file);
+} else {
+  // For .txt, .md — treat as text
+  reader.readAsText(file);
+}
   }
 
   // ============================================
@@ -1273,8 +1292,6 @@
   // ============================================
   // BEFOREUNLOAD WARNING (TAB CLOSE)
   // ============================================
-
-  var hasUnsavedChanges = false;
 
   if (richEditor) {
     richEditor.addEventListener('input', function() {

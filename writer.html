@@ -64,8 +64,9 @@
   <link rel="stylesheet" href="assets/css/tabs.css">
   <link rel="stylesheet" href="assets/css/writer.css">
 
-  <!-- External libraries for DOCX support (will be self-hosted later) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- Self-hosted libraries for DOCX/RTF support -->
+  <script src="assets/js/lib/mammoth.browser.min.js"></script>
+  <script src="assets/js/lib/rtf-parser.js"></script>
 
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
@@ -491,17 +492,6 @@
               <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
             </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Save Metadata</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Goal</td><td><kbd>Ctrl+G</kbd></td></tr>
-                <tr><td>Find</td><td><kbd>Ctrl+F</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
