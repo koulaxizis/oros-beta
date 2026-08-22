@@ -2,6 +2,8 @@
 // orOS — Global SEO Manager
 // Dynamic meta tag updates based on language
 // Static tags in HTML for crawler compatibility
+// Fixed: Removed habits.html, added characters/prompter properly
+// Updated: Re-integrated habits.html with proper metadata
 // ============================================
 
 (function() {
@@ -11,9 +13,9 @@
   var PAGE_META = {
     'index.html': {
       title: 'orOS — The Artist\'s Operating System',
-      description: 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more. Works offline. No tracking. No ads.',
+      description: 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, Habits, and more. Works offline. No tracking. No ads.',
       type: 'website',
-      keywords: ['text editor', 'case converter', 'kanban board', 'wiki notes', 'privacy', 'offline', 'writer', 'open source', 'Greek']
+      keywords: ['text editor', 'case converter', 'kanban board', 'wiki notes', 'habit tracker', 'privacy', 'offline', 'writer', 'open source', 'Greek']
     },
     'writer.html': {
       title: 'orOS Writer — Privacy-First Rich Text Editor',
@@ -51,12 +53,12 @@
       type: 'article',
       keywords: ['character design', 'character creator', 'relationship mapping', 'storytelling tools', 'fiction writing', 'character sheet', 'offline', 'privacy', 'open source']
     },
-	    'habits.html': {
+    'habits.html': {
       title: 'orOS Habit Tracker — Build Better Habits',
-      description: 'Track habits with streaks, statistics, and reminders. Build better routines. Works offline. No tracking.',
+      description: 'Track habits with streaks, statistics, and reminders. Build better routines. Works offline. No tracking. No ads.',
       type: 'article',
-      keywords: ['habit tracker', 'habit building', 'streaks', 'productivity', 'offline', 'privacy', 'open source']
-    },
+      keywords: ['habit tracker', 'habit building', 'streaks', 'productivity', 'routine builder', 'offline', 'privacy', 'open source']
+    }
   };
 
   // Language to locale mapping — ONLY en and el
@@ -86,38 +88,31 @@
     var lang = getCurrentLang();
     var t = getTranslations();
 
-    // Update description based on language
     var description = meta.description;
     if (t.site_tagline && page === 'index.html') {
       description = t.site_tagline + '. ' + (t.tools_intro || '');
     }
 
-    // Update description meta
     var descMeta = document.querySelector('meta[name="description"]');
     if (descMeta) descMeta.setAttribute('content', description);
 
-    // Update Open Graph
     var ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute('content', description);
 
     var ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) ogTitle.setAttribute('content', meta.title);
 
-    // Update Twitter
     var twDesc = document.querySelector('meta[name="twitter:description"]');
     if (twDesc) twDesc.setAttribute('content', description);
 
     var twTitle = document.querySelector('meta[name="twitter:title"]');
     if (twTitle) twTitle.setAttribute('content', meta.title);
 
-    // Update locale
     var ogLocale = document.querySelector('meta[property="og:locale"]');
     if (ogLocale) ogLocale.setAttribute('content', LOCALE_MAP[lang] || 'en_US');
 
-    // Update html lang attribute
     document.documentElement.setAttribute('lang', lang);
 
-    // Update canonical URL if needed
     updateCanonical(lang);
   }
 
@@ -151,14 +146,14 @@
         "url": "https://koulaxizis.gr"
       },
       "description": page === 'index.html'
-        ? 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more.'
+        ? 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, Habits, and more.'
         : (page === 'writer.html' ? 'Rich text editor with autosave and writing tools.'
            : page === 'converter.html' ? 'Text transformation tool with 10 case modes.'
            : page === 'kanban.html' ? 'Drag & drop kanban board with multiple boards, labels, and due dates.'
            : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
            : page === 'prompter.html' ? 'Writing prompts and inspiration across 10 techniques.'
            : page === 'characters.html' ? 'Character design tool with relationship mapping and templates.'
-		   : page === 'habits.html' ? 'Habits'
+           : page === 'habits.html' ? 'Habit tracker with streaks, statistics, and reminders.'
            : 'Privacy-first creative toolkit.'),
       "inLanguage": ["en", "el"],
       "operatingSystem": "Web",
@@ -170,10 +165,9 @@
       },
       "license": "https://github.com/koulaxizis/oros-beta/blob/main/LICENSE",
       "softwareVersion": OROS_CONFIG.version,
-      "keywords": "text editor, case converter, kanban, wiki notes, character design, privacy, offline, writer, productivity, open source, Greek"
+      "keywords": "text editor, case converter, kanban, wiki notes, character design, habit tracker, privacy, offline, writer, productivity, open source, Greek"
     };
 
-    // Add features based on page
     if (page === 'index.html') {
       structuredData.featureList = [
         'Rich text editor with autosave',
@@ -181,6 +175,7 @@
         'Kanban boards with drag & drop',
         'Wiki notes with wikilinks',
         'Character design with relationship mapping',
+        'Habit tracker with streaks and statistics',
         'Offline-first architecture',
         'Zero tracking, zero cookies'
       ];
@@ -192,7 +187,7 @@
 
   function injectBreadcrumbs() {
     var page = getCurrentPage();
-    if (page === 'index.html') return; // No breadcrumbs on home
+    if (page === 'index.html') return;
 
     var script = document.createElement('script');
     script.type = 'application/ld+json';
@@ -216,6 +211,7 @@
             : page === 'notes.html' ? 'Notes'
             : page === 'prompter.html' ? 'Prompter'
             : page === 'characters.html' ? 'Characters'
+            : page === 'habits.html' ? 'Habit Tracker'
             : 'Tool',
           "item": OROS_CONFIG.domain + '/' + page
         }
@@ -231,7 +227,6 @@
     injectStructuredData();
     injectBreadcrumbs();
 
-    // Listen for language changes
     window.addEventListener('oros-language-changed', updateMeta);
   }
 

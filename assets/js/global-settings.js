@@ -89,7 +89,6 @@
     loadAllSettings();
     setupLocalStorageListener();
     
-    // Re-trigger visibility for this page
     if (window.orosAppElements) {
       applyVisibility();
     }
@@ -98,7 +97,6 @@
   // ========== LOAD SETTINGS ==========
 
   function loadAllSettings() {
-    // Theme & display
     SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen_mode') === 'true';
     SETTINGS.readingProgressEnabled = localStorage.getItem(STORAGE_PREFIX + 'reading_progress') !== 'false';
     SETTINGS.focusModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'focus_mode') !== 'false';
@@ -108,7 +106,6 @@
     SETTINGS.hideStatsOverlay = localStorage.getItem(STORAGE_PREFIX + 'hide_stats') === 'true';
     SETTINGS.hideSaveIndicator = localStorage.getItem(STORAGE_PREFIX + 'hide_save_indicator') === 'true';
 
-    // Writer specific
     SETTINGS.hideGoalBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_goal_btn') === 'true';
     SETTINGS.hideOutlineBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_outline_btn') === 'true';
     SETTINGS.hideMetadataBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_metadata_btn') === 'true';
@@ -116,7 +113,6 @@
     SETTINGS.hideWordFreqBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_wordfreq_btn') === 'true';
     SETTINGS.hideLoremBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_lorem_btn') === 'true';
 
-    // Converter specific
     SETTINGS.hideCopyBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_converter_copy_btn') === 'true';
     SETTINGS.hideSaveBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_converter_save_btn') === 'true';
     SETTINGS.hideOpenBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_converter_open_btn') === 'true';
@@ -139,10 +135,8 @@
 
       var strippedKey = key.replace(STORAGE_PREFIX, '');
 
-      // Update in-memory state using KEY_MAP
       if (KEY_MAP[strippedKey]) {
         var settingProp = KEY_MAP[strippedKey];
-        // Handle boolean-like settings (default true vs default false)
         var defaultTrueKeys = [
           'reading_progress', 'focus_mode', 'quick_tbar_show', 'smart_typography'
         ];
@@ -153,12 +147,10 @@
         }
       }
 
-      // Notify this page
       window.dispatchEvent(new CustomEvent('oros-storage-sync', {
         detail: { key: strippedKey, value: value }
       }));
 
-      // Apply visibility if elements exist
       if (window.orosAppElements) {
         applyVisibility();
       }
@@ -168,7 +160,6 @@
   // ========== VISIBILITY APPLICATION ==========
 
   function applyVisibility() {
-    // Writer buttons
     var btnGoal = document.getElementById('btn-goal');
     var btnOutline = document.getElementById('btn-outline');
     var btnMetadata = document.getElementById('btn-metadata');
@@ -191,7 +182,6 @@
     if (statsOverlay) statsOverlay.style.display = SETTINGS.hideStatsOverlay ? 'none' : '';
     if (saveIndicator) saveIndicator.style.visibility = SETTINGS.hideSaveIndicator ? 'hidden' : 'visible';
 
-    // Converter buttons — prefixed with btn-conv- to avoid clashes with Writer IDs
     var btnCopy = document.getElementById('btn-conv-copy');
     var btnSaveConv = document.getElementById('btn-conv-save');
     var btnOpenConv = document.getElementById('btn-conv-open');
@@ -213,7 +203,6 @@
     if (btnStatsConv) btnStatsConv.style.display = SETTINGS.hideStatsPanelBtn ? 'none' : '';
   }
 
-  // Register element map after DOM ready
   document.addEventListener('DOMContentLoaded', function() {
     window.orosAppElements = {};
     init();

@@ -1,16 +1,7 @@
-// Fixed: zen-mode key consistency (oros_zen_mode throughout)
-// Fixed: #7 — Zen Mode toggle/header sync via oros-zen-mode-changed event
-// Fixed: Early theme application to prevent FOUC (Flash Of Unstyled Content)
-// Updated: Removed es, it, fr, de — only en + el supported
-// Fixed: Escape key stop propagation to prevent double-handling
-
-// ===== EARLY THEME APPLICATION (runs immediately, before DOMContentLoaded) =====
-(function applyStoredTheme() {
-  var saved = localStorage.getItem('oros-theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-  }
-})();
+// ============================================
+// orOS Main.js — Shared Functionality
+// Fixed: Theme application, Escape handling, Translations
+// ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
@@ -50,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== THEME TOGGLE ==========
   var themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
-    // Initialize icon based on stored/current theme
     var storedTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'dark';
     var themeIcon = themeToggle.querySelector('i');
     if (themeIcon) {
@@ -94,12 +84,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function translatePage() {
     var lang = localStorage.getItem('oros-language') || 'en';
-    // Fallback to 'en' if the stored language is not in translations
     if (SUPPORTED_LANGS.indexOf(lang) === -1) lang = 'en';
     var translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang];
 
     if (!translations) {
-      // Try English as ultimate fallback
       translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS['en'];
       if (!translations) return;
     }
@@ -161,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ========== ZEN MODE TOAST + SYNC (all pages) ==========
+  // ========== ZEN MODE TOAST + SYNC ==========
   window.addEventListener('oros-zen-mode-changed', function(e) {
     var zenToggle = document.getElementById('toggle-zen-mode');
     if (zenToggle) zenToggle.checked = e.detail.enabled;
@@ -175,15 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ========== KEYBOARD SHORTCUTS ==========
+  // ========== KEYBOARD SHORTCUTS — FIX #7 ESCAPE HANDLER ==========
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9') {
       e.preventDefault();
       if (zenBtn) zenBtn.click();
     }
     if (e.key === 'Escape') {
-      // Only handle escape if no other handler stopped it (i.e., no panel was closed)
-      if (document.body.hasAttribute('data-zen') && !e.isStoppedByPanel) {
+      // FIX #7: Check if Writer already handled the Escape key
+      if (document.body.hasAttribute('data-zen') && !e.isHandledByWriter) {
         if (zenBtn) zenBtn.click();
       }
     }
