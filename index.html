@@ -373,6 +373,134 @@
   </div>
 
   <div id="oros-footer"></div>
+  
+    <!-- ===== BETA WARNING POPUP ===== -->
+  <div class="beta-popup-overlay" id="beta-popup-overlay">
+    <div class="beta-popup">
+      <div class="beta-popup-icon">
+        <i class="fa fa-exclamation-triangle"></i>
+      </div>
+      <h2 class="beta-popup-title" data-i18n="beta_popup_title">Beta Channel Warning</h2>
+      <div class="beta-popup-body">
+        <p data-i18n="beta_popup_p1">You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
+        <p data-i18n="beta_popup_p2">Data loss may occur. You use this software at your own risk.</p>
+        <p data-i18n="beta_popup_p3" class="beta-popup-emphasis">We strongly encourage you to save your work frequently to a local file.</p>
+      </div>
+      <div class="beta-popup-actions">
+        <button class="beta-popup-btn primary" id="beta-popup-accept" data-i18n="beta_popup_accept">I understand and continue</button>
+        <button class="beta-popup-btn secondary" id="beta-popup-remind" data-i18n="beta_popup_remind">Remind me in 7 days</button>
+        <button class="beta-popup-btn tertiary" id="beta-popup-never" data-i18n="beta_popup_never">Don't show this again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== BETA WARNING LOGIC =====
+    (function() {
+      'use strict';
+
+      var LS_NEVER = 'oros_beta_warning_never';
+      var LS_REMIND = 'oros_beta_warning_remind';
+      var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+      function isBetaChannel() {
+        if (typeof OROS_CONFIG === 'undefined') return false;
+        var ch = OROS_CONFIG.channel || OROS_CONFIG.environment || '';
+        return ch.toString().toUpperCase() === 'BETA';
+      }
+
+      function shouldShowPopup() {
+        if (!isBetaChannel()) return false;
+        if (localStorage.getItem(LS_NEVER) === 'true') return false;
+        var remindTs = parseInt(localStorage.getItem(LS_REMIND) || '0', 10);
+        if (remindTs && (Date.now() - remindTs) < SEVEN_DAYS) return false;
+        return true;
+      }
+
+      function showPopup() {
+        var overlay = document.getElementById('beta-popup-overlay');
+        if (overlay) overlay.classList.add('visible');
+      }
+
+      function hidePopup() {
+        var overlay = document.getElementById('beta-popup-overlay');
+        if (overlay) overlay.classList.remove('visible');
+      }
+
+      function getTrans(key) {
+        var lang = localStorage.getItem('oros-language') || 'en';
+        var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
+        return t[key] || key;
+      }
+
+      // Localize buttons if i18n hasn't run yet
+      function localizeButtons() {
+        var btns = [
+          { id: 'beta-popup-accept', key: 'beta_popup_accept' },
+          { id: 'beta-popup-remind', key: 'beta_popup_remind' },
+          { id: 'beta-popup-never', key: 'beta_popup_never' }
+        ];
+        btns.forEach(function(b) {
+          var el = document.getElementById(b.id);
+          if (el && !el.dataset.localized) {
+            el.textContent = getTrans(b.key);
+            el.dataset.localized = 'true';
+          }
+        });
+      }
+
+      function init() {
+        if (!shouldShowPopup()) return;
+
+        // Wait for DOM to be ready
+        var overlay = document.getElementById('beta-popup-overlay');
+        if (!overlay) return;
+
+        localizeButtons();
+
+        // Small delay so it doesn't feel jarring
+        setTimeout(showPopup, 600);
+
+        // Accept — just close
+        var acceptBtn = document.getElementById('beta-popup-accept');
+        if (acceptBtn) {
+          acceptBtn.addEventListener('click', function() {
+            hidePopup();
+          });
+        }
+
+        // Remind in 7 days
+        var remindBtn = document.getElementById('beta-popup-remind');
+        if (remindBtn) {
+          remindBtn.addEventListener('click', function() {
+            localStorage.setItem(LS_REMIND, String(Date.now()));
+            localStorage.removeItem(LS_NEVER);
+            hidePopup();
+          });
+        }
+
+        // Never show again
+        var neverBtn = document.getElementById('beta-popup-never');
+        if (neverBtn) {
+          neverBtn.addEventListener('click', function() {
+            localStorage.setItem(LS_NEVER, 'true');
+            localStorage.removeItem(LS_REMIND);
+            hidePopup();
+          });
+        }
+
+        // Re-localize when language changes
+        window.addEventListener('oros-language-changed', localizeButtons);
+        document.addEventListener('languageChanged', localizeButtons);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
 
   <script>
     if ('serviceWorker' in navigator) {

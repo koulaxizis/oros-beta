@@ -1,6 +1,7 @@
 // Fixed: zen-mode key consistency (oros_zen_mode throughout)
 // Fixed: #7 — Zen Mode toggle/header sync via oros-zen-mode-changed event
 // Fixed: Early theme application to prevent FOUC (Flash Of Unstyled Content)
+// Updated: Removed es, it, fr, de — only en + el supported
 
 // ===== EARLY THEME APPLICATION (runs immediately, before DOMContentLoaded) =====
 (function applyStoredTheme() {
@@ -33,12 +34,13 @@ document.addEventListener('DOMContentLoaded', function() {
   window.orosShowToast = showToast;
 
   // ========== SYSTEM LANGUAGE DETECTION ==========
+  var SUPPORTED_LANGS = ['el', 'en'];
+
   function detectLanguage() {
     var stored = localStorage.getItem('oros-language');
-    if (stored) return stored;
+    if (stored && SUPPORTED_LANGS.indexOf(stored) !== -1) return stored;
     var navLang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
-    var supported = ['el', 'en', 'es', 'it', 'fr', 'de'];
-    return supported.indexOf(navLang) !== -1 ? navLang : 'en';
+    return SUPPORTED_LANGS.indexOf(navLang) !== -1 ? navLang : 'en';
   }
 
   var currentLang = detectLanguage();
@@ -71,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var langSelect = document.getElementById('language-select');
 
   if (langSelect) {
-    ['el', 'en', 'es', 'it', 'fr', 'de'].forEach(function(code) {
+    SUPPORTED_LANGS.forEach(function(code) {
       var opt = document.createElement('option');
       opt.value = code;
       opt.textContent = code.toUpperCase();
@@ -91,9 +93,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function translatePage() {
     var lang = localStorage.getItem('oros-language') || 'en';
+    // Fallback to 'en' if the stored language is not in translations
+    if (SUPPORTED_LANGS.indexOf(lang) === -1) lang = 'en';
     var translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang];
 
-    if (!translations) return;
+    if (!translations) {
+      // Try English as ultimate fallback
+      translations = window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS['en'];
+      if (!translations) return;
+    }
 
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');
