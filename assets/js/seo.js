@@ -39,22 +39,24 @@
       type: 'article',
       keywords: ['notes', 'wiki notes', 'wikilinks', 'markdown', 'knowledge base', 'note taking', 'offline', 'privacy', 'open source']
     },
-	'prompter.html': {
-  title: 'orOS Prompter — Writing Prompts & Inspiration',
-  description: '100 writing prompts across 10 techniques. Micro-fiction, haiku, poetry, songs, theatrical, novels. Works offline. No tracking.',
-  type: 'article',
-  keywords: ['writing prompts', 'creative writing', 'micro-fiction', 'haiku', 'poetry', 'song lyrics', 'aphorism', 'theatrical', 'monologue', 'inspiration', 'offline', 'privacy', 'open source']
-},
+    'prompter.html': {
+      title: 'orOS Prompter — Writing Prompts & Inspiration',
+      description: '100 writing prompts across 10 techniques. Micro-fiction, haiku, poetry, songs, theatrical, novels. Works offline. No tracking.',
+      type: 'article',
+      keywords: ['writing prompts', 'creative writing', 'micro-fiction', 'haiku', 'poetry', 'song lyrics', 'aphorism', 'theatrical', 'monologue', 'inspiration', 'offline', 'privacy', 'open source']
+    },
+    'characters.html': {
+      title: 'orOS Characters — Character Design & Relationship Mapping',
+      description: 'Design characters with personality traits, backstories, motivations, and relationship matrices. Works offline. No tracking.',
+      type: 'article',
+      keywords: ['character design', 'character creator', 'relationship mapping', 'storytelling tools', 'fiction writing', 'character sheet', 'offline', 'privacy', 'open source']
+    }
   };
 
-  // Language to locale mapping
+  // Language to locale mapping — ONLY en and el
   var LOCALE_MAP = {
     en: 'en_US',
-    el: 'el_GR',
-    es: 'es_ES',
-    it: 'it_IT',
-    fr: 'fr_FR',
-    de: 'de_DE'
+    el: 'el_GR'
   };
 
   function getCurrentPage() {
@@ -148,9 +150,10 @@
            : page === 'converter.html' ? 'Text transformation tool with 10 case modes.'
            : page === 'kanban.html' ? 'Drag & drop kanban board with multiple boards, labels, and due dates.'
            : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
-		   : page === 'prompter.html' ? 'Writing prompts and inspiration across 10 techniques.'
+           : page === 'prompter.html' ? 'Writing prompts and inspiration across 10 techniques.'
+           : page === 'characters.html' ? 'Character design tool with relationship mapping and templates.'
            : 'Privacy-first creative toolkit.'),
-      "inLanguage": ["en", "el", "es", "it", "fr", "de"],
+      "inLanguage": ["en", "el"],
       "operatingSystem": "Web",
       "applicationCategory": "ProductivityApplication",
       "offers": {
@@ -160,7 +163,7 @@
       },
       "license": "https://github.com/koulaxizis/oros-beta/blob/main/LICENSE",
       "softwareVersion": OROS_CONFIG.version,
-      "keywords": "text editor, case converter, kanban, wiki notes, privacy, offline, writer, productivity, open source, Greek"
+      "keywords": "text editor, case converter, kanban, wiki notes, character design, privacy, offline, writer, productivity, open source, Greek"
     };
 
     // Add features based on page
@@ -170,6 +173,7 @@
         'Case converter with 10 modes',
         'Kanban boards with drag & drop',
         'Wiki notes with wikilinks',
+        'Character design with relationship mapping',
         'Offline-first architecture',
         'Zero tracking, zero cookies'
       ];
@@ -203,6 +207,8 @@
             : page === 'converter.html' ? 'Case Converter'
             : page === 'kanban.html' ? 'Kanban'
             : page === 'notes.html' ? 'Notes'
+            : page === 'prompter.html' ? 'Prompter'
+            : page === 'characters.html' ? 'Characters'
             : 'Tool',
           "item": OROS_CONFIG.domain + '/' + page
         }
