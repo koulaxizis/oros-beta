@@ -1,7 +1,6 @@
 // ============================================
 // orOS Editor — Tabbed Documents Module
 // Manages multiple documents via tab bar
-// Loaded BEFORE editor.js (both deferred)
 // ============================================
 
 (function() {
@@ -34,6 +33,10 @@
       var raw = localStorage.getItem(STORAGE_TABS);
       if (raw) {
         tabs = JSON.parse(raw);
+        // Ensure each tab has lastSaved
+        for (var i = 0; i < tabs.length; i++) {
+          if (!tabs[i].hasOwnProperty('lastSaved')) tabs[i].lastSaved = null;
+        }
         activeId = localStorage.getItem(STORAGE_ACTIVE);
         if (!activeId || !getActiveTab()) {
           activeId = tabs.length > 0 ? tabs[0].id : null;
@@ -69,7 +72,8 @@
       id: 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
       title: title || 'Untitled',
       content: content || '',
-      metadata: metadata || {}
+      metadata: metadata || {},
+      lastSaved: null
     };
   }
 
@@ -117,6 +121,11 @@
     return tab ? (tab.metadata || {}) : {};
   }
 
+  function getActiveTimestamp() {
+    var tab = getActiveTab();
+    return tab ? tab.lastSaved : null;
+  }
+
   // ===== SETTERS =====
 
   function saveActiveContent(html) {
@@ -137,6 +146,13 @@
     var tab = getActiveTab();
     if (!tab) return;
     tab.metadata = meta || {};
+    persist();
+  }
+
+  function saveActiveTimestamp(ts) {
+    var tab = getActiveTab();
+    if (!tab) return;
+    tab.lastSaved = ts;
     persist();
   }
 
@@ -172,6 +188,7 @@
       tab.content = '';
       tab.title = 'Untitled';
       tab.metadata = {};
+      tab.lastSaved = null;
       persist();
       renderTabs();
       fireEvent('switch', tab);
@@ -301,6 +318,8 @@
     saveActiveContent: saveActiveContent,
     getActiveMetadata: getActiveMetadata,
     saveActiveMetadata: saveActiveMetadata,
+    getActiveTimestamp: getActiveTimestamp,
+    saveActiveTimestamp: saveActiveTimestamp,
     createTab: createTab,
     closeTab: closeTab,
     switchTab: switchTab,

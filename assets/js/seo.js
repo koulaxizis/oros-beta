@@ -15,7 +15,7 @@
       type: 'website',
       keywords: ['text editor', 'case converter', 'kanban board', 'wiki notes', 'privacy', 'offline', 'writer', 'open source', 'Greek']
     },
-    'editor.html': {
+    'writer.html': {
       title: 'orOS Writer — Privacy-First Rich Text Editor',
       description: 'Write distraction-free with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.',
       type: 'article',
@@ -146,7 +146,7 @@
       },
       "description": page === 'index.html'
         ? 'Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes, and more.'
-        : (page === 'editor.html' ? 'Rich text editor with autosave and writing tools.'
+        : (page === 'writer.html' ? 'Rich text editor with autosave and writing tools.'
            : page === 'converter.html' ? 'Text transformation tool with 10 case modes.'
            : page === 'kanban.html' ? 'Drag & drop kanban board with multiple boards, labels, and due dates.'
            : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
@@ -203,7 +203,7 @@
         {
           "@type": "ListItem",
           "position": 2,
-          "name": page === 'editor.html' ? 'Writer' 
+          "name": page === 'writer.html' ? 'Writer' 
             : page === 'converter.html' ? 'Case Converter'
             : page === 'kanban.html' ? 'Kanban'
             : page === 'notes.html' ? 'Notes'

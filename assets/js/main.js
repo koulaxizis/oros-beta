@@ -2,6 +2,7 @@
 // Fixed: #7 — Zen Mode toggle/header sync via oros-zen-mode-changed event
 // Fixed: Early theme application to prevent FOUC (Flash Of Unstyled Content)
 // Updated: Removed es, it, fr, de — only en + el supported
+// Fixed: Escape key stop propagation to prevent double-handling
 
 // ===== EARLY THEME APPLICATION (runs immediately, before DOMContentLoaded) =====
 (function applyStoredTheme() {
@@ -121,9 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
       if (translations[key]) {
-  el.setAttribute('data-placeholder', translations[key]);
-  el.setAttribute('placeholder', translations[key]);
-}
+        el.setAttribute('data-placeholder', translations[key]);
+        el.setAttribute('placeholder', translations[key]);
+      }
     });
   }
 
@@ -142,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== ZEN MODE ==========
   var zenBtn = document.getElementById('btn-zen');
   if (zenBtn) {
-    zenBtn.addEventListener('click', function() {
+    zenBtn.addEventListener('click', function(e) {
       var body = document.body;
       var isZen = body.hasAttribute('data-zen');
 
@@ -181,7 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (zenBtn) zenBtn.click();
     }
     if (e.key === 'Escape') {
-      if (document.body.hasAttribute('data-zen')) {
+      // Only handle escape if no other handler stopped it (i.e., no panel was closed)
+      if (document.body.hasAttribute('data-zen') && !e.isStoppedByPanel) {
         if (zenBtn) zenBtn.click();
       }
     }
@@ -360,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-    var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
+  var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
   if (typewriterSoundToggle) {
     typewriterSoundToggle.checked = localStorage.getItem('oros_typewriter_sound') === 'true';
     typewriterSoundToggle.addEventListener('change', function() {
@@ -387,15 +389,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // ========== SETTINGS TOGGLES — CONVERTER ==========
 
   var converterToggles = [
-    { id: 'toggle-hide-copy-btn', key: 'oros_hide_converter_copy_btn', element: 'btn-copy' },
-    { id: 'toggle-hide-save-btn', key: 'oros_hide_converter_save_btn', element: 'btn-save' },
-    { id: 'toggle-hide-open-btn', key: 'oros_hide_converter_open_btn', element: 'btn-open' },
-    { id: 'toggle-hide-clear-btn', key: 'oros_hide_converter_clear_btn', element: 'btn-clear' },
-    { id: 'toggle-hide-undo-btn', key: 'oros_hide_converter_undo_btn', element: 'btn-undo' },
-    { id: 'toggle-hide-redo-btn', key: 'oros_hide_converter_redo_btn', element: 'btn-redo' },
-    { id: 'toggle-hide-reset-btn', key: 'oros_hide_converter_reset_btn', element: 'btn-reset' },
-    { id: 'toggle-hide-options', key: 'oros_hide_converter_options', element: 'btn-options' },
-    { id: 'toggle-hide-stats-btn', key: 'oros_hide_converter_stats_btn', element: 'btn-stats' }
+    { id: 'toggle-hide-copy-btn', key: 'oros_hide_converter_copy_btn', element: 'btn-conv-copy' },
+    { id: 'toggle-hide-save-btn', key: 'oros_hide_converter_save_btn', element: 'btn-conv-save' },
+    { id: 'toggle-hide-open-btn', key: 'oros_hide_converter_open_btn', element: 'btn-conv-open' },
+    { id: 'toggle-hide-clear-btn', key: 'oros_hide_converter_clear_btn', element: 'btn-conv-clear' },
+    { id: 'toggle-hide-undo-btn', key: 'oros_hide_converter_undo_btn', element: 'btn-conv-undo' },
+    { id: 'toggle-hide-redo-btn', key: 'oros_hide_converter_redo_btn', element: 'btn-conv-redo' },
+    { id: 'toggle-hide-reset-btn', key: 'oros_hide_converter_reset_btn', element: 'btn-conv-reset' },
+    { id: 'toggle-hide-options', key: 'oros_hide_converter_options', element: 'btn-conv-options' },
+    { id: 'toggle-hide-stats-btn', key: 'oros_hide_converter_stats_btn', element: 'btn-conv-stats' }
   ];
 
   converterToggles.forEach(function(toggle) {

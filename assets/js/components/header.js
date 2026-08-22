@@ -22,6 +22,7 @@
           '<button id="btn-zen" class="header-btn" data-i18n-aria="aria_zen" aria-label="Zen Mode" title="Zen Mode (F9)"><i class="fa fa-eye-slash"></i></button>' +
           '<button id="theme-toggle" class="header-btn" data-i18n-aria="aria_theme" aria-label="Toggle Theme" title="Toggle Theme"><i class="fa fa-sun-o"></i></button>' +
           '<button id="btn-settings" class="header-btn" data-i18n-aria="aria_settings" aria-label="Settings" title="Settings"><i class="fa fa-cog"></i></button>' +
+          '<button id="btn-help" class="header-btn" data-i18n-aria="aria_help" aria-label="Help" title="Help"><i class="fa fa-question-circle"></i></button>' +
         '</div>' +
       '</div>' +
     '</header>';

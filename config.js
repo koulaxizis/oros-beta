@@ -15,6 +15,6 @@ var OROS_CONFIG = {
   website: 'https://koulaxizis.gr',
   github: 'https://github.com/koulaxizis/oros-beta',
   license: 'MIT',
-  languages: ['en', 'el', 'es', 'it', 'fr', 'de'],
+  languages: ['en', 'el'],
   defaultLanguage: 'en'
 };

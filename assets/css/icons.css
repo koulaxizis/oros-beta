@@ -141,3 +141,18 @@
 /* ===== CHARACTERS & BETA POPUP ===== */
 .fa-users:before                 { content: '\f0c0'; }
 .fa-exclamation-triangle:before  { content: '\f071'; }
+
+/* ===== WRITER — MISSING ICONS (Fix #2) ===== */
+.fa-minus:before        { content: '\f068'; }
+.fa-table:before        { content: '\f0ce'; }
+.fa-picture-o:before    { content: '\f03e'; }
+.fa-indent:before       { content: '\f03c'; }
+.fa-outdent:before      { content: '\f03b'; }
+.fa-subscript:before    { content: '\f12c'; }
+.fa-superscript:before  { content: '\f12b'; }
+
+/* ===== HELP BUTTON (Fix #5) ===== */
+.fa-question-circle:before { content: '\f059'; }
+
+/* ===== FIND NAVIGATION (Fix #12) ===== */
+.fa-chevron-down:before { content: '\f078'; }

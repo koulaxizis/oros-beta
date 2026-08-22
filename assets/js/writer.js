@@ -9,7 +9,6 @@
   // ===== STORAGE KEYS =====
   var LEGACY_STORAGE_KEY = 'oros_writer_content';
   var LEGACY_STORAGE_METADATA = 'oros_writer_metadata';
-  var LEGACY_STORAGE_LAST_SAVED = 'oros_writer_last_saved';
 
   // ===== DOM ELEMENTS =====
   var richEditor = document.getElementById('rich-editor');
@@ -17,6 +16,8 @@
   var findBar = document.getElementById('find-replace-bar');
   var findInput = document.getElementById('find-find');
   var replaceInput = document.getElementById('find-replace');
+  var btnPrev = document.getElementById('btn-fr-prev');
+  var btnNext = document.getElementById('btn-fr-next');
   var frResults = document.getElementById('fr_results');
   var btnSave = document.getElementById('btn-save');
   var btnOpen = document.getElementById('btn-open');
@@ -74,7 +75,6 @@
   var helpDialog = document.getElementById('help-dialog-overlay');
 
   // ===== STATE =====
-  var lastSavedTime = parseInt(localStorage.getItem(LEGACY_STORAGE_LAST_SAVED)) || null;
   var goalTarget = parseInt(localStorage.getItem('oros_goal_target')) || null;
   var goalUnit = localStorage.getItem('oros_goal_unit') || 'words';
   var goalLockEnabled = localStorage.getItem('oros_goal_lock') === 'true';
@@ -82,12 +82,13 @@
   var goalLockTriggered = false;
   var currentMatchIndex = -1;
   var matchRanges = [];
+  var matchMarks = [];
   var statsExpanded = false;
   var wordFreqDebounce = null;
   var outlineDebounceTimer = null;
-  var focusDebounceTimer = null;
   var isSwitching = false;
   var currentMetadata = {};
+  var hasUnsavedChanges = false;
 
   // ===== TRANSLATIONS HELPER =====
   function getCurrentLang() {
@@ -127,7 +128,6 @@
     isSwitching = true;
     richEditor.innerHTML = tab.content || '';
     currentMetadata = tab.metadata || {};
-    lastSavedTime = tab.lastSaved || null;
     if (metaTitle) metaTitle.value = currentMetadata.title || '';
     if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
     if (metaTags) metaTags.value = currentMetadata.tags || '';
@@ -135,6 +135,7 @@
     renderMetaDates();
     updateStats();
     updateGoalProgress();
+    hasUnsavedChanges = false;
     isSwitching = false;
   }
 
@@ -143,8 +144,7 @@
     var api = getTabsApi();
     if (!api) return;
     api.saveActiveContent(richEditor.innerHTML);
-    lastSavedTime = Date.now();
-    localStorage.setItem(LEGACY_STORAGE_LAST_SAVED, lastSavedTime.toString());
+    api.saveActiveTimestamp(Date.now());
     updateSaveIndicator();
   }
 
@@ -162,8 +162,7 @@
     if (api) api.saveActiveMetadata(currentMetadata);
     renderMetaDates();
     if (triggerSaveIndicator) {
-      lastSavedTime = Date.now();
-      localStorage.setItem(LEGACY_STORAGE_LAST_SAVED, lastSavedTime.toString());
+      api.saveActiveTimestamp(Date.now());
       updateSaveIndicator();
     }
   }
@@ -282,7 +281,9 @@
   function updateSaveIndicator() {
     if (!saveIndicator) return;
     var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[getCurrentLang()]) || {};
-    saveIndicator.style.visibility = hideSaveIndicator ? 'hidden' : 'visible';
+    saveIndicator.style.visibility = hasSaveIndicatorHidden() ? 'hidden' : 'visible';
+    var api = getTabsApi();
+    var lastSavedTime = api ? api.getActiveTimestamp() : null;
     if (!lastSavedTime) {
       saveIndicator.textContent = t.text_not_saved || '—';
       return;
@@ -299,6 +300,10 @@
     }
   }
 
+  function hasSaveIndicatorHidden() {
+    return localStorage.getItem('oros_hide_save_indicator') === 'true';
+  }
+
   // ============================================
   // CONTENT HANDLING
   // ============================================
@@ -307,6 +312,7 @@
     richEditor.addEventListener('input', function() {
       saveCurrentTabContent();
       updateStats();
+      hasUnsavedChanges = true;
       if (outlinePanel && outlinePanel.style.display !== 'none') {
         clearTimeout(outlineDebounceTimer);
         outlineDebounceTimer = setTimeout(updateOutline, 300);
@@ -819,43 +825,126 @@
   }
 
   // ============================================
-  // FIND & REPLACE
+  // FIND & REPLACE — FULL IMPLEMENTATION
   // ============================================
 
-  function toggleFindBar() {
-    if (!findBar || !findInput) return;
-    if (findBar.style.display === 'flex') {
-      findBar.style.display = 'none';
-      if (findInput) findInput.value = '';
-      if (replaceInput) replaceInput.value = '';
-      currentMatchIndex = -1;
-      matchRanges = [];
-    } else {
-      findBar.style.display = 'flex';
-      findInput.focus();
-      highlightMatches();
+  function clearHighlights() {
+    var marks = richEditor.querySelectorAll('mark.find-match');
+    for (var i = 0; i < marks.length; i++) {
+      var parent = marks[i].parentNode;
+      parent.insertBefore(document.createTextNode(marks[i].textContent), marks[i]);
+      parent.removeChild(marks[i]);
+      parent.normalize();
     }
+    matchMarks = [];
+    currentMatchIndex = -1;
   }
 
   function highlightMatches() {
     if (!findInput || !richEditor) return;
-    var searchTerm = findInput.value.toLowerCase();
+    clearHighlights();
+    
+    var searchTerm = findInput.value;
     if (!searchTerm) {
       if (frResults) frResults.textContent = getTrans('fr_no_matches');
       return;
     }
-    var content = richEditor.innerText.toLowerCase();
-    var matches = 0;
-    var idx = content.indexOf(searchTerm);
-    while (idx !== -1) {
-      matches++;
-      idx = content.indexOf(searchTerm, idx + 1);
+
+    var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node) {
+        if (!node.nodeValue || !node.nodeValue.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }, false);
+
+    var nodes = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode);
     }
+
+    if (nodes.length === 0) {
+      if (frResults) frResults.textContent = getTrans('fr_no_matches');
+      return;
+    }
+
+    // Build ranges for all matches
+    var allMatches = [];
+    for (var n = 0; n < nodes.length; n++) {
+      var text = nodes[n].nodeValue;
+      var idx = -1;
+      while ((idx = text.toLowerCase().indexOf(searchTerm.toLowerCase(), idx + 1)) !== -1) {
+        allMatches.push({ node: nodes[n], start: idx, end: idx + searchTerm.length });
+      }
+    }
+
+    if (allMatches.length === 0) {
+      if (frResults) frResults.textContent = getTrans('fr_no_matches');
+      return;
+    }
+
+    // Create mark elements for each match
+    for (var m = 0; m < allMatches.length; m++) {
+      var match = allMatches[m];
+      var node = match.node;
+      var beforeText = node.nodeValue.substring(0, match.start);
+      var matchText = node.nodeValue.substring(match.start, match.end);
+      var afterText = node.nodeValue.substring(match.end);
+
+      var beforeNode = document.createTextNode(beforeText);
+      var mark = document.createElement('mark');
+      mark.className = 'find-match';
+      mark.textContent = matchText;
+      var afterNode = document.createTextNode(afterText);
+
+      node.parentNode.insertBefore(beforeNode, node);
+      node.parentNode.insertBefore(mark, node);
+      node.parentNode.insertBefore(afterNode, node);
+      node.parentNode.removeChild(node);
+      
+      matchMarks.push(mark);
+    }
+
     if (frResults) {
-      frResults.textContent = matches > 0
-        ? matches + ' ' + getTrans('fr_results_matches')
-        : getTrans('fr_no_matches');
+      frResults.textContent = matchMarks.length + ' ' + getTrans('fr_results_matches');
     }
+
+    // Highlight first match
+    if (matchMarks.length > 0) {
+      currentMatchIndex = 0;
+      navigateMatchToMark(0);
+    }
+  }
+
+  function navigateMatchToMark(index) {
+    if (index < 0 || index >= matchMarks.length) return;
+    
+    // Remove 'current' class from previous
+    var prev = matchMarks[currentMatchIndex];
+    if (prev && prev !== matchMarks[index]) {
+      prev.classList.remove('current');
+    }
+
+    currentMatchIndex = index;
+    var mark = matchMarks[index];
+    mark.classList.add('current');
+
+    // Scroll into view
+    mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Update counter
+    if (frResults) {
+      frResults.textContent = (index + 1) + '/' + matchMarks.length + ' ' + getTrans('fr_results_matches');
+    }
+  }
+
+  function navigateMatch(direction) {
+    if (matchMarks.length === 0) return;
+    var newIndex = currentMatchIndex + direction;
+    if (newIndex < 0) newIndex = matchMarks.length - 1;
+    if (newIndex >= matchMarks.length) newIndex = 0;
+    navigateMatchToMark(newIndex);
   }
 
   function doReplace(isAll) {
@@ -863,24 +952,64 @@
     var searchTerm = findInput.value;
     var replaceTerm = replaceInput.value;
     if (!searchTerm) return;
-    var content = richEditor.innerHTML;
-    var escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var regex = new RegExp(escaped, 'gi');
-    richEditor.innerHTML = content.replace(regex, replaceTerm);
+
+    if (isAll) {
+      // Replace all
+      var escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var regex = new RegExp(escaped, 'gi');
+      richEditor.innerHTML = richEditor.innerHTML.replace(regex, function(match) {
+        // Preserve any HTML tags around the match
+        return replaceTerm;
+      });
+    } else {
+      // Replace only current match
+      var currentMark = matchMarks[currentMatchIndex];
+      if (currentMark) {
+        var textNode = document.createTextNode(replaceTerm);
+        currentMark.parentNode.replaceChild(textNode, currentMark);
+        // Clear highlights after replace
+        clearHighlights();
+      }
+    }
+
     saveCurrentTabContent();
     updateStats();
     showToast(getTrans('text_saved'));
+    highlightMatches();
+  }
+
+  function toggleFindBar() {
+    if (!findBar || !findInput) return;
+    if (findBar.style.display === 'flex') {
+      findBar.style.display = 'none';
+      clearHighlights();
+      if (findInput) findInput.value = '';
+      if (replaceInput) replaceInput.value = '';
+      currentMatchIndex = -1;
+    } else {
+      findBar.style.display = 'flex';
+      findInput.focus();
+      highlightMatches();
+    }
   }
 
   // ============================================
-  // FILE OPEN (TXT, MD, RTF, DOC, DOCX)
+  // FILE OPEN (TXT, MD, RTF, DOCX) — .doc REMOVED
   // ============================================
 
   function openFile(file) {
+    var extension = file.name.split('.').pop().toLowerCase();
+    
+    // Block .doc files
+    if (extension === 'doc') {
+      showToast(getTrans('format_not_supported') || 'Format not supported: .doc');
+      return;
+    }
+
     var reader = new FileReader();
     reader.onload = function(e) {
       var content = e.target.result;
-      if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
+      if (extension === 'docx' && typeof mammoth !== 'undefined') {
         mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(result) {
           richEditor.innerHTML = result.value;
           saveCurrentTabContent();
@@ -891,14 +1020,16 @@
           showToast('Error converting DOCX');
         });
       } else {
-        richEditor.innerHTML = content;
+        // For .txt, .md, .rtf — treat as text
+        richEditor.innerHTML = content.replace(/\n/g, '<br>');
         saveCurrentTabContent();
         updateStats();
         showToast(getTrans('toast_opened'));
       }
     };
     reader.onerror = function() { showToast('Error reading file'); };
-    if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
+    
+    if (extension === 'docx' && typeof mammoth !== 'undefined') {
       reader.readAsArrayBuffer(file);
     } else {
       reader.readAsText(file);
@@ -906,7 +1037,7 @@
   }
 
   // ============================================
-  // EXPORT (MD, TXT, RTF, DOC, PDF)
+  // EXPORT (MD, TXT, RTF, DOCX, PDF) — .doc REMOVED
   // ============================================
 
   function downloadFile(format) {
@@ -936,10 +1067,10 @@
       case 'pdf':
         window.print();
         return;
-      case 'doc':
+      case 'docx':
         data = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + content + '</body></html>';
-        ext = '.doc';
-        mime = 'application/msword;charset=utf-8';
+        ext = '.docx';
+        mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8';
         break;
     }
 
@@ -1011,16 +1142,18 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-
-  // ============================================
+  
+    // ============================================
   // KEYBOARD SHORTCUTS
   // ============================================
 
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
+      e.stopImmediatePropagation();
       saveCurrentTabContent();
       saveCurrentTabMetadata(true);
+      hasUnsavedChanges = false;
       showToast(getTrans('text_saved'));
     }
     else if (e.ctrlKey && e.key === 'g') {
@@ -1049,46 +1182,90 @@
       var api2 = getTabsApi();
       if (api2) api2.createTab({ content: '', metadata: {} });
     }
+    else if (e.ctrlKey && e.key === 'b') {
+      document.execCommand('bold');
+      saveCurrentTabContent();
+    }
+    else if (e.ctrlKey && e.key === 'i') {
+      document.execCommand('italic');
+      saveCurrentTabContent();
+    }
+    else if (e.ctrlKey && e.key === 'u') {
+      document.execCommand('underline');
+      saveCurrentTabContent();
+    }
     else if (e.ctrlKey && e.shiftKey && e.key === 'X') {
       e.preventDefault();
       document.execCommand('strikeThrough');
+      saveCurrentTabContent();
     }
     else if (e.ctrlKey && e.key === ',') {
       e.preventDefault();
       document.execCommand('subscript');
+      saveCurrentTabContent();
     }
     else if (e.ctrlKey && e.key === '.') {
       e.preventDefault();
       document.execCommand('superscript');
+      saveCurrentTabContent();
     }
     else if (e.key === 'Escape') {
+      var handled = false;
       if (metadataPanel && metadataPanel.style.display !== 'none') {
         saveCurrentTabMetadata(false);
         metadataPanel.style.display = 'none';
+        handled = true;
       }
       if (outlinePanel && outlinePanel.style.display !== 'none') {
         outlinePanel.style.display = 'none';
+        handled = true;
       }
       if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
         wordFreqPanel.style.display = 'none';
+        handled = true;
       }
       if (findBar && findBar.style.display === 'flex') {
         findBar.style.display = 'none';
+        clearHighlights();
+        handled = true;
       }
       if (goalBar && goalBar.style.display === 'flex') {
         goalBar.style.display = 'none';
+        handled = true;
       }
       if (linkDialog && linkDialog.style.display === 'flex') {
         linkDialog.style.display = 'none';
+        handled = true;
       }
       if (tableDialog && tableDialog.style.display === 'flex') {
         tableDialog.style.display = 'none';
+        handled = true;
       }
       if (imageDialog && imageDialog.style.display === 'flex') {
         imageDialog.style.display = 'none';
+        handled = true;
       }
       if (helpDialog && helpDialog.style.display === 'flex') {
         helpDialog.style.display = 'none';
+        handled = true;
+      }
+      if (handled) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    }
+    else if (e.key === 'Enter' && findBar && findBar.style.display === 'flex') {
+      var activeElement = document.activeElement;
+      if (activeElement === findInput) {
+        if (e.shiftKey) {
+          navigateMatch(-1);
+        } else {
+          navigateMatch(1);
+        }
+        e.preventDefault();
+      } else if (activeElement === replaceInput) {
+        doReplace(false);
+        e.preventDefault();
       }
     }
   });
@@ -1114,37 +1291,77 @@
   });
 
   // ============================================
-  // VISIBILITY INIT
+  // VISIBILITY INITIALIZATION
   // ============================================
 
-  var hideStats = localStorage.getItem('oros_hide_stats') === 'true';
-  var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
-  var hideGoalBtn = localStorage.getItem('oros_hide_goal_btn') === 'true';
-  var hideOutlineBtn = localStorage.getItem('oros_hide_outline_btn') === 'true';
-  var hideMetadataBtn = localStorage.getItem('oros_hide_metadata_btn') === 'true';
-  var hideFindBtn = localStorage.getItem('oros_hide_find_btn') === 'true';
-  var hideWordFreqBtn = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
-  var hideSaveIndicator = localStorage.getItem('oros_hide_save_indicator') === 'true';
-  var hideLoremBtn = localStorage.getItem('oros_hide_lorem_btn') === 'true';
+  function applyInitialVisibility() {
+    var hideStats = localStorage.getItem('oros_hide_stats') === 'true';
+    var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
+    var hideGoalBtn = localStorage.getItem('oros_hide_goal_btn') === 'true';
+    var hideOutlineBtn = localStorage.getItem('oros_hide_outline_btn') === 'true';
+    var hideMetadataBtn = localStorage.getItem('oros_hide_metadata_btn') === 'true';
+    var hideFindBtn = localStorage.getItem('oros_hide_find_btn') === 'true';
+    var hideWordFreqBtn = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
+    var hideLoremBtn = localStorage.getItem('oros_hide_lorem_btn') === 'true';
 
-  if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
-  if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
-  if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
-  if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
-  if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
-  if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
-  if (hideFindBtn && btnFind) btnFind.style.display = 'none';
-  if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
-  if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
-  if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
+    if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
+    if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
+    if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
+    if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
+    if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
+    if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
+    if (hideFindBtn && btnFind) btnFind.style.display = 'none';
+    if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
+    if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
+  }
+
+  // ============================================
+  // VISIBILITY EVENT LISTENERS (REAL-TIME)
+  // ============================================
+
+  window.addEventListener('oros-quick-tbar-changed', function(e) {
+    if (toolbarCenter) toolbarCenter.style.display = e.detail.show ? 'flex' : 'none';
+  });
+
+  window.addEventListener('oros-hide-stats-changed', function(e) {
+    if (statsOverlay) statsOverlay.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-save-indicator-changed', function(e) {
+    if (saveIndicator) saveIndicator.style.visibility = e.detail.hidden ? 'hidden' : 'visible';
+  });
+
+  window.addEventListener('oros-hide-goal-btn-changed', function(e) {
+    if (btnGoal) btnGoal.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-outline-btn-changed', function(e) {
+    if (btnOutline) btnOutline.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-metadata-btn-changed', function(e) {
+    if (btnMetadata) btnMetadata.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-find-btn-changed', function(e) {
+    if (btnFind) btnFind.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-wordfreq-btn-changed', function(e) {
+    if (btnWordFreq) btnWordFreq.style.display = e.detail.hidden ? 'none' : '';
+  });
+
+  window.addEventListener('oros-hide-lorem-btn-changed', function(e) {
+    if (btnLorem) btnLorem.style.display = e.detail.hidden ? 'none' : '';
+  });
 
   // ============================================
   // EVENT LISTENERS
   // ============================================
 
   if (btnSave) btnSave.addEventListener('click', function() {
-    saveCurrentTabContent();
     saveCurrentTabMetadata(true);
+    hasUnsavedChanges = false;
     showToast(getTrans('text_saved'));
   });
 
@@ -1173,15 +1390,37 @@
 
   if (btnFind) btnFind.addEventListener('click', toggleFindBar);
   if (findBar) {
-    if (findInput) findInput.addEventListener('input', highlightMatches);
+    if (findInput) {
+      findInput.addEventListener('input', highlightMatches);
+      findInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          if (e.shiftKey) navigateMatch(-1);
+          else navigateMatch(1);
+          e.preventDefault();
+        }
+      });
+    }
+    if (replaceInput) {
+      replaceInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          doReplace(false);
+          e.preventDefault();
+        }
+      });
+    }
+    var btnFrPrev = document.getElementById('btn-fr-prev');
+    var btnFrNext = document.getElementById('btn-fr-next');
     var btnFrReplace = document.getElementById('btn-fr-replace');
     var btnFrReplaceAll = document.getElementById('btn-fr-replace-all');
+    if (btnFrPrev) btnFrPrev.addEventListener('click', function() { navigateMatch(-1); });
+    if (btnFrNext) btnFrNext.addEventListener('click', function() { navigateMatch(1); });
     if (btnFrReplace) btnFrReplace.addEventListener('click', function() { doReplace(false); });
     if (btnFrReplaceAll) btnFrReplaceAll.addEventListener('click', function() { doReplace(true); });
     if (btnCloseFR) btnCloseFR.addEventListener('click', function() {
       findBar.style.display = 'none';
       if (findInput) findInput.value = '';
       if (replaceInput) replaceInput.value = '';
+      clearHighlights();
     });
   }
 
@@ -1359,7 +1598,6 @@
       isSwitching = true;
       richEditor.innerHTML = tab.content || '';
       currentMetadata = tab.metadata || {};
-      lastSavedTime = tab.lastSaved || null;
       if (metaTitle) metaTitle.value = currentMetadata.title || '';
       if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
       if (metaTags) metaTags.value = currentMetadata.tags || '';
@@ -1376,7 +1614,6 @@
       isSwitching = true;
       richEditor.innerHTML = '';
       currentMetadata = {};
-      lastSavedTime = null;
       if (metaTitle) metaTitle.value = '';
       if (metaAuthor) metaAuthor.value = '';
       if (metaTags) metaTags.value = '';
@@ -1439,7 +1676,6 @@
         isSwitching = true;
         richEditor.innerHTML = tab.content;
         currentMetadata = tab.metadata || {};
-        lastSavedTime = tab.lastSaved || null;
         if (metaTitle) metaTitle.value = currentMetadata.title || '';
         if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
         if (metaTags) metaTags.value = currentMetadata.tags || '';
@@ -1447,28 +1683,6 @@
         renderMetaDates();
         isSwitching = false;
         return;
-      }
-    }
-
-    // Fallback: load from legacy localStorage
-    var legacyContent = localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (legacyContent) {
-      isSwitching = true;
-      richEditor.innerHTML = legacyContent;
-      isSwitching = false;
-    }
-
-    var legacyMeta = localStorage.getItem(LEGACY_STORAGE_METADATA);
-    if (legacyMeta) {
-      try {
-        currentMetadata = JSON.parse(legacyMeta);
-        if (metaTitle) metaTitle.value = currentMetadata.title || '';
-        if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
-        if (metaTags) metaTags.value = currentMetadata.tags || '';
-        if (metaCategory) metaCategory.value = currentMetadata.category || '';
-        renderMetaDates();
-      } catch(e) {
-        currentMetadata = {};
       }
     }
   }
@@ -1484,5 +1698,6 @@
   updateStats();
   updateReadingProgress();
   renderMetaDates();
+  applyInitialVisibility();
 
 })();

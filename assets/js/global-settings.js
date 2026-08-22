@@ -191,16 +191,16 @@
     if (statsOverlay) statsOverlay.style.display = SETTINGS.hideStatsOverlay ? 'none' : '';
     if (saveIndicator) saveIndicator.style.visibility = SETTINGS.hideSaveIndicator ? 'hidden' : 'visible';
 
-    // Converter buttons
-    var btnCopy = document.getElementById('btn-copy');
-    var btnSaveConv = document.getElementById('btn-save');
-    var btnOpenConv = document.getElementById('btn-open');
-    var btnClearConv = document.getElementById('btn-clear');
-    var btnUndoConv = document.getElementById('btn-undo');
-    var btnRedoConv = document.getElementById('btn-redo');
-    var btnResetConv = document.getElementById('btn-reset');
-    var btnOptions = document.getElementById('btn-options');
-    var btnStatsConv = document.getElementById('btn-stats');
+    // Converter buttons — prefixed with btn-conv- to avoid clashes with Writer IDs
+    var btnCopy = document.getElementById('btn-conv-copy');
+    var btnSaveConv = document.getElementById('btn-conv-save');
+    var btnOpenConv = document.getElementById('btn-conv-open');
+    var btnClearConv = document.getElementById('btn-conv-clear');
+    var btnUndoConv = document.getElementById('btn-conv-undo');
+    var btnRedoConv = document.getElementById('btn-conv-redo');
+    var btnResetConv = document.getElementById('btn-conv-reset');
+    var btnOptions = document.getElementById('btn-conv-options');
+    var btnStatsConv = document.getElementById('btn-conv-stats');
 
     if (btnCopy) btnCopy.style.display = SETTINGS.hideCopyBtn ? 'none' : '';
     if (btnSaveConv) btnSaveConv.style.display = SETTINGS.hideSaveBtn ? 'none' : '';
