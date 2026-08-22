@@ -20,11 +20,10 @@
   function getPageType() {
     var path = window.location.pathname;
     var page = path.split('/').pop();
-    // Map page filenames to their app identifier
     var map = {
       'index.html': 'index',
       'writer.html': 'writer',
-      'editor.html': 'writer', // legacy redirect support
+      'editor.html': 'writer',
       'converter.html': 'converter',
       'kanban.html': 'kanban',
       'notes.html': 'notes',
@@ -40,11 +39,8 @@
 
     var lang = getCurrentLang();
     var pageType = getPageType();
-
-    // Determine if we should show app-specific buttons
     var isAppPage = pageType !== 'index';
 
-    // Build nav links (hidden on mobile, shown in menu)
     var navLinks = '';
     var apps = [
       { href: 'writer.html', icon: 'fa-pencil', key: 'editor_name' },
@@ -62,11 +58,9 @@
         ' data-i18n="' + a.key + '">' + getTrans(a.key) + '</a>';
     }
 
-    // Theme state
     var savedTheme = localStorage.getItem('oros-theme') || 'dark';
     var isDark = savedTheme === 'dark';
 
-    // Build the header HTML
     var html = '';
 
     html += '<header class="header" id="oros-header-bar">';
@@ -125,7 +119,6 @@
 
     header.innerHTML = html;
 
-    // Apply theme on load
     applyTheme(savedTheme);
   }
 
@@ -144,7 +137,6 @@
     }
     localStorage.setItem('oros-theme', theme);
 
-    // Update toggle icon
     var btn = document.getElementById('btn-theme-toggle');
     if (btn) {
       var icon = btn.querySelector('i');
@@ -153,7 +145,6 @@
       }
     }
 
-    // Dispatch event for other components
     window.dispatchEvent(new CustomEvent('oros-theme-changed', { detail: { theme: theme } }));
   }
 
@@ -172,19 +163,15 @@
       body.classList.add('zen-mode');
     }
 
-    // Update zen toggle button
     var zenCheckbox = document.getElementById('toggle-zen-mode');
     if (zenCheckbox) {
       zenCheckbox.checked = !isZen;
     }
 
-    // Show toast
     var label = !isZen ? getTrans('toggle_zen') : getTrans('toggle_zen') + ' Off';
     showToast(label);
 
-    // Trigger resize for editor recalculation
     window.dispatchEvent(new Event('resize'));
-
     window.dispatchEvent(new CustomEvent('oros-zen-changed', { detail: { enabled: !isZen } }));
   }
 
@@ -200,7 +187,6 @@
       modal.classList.remove('visible');
     } else {
       modal.classList.add('visible');
-      // Sync toggle states
       syncSettingsToggles();
     }
   }
@@ -219,14 +205,12 @@
     for (var i = 0; i < tabBtns.length; i++) {
       (function(btn) {
         btn.addEventListener('click', function() {
-          // Remove active from all
           for (var j = 0; j < tabBtns.length; j++) {
             tabBtns[j].classList.remove('active');
           }
           for (var k = 0; k < panels.length; k++) {
             panels[k].style.display = 'none';
           }
-          // Activate clicked
           btn.classList.add('active');
           var targetId = btn.getAttribute('data-tab');
           var target = document.getElementById(targetId);
@@ -235,19 +219,16 @@
       })(tabBtns[i]);
     }
 
-    // Close on overlay click
     var overlay = document.querySelector('.settings-modal-overlay');
     if (overlay) {
       overlay.addEventListener('click', toggleSettings);
     }
 
-    // Close button
     var closeBtn = document.querySelector('.settings-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', toggleSettings);
     }
 
-    // Zen mode toggle in settings
     var zenCheckbox = document.getElementById('toggle-zen-mode');
     if (zenCheckbox) {
       zenCheckbox.addEventListener('change', function() {
@@ -264,11 +245,9 @@
     localStorage.setItem('oros-language', lang);
     document.documentElement.setAttribute('lang', lang);
 
-    // Dispatch events
     window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
     document.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: lang } }));
 
-    // Reload to apply translations
     window.location.reload();
   }
 
@@ -310,7 +289,6 @@
   var deferredInstallPrompt = null;
 
   window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
     deferredInstallPrompt = e;
     var installBtn = document.getElementById('btn-install');
     if (installBtn) {
@@ -336,7 +314,6 @@
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9') {
       e.preventDefault();
-      // Only toggle zen on app pages
       if (getPageType() !== 'index') {
         toggleZenMode();
       }
@@ -350,7 +327,6 @@
   function init() {
     buildHeader();
 
-    // Attach event listeners
     var themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
       themeBtn.addEventListener('click', function() {
@@ -381,10 +357,8 @@
       menuToggle.addEventListener('click', toggleMobileMenu);
     }
 
-    // Setup settings modal nav
     setupSettingsNav();
 
-    // Close mobile menu when clicking a nav link
     var navLinks = document.querySelectorAll('.nav-link');
     for (var i = 0; i < navLinks.length; i++) {
       navLinks[i].addEventListener('click', function() {
