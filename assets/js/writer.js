@@ -320,6 +320,7 @@
 
     richEditor.addEventListener('scroll', function() {
       updateReadingProgress();
+      clearFocusMode();
     }, { passive: true });
   }
 
@@ -631,7 +632,7 @@
       temp.innerHTML = html;
       var allowed = ['P','H1','H2','H3','H4','H5','H6','UL','OL','LI','STRONG','EM','B','I','U','A','CODE','PRE','BLOCKQUOTE','BR','SPAN'];
       var all = temp.querySelectorAll('*');
-      for (var i = 0; i < all.length; i++) {
+      for (var i = all.length - 1; i >= 0; i--) {
         var el = all[i];
         if (allowed.indexOf(el.tagName) === -1) {
           var txt = document.createTextNode(el.textContent + ' ');
@@ -653,836 +654,784 @@
     updateStats();
   }
 
-  // ============================================
-  // NEW FEATURES: LINK, TABLE, IMAGE, HR
-  // ============================================
+// ============================================
+// NEW FEATURES: LINK, TABLE, IMAGE, SUB/SUPERSCRIPT, HR
+// ============================================
 
-  function toggleLinkDialog() {
-    if (!linkDialog) return;
-    if (linkDialog.style.display === 'none' || !linkDialog.style.display) {
-      var selectedText = window.getSelection().toString();
-      var linkUrl = document.getElementById('link-url');
-      var linkTextEl = document.getElementById('link-text');
-      linkUrl.value = '';
-      linkTextEl.value = selectedText;
-      linkDialog.style.display = 'flex';
-    } else {
-      linkDialog.style.display = 'none';
-    }
-  }
-
-  function insertLink() {
-    var url = document.getElementById('link-url').value;
-    var text = document.getElementById('link-text').value || document.getElementById('link-url').value;
-    if (!url) { linkDialog.style.display = 'none'; return; }
-    var html = '<a href="' + escapeHtml(url) + '">' + escapeHtml(text) + '</a>';
-    document.execCommand('insertHTML', false, html);
+function toggleLinkDialog() {
+  if (!linkDialog) return;
+  if (linkDialog.style.display === 'none' || !linkDialog.style.display) {
+    var selectedText = window.getSelection().toString();
+    var linkUrl = document.getElementById('link-url');
+    var linkText = document.getElementById('link-text');
+    linkUrl.value = '';
+    linkText.value = selectedText;
+    linkDialog.style.display = 'flex';
+  } else {
     linkDialog.style.display = 'none';
-    saveCurrentTabContent();
-    updateStats();
   }
+}
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
+function insertLink() {
+  var url = document.getElementById('link-url').value;
+  var text = document.getElementById('link-text').value || document.getElementById('link-url').value;
+  if (!url) { linkDialog.style.display = 'none'; return; }
+  var html = '<a href="' + escapeHtml(url) + '">' + escapeHtml(text) + '</a>';
+  document.execCommand('insertHTML', false, html);
+  linkDialog.style.display = 'none';
+  saveCurrentTabContent();
+  updateStats();
+}
 
-  function toggleTableDialog() {
-    if (!tableDialog) return;
-    if (tableDialog.style.display === 'none' || !tableDialog.style.display) {
-      tableDialog.style.display = 'flex';
-    } else {
-      tableDialog.style.display = 'none';
-    }
-  }
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-  function insertTable() {
-    var rows = parseInt(document.getElementById('table-rows').value) || 3;
-    var cols = parseInt(document.getElementById('table-cols').value) || 3;
-    var tableHtml = '<table style="border-collapse:collapse; width:100%; margin: 1em 0;"><tbody>';
-    for (var r = 0; r < rows; r++) {
-      tableHtml += '<tr>';
-      for (var c = 0; c < cols; c++) {
-        tableHtml += '<td style="border:1px solid #ccc; padding:8px; min-width:50px;">&nbsp;</td>';
-      }
-      tableHtml += '</tr>';
-    }
-    tableHtml += '</tbody></table><p>&nbsp;</p>';
-    document.execCommand('insertHTML', false, tableHtml);
+function toggleTableDialog() {
+  if (!tableDialog) return;
+  if (tableDialog.style.display === 'none' || !tableDialog.style.display) {
+    tableDialog.style.display = 'flex';
+  } else {
     tableDialog.style.display = 'none';
-    saveCurrentTabContent();
-    updateStats();
   }
+}
 
-  function toggleImageDialog() {
-    if (!imageDialog) return;
-    if (imageDialog.style.display === 'none' || !imageDialog.style.display) {
-      document.getElementById('image-source-type').value = 'upload';
-      document.getElementById('image-upload-field').style.display = '';
-      document.getElementById('image-url-field').style.display = 'none';
-      imageDialog.style.display = 'flex';
-    } else {
-      imageDialog.style.display = 'none';
+function insertTable() {
+  var rows = parseInt(document.getElementById('table-rows').value) || 3;
+  var cols = parseInt(document.getElementById('table-cols').value) || 3;
+  var tableHtml = '<table style="border-collapse:collapse; width:100%; margin: 1em 0;"><tbody>';
+  for (var r = 0; r < rows; r++) {
+    tableHtml += '<tr>';
+    for (var c = 0; c < cols; c++) {
+      tableHtml += '<td style="border:1px solid #ccc; padding:8px; min-width:50px;">&nbsp;</td>';
     }
+    tableHtml += '</tr>';
   }
+  tableHtml += '</tbody></table><p>&nbsp;</p>';
+  document.execCommand('insertHTML', false, tableHtml);
+  tableDialog.style.display = 'none';
+  saveCurrentTabContent();
+  updateStats();
+}
 
-  function insertImageFromUpload(file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var imgHtml = '<p><img src="' + e.target.result + '" style="max-width:100%; height:auto;" /></p>';
-      document.execCommand('insertHTML', false, imgHtml);
-      saveCurrentTabContent();
-      updateStats();
-    };
-    reader.onerror = function() { showToast('Error loading image'); };
-    reader.readAsDataURL(file);
+function toggleImageDialog() {
+  if (!imageDialog) return;
+  if (imageDialog.style.display === 'none' || !imageDialog.style.display) {
+    document.getElementById('image-source-type').value = 'upload';
+    document.getElementById('image-upload-field').style.display = '';
+    document.getElementById('image-url-field').style.display = 'none';
+    imageDialog.style.display = 'flex';
+  } else {
+    imageDialog.style.display = 'none';
   }
+}
 
-  function insertImageUrl(url) {
-    var imgHtml = '<p><img src="' + escapeHtml(url) + '" style="max-width:100%; height:auto;" /></p>';
+function insertImageFromUpload(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var imgHtml = '<p><img src="' + e.target.result + '" style="max-width:100%; height:auto;" /></p>';
     document.execCommand('insertHTML', false, imgHtml);
     saveCurrentTabContent();
     updateStats();
+  };
+  reader.onerror = function() { showToast('Error loading image'); };
+  reader.readAsDataURL(file);
+}
+
+function insertImageUrl(url) {
+  var imgHtml = '<p><img src="' + escapeHtml(url) + '" style="max-width:100%; height:auto;" /></p>';
+  document.execCommand('insertHTML', false, imgHtml);
+  saveCurrentTabContent();
+  updateStats();
+}
+
+function handleImageInsert() {
+  var sourceType = document.getElementById('image-source-type').value;
+  if (sourceType === 'upload') {
+    var fileInput = document.getElementById('image-file');
+    if (fileInput.files && fileInput.files[0]) {
+      insertImageFromUpload(fileInput.files[0]);
+    }
+  } else {
+    var url = document.getElementById('image-url').value;
+    if (url) insertImageUrl(url);
+  }
+  imageDialog.style.display = 'none';
+}
+
+// ============================================
+// FOCUS MODE (removed per request — placeholder only)
+// ============================================
+
+// Focus Mode has been completely removed from Writer as requested
+
+// ============================================
+// WORD FREQUENCY
+// ============================================
+
+function toggleWordFreqPanel() {
+  if (!wordFreqPanel) return;
+  if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
+    wordFreqPanel.style.display = 'flex';
+    updateWordFrequency();
+  } else {
+    wordFreqPanel.style.display = 'none';
+  }
+}
+
+function updateWordFrequency() {
+  if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
+  var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
+  if (!text) {
+    wordFreqList.innerHTML = '<div class="wordfreq-empty">' + getTrans('word_freq_empty') + '</div>';
+    if (wordFreqSummary) wordFreqSummary.innerHTML = '';
+    return;
+  }
+  var words = text.split(/\s+/).filter(Boolean);
+  var total = words.length;
+  var freq_map = {};
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    freq_map[w] = (freq_map[w] || 0) + 1;
+  }
+  var unique = Object.keys(freq_map).length;
+  var diversity = total > 0 ? (unique / total * 100).toFixed(1) : 0;
+  var sorted = Object.keys(freq_map).sort(function(a,b) {
+    return freq_map[b] - freq_map[a];
+  }).slice(0, 20);
+  var maxFreq = sorted.length > 0 ? freq_map[sorted[0]] : 1;
+
+  if (wordFreqSummary) {
+    wordFreqSummary.innerHTML =
+      '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
+      '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
+      '<div class="stat-row"><span>' + getTrans('word_freq_diversity') + '</span><span>' + diversity + '%</span></div>';
   }
 
-  function handleImageInsert() {
-    var sourceType = document.getElementById('image-source-type').value;
-    if (sourceType === 'upload') {
-      var imgFileInput = document.getElementById('image-file');
-      if (imgFileInput.files && imgFileInput.files[0]) {
-        insertImageFromUpload(imgFileInput.files[0]);
-      }
-    } else {
-      var url = document.getElementById('image-url').value;
-      if (url) insertImageUrl(url);
-    }
-    imageDialog.style.display = 'none';
+  var listHtml = '';
+  for (var j = 0; j < sorted.length; j++) {
+    var word = sorted[j];
+    var count = freq_map[word];
+    var pct = (count / maxFreq * 100).toFixed(0);
+    var isOverused = count >= 5 && (count / total * 100) > 2;
+    listHtml += '<div class="wordfreq-item' + (isOverused ? ' overused' : '') + '">' +
+      '<span class="wf-word">' + word + '</span>' +
+      '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="wordfreq-count">' + count + '</span>' +
+    '</div>';
   }
+  wordFreqList.innerHTML = listHtml;
+}
 
-  // ============================================
-  // WORD FREQUENCY
-  // ============================================
+// ============================================
+// FIND & REPLACE
+// ============================================
 
-  function toggleWordFreqPanel() {
-    if (!wordFreqPanel) return;
-    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
-      wordFreqPanel.style.display = 'flex';
-      updateWordFrequency();
-    } else {
-      wordFreqPanel.style.display = 'none';
-    }
+function toggleFindBar() {
+  if (!findBar || !findInput) return;
+  if (findBar.style.display === 'flex') {
+    findBar.style.display = 'none';
+    if (findInput) findInput.value = '';
+    if (replaceInput) replaceInput.value = '';
+    currentMatchIndex = -1;
+    matchRanges = [];
+  } else {
+    findBar.style.display = 'flex';
+    findInput.focus();
+    highlightMatches();
   }
+}
 
-  function updateWordFrequency() {
-    if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
-    var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
-    if (!text) {
-      wordFreqList.innerHTML = '<div class="wordfreq-empty">' + getTrans('word_freq_empty') + '</div>';
-      if (wordFreqSummary) wordFreqSummary.innerHTML = '';
-      return;
-    }
-    var words = text.split(/\s+/).filter(Boolean);
-    var total = words.length;
-    var freq_map = {};
-    for (var i = 0; i < words.length; i++) {
-      var w = words[i];
-      freq_map[w] = (freq_map[w] || 0) + 1;
-    }
-    var unique = Object.keys(freq_map).length;
-    var diversity = total > 0 ? (unique / total * 100).toFixed(1) : 0;
-    var sorted = Object.keys(freq_map).sort(function(a,b) {
-      return freq_map[b] - freq_map[a];
-    }).slice(0, 20);
-    var maxFreq = sorted.length > 0 ? freq_map[sorted[0]] : 1;
-
-    if (wordFreqSummary) {
-      wordFreqSummary.innerHTML =
-        '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
-        '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
-        '<div class="stat-row"><span>' + getTrans('word_freq_diversity') + '</span><span>' + diversity + '%</span></div>';
-    }
-
-    var listHtml = '';
-    for (var j = 0; j < sorted.length; j++) {
-      var word = sorted[j];
-      var count = freq_map[word];
-      var pct = (count / maxFreq * 100).toFixed(0);
-      var isOverused = count >= 5 && (count / total * 100) > 2;
-      listHtml += '<div class="wordfreq-item' + (isOverused ? ' overused' : '') + '">' +
-        '<span class="wf-word">' + word + '</span>' +
-        '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
-        '<span class="wordfreq-count">' + count + '</span>' +
-      '</div>';
-    }
-    wordFreqList.innerHTML = listHtml;
+function highlightMatches() {
+  if (!findInput || !richEditor) return;
+  var searchTerm = findInput.value.toLowerCase();
+  if (!searchTerm) {
+    if (frResults) frResults.textContent = getTrans('fr_no_matches');
+    return;
   }
-
-  // ============================================
-  // FIND & REPLACE
-  // ============================================
-
-  function toggleFindBar() {
-    if (!findBar || !findInput) return;
-    if (findBar.style.display === 'flex') {
-      findBar.style.display = 'none';
-      if (findInput) findInput.value = '';
-      if (replaceInput) replaceInput.value = '';
-      currentMatchIndex = -1;
-      matchRanges = [];
-    } else {
-      findBar.style.display = 'flex';
-      findInput.focus();
-      highlightMatches();
-    }
+  var content = richEditor.innerText.toLowerCase();
+  var matches = 0;
+  var idx = content.indexOf(searchTerm);
+  while (idx !== -1) {
+    matches++;
+    idx = content.indexOf(searchTerm, idx + 1);
   }
-
-  function highlightMatches() {
-    if (!findInput || !richEditor) return;
-    var searchTerm = findInput.value.toLowerCase();
-    if (!searchTerm) {
-      if (frResults) frResults.textContent = getTrans('fr_no_matches');
-      return;
-    }
-    var content = richEditor.innerText.toLowerCase();
-    var matches = 0;
-    var idx = content.indexOf(searchTerm);
-    while (idx !== -1) {
-      matches++;
-      idx = content.indexOf(searchTerm, idx + 1);
-    }
-    if (frResults) {
-      frResults.textContent = matches > 0
-        ? matches + ' ' + getTrans('fr_results_matches')
-        : getTrans('fr_no_matches');
-    }
+  if (frResults) {
+    frResults.textContent = matches > 0
+      ? matches + ' ' + getTrans('fr_results_matches')
+      : getTrans('fr_no_matches');
   }
+}
 
-  function doReplace(isAll) {
-    if (!findInput || !replaceInput || !richEditor) return;
-    var searchTerm = findInput.value;
-    var replaceTerm = replaceInput.value;
-    if (!searchTerm) return;
-    var content = richEditor.innerHTML;
-    var escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var regex = new RegExp(escaped, 'gi');
-    richEditor.innerHTML = content.replace(regex, replaceTerm);
-    saveCurrentTabContent();
-    updateStats();
-    showToast(getTrans('text_saved'));
-  }
+function doReplace(isAll) {
+  if (!findInput || !replaceInput || !richEditor) return;
+  var searchTerm = findInput.value;
+  var replaceTerm = replaceInput.value;
+  if (!searchTerm) return;
+  var content = richEditor.innerHTML;
+  var escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var regex = new RegExp(escaped, 'gi');
+  richEditor.innerHTML = content.replace(regex, replaceTerm);
+  saveCurrentTabContent();
+  updateStats();
+  showToast(getTrans('text_saved'));
+}
 
-  // ============================================
-  // FILE OPEN (TXT, MD, RTF, DOC, DOCX)
-  // ============================================
+// ============================================
+// FILE OPEN (TXT, MD, RTF, DOC, DOCX)
+// ============================================
 
-  function openFile(file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var content = e.target.result;
-      if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
-        mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(result) {
-          richEditor.innerHTML = result.value;
-          saveCurrentTabContent();
-          updateStats();
-          showToast(getTrans('toast_opened'));
-        }).catch(function(err) {
-          console.error('DOCX conversion error:', err);
-          showToast('Error converting DOCX');
-        });
-      } else {
-        richEditor.innerHTML = content;
+function openFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var content = e.target.result;
+    if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
+      mammoth.convertToHtml({arrayBuffer: e.target.result}).then(function(result) {
+        richEditor.innerHTML = result.value;
         saveCurrentTabContent();
         updateStats();
         showToast(getTrans('toast_opened'));
-      }
-    };
-    reader.onerror = function() { showToast('Error reading file'); };
-    if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
-      reader.readAsArrayBuffer(file);
+      }).catch(function(err) {
+        console.error('DOCX conversion error:', err);
+        showToast('Error converting DOCX');
+      });
     } else {
-      reader.readAsText(file);
-    }
-  }
-
-  // ============================================
-  // EXPORT (MD, TXT, RTF, DOC, PDF)
-  // ============================================
-
-  function downloadFile(format) {
-    var content = richEditor.innerHTML;
-    var textContent = richEditor.innerText;
-    var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    var filenamePrefix = timestamp;
-    var ext = '';
-    var mime = 'text/plain;charset=utf-8';
-    var data = '';
-
-    switch (format) {
-      case 'md':
-        data = convertHTMLtoMarkdown(content);
-        ext = '.md';
-        mime = 'text/markdown;charset=utf-8';
-        break;
-      case 'txt':
-        data = textContent;
-        ext = '.txt';
-        break;
-      case 'rtf':
-        data = convertToRTF(textContent);
-        ext = '.rtf';
-        mime = 'application/rtf;charset=utf-8';
-        break;
-      case 'pdf':
-        window.print();
-        return;
-      case 'doc':
-        data = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + content + '</body></html>';
-        ext = '.doc';
-        mime = 'application/msword;charset=utf-8';
-        break;
-    }
-
-    var blob = new Blob([data], { type: mime });
-    triggerDownload(blob, filenamePrefix + ext);
-    showToast(getTrans('toast_downloaded'));
-  }
-
-  function convertHTMLtoMarkdown(html) {
-    var temp = document.createElement('div');
-    temp.innerHTML = html;
-    return htmlToMd(temp);
-  }
-
-  function htmlToMd(node) {
-    var md = '';
-    var children = node.childNodes;
-    for (var i = 0; i < children.length; i++) {
-      var child = children[i];
-      if (child.nodeType === 3) {
-        md += child.textContent;
-      } else if (child.nodeType === 1) {
-        var tag = child.tagName.toLowerCase();
-        switch (tag) {
-          case 'h1': md += '\n# ' + child.textContent + '\n\n'; break;
-          case 'h2': md += '\n## ' + child.textContent + '\n\n'; break;
-          case 'h3': md += '\n### ' + child.textContent + '\n\n'; break;
-          case 'p': md += '\n' + htmlToMd(child) + '\n\n'; break;
-          case 'br': md += '  \n'; break;
-          case 'strong': case 'b': md += '**' + htmlToMd(child) + '**'; break;
-          case 'em': case 'i': md += '*' + htmlToMd(child) + '*'; break;
-          case 'u': md += '__' + htmlToMd(child) + '__'; break;
-          case 'code': md += '`' + child.textContent + '`'; break;
-          case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n'; break;
-          case 'blockquote': md += '\n> ' + htmlToMd(child).replace(/\n/g, '\n> ') + '\n\n'; break;
-          case 'ul':
-            var ulItems = child.querySelectorAll(':scope > li');
-            for (var j = 0; j < ulItems.length; j++) { md += '- ' + htmlToMd(ulItems[j]).trim() + '\n'; }
-            md += '\n';
-            break;
-          case 'ol':
-            var olItems = child.querySelectorAll(':scope > li');
-            for (var k = 0; k < olItems.length; k++) { md += (k + 1) + '. ' + htmlToMd(olItems[k]).trim() + '\n'; }
-            md += '\n';
-            break;
-          case 'li': md += htmlToMd(child); break;
-          case 'a': md += '[' + child.textContent + '](' + (child.getAttribute('href') || '#') + ')'; break;
-          case 'span': md += child.textContent; break;
-          case 'div': md += htmlToMd(child) + '\n'; break;
-          default: md += child.textContent || ''; break;
-        }
-      }
-    }
-    return md;
-  }
-
-  function convertToRTF(text) {
-    var escaped = text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/{/g, '\\{').replace(/}/g, '\\}');
-    return "{\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat\\deflang1033{\\fonttbl{\\f0\\fnil\\fcharset0 Nunito;}}\\f0\\fs24 " + escaped + "}";
-  }
-
-  function triggerDownload(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // ============================================
-  // KEYBOARD SHORTCUTS
-  // ============================================
-
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
+      richEditor.innerHTML = content;
       saveCurrentTabContent();
-      saveCurrentTabMetadata(true);
-      showToast(getTrans('text_saved'));
+      updateStats();
+      showToast(getTrans('toast_opened'));
     }
-    else if (e.ctrlKey && e.key === 'g') {
-      e.preventDefault();
-      toggleGoalBar();
-    }
-    else if (e.ctrlKey && e.key === 'f') {
-      e.preventDefault();
-      toggleFindBar();
-    }
-    else if (e.ctrlKey && e.key === 'k') {
-      e.preventDefault();
-      toggleLinkDialog();
-    }
-    else if (e.ctrlKey && e.key === 'o') {
-      e.preventDefault();
-      if (btnOpen) btnOpen.click();
-    }
-    else if (e.ctrlKey && e.key === 'w') {
-      e.preventDefault();
-      var api = getTabsApi();
-      if (api) api.closeTab(api.getActiveId());
-    }
-    else if (e.ctrlKey && e.key === 'n') {
-      e.preventDefault();
-      var api2 = getTabsApi();
-      if (api2) api2.createTab({ content: '', metadata: {} });
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key === 'X') {
-      e.preventDefault();
-      document.execCommand('strikeThrough');
-    }
-    else if (e.ctrlKey && e.key === ',') {
-      e.preventDefault();
-      document.execCommand('subscript');
-    }
-    else if (e.ctrlKey && e.key === '.') {
-      e.preventDefault();
-      document.execCommand('superscript');
-    }
-    else if (e.key === 'Escape') {
-      if (metadataPanel && metadataPanel.style.display !== 'none') {
-        saveCurrentTabMetadata(false);
-        metadataPanel.style.display = 'none';
-      }
-      if (outlinePanel && outlinePanel.style.display !== 'none') {
-        outlinePanel.style.display = 'none';
-      }
-      if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
-        wordFreqPanel.style.display = 'none';
-      }
-      if (findBar && findBar.style.display === 'flex') {
-        findBar.style.display = 'none';
-      }
-      if (goalBar && goalBar.style.display === 'flex') {
-        goalBar.style.display = 'none';
-      }
-      if (linkDialog && linkDialog.style.display === 'flex') {
-        linkDialog.style.display = 'none';
-      }
-      if (tableDialog && tableDialog.style.display === 'flex') {
-        tableDialog.style.display = 'none';
-      }
-      if (imageDialog && imageDialog.style.display === 'flex') {
-        imageDialog.style.display = 'none';
-      }
-      if (helpDialog && helpDialog.style.display === 'flex') {
-        helpDialog.style.display = 'none';
-      }
-    }
-  });
+  };
+  reader.onerror = function() { showToast('Error reading file'); };
+  if (file.name.endsWith('.docx') && typeof mammoth !== 'undefined') {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsText(file);
+  }
+}
 
-  // ============================================
-  // BEFOREUNLOAD WARNING (TAB CLOSE)
-  // ============================================
+// ============================================
+// EXPORT (MD, TXT, RTF, DOC, PDF)
+// ============================================
 
-  var hasUnsavedChanges = false;
+function downloadFile(format) {
+  var content = richEditor.innerHTML;
+  var textContent = richEditor.innerText;
+  var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  var filenamePrefix = timestamp;
+  var ext = '';
+  var mime = 'text/plain;charset=utf-8';
+  var data = '';
 
-  if (richEditor) {
-    richEditor.addEventListener('input', function() {
-      hasUnsavedChanges = true;
-    });
+  switch (format) {
+    case 'md':
+      data = convertHTMLtoMarkdown(content);
+      ext = '.md';
+      mime = 'text/markdown;charset=utf-8';
+      break;
+    case 'txt':
+      data = textContent;
+      ext = '.txt';
+      break;
+    case 'rtf':
+      data = convertToRTF(textContent);
+      ext = '.rtf';
+      mime = 'application/rtf;charset=utf-8';
+      break;
+    case 'pdf':
+      window.print();
+      return;
+    case 'doc':
+      data = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + content + '</body></html>';
+      ext = '.doc';
+      mime = 'application/msword;charset=utf-8';
+      break;
   }
 
-  window.addEventListener('beforeunload', function(e) {
-    if (hasUnsavedChanges && window.location.pathname.indexOf('index.html') === -1) {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
+  var blob = new Blob([data], { type: mime });
+  triggerDownload(blob, filenamePrefix + ext);
+  showToast(getTrans('toast_downloaded'));
+}
+
+function convertHTMLtoMarkdown(html) {
+  var temp = document.createElement('div');
+  temp.innerHTML = html;
+  return htmlToMd(temp);
+}
+
+function htmlToMd(node) {
+  var md = '';
+  var children = node.childNodes;
+  for (var i = 0; i < children.length; i++) {
+    var child = children[i];
+    if (child.nodeType === 3) {
+      md += child.textContent;
+    } else if (child.nodeType === 1) {
+      var tag = child.tagName.toLowerCase();
+      switch (tag) {
+        case 'h1': md += '\n# ' + child.textContent + '\n\n'; break;
+        case 'h2': md += '\n## ' + child.textContent + '\n\n'; break;
+        case 'h3': md += '\n### ' + child.textContent + '\n\n'; break;
+        case 'p': md += '\n' + htmlToMd(child) + '\n\n'; break;
+        case 'br': md += '  \n'; break;
+        case 'strong': case 'b': md += '**' + htmlToMd(child) + '**'; break;
+        case 'em': case 'i': md += '*' + htmlToMd(child) + '*'; break;
+        case 'u': md += '__' + htmlToMd(child) + '__'; break;
+        case 'code': md += '`' + child.textContent + '`'; break;
+        case 'pre': md += '\n```\n' + child.textContent + '\n```\n\n'; break;
+        case 'blockquote': md += '\n> ' + htmlToMd(child).replace(/\n/g, '\n> ') + '\n\n'; break;
+        case 'ul':
+          var ulItems = child.querySelectorAll(':scope > li');
+          for (var j = 0; j < ulItems.length; j++) { md += '- ' + htmlToMd(ulItems[j]).trim() + '\n'; }
+          md += '\n';
+          break;
+        case 'ol':
+          var olItems = child.querySelectorAll(':scope > li');
+          for (var k = 0; k < olItems.length; k++) { md += (k + 1) + '. ' + htmlToMd(olItems[k]).trim() + '\n'; }
+          md += '\n';
+          break;
+        case 'li': md += htmlToMd(child); break;
+        case 'a': md += '[' + child.textContent + '](' + (child.getAttribute('href') || '#') + ')'; break;
+        case 'span': md += child.textContent; break;
+        case 'div': md += htmlToMd(child) + '\n'; break;
+        default: md += child.textContent || ''; break;
+      }
     }
-  });
+  }
+  return md;
+}
 
-  // ============================================
-  // VISIBILITY INIT
-  // ============================================
+function convertToRTF(text) {
+  var escaped = text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/{/g, '\\{').replace(/}/g, '\\}');
+  return "{\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat\\deflang1033{\\fonttbl{\\f0\\fnil\\fcharset0 Nunito;}}\\f0\\fs24 " + escaped + "}";
+}
 
-  var hideStats = localStorage.getItem('oros_hide_stats') === 'true';
-  var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
-  var hideGoalBtn = localStorage.getItem('oros_hide_goal_btn') === 'true';
-  var hideOutlineBtn = localStorage.getItem('oros_hide_outline_btn') === 'true';
-  var hideMetadataBtn = localStorage.getItem('oros_hide_metadata_btn') === 'true';
-  var hideFindBtn = localStorage.getItem('oros_hide_find_btn') === 'true';
-  var hideWordFreqBtn = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
-  var hideSaveIndicator = localStorage.getItem('oros_hide_save_indicator') === 'true';
-  var hideLoremBtn = localStorage.getItem('oros_hide_lorem_btn') === 'true';
+function triggerDownload(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-  if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
-  if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
-  if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
-  if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
-  if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
-  if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
-  if (hideFindBtn && btnFind) btnFind.style.display = 'none';
-  if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
-  if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
-  if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
 
-  // ============================================
-  // EVENT LISTENERS
-  // ============================================
-
-  if (btnSave) btnSave.addEventListener('click', function() {
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
     saveCurrentTabContent();
     saveCurrentTabMetadata(true);
     showToast(getTrans('text_saved'));
-  });
-
-  if (btnMetadata) btnMetadata.addEventListener('click', toggleMetadataPanel);
-  if (btnCloseMetadata) btnCloseMetadata.addEventListener('click', function() {
-    saveCurrentTabMetadata(false);
-    metadataPanel.style.display = 'none';
-  });
-
-  if (btnOutline) btnOutline.addEventListener('click', toggleOutline);
-  if (btnCloseOutline) btnCloseOutline.addEventListener('click', function() {
-    outlinePanel.style.display = 'none';
-  });
-
-  if (btnWordFreq) btnWordFreq.addEventListener('click', toggleWordFreqPanel);
-  if (btnCloseWordFreq) btnCloseWordFreq.addEventListener('click', function() {
-    wordFreqPanel.style.display = 'none';
-  });
-
-  if (btnGoal) btnGoal.addEventListener('click', toggleGoalBar);
-  if (btnSetGoal) btnSetGoal.addEventListener('click', setGoal);
-  if (btnClearGoal) btnClearGoal.addEventListener('click', clearGoal);
-  if (btnCloseGoal) btnCloseGoal.addEventListener('click', function() {
-    goalBar.style.display = 'none';
-  });
-
-  if (btnFind) btnFind.addEventListener('click', toggleFindBar);
-  if (findBar) {
-    if (findInput) findInput.addEventListener('input', highlightMatches);
-    var btnFrReplace = document.getElementById('btn-fr-replace');
-    var btnFrReplaceAll = document.getElementById('btn-fr-replace-all');
-    if (btnFrReplace) btnFrReplace.addEventListener('click', function() { doReplace(false); });
-    if (btnFrReplaceAll) btnFrReplaceAll.addEventListener('click', function() { doReplace(true); });
-    if (btnCloseFR) btnCloseFR.addEventListener('click', function() {
-      findBar.style.display = 'none';
-      if (findInput) findInput.value = '';
-      if (replaceInput) replaceInput.value = '';
-    });
   }
-
-  if (btnOpen) btnOpen.addEventListener('click', function() {
-    if (fileInput) fileInput.click();
-  });
-  if (fileInput) fileInput.addEventListener('change', function() {
-    if (this.files && this.files[0]) {
-      openFile(this.files[0]);
-      this.value = '';
-    }
-  });
-
-  if (btnClear) btnClear.addEventListener('click', function() {
-    var msg = getCurrentLang() === 'el'
-      ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
-      : 'Are you sure? All content will be lost.';
-    if (confirm(msg)) {
-      richEditor.innerHTML = '';
-      hasUnsavedChanges = false;
-      saveCurrentTabContent();
-      updateStats();
-      showToast(getTrans('toast_cleared'));
-    }
-  });
-
-  if (btnLorem) btnLorem.addEventListener('click', insertLoremIpsum);
-
-  if (btnLink) btnLink.addEventListener('click', toggleLinkDialog);
-  if (document.getElementById('btn-insert-link')) {
-    document.getElementById('btn-insert-link').addEventListener('click', insertLink);
+  else if (e.ctrlKey && e.key === 'g') {
+    e.preventDefault();
+    toggleGoalBar();
   }
-  if (document.getElementById('btn-cancel-link')) {
-    document.getElementById('btn-cancel-link').addEventListener('click', function() {
-      linkDialog.style.display = 'none';
-    });
+  else if (e.ctrlKey && e.key === 'f') {
+    e.preventDefault();
+    toggleFindBar();
   }
-  if (document.getElementById('btn-close-link-dialog')) {
-    document.getElementById('btn-close-link-dialog').addEventListener('click', function() {
-      linkDialog.style.display = 'none';
-    });
+  else if (e.ctrlKey && e.key === 'k') {
+    e.preventDefault();
+    toggleLinkDialog();
   }
-
-  if (btnTable) btnTable.addEventListener('click', toggleTableDialog);
-  if (document.getElementById('btn-insert-table')) {
-    document.getElementById('btn-insert-table').addEventListener('click', insertTable);
+  else if (e.ctrlKey && e.key === 'o') {
+    e.preventDefault();
+    if (btnOpen) btnOpen.click();
   }
-  if (document.getElementById('btn-cancel-table')) {
-    document.getElementById('btn-cancel-table').addEventListener('click', function() {
-      tableDialog.style.display = 'none';
-    });
-  }
-  if (document.getElementById('btn-close-table-dialog')) {
-    document.getElementById('btn-close-table-dialog').addEventListener('click', function() {
-      tableDialog.style.display = 'none';
-    });
-  }
-
-  if (btnImage) btnImage.addEventListener('click', toggleImageDialog);
-  if (document.getElementById('btn-insert-image')) {
-    document.getElementById('btn-insert-image').addEventListener('click', handleImageInsert);
-  }
-  if (document.getElementById('btn-cancel-image')) {
-    document.getElementById('btn-cancel-image').addEventListener('click', function() {
-      imageDialog.style.display = 'none';
-    });
-  }
-  if (document.getElementById('btn-close-image-dialog')) {
-    document.getElementById('btn-close-image-dialog').addEventListener('click', function() {
-      imageDialog.style.display = 'none';
-    });
-  }
-  if (document.getElementById('image-source-type')) {
-    document.getElementById('image-source-type').addEventListener('change', function() {
-      var type = this.value;
-      if (type === 'upload') {
-        document.getElementById('image-upload-field').style.display = '';
-        document.getElementById('image-url-field').style.display = 'none';
-      } else {
-        document.getElementById('image-upload-field').style.display = 'none';
-        document.getElementById('image-url-field').style.display = '';
-      }
-    });
-  }
-
-  if (btnHr) btnHr.addEventListener('click', function() {
-    document.execCommand('insertHTML', false, '<hr /><p>&nbsp;</p>');
-    saveCurrentTabContent();
-  });
-
-  if (btnIndent) btnIndent.addEventListener('click', function() {
-    document.execCommand('indent');
-    saveCurrentTabContent();
-  });
-
-  if (btnOutdent) btnOutdent.addEventListener('click', function() {
-    document.execCommand('outdent');
-    saveCurrentTabContent();
-  });
-
-  if (btnExport) {
-    btnExport.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (exportDropdown) exportDropdown.classList.toggle('visible');
-    });
-  }
-  document.addEventListener('click', function() {
-    if (exportDropdown) exportDropdown.classList.remove('visible');
-  });
-  if (exportDropdown) {
-    var expBtns = exportDropdown.querySelectorAll('button');
-    for (var j = 0; j < expBtns.length; j++) {
-      (function(btn) {
-        btn.addEventListener('click', function() {
-          var fmt = btn.getAttribute('data-format');
-          downloadFile(fmt);
-        });
-      })(expBtns[j]);
-    }
-  }
-
-  if (richEditor) {
-    richEditor.addEventListener('paste', handleSmartPaste);
-    richEditor.addEventListener('keyup', function() {
-      handleSmartTypography();
-    });
-  }
-
-  // ============================================
-  // STATS EXPAND/COLLAPSE
-  // ============================================
-
-  if (statsDefaultEl) {
-    statsDefaultEl.addEventListener('click', function() {
-      statsExpanded = !statsExpanded;
-      if (statsDetailed) statsDetailed.classList.toggle('visible', statsExpanded);
-      updateStats();
-    });
-  }
-
-  // ============================================
-  // MAIN TOOLBAR BUTTONS
-  // ============================================
-
-  function setupMainToolbarButtons() {
-    if (!richEditor) return;
-    var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
-    for (var i = 0; i < fmtBtns.length; i++) {
-      (function(btn) {
-        var cmd = btn.getAttribute('data-cmd');
-        if (!cmd) return;
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          var block = btn.getAttribute('data-block');
-          if (block) {
-            document.execCommand('formatBlock', false, block);
-          } else {
-            document.execCommand(cmd, false);
-          }
-          saveCurrentTabContent();
-          updateStats();
-          richEditor.focus();
-        });
-      })(fmtBtns[i]);
-    }
-  }
-
-  // ============================================
-  // TAB SWITCH LISTENER
-  // ============================================
-
-  if (window.OROS_TABS) {
-    window.OROS_TABS.on('switch', function(tab) {
-      if (!tab) return;
-      isSwitching = true;
-      richEditor.innerHTML = tab.content || '';
-      currentMetadata = tab.metadata || {};
-      lastSavedTime = tab.lastSaved || null;
-      if (metaTitle) metaTitle.value = currentMetadata.title || '';
-      if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
-      if (metaTags) metaTags.value = currentMetadata.tags || '';
-      if (metaCategory) metaCategory.value = currentMetadata.category || '';
-      renderMetaDates();
-      updateStats();
-      updateGoalProgress();
-      hasUnsavedChanges = false;
-      isSwitching = false;
-      richEditor.focus();
-    });
-
-    window.OROS_TABS.on('create', function(tab) {
-      isSwitching = true;
-      richEditor.innerHTML = '';
-      currentMetadata = {};
-      lastSavedTime = null;
-      if (metaTitle) metaTitle.value = '';
-      if (metaAuthor) metaAuthor.value = '';
-      if (metaTags) metaTags.value = '';
-      if (metaCategory) metaCategory.value = '';
-      renderMetaDates();
-      updateStats();
-      hasUnsavedChanges = false;
-      isSwitching = false;
-      richEditor.focus();
-    });
-  }
-
-  // ============================================
-  // HELP DIALOG
-  // ============================================
-
-  var helpBtn = document.getElementById('btn-help');
-  if (helpBtn && helpDialog) {
-    helpBtn.addEventListener('click', function() {
-      helpDialog.style.display = 'flex';
-    });
-  }
-  if (document.getElementById('btn-close-help')) {
-    document.getElementById('btn-close-help').addEventListener('click', function() {
-      helpDialog.style.display = 'none';
-    });
-  }
-  if (document.getElementById('btn-close-help-ok')) {
-    document.getElementById('btn-close-help-ok').addEventListener('click', function() {
-      helpDialog.style.display = 'none';
-    });
-  }
-
-  // ============================================
-  // INTERNATIONALIZATION EVENT
-  // ============================================
-
-  window.addEventListener('oros-language-changed', function(e) {
-    updateStats();
-    renderMetaDates();
-    updateSaveIndicator();
-    if (frResults) highlightMatches();
-  });
-
-  // ============================================
-  // SAVE INDICATOR LIVE TICK
-  // ============================================
-
-  setInterval(updateSaveIndicator, 30000);
-
-  // ============================================
-  // LOAD INITIAL CONTENT
-  // ============================================
-
-  function loadContent() {
+  else if (e.ctrlKey && e.key === 'w') {
+    e.preventDefault();
     var api = getTabsApi();
-    if (api) {
-      var tab = api.getActiveTab();
-      if (tab && tab.content) {
-        isSwitching = true;
-        richEditor.innerHTML = tab.content;
-        currentMetadata = tab.metadata || {};
-        lastSavedTime = tab.lastSaved || null;
-        if (metaTitle) metaTitle.value = currentMetadata.title || '';
-        if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
-        if (metaTags) metaTags.value = currentMetadata.tags || '';
-        if (metaCategory) metaCategory.value = currentMetadata.category || '';
-        renderMetaDates();
-        isSwitching = false;
-        return;
-      }
+    if (api) api.closeTab(api.getActiveId());
+  }
+  else if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    var api = getTabsApi();
+    if (api) api.createTab({ content: '', metadata: {} });
+  }
+  else if (e.ctrlKey && e.shiftKey && e.key === 'X') {
+    e.preventDefault();
+    document.execCommand('strikeThrough');
+  }
+  else if (e.ctrlKey && e.key === ',') {
+    e.preventDefault();
+    document.execCommand('subscript');
+  }
+  else if (e.ctrlKey && e.key === '.') {
+    e.preventDefault();
+    document.execCommand('superscript');
+  }
+  else if (e.key === 'Escape') {
+    if (metadataPanel && metadataPanel.style.display !== 'none') {
+      saveCurrentTabMetadata(false);
+      metadataPanel.style.display = 'none';
     }
-
-    // Fallback: load from legacy localStorage
-    var legacyContent = localStorage.getItem(LEGACY_STORAGE_KEY);
-    if (legacyContent) {
-      isSwitching = true;
-      richEditor.innerHTML = legacyContent;
-      isSwitching = false;
+    if (outlinePanel && outlinePanel.style.display !== 'none') {
+      outlinePanel.style.display = 'none';
     }
-
-    var legacyMeta = localStorage.getItem(LEGACY_STORAGE_METADATA);
-    if (legacyMeta) {
-      try {
-        currentMetadata = JSON.parse(legacyMeta);
-        if (metaTitle) metaTitle.value = currentMetadata.title || '';
-        if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
-        if (metaTags) metaTags.value = currentMetadata.tags || '';
-        if (metaCategory) metaCategory.value = currentMetadata.category || '';
-        renderMetaDates();
-      } catch(e) {
-        currentMetadata = {};
-      }
+    if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
+      wordFreqPanel.style.display = 'none';
+    }
+    if (findBar && findBar.style.display === 'flex') {
+      findBar.style.display = 'none';
+    }
+    if (goalBar && goalBar.style.display === 'flex') {
+      goalBar.style.display = 'none';
+    }
+    if (linkDialog && linkDialog.style.display === 'flex') {
+      linkDialog.style.display = 'none';
+    }
+    if (tableDialog && tableDialog.style.display === 'flex') {
+      tableDialog.style.display = 'none';
+    }
+    if (imageDialog && imageDialog.style.display === 'flex') {
+      imageDialog.style.display = 'none';
+    }
+    if (helpDialog && helpDialog.style.display === 'flex') {
+      helpDialog.style.display = 'none';
     }
   }
+});
 
-  // ============================================
-  // INITIALIZE
-  // ============================================
+// ============================================
+// BEFOREUNLOAD WARNING (TAB CLOSE)
+// ============================================
 
-  initTypewriterSound();
-  setupMainToolbarButtons();
-  loadContent();
-  setupMetadataHandlers();
+var hasUnsavedChanges = false;
+
+if (richEditor) {
+  richEditor.addEventListener('input', function() {
+    hasUnsavedChanges = true;
+  });
+}
+
+window.addEventListener('beforeunload', function(e) {
+  if (hasUnsavedChanges && window.location.pathname.indexOf('index.html') === -1) {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
+
+// ============================================
+// VISIBILITY INIT
+// ============================================
+
+var hideStats = localStorage.getItem('oros_hide_stats') === 'true';
+var quickTbarShow = localStorage.getItem('oros_quick_tbar_show') !== 'false';
+var hideGoalBtn = localStorage.getItem('oros_hide_goal_btn') === 'true';
+var hideOutlineBtn = localStorage.getItem('oros_hide_outline_btn') === 'true';
+var hideMetadataBtn = localStorage.getItem('oros_hide_metadata_btn') === 'true';
+var hideFindBtn = localStorage.getItem('oros_hide_find_btn') === 'true';
+var hideWordFreqBtn = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
+var hideSaveIndicator = localStorage.getItem('oros_hide_save_indicator') === 'true';
+var hideLoremBtn = localStorage.getItem('oros_hide_lorem_btn') === 'true';
+
+if (hideStats && statsOverlay) statsOverlay.style.display = 'none';
+if (toolbarCenter) toolbarCenter.style.display = quickTbarShow ? 'flex' : 'none';
+if (!readingProgressEnabled && progressBar) progressBar.style.display = 'none';
+if (hideGoalBtn && btnGoal) btnGoal.style.display = 'none';
+if (hideOutlineBtn && btnOutline) btnOutline.style.display = 'none';
+if (hideMetadataBtn && btnMetadata) btnMetadata.style.display = 'none';
+if (hideFindBtn && btnFind) btnFind.style.display = 'none';
+if (hideWordFreqBtn && btnWordFreq) btnWordFreq.style.display = 'none';
+if (hideSaveIndicator && saveIndicator) saveIndicator.style.visibility = 'hidden';
+if (hideLoremBtn && btnLorem) btnLorem.style.display = 'none';
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
+if (btnSave) btnSave.addEventListener('click', function() {
+  saveCurrentTabContent();
+  saveCurrentTabMetadata(true);
+  showToast(getTrans('text_saved'));
+});
+
+if (btnMetadata) btnMetadata.addEventListener('click', toggleMetadataPanel);
+if (btnCloseMetadata) btnCloseMetadata.addEventListener('click', function() {
+  saveCurrentTabMetadata(false);
+  metadataPanel.style.display = 'none';
+});
+
+if (btnOutline) btnOutline.addEventListener('click', toggleOutline);
+if (btnCloseOutline) btnCloseOutline.addEventListener('click', function() {
+  outlinePanel.style.display = 'none';
+});
+
+if (btnWordFreq) btnWordFreq.addEventListener('click', toggleWordFreqPanel);
+if (btnCloseWordFreq) btnCloseWordFreq.addEventListener('click', function() {
+  wordFreqPanel.style.display = 'none';
+});
+
+if (btnGoal) btnGoal.addEventListener('click', toggleGoalBar);
+if (btnSetGoal) btnSetGoal.addEventListener('click', setGoal);
+if (btnClearGoal) btnClearGoal.addEventListener('click', clearGoal);
+if (btnCloseGoal) btnCloseGoal.addEventListener('click', function() {
+  goalBar.style.display = 'none';
+});
+
+if (btnFind) btnFind.addEventListener('click', toggleFindBar);
+if (findBar) {
+  if (findInput) findInput.addEventListener('input', highlightMatches);
+  var btnFrReplace = document.getElementById('btn-fr-replace');
+  var btnFrReplaceAll = document.getElementById('btn-fr-replace-all');
+  if (btnFrReplace) btnFrReplace.addEventListener('click', function() { doReplace(false); });
+  if (btnFrReplaceAll) btnFrReplaceAll.addEventListener('click', function() { doReplace(true); });
+  if (btnCloseFR) btnCloseFR.addEventListener('click', function() {
+    findBar.style.display = 'none';
+    if (findInput) findInput.value = '';
+    if (replaceInput) replaceInput.value = '';
+  });
+}
+
+if (btnOpen) btnOpen.addEventListener('click', function() {
+  if (fileInput) fileInput.click();
+});
+if (fileInput) fileInput.addEventListener('change', function() {
+  if (this.files && this.files[0]) {
+    openFile(this.files[0]);
+    this.value = '';
+  }
+});
+
+if (btnClear) btnClear.addEventListener('click', function() {
+  var msg = getCurrentLang() === 'el'
+    ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
+    : 'Are you sure? All content will be lost.';
+  if (confirm(msg)) {
+    richEditor.innerHTML = '';
+    hasUnsavedChanges = false;
+    saveCurrentTabContent();
+    updateStats();
+    showToast(getTrans('toast_cleared'));
+  }
+});
+
+if (btnLorem) btnLorem.addEventListener('click', insertLoremIpsum);
+
+if (btnLink) btnLink.addEventListener('click', toggleLinkDialog);
+if (document.getElementById('btn-insert-link')) {
+  document.getElementById('btn-insert-link').addEventListener('click', insertLink);
+}
+if (document.getElementById('btn-cancel-link')) {
+  document.getElementById('btn-cancel-link').addEventListener('click', function() {
+    linkDialog.style.display = 'none';
+  });
+}
+if (document.getElementById('btn-close-link-dialog')) {
+  document.getElementById('btn-close-link-dialog').addEventListener('click', function() {
+    linkDialog.style.display = 'none';
+  });
+}
+
+if (btnTable) btnTable.addEventListener('click', toggleTableDialog);
+if (document.getElementById('btn-insert-table')) {
+  document.getElementById('btn-insert-table').addEventListener('click', insertTable);
+}
+if (document.getElementById('btn-cancel-table')) {
+  document.getElementById('btn-cancel-table').addEventListener('click', function() {
+    tableDialog.style.display = 'none';
+  });
+}
+if (document.getElementById('btn-close-table-dialog')) {
+  document.getElementById('btn-close-table-dialog').addEventListener('click', function() {
+    tableDialog.style.display = 'none';
+  });
+}
+
+if (btnImage) btnImage.addEventListener('click', toggleImageDialog);
+if (document.getElementById('btn-insert-image')) {
+  document.getElementById('btn-insert-image').addEventListener('click', handleImageInsert);
+}
+if (document.getElementById('btn-cancel-image')) {
+  document.getElementById('btn-cancel-image').addEventListener('click', function() {
+    imageDialog.style.display = 'none';
+  });
+}
+if (document.getElementById('btn-close-image-dialog')) {
+  document.getElementById('btn-close-image-dialog').addEventListener('click', function() {
+    imageDialog.style.display = 'none';
+  });
+}
+if (document.getElementById('image-source-type')) {
+  document.getElementById('image-source-type').addEventListener('change', function() {
+    var type = this.value;
+    if (type === 'upload') {
+      document.getElementById('image-upload-field').style.display = '';
+      document.getElementById('image-url-field').style.display = 'none';
+    } else {
+      document.getElementById('image-upload-field').style.display = 'none';
+      document.getElementById('image-url-field').style.display = '';
+    }
+  });
+}
+
+if (btnHr) btnHr.addEventListener('click', function() {
+  document.execCommand('insertHTML', false, '<hr /><p>&nbsp;</p>');
+  saveCurrentTabContent();
+});
+
+if (btnIndent) btnIndent.addEventListener('click', function() {
+  document.execCommand('indent');
+  saveCurrentTabContent();
+});
+
+if (btnOutdent) btnOutdent.addEventListener('click', function() {
+  document.execCommand('outdent');
+  saveCurrentTabContent();
+});
+
+if (btnExport) {
+  btnExport.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (exportDropdown) exportDropdown.classList.toggle('visible');
+  });
+}
+document.addEventListener('click', function() {
+  if (exportDropdown) exportDropdown.classList.remove('visible');
+});
+if (exportDropdown) {
+  var expBtns = exportDropdown.querySelectorAll('button');
+  for (var j = 0; j < expBtns.length; j++) {
+    (function(btn) {
+      btn.addEventListener('click', function() {
+        var fmt = btn.getAttribute('data-format');
+        downloadFile(fmt);
+      });
+    })(expBtns[j]);
+  }
+}
+
+if (richEditor) {
+  richEditor.addEventListener('paste', handleSmartPaste);
+  richEditor.addEventListener('keyup', function() {
+    handleSmartTypography();
+  });
+}
+
+// ============================================
+// MAIN TOOLBAR BUTTONS
+// ============================================
+
+function setupMainToolbarButtons() {
+  if (!richEditor) return;
+  var fmtBtns = document.querySelectorAll('.main-toolbar .fmt-text-btn, .main-toolbar .action-btn[data-cmd]');
+  for (var i = 0; i < fmtBtns.length; i++) {
+    (function(btn) {
+      var cmd = btn.getAttribute('data-cmd');
+      if (!cmd) return;
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var block = btn.getAttribute('data-block');
+        if (block) {
+          document.execCommand('formatBlock', false, block);
+        } else {
+          document.execCommand(cmd, false);
+        }
+        saveCurrentTabContent();
+        updateStats();
+        richEditor.focus();
+      });
+    })(fmtBtns[i]);
+  }
+}
+
+// ============================================
+// TAB SWITCH LISTENER
+// ============================================
+
+if (window.OROS_TABS) {
+  window.OROS_TABS.on('switch', function(tab) {
+    if (!tab) return;
+    isSwitching = true;
+    richEditor.innerHTML = tab.content || '';
+    currentMetadata = tab.metadata || {};
+    lastSavedTime = tab.lastSaved || null;
+    if (metaTitle) metaTitle.value = currentMetadata.title || '';
+    if (metaAuthor) metaAuthor.value = currentMetadata.author || '';
+    if (metaTags) metaTags.value = currentMetadata.tags || '';
+    if (metaCategory) metaCategory.value = currentMetadata.category || '';
+    renderMetaDates();
+    updateStats();
+    updateGoalProgress();
+    hasUnsavedChanges = false;
+    isSwitching = false;
+    richEditor.focus();
+  });
+
+  window.OROS_TABS.on('create', function(tab) {
+    isSwitching = true;
+    richEditor.innerHTML = '';
+    currentMetadata = {};
+    lastSavedTime = null;
+    if (metaTitle) metaTitle.value = '';
+    if (metaAuthor) metaAuthor.value = '';
+    if (metaTags) metaTags.value = '';
+    if (metaCategory) metaCategory.value = '';
+    renderMetaDates();
+    updateStats();
+    hasUnsavedChanges = false;
+    isSwitching = false;
+    richEditor.focus();
+  });
+}
+
+// ============================================
+// HELP DIALOG
+// ============================================
+
+var helpBtn = document.getElementById('btn-help');
+if (helpBtn && helpDialog) {
+  helpBtn.addEventListener('click', function() {
+    helpDialog.style.display = 'flex';
+  });
+}
+if (document.getElementById('btn-close-help')) {
+  document.getElementById('btn-close-help').addEventListener('click', function() {
+    helpDialog.style.display = 'none';
+  });
+}
+if (document.getElementById('btn-close-help-ok')) {
+  document.getElementById('btn-close-help-ok').addEventListener('click', function() {
+    helpDialog.style.display = 'none';
+  });
+}
+
+// ============================================
+// INTERNATIONALIZATION EVENT
+// ============================================
+
+window.addEventListener('oros-language-changed', function(e) {
   updateStats();
-  updateReadingProgress();
   renderMetaDates();
+  updateSaveIndicator();
+  if (frResults) highlightMatches();
+});
+
+// ============================================
+// SAVE INDICATOR LIVE TICK
+// ============================================
+
+setInterval(updateSaveIndicator, 30000);
+
+// ============================================
+// INITIALIZE
+// ============================================
+
+initTypewriterSound();
+setupMainToolbarButtons();
+loadContent();
+setupMetadataHandlers();
+updateStats();
+updateReadingProgress();
+renderMetaDates();
 
 })();
