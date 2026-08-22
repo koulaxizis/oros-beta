@@ -38,7 +38,13 @@
       description: 'Wiki-style notes with [[wikilinks]], Markdown rendering, folder hierarchy, and search. Works offline. No tracking.',
       type: 'article',
       keywords: ['notes', 'wiki notes', 'wikilinks', 'markdown', 'knowledge base', 'note taking', 'offline', 'privacy', 'open source']
-    }
+    },
+	'prompter.html': {
+  title: 'orOS Prompter — Writing Prompts & Inspiration',
+  description: '100 writing prompts across 10 techniques. Micro-fiction, haiku, poetry, songs, theatrical, novels. Works offline. No tracking.',
+  type: 'article',
+  keywords: ['writing prompts', 'creative writing', 'micro-fiction', 'haiku', 'poetry', 'song lyrics', 'aphorism', 'theatrical', 'monologue', 'inspiration', 'offline', 'privacy', 'open source']
+},
   };
 
   // Language to locale mapping
@@ -142,6 +148,7 @@
            : page === 'converter.html' ? 'Text transformation tool with 10 case modes.'
            : page === 'kanban.html' ? 'Drag & drop kanban board with multiple boards, labels, and due dates.'
            : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
+		   : page === 'prompter.html' ? 'Writing prompts and inspiration across 10 techniques.'
            : 'Privacy-first creative toolkit.'),
       "inLanguage": ["en", "el", "es", "it", "fr", "de"],
       "operatingSystem": "Web",

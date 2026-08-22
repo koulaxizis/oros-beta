@@ -100,13 +100,29 @@
 
     <main id="char-main">
 
+      <!-- VIEW TOGGLE BAR -->
+      <div id="view-toggle-bar" class="view-toggle-bar" style="display:none;">
+        <button class="view-toggle-btn active" id="btn-view-detail" data-view="detail">
+          <i class="fa fa-user"></i> <span data-i18n="char_view_detail">Detail</span>
+        </button>
+        <button class="view-toggle-btn" id="btn-view-grid" data-view="grid">
+          <i class="fa fa-users"></i> <span data-i18n="char_view_grid">Relationships</span>
+        </button>
+        <button class="view-toggle-btn" id="btn-view-compare" data-view="compare">
+          <i class="fa fa-sort"></i> <span data-i18n="char_view_compare">Compare</span>
+        </button>
+      </div>
+
+      <!-- EMPTY STATE -->
       <div id="char-empty-state" class="char-empty-state">
         <div class="empty-icon"><i class="fa fa-users"></i></div>
         <h2 data-i18n="char_empty_title">No characters yet</h2>
         <p data-i18n="char_empty_desc">Create your first character to get started.</p>
         <button class="btn-install" id="btn-create-first-char" data-i18n="char_create_first">Create Character</button>
+        <button class="btn-install" id="btn-generate-random" data-i18n="char_generate_random">Random Character</button>
       </div>
 
+      <!-- DETAIL VIEW -->
       <div id="char-detail" class="char-detail" style="display:none;">
 
         <div class="char-detail-header">
@@ -114,6 +130,22 @@
           <input type="text" id="char-name-input" class="char-name-input"
                  data-i18n-placeholder="char_name_placeholder" placeholder="Character name...">
           <div class="char-actions">
+            <!-- Template Dropdown -->
+            <div class="dropdown" id="template-dropdown-container">
+              <button class="action-btn dropdown-toggle" id="btn-apply-template" data-i18n-tooltip="char_apply_template" title="Apply template">
+                <i class="fa fa-magic"></i>
+                <i class="fa fa-caret-down dropdown-arrow-icon"></i>
+              </button>
+              <div class="dropdown-content" id="template-dropdown">
+                <button data-template="hero" data-i18n="tpl_hero">Hero</button>
+                <button data-template="villain" data-i18n="tpl_villain">Villain</button>
+                <button data-template="mentor" data-i18n="tpl_mentor">Mentor</button>
+                <button data-template="trickster" data-i18n="tpl_trickster">Trickster</button>
+                <button data-template="herald" data-i18n="tpl_herald">Herald</button>
+                <button data-template="shadow" data-i18n="tpl_shadow">Shadow</button>
+              </div>
+            </div>
+            <!-- Export Dropdown -->
             <div class="dropdown" id="char-export-dropdown-container">
               <button class="action-btn dropdown-toggle" id="btn-export-char" data-i18n-tooltip="tooltip_export" title="Export character">
                 <i class="fa fa-download"></i>
@@ -122,8 +154,16 @@
               <div class="dropdown-content" id="char-export-dropdown">
                 <button data-format="md" data-i18n="char_export_md">Export as Markdown</button>
                 <button data-format="json" data-i18n="char_export_json">Export as JSON</button>
+                <button data-action="send-writer" data-i18n="char_send_writer">Send to Writer</button>
+                <button data-action="send-notes" data-i18n="char_send_notes">Export to Notes</button>
+                <button data-action="send-kanban" data-i18n="char_send_kanban">Create Kanban Board</button>
               </div>
             </div>
+            <!-- Clone Button -->
+            <button class="action-btn" id="btn-clone-char" data-i18n-tooltip="char_clone_tt" title="Clone character">
+              <i class="fa fa-files-o"></i>
+            </button>
+            <!-- Delete Button -->
             <button class="action-btn" id="btn-delete-char" data-i18n-tooltip="char_delete_tt" title="Delete character">
               <i class="fa fa-trash-o"></i>
             </button>
@@ -152,6 +192,12 @@
             <label data-i18n="char_occupation">Occupation</label>
             <input type="text" id="char-occupation" placeholder="—">
           </div>
+        </div>
+
+        <!-- RADAR CHART SECTION -->
+        <div class="char-section">
+          <h3 class="section-title" data-i18n="char_traits_visual">Traits Profile</h3>
+          <canvas id="trait-radar-chart" width="300" height="250" style="display:block;margin:0 auto;"></canvas>
         </div>
 
         <div class="char-section">
@@ -244,8 +290,71 @@
 
       </div>
 
+      <!-- GRID VIEW (Relationships) -->
+      <div id="char-grid-view" class="char-grid-view" style="display:none;">
+        <div class="grid-header">
+          <h2 data-i18n="char_grid_title">Character Relationship Matrix</h2>
+          <p class="grid-subtitle" data-i18n="char_grid_subtitle">Rows define relationships towards columns. Click a name to select that character.</p>
+        </div>
+        <div id="char-grid-empty" class="char-grid-empty" style="display:none;">
+          <div class="empty-icon"><i class="fa fa-users"></i></div>
+          <p data-i18n="char_grid_needs_two">Add at least 2 characters to see relationships.</p>
+        </div>
+        <div id="char-grid-legend" class="grid-legend" style="display:none;"></div>
+        <div id="char-grid-container" class="grid-scroll-container"></div>
+      </div>
+
+      <!-- COMPARISON VIEW -->
+      <div id="char-compare-view" class="char-compare-view" style="display:none;">
+        <div class="compare-header">
+          <h2 data-i18n="char_compare_title">Character Comparison</h2>
+          <p class="compare-subtitle" data-i18n="char_compare_subtitle">Select 2-4 characters from the sidebar to compare traits, roles, and goals.</p>
+        </div>
+        <div id="compare-selection" class="compare-selection">
+          <div class="compare-select-title" data-i18n="compare_select_hint">Selected:</div>
+          <div id="compare-chips-container" class="compare-chips"></div>
+          <p class="compare-hint" data-i18n="compare_max_hint">Maximum 4 characters</p>
+        </div>
+        <div id="compare-empty" class="char-grid-empty" style="display:none;">
+          <div class="empty-icon"><i class="fa fa-sort"></i></div>
+          <p data-i18n="compare_select_to_continue">Select at least 2 characters to compare.</p>
+        </div>
+        <div id="compare-content" class="compare-content" style="display:none;">
+          <!-- Traits comparison -->
+          <div class="compare-section">
+            <h3 class="section-title" data-i18n="char_traits">Traits</h3>
+            <div id="compare-traits-table" class="compare-table"></div>
+          </div>
+          <!-- Roles & basic info -->
+          <div class="compare-section">
+            <h3 class="section-title" data-i18n="char_basic">Basic Info</h3>
+            <div id="compare-basic-table" class="compare-table"></div>
+          </div>
+          <!-- Goals comparison -->
+          <div class="compare-section">
+            <h3 class="section-title" data-i18n="char_goals">Goals</h3>
+            <div id="compare-goals-table" class="compare-table"></div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
+  </div>
+
+  <!-- COMPARE SELECTION MODAL -->
+  <div id="compare-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 data-i18n="compare_choose_chars">Choose Characters to Compare</h3>
+        <button class="modal-close" aria-label="Close"><i class="fa fa-times"></i></button>
+      </div>
+      <div id="compare-char-list" class="compare-char-list"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-clear-compare" data-i18n="compare_clear">Clear All</button>
+        <button class="btn-primary" id="btn-start-compare" data-i18n="compare_start">Start Comparison</button>
+      </div>
+    </div>
   </div>
 
   <div class="settings-modal">
@@ -298,6 +407,14 @@
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_hide_char_search">Hide Search Box</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-char-search"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_show_radar">Show Radar Chart</span>
+              <label class="switch"><input type="checkbox" id="toggle-show-radar"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_drag_reorder">Enable Drag-to-Reorder</span>
+              <label class="switch"><input type="checkbox" id="toggle-drag-reorder"><span class="slider"></span></label>
             </div>
             <div class="settings-divider"></div>
             <table class="shortcut-table">

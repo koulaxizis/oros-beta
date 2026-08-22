@@ -1,0 +1,111 @@
+/* ============================================
+   orOS Editor — Tabbed Documents
+   ============================================ */
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 8px;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+  height: 36px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 999;
+}
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  max-width: 220px;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.doc-tab:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.doc-tab.active {
+  background: var(--bg-surface);
+  color: var(--accent-gold);
+  border-color: var(--border-color);
+  border-bottom: 1px solid var(--bg-surface);
+  position: relative;
+  z-index: 1;
+}
+
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  pointer-events: none;
+}
+
+.tab-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.tab-close:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+}
+
+.tab-new {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.tab-new:hover {
+  background: var(--accent-gold-dim);
+  color: var(--accent-gold-light);
+}
+
+.tab-bar::-webkit-scrollbar { height: 2px; }
+.tab-bar::-webkit-scrollbar-track { background: transparent; }
+.tab-bar::-webkit-scrollbar-thumb { background: var(--border-color); }
+
+@media (max-width: 768px) {
+  .doc-tab { max-width: 140px; padding: 6px 8px; }
+  .tab-title { max-width: 100px; }
+}
