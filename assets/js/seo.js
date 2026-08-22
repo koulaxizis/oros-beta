@@ -50,7 +50,13 @@
       description: 'Design characters with personality traits, backstories, motivations, and relationship matrices. Works offline. No tracking.',
       type: 'article',
       keywords: ['character design', 'character creator', 'relationship mapping', 'storytelling tools', 'fiction writing', 'character sheet', 'offline', 'privacy', 'open source']
-    }
+    },
+	    'habits.html': {
+      title: 'orOS Habit Tracker — Build Better Habits',
+      description: 'Track habits with streaks, statistics, and reminders. Build better routines. Works offline. No tracking.',
+      type: 'article',
+      keywords: ['habit tracker', 'habit building', 'streaks', 'productivity', 'offline', 'privacy', 'open source']
+    },
   };
 
   // Language to locale mapping — ONLY en and el
@@ -152,6 +158,7 @@
            : page === 'notes.html' ? 'Wiki-style notes with wikilinks, Markdown, and folder hierarchy.'
            : page === 'prompter.html' ? 'Writing prompts and inspiration across 10 techniques.'
            : page === 'characters.html' ? 'Character design tool with relationship mapping and templates.'
+		   : page === 'habits.html' ? 'Habits'
            : 'Privacy-first creative toolkit.'),
       "inLanguage": ["en", "el"],
       "operatingSystem": "Web",

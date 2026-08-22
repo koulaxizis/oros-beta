@@ -1,10 +1,10 @@
 // ============================================
 // orOS Service Worker
 // Cache-first strategy with network fallback
-// Version: 0.9.0
+// Version: 0.9.1
 // ============================================
 
-var CACHE_NAME = 'oros-v0.9.0';
+var CACHE_NAME = 'oros-v0.9.1';
 var CACHE_URLS = [
   './',
   './index.html',
@@ -47,6 +47,9 @@ var CACHE_URLS = [
 './assets/css/prompter.css',
 './assets/js/prompter.js',
 './assets/js/prompts.json',
+  './habits.html',
+  './assets/css/habits.css',
+  './assets/js/habits.js',
 ];
 
 // ========== INSTALL ==========

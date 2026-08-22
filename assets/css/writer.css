@@ -1,6 +1,6 @@
 /* ============================================
    orOS Writer — Dedicated Stylesheet
-   Editor-specific styles only
+   Includes merged tabs.css, fixed z-index layering
    Clean, focused, no redundancy
    ============================================ */
 
@@ -13,107 +13,120 @@
   background: var(--bg-dark);
 }
 
-/* ===== TAB BAR ===== */
+/* ===== TAB BAR — MERGED WITH tabs.css ===== */
 .tab-bar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 8px;
+  gap: 1px;
+  padding: 0 8px;
   background: var(--bg-toolbar);
   border-bottom: 1px solid var(--border-color);
+  height: 36px;
   overflow-x: auto;
   overflow-y: hidden;
+  scrollbar-width: thin;
   flex-shrink: 0;
+  position: relative;
+  z-index: 150;
 }
 
-.tab-bar::-webkit-scrollbar {
-  height: 4px;
-}
-
-.tab-bar::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
-}
+.tab-bar::-webkit-scrollbar { height: 2px; }
+.tab-bar::-webkit-scrollbar-track { background: transparent; }
+.tab-bar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
 
 .doc-tab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
   white-space: nowrap;
+  max-width: 220px;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
 }
 
 .doc-tab:hover {
-  background: var(--bg-hover);
+  background: var(--bg-surface);
   color: var(--text-primary);
 }
 
 .doc-tab.active {
-  background: var(--accent-gold-dim);
-  border-color: var(--accent-gold);
-  color: var(--accent-gold-light);
-  font-weight: 600;
+  background: var(--bg-surface);
+  color: var(--accent-gold);
+  border-color: var(--border-color);
+  border-bottom: 1px solid var(--bg-surface);
+  position: relative;
+  z-index: 1;
 }
 
 .tab-title {
-  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 180px;
+  pointer-events: none;
 }
 
 .tab-close {
-  background: none;
+  background: transparent;
   border: none;
-  color: inherit;
-  opacity: 0.6;
-  width: 16px;
-  height: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
   padding: 0;
+  font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  width: 16px;
+  height: 16px;
   border-radius: 3px;
-  transition: opacity var(--transition), background var(--transition);
+  transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .tab-close:hover {
-  opacity: 1;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
 }
 
 .tab-new {
-  background: none;
+  background: transparent;
   border: none;
-  color: var(--accent-gold);
-  width: 28px;
-  height: 28px;
-  padding: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background var(--transition);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .tab-new:hover {
   background: var(--accent-gold-dim);
+  color: var(--accent-gold-light);
 }
 
-/* ===== DIALOGS ===== */
+@media (max-width: 768px) {
+  .doc-tab { max-width: 140px; padding: 6px 8px; }
+  .tab-title { max-width: 100px; }
+}
+
+/* ===== DIALOGS — FIXED z-index (must be ABOVE context-menu) ===== */
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10003;
+  z-index: 10005;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -438,17 +451,17 @@
   height: auto;
 }
 
-/* ===== SIDE PANELS ===== */
+/* ===== SIDE PANELS — FIXED z-index & max-height ===== */
 .side-panel {
   position: fixed;
-  top: 112px;
+  top: 152px;
   right: 0;
   width: 280px;
   max-height: calc(100vh - 172px);
   background: var(--bg-panel);
   border-left: 1px solid var(--border-color);
   box-shadow: -4px 0 24px rgba(0,0,0,0.3);
-  z-index: 996;
+  z-index: 1000;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -630,7 +643,7 @@
   pointer-events: auto;
   font-family: var(--font-primary);
   letter-spacing: 0.3px;
-  z-index: 10;
+  z-index: 90;
 }
 
 .stats-default {
@@ -698,14 +711,14 @@
   transition: opacity var(--transition);
 }
 
-/* ===== CONTEXT MENU ===== */
+/* ===== CONTEXT MENU — BELOW DIALOGS ===== */
 .context-menu {
   position: fixed;
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  z-index: 10000;
+  z-index: 10001;
   min-width: 160px;
   overflow: hidden;
   padding: 4px 0;
@@ -765,6 +778,49 @@
 [data-zen="true"] .side-panel,
 [data-zen="true"] .dialog-overlay {
   display: none !important;
+}
+
+/* ===== Z-LAYERING FIX — PROPER ORDER ===== */
+/* Main toolbar stays below panels */
+.main-toolbar {
+  position: relative;
+  z-index: 100;
+}
+
+/* Goal bar and find bar above toolbar */
+.goal-bar,
+.find-replace-bar {
+  position: relative;
+  z-index: 200;
+}
+
+/* Side panels above everything except dialogs/context-menus */
+.side-panel {
+  position: fixed;
+  top: 152px;
+  z-index: 1000;
+}
+
+/* Stats overlay stays low */
+.stats-overlay {
+  z-index: 90;
+}
+
+/* Context menu above panels but below dialogs */
+.context-menu {
+  z-index: 10001;
+}
+
+/* Dialogs always on TOP (higher than context-menu) */
+.dialog-overlay {
+  z-index: 10005;
+}
+
+/* Responsive panel offset */
+@media screen and (max-width: 768px) {
+  .side-panel {
+    top: 180px;
+  }
 }
 
 /* ===== RESPONSIVE ===== */
@@ -881,45 +937,5 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* ===== SIDE PANEL LAYERING FIX ===== */
-
-/* Main toolbar stays below panels */
-.main-toolbar {
-  position: relative;
-  z-index: 100;
-}
-
-/* Goal bar and find bar above toolbar */
-.goal-bar,
-.find-replace-bar {
-  position: relative;
-  z-index: 200;
-}
-
-/* Side panels above everything except dialogs */
-.side-panel {
-  position: fixed;
-  top: 152px;
-  z-index: 1000;
-}
-
-/* Stats overlay stays low */
-.stats-overlay {
-  z-index: 90;
-}
-
-/* Dialogs always on top */
-.dialog-overlay {
-  z-index: 5000;
-}
-
-/* Responsive panel offset */
-@media screen and (max-width: 768px) {
-  .side-panel {
-    /* Mobile: header (48px) + tab bar (~36px) + wrapped toolbar (~92px) ≈ 176px */
-    top: 180px;
   }
 }

@@ -156,3 +156,21 @@
 
 /* ===== FIND NAVIGATION (Fix #12) ===== */
 .fa-chevron-down:before { content: '\f078'; }
+
+/* ===== HABIT TRACKER ICONS ===== */
+.fa-check-circle:before       { content: '\f058'; }
+.fa-heart:before              { content: '\f004'; }
+.fa-fire:before               { content: '\f06d'; }
+.fa-trophy:before             { content: '\f091'; }
+.fa-leaf:before               { content: '\f06c'; }
+.fa-bolt:before               { content: '\f0e7'; }
+.fa-rocket:before             { content: '\f135'; }
+.fa-coffee:before             { content: '\f0f4'; }
+.fa-dumbbell:before           { content: '\f109'; } /* Fork Awesome alt */
+.fa-water:before              { content: '\f043'; }
+.fa-bed:before                { content: '\f236'; }
+.fa-running:before            { content: '\f2eb'; } /* Fork Awesome fa-walking */
+.fa-apple-whole:before        { content: '\f179'; }
+.fa-brain:before              { content: '\f0e4'; } /* Fork Awesome fa-dashboard */
+.fa-spa:before                { content: '\f06c'; }
+.fa-chevron-left:before       { content: '\f053'; }
