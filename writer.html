@@ -13,7 +13,7 @@
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/editor.html">
+  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
   <meta property="og:title" content="orOS Writer — Privacy-First Rich Text Editor">
   <meta property="og:description" content="Write distraction-free with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.">
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
@@ -22,7 +22,7 @@
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/editor.html">
+  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
   <meta name="twitter:title" content="orOS Writer — Privacy-First Rich Text Editor">
   <meta name="twitter:description" content="Write distraction-free with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
@@ -35,14 +35,10 @@
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
   
-  <!-- hreflang -->
-  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/editor.html">
-  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/editor.html?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/editor.html?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/editor.html?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/editor.html?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/editor.html?lang=de">
-  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/editor.html">
+  <!-- hreflang — ONLY en + el -->
+  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/writer.html">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/writer.html?lang=el">
+  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/writer.html">
   
   <title>orOS Writer</title>
   <script src="config.js"></script>
@@ -66,14 +62,18 @@
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/tabs.css">
+  <link rel="stylesheet" href="assets/css/writer.css">
+
+  <!-- External libraries for DOCX support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/tabs.js" defer></script>
-  <script src="assets/js/editor.js" defer></script>
   <script src="assets/js/main.js" defer></script>
+  <script src="assets/js/writer.js" defer></script>
 </head>
 <body class="noscript">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
@@ -85,12 +85,11 @@
   <div id="oros-header"></div>
 
   <div id="editor-wrapper">
-
     <div class="reading-progress-container">
       <div class="reading-progress-bar" id="reading-progress-bar"></div>
     </div>
-	
-	<div id="tab-bar" class="tab-bar"></div>
+    
+    <div id="tab-bar" class="tab-bar"></div>
 
     <div class="main-toolbar" id="main-toolbar">
       <div class="toolbar-group toolbar-left">
@@ -100,31 +99,41 @@
         <button class="action-btn" id="btn-open" data-i18n-tooltip="tooltip_open" title="Open file">
           <i class="fa fa-folder-open"></i>
         </button>
-        <input type="file" id="file-input" accept=".txt,.md,.markdown,.rtf" style="display:none;">
+        <input type="file" id="file-input" accept=".txt,.md,.markdown,.rtf,.doc,.docx" style="display:none;">
         <button class="action-btn" id="btn-clear" data-i18n-tooltip="tooltip_clear" title="Clear all content">
           <i class="fa fa-trash-o"></i>
         </button>
       </div>
 
       <div class="toolbar-group toolbar-center">
-        <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold">
+        <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold (Ctrl+B)">
           <i class="fa fa-bold"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic">
+        <button class="fmt-text-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic (Ctrl+I)">
           <i class="fa fa-italic"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline">
+        <button class="fmt-text-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline (Ctrl+U)">
           <i class="fa fa-underline"></i>
+        </button>
+        <button class="fmt-text-btn" data-cmd="strikeThrough" data-i18n-tooltip="toolbar_strike" title="Strikethrough (Ctrl+Shift+X)">
+          <i class="fa fa-strikethrough"></i>
         </button>
         <span class="tb-separator"></span>
         <button class="fmt-text-btn" data-h="H1" data-block="h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
         <button class="fmt-text-btn" data-h="H2" data-block="h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
         <button class="fmt-text-btn" data-h="H3" data-block="h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
         <span class="tb-separator"></span>
-        <button class="action-btn" id="btn-bullet" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
+        <button class="action-btn" id="btn-indent" data-cmd="indent" data-i18n-tooltip="toolbar_indent" title="Increase indent">
+          <i class="fa fa-indent"></i>
+        </button>
+        <button class="action-btn" id="btn-outdent" data-cmd="outdent" data-i18n-tooltip="toolbar_outdent" title="Decrease indent">
+          <i class="fa fa-outdent"></i>
+        </button>
+        <span class="tb-separator"></span>
+        <button class="action-btn" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
           <i class="fa fa-list-ul"></i>
         </button>
-        <button class="action-btn" id="btn-number" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
+        <button class="action-btn" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
           <i class="fa fa-list-ol"></i>
         </button>
         <span class="tb-separator"></span>
@@ -143,6 +152,25 @@
       </div>
 
       <div class="toolbar-group toolbar-right">
+        <button class="action-btn" data-cmd=" subscript" title="Subscript (Ctrl+,)">
+          <i class="fa fa-subscript"></i>
+        </button>
+        <button class="action-btn" data-cmd=" superscript" title="Superscript (Ctrl+. )">
+          <i class="fa fa-superscript"></i>
+        </button>
+        <button class="action-btn" id="btn-hr" title="Insert horizontal rule">
+          <i class="fa fa-minus"></i>
+        </button>
+        <button class="action-btn" id="btn-table" title="Insert table">
+          <i class="fa fa-table"></i>
+        </button>
+        <button class="action-btn" id="btn-link" data-i18n-tooltip="toolbar_link" title="Insert link (Ctrl+K)">
+          <i class="fa fa-link"></i>
+        </button>
+        <button class="action-btn" id="btn-image" title="Insert image">
+          <i class="fa fa-picture-o"></i>
+        </button>
+        <span class="tb-separator"></span>
         <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
         </button>
@@ -209,9 +237,9 @@
       </div>
       <div class="rich-editor" id="rich-editor" contenteditable="true" data-placeholder="Start writing..." data-i18n-placeholder="editor_placeholder"></div>
     </div>
-
   </div>
 
+  <!-- Side Panels -->
   <div class="side-panel" id="metadata-panel" style="display:none;">
     <div class="panel-header">
       <span class="panel-title" data-i18n="meta_panel_title">Document Info</span>
@@ -262,6 +290,130 @@
     </div>
   </div>
 
+  <!-- Link Insert Dialog -->
+  <div class="dialog-overlay" id="link-dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 data-i18n="dialog_link_title">Insert Link</h3>
+        <button class="dialog-close" id="btn-close-link-dialog"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-field">
+          <label data-i18n="dialog_link_url">URL</label>
+          <input type="url" id="link-url" placeholder="https://example.com" />
+        </div>
+        <div class="dialog-field">
+          <label data-i18n="dialog_link_text">Display Text</label>
+          <input type="text" id="link-text" placeholder="Click here" />
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-cancel-link" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn-primary" id="btn-insert-link" data-i18n="btn_insert">Insert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Insert Dialog -->
+  <div class="dialog-overlay" id="table-dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 data-i18n="dialog_table_title">Insert Table</h3>
+        <button class="dialog-close" id="btn-close-table-dialog"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-field">
+          <label data-i18n="dialog_table_rows">Rows</label>
+          <input type="number" id="table-rows" min="1" max="20" value="3" />
+        </div>
+        <div class="dialog-field">
+          <label data-i18n="dialog_table_cols">Columns</label>
+          <input type="number" id="table-cols" min="1" max="10" value="3" />
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-cancel-table" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn-primary" id="btn-insert-table" data-i18n="btn_insert">Insert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Insert Dialog -->
+  <div class="dialog-overlay" id="image-dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 data-i18n="dialog_image_title">Insert Image</h3>
+        <button class="dialog-close" id="btn-close-image-dialog"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-field">
+          <label data-i18n="dialog_image_source">Image Source</label>
+          <select id="image-source-type">
+            <option value="upload" data-i18n="dialog_image_upload">Upload from computer</option>
+            <option value="url" data-i18n="dialog_image_url">From URL</option>
+          </select>
+        </div>
+        <div class="dialog-field" id="image-upload-field">
+          <input type="file" id="image-file" accept="image/*" />
+        </div>
+        <div class="dialog-field" id="image-url-field" style="display:none;">
+          <input type="url" id="image-url" placeholder="https://example.com/image.jpg" />
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-cancel-image" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn-primary" id="btn-insert-image" data-i18n="btn_insert">Insert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / Tutorial Modal -->
+  <div class="dialog-overlay" id="help-dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <div class="dialog-header">
+        <h3 data-i18n="help_title">Writer Help</h3>
+        <button class="dialog-close" id="btn-close-help"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="help-section">
+          <h4 data-i18n="help_shortcuts_title">Keyboard Shortcuts</h4>
+          <table class="shortcut-table">
+            <tbody>
+              <tr><td><kbd>Ctrl+S</kbd></td><td data-i18n="help_shortcut_save">Save</td></tr>
+              <tr><td><kbd>Ctrl+O</kbd></td><td data-i18n="help_shortcut_open">Open file</td></tr>
+              <tr><td><kbd>Ctrl+W</kbd></td><td data-i18n="help_shortcut_close_tab">Close current tab</td></tr>
+              <tr><td><kbd>Ctrl+N</kbd></td><td data-i18n="help_shortcut_new_tab">New tab</td></tr>
+              <tr><td><kbd>Ctrl+B</kbd></td><td data-i18n="help_shortcut_bold">Bold</td></tr>
+              <tr><td><kbd>Ctrl+I</kbd></td><td data-i18n="help_shortcut_italic">Italic</td></tr>
+              <tr><td><kbd>Ctrl+U</kbd></td><td data-i18n="help_shortcut_underline">Underline</td></tr>
+              <tr><td><kbd>Ctrl+K</kbd></td><td data-i18n="help_shortcut_link">Insert link</td></tr>
+              <tr><td><kbd>Ctrl+F</kbd></td><td data-i18n="help_shortcut_find">Find</td></tr>
+              <tr><td><kbd>Ctrl+G</kbd></td><td data-i18n="help_shortcut_goal">Set goal</td></tr>
+              <tr><td><kbd>F9</kbd></td><td data-i18n="help_shortcut_zen">Zen Mode</td></tr>
+              <tr><td><kbd>Esc</kbd></td><td data-i18n="help_shortcut_esc">Close panels/dialogs</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="help-section">
+          <h4 data-i18n="help_features_title">Features</h4>
+          <ul class="help-list">
+            <li data-i18n="help_feature_tabs">Multiple document tabs</li>
+            <li data-i18n="help_feature_autosave">Auto-save on every keystroke</li>
+            <li data-i18n="help_feature_goals">Writing goals with lock option</li>
+            <li data-i18n="help_feature_outline">Document outline navigation</li>
+            <li data-i18n="help_feature_frequency">Word frequency analysis</li>
+            <li data-i18n="help_feature_import">Import .txt, .md, .rtf, .doc, .docx</li>
+            <li data-i18n="help_feature_export">Export to .md, .txt, .rtf, .doc, .pdf</li>
+          </ul>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-primary" id="btn-close-help-ok" data-i18n="btn_ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
   <div class="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
@@ -272,7 +424,6 @@
       <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
-        <button class="tab-btn" data-tab="converter-settings" data-i18n="tab_converter">Converter</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -285,15 +436,6 @@
               <span class="toggle-label" data-i18n="install_app">Install as App</span>
               <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
             </div>
-            <div class="settings-divider"></div>
-            <div class="beta-section">
-              <div class="beta-header" data-i18n="beta_title">Beta Channel</div>
-              <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
-              <div class="beta-links">
-                <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
-              </div>
-            </div>
           </div>
         </div>
         <div class="tab-panel" id="writer-settings" style="display:none;">
@@ -305,10 +447,6 @@
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_smart_typography">Smart Typography</span>
               <label class="switch"><input type="checkbox" id="toggle-smart-typography"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_focus_mode">Focus Mode</span>
-              <label class="switch"><input type="checkbox" id="toggle-focus-mode"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_quick_toolbar">Quick Format Toolbar</span>
@@ -364,68 +502,13 @@
             </table>
           </div>
         </div>
-        <div class="tab-panel" id="converter-settings" style="display:none;">
-          <div class="toggles-container">
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_copy_btn">Hide Copy Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-copy-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_save_btn">Hide Save Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-save-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_open_btn">Hide Open Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-open-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_clear_btn">Hide Clear Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-clear-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_undo_btn">Hide Undo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-undo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_redo_btn">Hide Redo Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-redo-btn"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_reset_btn">Hide Reset Button</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-reset-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_options">Hide Options Dropdown</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-options"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_hide_stats_btn">Hide Stats Panel</span>
-              <label class="switch"><input type="checkbox" id="toggle-hide-stats-btn"><span class="slider"></span></label>
-            </div>
-            <div class="settings-divider"></div>
-            <table class="shortcut-table">
-              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
-              <tbody>
-                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
-                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
-                <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
-                <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
-                <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
-                <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 
   <div id="oros-footer"></div>
 
-    <script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(

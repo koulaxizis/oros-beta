@@ -1,28 +1,403 @@
+// ============================================
+// orOS Header Component
+// Shared across all pages
+// Includes: Brand, Nav, Language, Theme, Zen, Help, Settings
+// ============================================
+
 (function() {
-  var headerEl = document.getElementById('oros-header');
-  if (!headerEl) return;
+  'use strict';
 
-  var version = (window.OROS_CONFIG && window.OROS_CONFIG.version) || '0.8';
-  var channel = (window.OROS_CONFIG && window.OROS_CONFIG.channel) || 'beta';
+  function getCurrentLang() {
+    return localStorage.getItem('oros-language') || 'en';
+  }
 
-  headerEl.innerHTML =
-    '<header class="header">' +
-      '<div class="header-content">' +
-        '<div class="header-left">' +
-          '<a href="index.html" class="logo-link">' +
-            '<img src="favicon.svg" alt="orOS" class="logo-icon" />' +
-            '<span class="logo-text">orOS</span>' +
-          '</a>' +
-          '<span class="version-badge">' + version + '</span>' +
-          (channel === 'beta' ? '<span class="channel-badge beta">BETA</span>' : '') +
-          (channel === 'stable' ? '<span class="channel-badge stable">STABLE</span>' : '') +
-        '</div>' +
-        '<div class="header-right">' +
-          '<select id="language-select" class="lang-select" aria-label="Language"></select>' +
-          '<button id="btn-zen" class="header-btn" data-i18n-aria="aria_zen" aria-label="Zen Mode" title="Zen Mode (F9)"><i class="fa fa-eye-slash"></i></button>' +
-          '<button id="theme-toggle" class="header-btn" data-i18n-aria="aria_theme" aria-label="Toggle Theme" title="Toggle Theme"><i class="fa fa-sun-o"></i></button>' +
-          '<button id="btn-settings" class="header-btn" data-i18n-aria="aria_settings" aria-label="Settings" title="Settings"><i class="fa fa-cog"></i></button>' +
-        '</div>' +
-      '</div>' +
-    '</header>';
+  function getTrans(key) {
+    var lang = getCurrentLang();
+    var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
+    return t[key] || key;
+  }
+
+  function getPageType() {
+    var path = window.location.pathname;
+    var page = path.split('/').pop();
+    // Map page filenames to their app identifier
+    var map = {
+      'index.html': 'index',
+      'writer.html': 'writer',
+      'editor.html': 'writer', // legacy redirect support
+      'converter.html': 'converter',
+      'kanban.html': 'kanban',
+      'notes.html': 'notes',
+      'prompter.html': 'prompter',
+      'characters.html': 'characters'
+    };
+    return map[page] || 'index';
+  }
+
+  function buildHeader() {
+    var header = document.getElementById('oros-header');
+    if (!header) return;
+
+    var lang = getCurrentLang();
+    var pageType = getPageType();
+
+    // Determine if we should show app-specific buttons
+    var isAppPage = pageType !== 'index';
+
+    // Build nav links (hidden on mobile, shown in menu)
+    var navLinks = '';
+    var apps = [
+      { href: 'writer.html', icon: 'fa-pencil', key: 'editor_name' },
+      { href: 'converter.html', icon: 'fa-text-width', key: 'converter_name' },
+      { href: 'kanban.html', icon: 'fa-list-ul', key: 'kanban_name' },
+      { href: 'notes.html', icon: 'fa-sticky-note-o', key: 'notes_name' },
+      { href: 'prompter.html', icon: 'fa-lightbulb-o', key: 'prompter_name' },
+      { href: 'characters.html', icon: 'fa-users', key: 'characters_name' }
+    ];
+
+    for (var i = 0; i < apps.length; i++) {
+      var a = apps[i];
+      var isActive = pageType === a.href.replace('.html', '');
+      navLinks += '<a href="' + a.href + '" class="nav-link' + (isActive ? ' active' : '') + '"' +
+        ' data-i18n="' + a.key + '">' + getTrans(a.key) + '</a>';
+    }
+
+    // Theme state
+    var savedTheme = localStorage.getItem('oros-theme') || 'dark';
+    var isDark = savedTheme === 'dark';
+
+    // Build the header HTML
+    var html = '';
+
+    html += '<header class="header" id="oros-header-bar">';
+    html += '  <div class="header-left">';
+    html += '    <a href="index.html" class="header-brand">';
+    html += '      <img src="favicon.svg" alt="orOS" class="header-logo" />';
+    html += '      <span class="brand-text">orOS</span>';
+    html += '    </a>';
+    html += '  </div>';
+
+    html += '  <div class="header-nav" id="header-nav">';
+    html += navLinks;
+    html += '  </div>';
+
+    html += '  <div class="header-right">';
+
+    // Language selector
+    html += '    <div class="header-control">';
+    html += '      <select class="lang-select" id="lang-select" aria-label="' + getTrans('aria_language') + '" title="' + getTrans('aria_language') + '">';
+    html += '        <option value="en"' + (lang === 'en' ? ' selected' : '') + '>EN</option>';
+    html += '        <option value="el"' + (lang === 'el' ? ' selected' : '') + '>EL</option>';
+    html += '      </select>';
+    html += '    </div>';
+
+    // Theme toggle
+    html += '    <button class="header-btn" id="btn-theme-toggle" aria-label="' + getTrans('aria_theme_toggle') + '" title="' + getTrans('aria_theme_toggle') + '">';
+    html += '      <i class="fa ' + (isDark ? 'fa-sun-o' : 'fa-moon-o') + '"></i>';
+    html += '    </button>';
+
+    // Zen mode (only on app pages)
+    if (isAppPage) {
+      html += '    <button class="header-btn" id="btn-zen-mode" aria-label="' + getTrans('aria_zen') + '" title="' + getTrans('tooltip_zen') + '">';
+      html += '      <i class="fa fa-circle-o"></i>';
+      html += '    </button>';
+    }
+
+    // Help button (?) — only on app pages
+    if (isAppPage) {
+      html += '    <button class="header-btn" id="btn-help" aria-label="Help" title="Help">';
+      html += '      <i class="fa fa-question-circle"></i>';
+      html += '    </button>';
+    }
+
+    // Settings
+    html += '    <button class="header-btn" id="btn-settings" aria-label="' + getTrans('aria_settings') + '" title="' + getTrans('tooltip_settings') + '">';
+    html += '      <i class="fa fa-cog"></i>';
+    html += '    </button>';
+
+    // Mobile menu toggle
+    html += '    <button class="header-btn header-menu-toggle" id="btn-menu-toggle" aria-label="Menu">';
+    html += '      <i class="fa fa-bars"></i>';
+    html += '    </button>';
+
+    html += '  </div>';
+    html += '</header>';
+
+    header.innerHTML = html;
+
+    // Apply theme on load
+    applyTheme(savedTheme);
+  }
+
+  // ============================================
+  // THEME MANAGEMENT
+  // ============================================
+
+  function applyTheme(theme) {
+    var body = document.body;
+    if (theme === 'light') {
+      body.classList.add('theme-light');
+      body.classList.remove('theme-dark');
+    } else {
+      body.classList.add('theme-dark');
+      body.classList.remove('theme-light');
+    }
+    localStorage.setItem('oros-theme', theme);
+
+    // Update toggle icon
+    var btn = document.getElementById('btn-theme-toggle');
+    if (btn) {
+      var icon = btn.querySelector('i');
+      if (icon) {
+        icon.className = 'fa ' + (theme === 'dark' ? 'fa-sun-o' : 'fa-moon-o');
+      }
+    }
+
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('oros-theme-changed', { detail: { theme: theme } }));
+  }
+
+  // ============================================
+  // ZEN MODE
+  // ============================================
+
+  function toggleZenMode() {
+    var body = document.body;
+    var isZen = body.getAttribute('data-zen') === 'true';
+    if (isZen) {
+      body.removeAttribute('data-zen');
+      body.classList.remove('zen-mode');
+    } else {
+      body.setAttribute('data-zen', 'true');
+      body.classList.add('zen-mode');
+    }
+
+    // Update zen toggle button
+    var zenCheckbox = document.getElementById('toggle-zen-mode');
+    if (zenCheckbox) {
+      zenCheckbox.checked = !isZen;
+    }
+
+    // Show toast
+    var label = !isZen ? getTrans('toggle_zen') : getTrans('toggle_zen') + ' Off';
+    showToast(label);
+
+    // Trigger resize for editor recalculation
+    window.dispatchEvent(new Event('resize'));
+
+    window.dispatchEvent(new CustomEvent('oros-zen-changed', { detail: { enabled: !isZen } }));
+  }
+
+  // ============================================
+  // SETTINGS MODAL
+  // ============================================
+
+  function toggleSettings() {
+    var modal = document.querySelector('.settings-modal');
+    if (!modal) return;
+    var isVisible = modal.classList.contains('visible');
+    if (isVisible) {
+      modal.classList.remove('visible');
+    } else {
+      modal.classList.add('visible');
+      // Sync toggle states
+      syncSettingsToggles();
+    }
+  }
+
+  function syncSettingsToggles() {
+    var zenToggle = document.getElementById('toggle-zen-mode');
+    if (zenToggle) {
+      zenToggle.checked = document.body.getAttribute('data-zen') === 'true';
+    }
+  }
+
+  function setupSettingsNav() {
+    var tabBtns = document.querySelectorAll('.settings-modal .tab-btn');
+    var panels = document.querySelectorAll('.settings-modal .tab-panel');
+
+    for (var i = 0; i < tabBtns.length; i++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          // Remove active from all
+          for (var j = 0; j < tabBtns.length; j++) {
+            tabBtns[j].classList.remove('active');
+          }
+          for (var k = 0; k < panels.length; k++) {
+            panels[k].style.display = 'none';
+          }
+          // Activate clicked
+          btn.classList.add('active');
+          var targetId = btn.getAttribute('data-tab');
+          var target = document.getElementById(targetId);
+          if (target) target.style.display = 'flex';
+        });
+      })(tabBtns[i]);
+    }
+
+    // Close on overlay click
+    var overlay = document.querySelector('.settings-modal-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', toggleSettings);
+    }
+
+    // Close button
+    var closeBtn = document.querySelector('.settings-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', toggleSettings);
+    }
+
+    // Zen mode toggle in settings
+    var zenCheckbox = document.getElementById('toggle-zen-mode');
+    if (zenCheckbox) {
+      zenCheckbox.addEventListener('change', function() {
+        toggleZenMode();
+      });
+    }
+  }
+
+  // ============================================
+  // LANGUAGE SWITCHING
+  // ============================================
+
+  function changeLanguage(lang) {
+    localStorage.setItem('oros-language', lang);
+    document.documentElement.setAttribute('lang', lang);
+
+    // Dispatch events
+    window.dispatchEvent(new CustomEvent('oros-language-changed', { detail: { lang: lang } }));
+    document.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: lang } }));
+
+    // Reload to apply translations
+    window.location.reload();
+  }
+
+  // ============================================
+  // MOBILE MENU
+  // ============================================
+
+  function toggleMobileMenu() {
+    var nav = document.getElementById('header-nav');
+    if (!nav) return;
+    nav.classList.toggle('mobile-open');
+  }
+
+  // ============================================
+  // TOAST
+  // ============================================
+
+  function showToast(message) {
+    var toast = document.getElementById('zen-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'zen-toast';
+      toast.className = 'zentool-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.display = '';
+    toast.classList.add('visible');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() {
+      toast.classList.remove('visible');
+    }, 2500);
+  }
+
+  // ============================================
+  // PWA INSTALL
+  // ============================================
+
+  var deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    var installBtn = document.getElementById('btn-install');
+    if (installBtn) {
+      installBtn.disabled = false;
+      installBtn.addEventListener('click', function() {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          deferredInstallPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+              installBtn.disabled = true;
+            }
+            deferredInstallPrompt = null;
+          });
+        }
+      });
+    }
+  });
+
+  // ============================================
+  // KEYBOARD SHORTCUT (F9 for Zen)
+  // ============================================
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F9') {
+      e.preventDefault();
+      // Only toggle zen on app pages
+      if (getPageType() !== 'index') {
+        toggleZenMode();
+      }
+    }
+  });
+
+  // ============================================
+  // INIT
+  // ============================================
+
+  function init() {
+    buildHeader();
+
+    // Attach event listeners
+    var themeBtn = document.getElementById('btn-theme-toggle');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function() {
+        var current = localStorage.getItem('oros-theme') || 'dark';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+      });
+    }
+
+    var zenBtn = document.getElementById('btn-zen-mode');
+    if (zenBtn) {
+      zenBtn.addEventListener('click', toggleZenMode);
+    }
+
+    var settingsBtn = document.getElementById('btn-settings');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', toggleSettings);
+    }
+
+    var langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      langSelect.addEventListener('change', function() {
+        changeLanguage(this.value);
+      });
+    }
+
+    var menuToggle = document.getElementById('btn-menu-toggle');
+    if (menuToggle) {
+      menuToggle.addEventListener('click', toggleMobileMenu);
+    }
+
+    // Setup settings modal nav
+    setupSettingsNav();
+
+    // Close mobile menu when clicking a nav link
+    var navLinks = document.querySelectorAll('.nav-link');
+    for (var i = 0; i < navLinks.length; i++) {
+      navLinks[i].addEventListener('click', function() {
+        var nav = document.getElementById('header-nav');
+        if (nav) nav.classList.remove('mobile-open');
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
 })();
