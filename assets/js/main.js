@@ -120,7 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
-      if (translations[key]) el.setAttribute('data-placeholder', translations[key]);
+      if (translations[key]) {
+  el.setAttribute('data-placeholder', translations[key]);
+  el.setAttribute('placeholder', translations[key]);
+}
     });
   }
 

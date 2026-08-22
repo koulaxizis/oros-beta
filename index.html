@@ -150,7 +150,7 @@
   <h2 class="tool-name" data-i18n="prompter_name">Prompter</h2>
   <p class="tool-desc" data-i18n="prompter_desc">100 writing prompts · 10 techniques</p>
 </a>
-        <a href="characters.html" class="tool-card" aria-label="Open Characters — character design and relationship mapping">
+<a href="characters.html" class="tool-card" aria-label="Open Characters — character design and relationship mapping">
           <div class="tool-icon"><i class="fa fa-users"></i></div>
           <h2 class="tool-name" data-i18n="characters_name">Characters</h2>
           <p class="tool-desc" data-i18n="characters_desc">Character design · Relationships · Cast builder</p>
@@ -307,13 +307,13 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
+                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
                 <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
                 <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
                 <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
                 <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
                 <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
                 <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>
@@ -368,6 +368,53 @@
                 <tr><td>Export Note</td><td><kbd>Ctrl+E</kbd></td></tr>
                 <tr><td>Search</td><td><kbd>Ctrl+Shift+F</kbd></td></tr>
                 <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="prompter-settings" style="display:none;">
+          <div class="toggles-container">
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_random_btn">Hide Random Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-random-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_filter_bar">Hide Filter Bar</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-filter-bar"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_fav_toggle">Hide Favorites Toggle</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-fav-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_completed_toggle">Hide Completed Toggle</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-completed-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_daily_btn">Hide Daily Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-daily-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_custom_btn">Hide Custom Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-custom-btn"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label" data-i18n="toggle_hide_multi_btn">Hide Multi-Prompt Button</span>
+              <label class="switch"><input type="checkbox" id="toggle-hide-multi-btn"><span class="slider"></span></label>
+            </div>
+            <div class="settings-divider"></div>
+            <table class="shortcut-table">
+              <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
+              <tbody>
+                <tr><td data-i18n="prompter_random">Random Prompt</td><td><kbd>R</kbd></td></tr>
+                <tr><td data-i18n="prompter_favorites">Favorites</td><td><kbd>F</kbd></td></tr>
+                <tr><td data-i18n="prompter_completed">Completed</td><td><kbd>C</kbd></td></tr>
+                <tr><td data-i18n="prompter_daily">Today's Prompt</td><td><kbd>D</kbd></td></tr>
+                <tr><td data-i18n="prompter_multi">Multi-Prompt</td><td><kbd>M</kbd></td></tr>
+                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td>Navigate Cards</td><td><kbd>←</kbd> <kbd>→</kbd></td></tr>
+                <tr><td>Open in Writer</td><td><kbd>Enter</kbd></td></tr>
                 <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>
