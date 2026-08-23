@@ -53,7 +53,6 @@
 
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
-  <!-- FIX #2/#3: tabs.css removed — styles integrated into writer.css -->
   <link rel="stylesheet" href="assets/css/writer.css">
 
   <script src="assets/js/lib/jszip.min.js"></script>
@@ -88,7 +87,7 @@
         <button class="action-btn" id="btn-open" data-i18n-tooltip="tooltip_open" title="Open file">
           <i class="fa fa-folder-open"></i>
         </button>
-        <input type="file" id="file-input" accept=".txt,.md,.markdown,.rtf,.docx" style="display:none;">
+        <input type="file" id="file-input-hidden" accept=".txt,.md,.markdown,.rtf,.docx" style="display:none;">
         <button class="action-btn" id="btn-clear" data-i18n-tooltip="tooltip_clear" title="Clear all content">
           <i class="fa fa-trash-o"></i>
         </button>
@@ -100,66 +99,65 @@
 
       <div class="toolbar-group toolbar-center">
         <select id="styles-select" class="styles-dropdown" data-i18n-tooltip="tooltip_styles" title="Paragraph styles">
-          <option value="p" data-i18n="style_normal">Normal</option>
+          <option value="normal" data-i18n="style_normal">Normal</option>
           <option value="h1" data-i18n="style_h1">Heading 1</option>
           <option value="h2" data-i18n="style_h2">Heading 2</option>
           <option value="h3" data-i18n="style_h3">Heading 3</option>
           <option value="h4" data-i18n="style_h4">Heading 4</option>
-          <option value="blockquote" data-i18n="style_quote">Quote</option>
-          <option value="pre" data-i18n="style_code">Code Block</option>
-          <option value="p caption" data-i18n="style_caption">Caption</option>
+          <option value="quote" data-i18n="style_quote">Quote</option>
+          <option value="code" data-i18n="style_code">Code Block</option>
         </select>
         <span class="tb-separator"></span>
-        <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold (Ctrl+B)">
+        <button class="fmt-text-btn" id="btn-bold" data-i18n-tooltip="toolbar_bold" title="Bold (Ctrl+B)">
           <i class="fa fa-bold"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="italic" data-i18n-tooltip="toolbar_italic" title="Italic (Ctrl+I)">
+        <button class="fmt-text-btn" id="btn-italic" data-i18n-tooltip="toolbar_italic" title="Italic (Ctrl+I)">
           <i class="fa fa-italic"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="underline" data-i18n-tooltip="toolbar_underline" title="Underline (Ctrl+U)">
+        <button class="fmt-text-btn" id="btn-underline" data-i18n-tooltip="toolbar_underline" title="Underline (Ctrl+U)">
           <i class="fa fa-underline"></i>
         </button>
-        <button class="fmt-text-btn" data-cmd="strikeThrough" data-i18n-tooltip="toolbar_strike" title="Strikethrough (Ctrl+Shift+X)">
+        <button class="fmt-text-btn" id="btn-strikethrough" data-i18n-tooltip="toolbar_strike" title="Strikethrough (Ctrl+Shift+X)">
           <i class="fa fa-strikethrough"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="fmt-text-btn" data-h="H1" data-block="h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
-        <button class="fmt-text-btn" data-h="H2" data-block="h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
-        <button class="fmt-text-btn" data-h="H3" data-block="h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
+        <button class="fmt-text-btn" id="btn-h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
+        <button class="fmt-text-btn" id="btn-h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
+        <button class="fmt-text-btn" id="btn-h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
         <span class="tb-separator"></span>
-        <button class="action-btn" id="btn-indent" data-cmd="indent" data-i18n-tooltip="toolbar_indent" title="Increase indent">
+        <button class="action-btn" id="btn-indent" data-i18n-tooltip="toolbar_indent" title="Increase indent">
           <i class="fa fa-indent"></i>
         </button>
-        <button class="action-btn" id="btn-outdent" data-cmd="outdent" data-i18n-tooltip="toolbar_outdent" title="Decrease indent">
+        <button class="action-btn" id="btn-outdent" data-i18n-tooltip="toolbar_outdent" title="Decrease indent">
           <i class="fa fa-outdent"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="action-btn" data-cmd="insertUnorderedList" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
+        <button class="action-btn" id="btn-bullets" data-i18n-tooltip="toolbar_bullet_list" title="Bullet list">
           <i class="fa fa-list-ul"></i>
         </button>
-        <button class="action-btn" data-cmd="insertOrderedList" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
+        <button class="action-btn" id="btn-numbers" data-i18n-tooltip="toolbar_number_list" title="Numbered list">
           <i class="fa fa-list-ol"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="action-btn" data-cmd="justifyLeft" data-i18n-tooltip="toolbar_align_left" title="Align left">
+        <button class="action-btn" id="btn-align-left" data-i18n-tooltip="toolbar_align_left" title="Align left">
           <i class="fa fa-align-left"></i>
         </button>
-        <button class="action-btn" data-cmd="justifyCenter" data-i18n-tooltip="toolbar_align_center" title="Align center">
+        <button class="action-btn" id="btn-align-center" data-i18n-tooltip="toolbar_align_center" title="Align center">
           <i class="fa fa-align-center"></i>
         </button>
-        <button class="action-btn" data-cmd="justifyRight" data-i18n-tooltip="toolbar_align_right" title="Align right">
+        <button class="action-btn" id="btn-align-right" data-i18n-tooltip="toolbar_align_right" title="Align right">
           <i class="fa fa-align-right"></i>
         </button>
-        <button class="action-btn" data-cmd="justifyFull" data-i18n-tooltip="toolbar_align_justify" title="Justify">
+        <button class="action-btn" id="btn-align-justify" data-i18n-tooltip="toolbar_align_justify" title="Justify">
           <i class="fa fa-align-justify"></i>
         </button>
       </div>
 
       <div class="toolbar-group toolbar-right">
-        <button class="action-btn" data-cmd="subscript" title="Subscript (Ctrl+,)">
+        <button class="action-btn" id="btn-subscript" title="Subscript (Ctrl+,)">
           <i class="fa fa-subscript"></i>
         </button>
-        <button class="action-btn" data-cmd="superscript" title="Superscript (Ctrl+.)">
+        <button class="action-btn" id="btn-superscript" title="Superscript (Ctrl+. )">
           <i class="fa fa-superscript"></i>
         </button>
         <button class="action-btn" id="btn-hr" title="Insert horizontal rule">
@@ -184,7 +182,7 @@
           <i class="fa fa-keyboard-o"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="action-btn" id="btn-comment" data-i18n-tooltip="tooltip_comment" title="Add comment (Ctrl+Shift+C)">
+        <button class="action-btn" id="btn-comments" data-i18n-tooltip="tooltip_comment" title="Add comment (Ctrl+Shift+C)">
           <i class="fa fa-comment-o"></i>
         </button>
         <button class="action-btn" id="btn-toc" data-i18n-tooltip="tooltip_toc" title="Table of contents">
@@ -239,14 +237,14 @@
       </div>
     </div>
 
-    <div class="goal-bar" id="goal-bar">
-      <select id="goal-unit">
+    <div class="goal-bar" id="goal-bar" style="display:none;">
+      <select id="goal-unit-select">
         <option value="words" data-i18n="goal_unit_words">Words</option>
         <option value="chars" data-i18n="goal_unit_chars">Characters</option>
         <option value="paras" data-i18n="goal_unit_paras">Paragraphs</option>
       </select>
       <input type="number" id="goal-target-input" min="1" placeholder="Target" />
-      <label class="goal-lock-label"><input type="checkbox" id="goal-lock"> Lock</label>
+      <label class="goal-lock-label"><input type="checkbox" id="goal-lock-checkbox"> Lock</label>
       <button class="mini-btn" id="btn-set-goal"><i class="fa fa-check"></i></button>
       <button class="mini-btn" id="btn-clear-goal"><i class="fa fa-trash-o"></i></button>
       <button class="mini-btn" id="btn-close-goal"><i class="fa fa-times"></i></button>
@@ -265,9 +263,9 @@
       <button class="mini-btn" id="btn-close-session"><i class="fa fa-times"></i></button>
     </div>
 
-    <div class="find-replace-bar" id="find-replace-bar">
-      <input type="text" id="find-find" placeholder="Find..." />
-      <input type="text" id="find-replace" placeholder="Replace..." />
+    <div class="find-replace-bar" id="find-replace-bar" style="display:none;">
+      <input type="text" id="find-input" placeholder="Find..." />
+      <input type="text" id="replace-input" placeholder="Replace..." />
       <select id="find-format-filter" class="find-format-filter" data-i18n-tooltip="tooltip_find_format" title="Find by formatting">
         <option value="" data-i18n="find_format_any">Any format</option>
         <option value="bold" data-i18n="find_format_bold">Bold text</option>
@@ -277,19 +275,19 @@
         <option value="h2" data-i18n="find_format_h2">Heading 2</option>
         <option value="h3" data-i18n="find_format_h3">Heading 3</option>
       </select>
-      <button class="mini-btn" id="btn-fr-prev" title="Previous"><i class="fa fa-chevron-up"></i></button>
-      <button class="mini-btn" id="btn-fr-next" title="Next"><i class="fa fa-chevron-down"></i></button>
-      <button class="mini-btn" id="btn-fr-replace" title="Replace"><i class="fa fa-exchange"></i></button>
-      <button class="mini-btn" id="btn-fr-replace-all" title="Replace all"><i class="fa fa-refresh"></i></button>
-      <span id="fr_results"></span>
-      <button class="mini-btn" id="btn-close-fr"><i class="fa fa-times"></i></button>
+      <button class="mini-btn" id="btn-find-prev" title="Previous"><i class="fa fa-chevron-up"></i></button>
+      <button class="mini-btn" id="btn-find-next" title="Next"><i class="fa fa-chevron-down"></i></button>
+      <button class="mini-btn" id="btn-replace" title="Replace"><i class="fa fa-exchange"></i></button>
+      <button class="mini-btn" id="btn-replace-all" title="Replace all"><i class="fa fa-refresh"></i></button>
+      <span id="fr-results"></span>
+      <button class="mini-btn" id="btn-close-find"><i class="fa fa-times"></i></button>
     </div>
 
     <div class="track-changes-bar" id="track-changes-bar" style="display:none;">
       <span class="tc-label" data-i18n="track_changes_active">Tracking changes</span>
-      <button class="mini-btn" id="btn-tc-accept-all" title="Accept all"><i class="fa fa-check"></i></button>
-      <button class="mini-btn" id="btn-tc-reject-all" title="Reject all"><i class="fa fa-times"></i></button>
-      <button class="mini-btn" id="btn-tc-toggle" title="Stop tracking"><i class="fa fa-pause"></i></button>
+      <button class="mini-btn" id="btn-accept-all-changes" title="Accept all"><i class="fa fa-check"></i></button>
+      <button class="mini-btn" id="btn-reject-all-changes" title="Reject all"><i class="fa fa-times"></i></button>
+      <button class="mini-btn" id="btn-track-changes-toggle" title="Stop tracking"><i class="fa fa-pause"></i></button>
     </div>
 
     <div class="rich-wrapper">
@@ -403,7 +401,7 @@
       <div id="comments-list"></div>
       <div class="comment-add-area" id="comment-add-area" style="display:none;">
         <textarea id="comment-input" placeholder="Write a comment..." rows="3"></textarea>
-        <button class="btn-primary" id="btn-submit-comment" data-i18n="btn_add">Add</button>
+        <button class="btn-primary" id="btn-add-comment" data-i18n="btn_add">Add</button>
       </div>
     </div>
   </div>
@@ -420,7 +418,7 @@
     </div>
   </div>
 
-  <div class="side-panel" id="version-panel" style="display:none;">
+  <div class="side-panel" id="version-history-panel" style="display:none;">
     <div class="panel-header">
       <span class="panel-title" data-i18n="version_history_title">Version History</span>
       <button class="panel-close mini-btn" id="btn-close-version"><i class="fa fa-times"></i></button>
@@ -440,16 +438,16 @@
       <div class="dialog-body">
         <div class="dialog-field">
           <label data-i18n="dialog_link_url">URL</label>
-          <input type="url" id="link-url" placeholder="https://example.com" />
+          <input type="url" id="link-url-input" placeholder="https://example.com" />
         </div>
         <div class="dialog-field">
           <label data-i18n="dialog_link_text">Display Text</label>
-          <input type="text" id="link-text" placeholder="Click here" />
+          <input type="text" id="link-text-input" placeholder="Click here" />
         </div>
       </div>
       <div class="dialog-actions">
         <button class="btn-cancel" id="btn-cancel-link" data-i18n="btn_cancel">Cancel</button>
-        <button class="btn-primary" id="btn-insert-link" data-i18n="btn_insert">Insert</button>
+        <button class="btn-primary" id="btn-ok-link" data-i18n="btn_insert">Insert</button>
       </div>
     </div>
   </div>
@@ -464,16 +462,16 @@
       <div class="dialog-body">
         <div class="dialog-field">
           <label data-i18n="dialog_table_rows">Rows</label>
-          <input type="number" id="table-rows" min="1" max="20" value="3" />
+          <input type="number" id="table-rows-select" min="1" max="20" value="3" />
         </div>
         <div class="dialog-field">
           <label data-i18n="dialog_table_cols">Columns</label>
-          <input type="number" id="table-cols" min="1" max="10" value="3" />
+          <input type="number" id="table-cols-select" min="1" max="10" value="3" />
         </div>
       </div>
       <div class="dialog-actions">
         <button class="btn-cancel" id="btn-cancel-table" data-i18n="btn_cancel">Cancel</button>
-        <button class="btn-primary" id="btn-insert-table" data-i18n="btn_insert">Insert</button>
+        <button class="btn-primary" id="btn-create-table" data-i18n="btn_insert">Insert</button>
       </div>
     </div>
   </div>
@@ -494,15 +492,20 @@
           </select>
         </div>
         <div class="dialog-field" id="image-upload-field">
-          <input type="file" id="image-file" accept="image/*" />
+          <input type="file" id="image-file-input" accept="image/*" />
         </div>
         <div class="dialog-field" id="image-url-field" style="display:none;">
-          <input type="url" id="image-url" placeholder="https://example.com/image.jpg" />
+          <input type="url" id="image-url-input" placeholder="https://example.com/image.jpg" />
+        </div>
+        <div class="dialog-field">
+          <label data-i18n="dialog_image_caption">Caption</label>
+          <input type="text" id="image-caption-input" placeholder="Optional caption" />
         </div>
       </div>
       <div class="dialog-actions">
         <button class="btn-cancel" id="btn-cancel-image" data-i18n="btn_cancel">Cancel</button>
-        <button class="btn-primary" id="btn-insert-image" data-i18n="btn_insert">Insert</button>
+        <button class="btn-primary" id="btn-image-upload" data-i18n="btn_insert">Upload</button>
+        <button class="btn-primary" id="btn-image-url" data-i18n="btn_insert">Insert URL</button>
       </div>
     </div>
   </div>
@@ -534,7 +537,7 @@
         <div class="special-chars-tabs" id="special-chars-tabs">
           <button class="sc-tab active" data-cat="greek" data-i18n="sc_greek">Greek</button>
           <button class="sc-tab" data-cat="math" data-i18n="sc_math">Math</button>
-          <button class="sc-tab" data-cat="arrows" data-i18n="sc_arrows">Arrows</button>
+          <button class="sc-tab" data-cat="arrows" data-cat="arrows" data-i18n="sc_arrows">Arrows</button>
           <button class="sc-tab" data-cat="currency" data-i18n="sc_currency">Currency</button>
           <button class="sc-tab" data-cat="punctuation" data-i18n="sc_punctuation">Punctuation</button>
           <button class="sc-tab" data-cat="symbols" data-i18n="sc_symbols">Symbols</button>
@@ -632,12 +635,12 @@
   </div>
 
   <!-- Settings Modal -->
-  <div class="settings-modal">
+  <div class="settings-modal" id="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
       <div class="settings-header">
         <h2 data-i18n="settings">Settings</h2>
-        <button class="settings-close" aria-label="Close settings"><i class="fa fa-times"></i></button>
+        <button class="settings-close" id="btn-close-settings" aria-label="Close settings"><i class="fa fa-times"></i></button>
       </div>
       <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
@@ -718,13 +721,17 @@
               <input type="text" id="ac-pattern" placeholder="(tm)" style="width:120px;" />
               <span>→</span>
               <input type="text" id="ac-replacement" placeholder="™" style="width:120px;" />
-              <button class="mini-btn" id="btn-add-autocorrect"><i class="fa fa-plus"></i></button>
+              <button class="mini-btn" id="btn-add-autocorrect-rule"><i class="fa fa-plus"></i></button>
             </div>
             <div class="settings-divider"></div>
             <h4 data-i18n="shortcuts_custom_title">Keyboard Shortcuts</h4>
             <div id="shortcuts-custom-container"></div>
           </div>
         </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-close-settings-footer" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn-primary" id="btn-save-settings" data-i18n="btn_save">Save</button>
       </div>
     </div>
   </div>
@@ -742,6 +749,13 @@
         });
       });
     }
+    
+    // Initialize Writer app when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof orOSWriter !== 'undefined') {
+        orOSWriter.init();
+      }
+    });
   </script>
 
 </body>

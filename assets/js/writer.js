@@ -2,91 +2,92 @@
   'use strict';
 
   // ===== CONSTANTS =====
-  const TABS_STORAGE_KEY = 'oros_writer_tabs_v2';
-  const VERSION_HISTORY_KEY = 'oros_writer_versions';
-  const MAX_TABS = 15;
-  const MAX_VERSIONS_PER_TAB = 20;
-  const AUTO_SNAPSHOT_INTERVAL = 300000;
+  var TABS_STORAGE_KEY = 'oros_writer_tabs_v2';
+  var VERSION_HISTORY_KEY = 'oros_writer_versions';
+  var MAX_TABS = 15;
+  var MAX_VERSIONS_PER_TAB = 20;
+  var AUTO_SNAPSHOT_INTERVAL = 300000;
 
   // ===== DOM ELEMENTS =====
-  let richEditor = null;
-  let richWrapper = null;
-  let tabBar = null;
-  let saveIndicator = null;
-  let statsOverlay = null;
-  let statsDefaultEl = null;
-  let statsGoalEl = null;
-  let statsDetailed = null;
-  let goalBar = null;
-  let sessionBar = null;
-  let sessionDisplay = null;
-  let findBar = null;
-  let findInput = null;
-  let replaceInput = null;
-  let frResults = null;
-  let findFormatFilter = null;
-  let trackChangesBar = null;
-  let metadataPanel = null;
-  let outlinePanel = null;
-  let outlineList = null;
-  let wordFreqPanel = null;
-  let wordFreqList = null;
-  let wordFreqSummary = null;
-  let commentsPanel = null;
-  let tocPanel = null;
-  let versionPanel = null;
-  let footnoteArea = null;
-  let readingProgressBar = null;
-  let exportDropdown = null;
-  let stylesSelect = null;
-  let metaTitle = null;
-  let metaAuthor = null;
-  let metaTags = null;
-  let metaCategory = null;
-  let metaCreated = null;
-  let metaModified = null;
-  let goalTargetInput = null;
-  let goalUnitSelect = null;
-  let goalLockCheckbox = null;
+  var richEditor = null;
+  var richWrapper = null;
+  var tabBar = null;
+  var saveIndicator = null;
+  var statsOverlay = null;
+  var statsDefaultEl = null;
+  var statsGoalEl = null;
+  var statsDetailed = null;
+  var goalBar = null;
+  var sessionBar = null;
+  var sessionDisplay = null;
+  var findBar = null;
+  var findInput = null;
+  var replaceInput = null;
+  var frResults = null;
+  var findFormatFilter = null;
+  var trackChangesBar = null;
+  var metadataPanel = null;
+  var outlinePanel = null;
+  var outlineList = null;
+  var wordFreqPanel = null;
+  var wordFreqList = null;
+  var wordFreqSummary = null;
+  var commentsPanel = null;
+  var tocPanel = null;
+  var versionPanel = null;
+  var footnoteArea = null;
+  var readingProgressBar = null;
+  var exportDropdown = null;
+  var stylesSelect = null;
+  var metaTitle = null;
+  var metaAuthor = null;
+  var metaTags = null;
+  var metaCategory = null;
+  var metaCreated = null;
+  var metaModified = null;
+  var goalTargetInput = null;
+  var goalUnitSelect = null;
+  var goalLockCheckbox = null;
 
   // ===== STATE =====
-  let tabsState = [];
-  let activeTabId = null;
-  let tabSwitchListeners = [];
-  let currentMetadata = {};
-  let isSwitching = false;
-  let goalTarget = null;
-  let goalUnit = 'words';
-  let goalLockEnabled = false;
-  let goalReachedShown = false;
-  let goalLockTriggered = false;
-  let currentMatchIndex = -1;
-  let matchMarks = [];
-  let statsExpanded = false;
-  let sessionRunning = false;
-  let sessionInterval = null;
-  let sessionRemaining = 0;
-  let sessionWordsTarget = 500;
-  let sessionWordsStart = 0;
-  let trackingChanges = false;
-  let autoCorrections = [];
-  let shortcutOverrides = {};
-  let readingModeEnabled = false;
-  let focusModeEnabled = false;
-  let smartTypographyEnabled = true;
-  let typewriterSoundEnabled = false;
-  let smartPasteEnabled = true;
-  let isReplacing = false;
-  let wordFreqDebounce = null;
-  let outlineDebounceTimer = null;
-  let selectionTimer = null;
-  let findDebounceTimer = null;
-  let toastElement = null;
-  let toastTimeout = null;
-  let typewriterAudioCtx = null;
-  let typewriterAudioBuffer = null;
-  let commentsData = [];
-  let activeCommentId = null;
+  var tabsState = [];
+  var activeTabId = null;
+  var tabSwitchListeners = [];
+  var currentMetadata = {};
+  var isSwitching = false;
+  var goalTarget = null;
+  var goalUnit = 'words';
+  var goalLockEnabled = false;
+  var goalReachedShown = false;
+  var goalLockTriggered = false;
+  var currentMatchIndex = -1;
+  var matchMarks = [];
+  var statsExpanded = false;
+  var sessionRunning = false;
+  var sessionInterval = null;
+  var sessionRemaining = 0;
+  var sessionWordsTarget = 500;
+  var sessionWordsStart = 0;
+  var trackingChanges = false;
+  var autoCorrections = [];
+  var shortcutOverrides = {};
+  var readingModeEnabled = false;
+  var focusModeEnabled = false;
+  var smartTypographyEnabled = true;
+  var typewriterSoundEnabled = false;
+  var smartPasteEnabled = true;
+  var isReplacing = false;
+  var wordFreqDebounce = null;
+  var outlineDebounceTimer = null;
+  var selectionTimer = null;
+  var findDebounceTimer = null;
+  var toastElement = null;
+  var toastTimeout = null;
+  var typewriterAudioCtx = null;
+  var typewriterAudioBuffer = null;
+  var commentsData = [];
+  var activeCommentId = null;
+  var writerInitialized = false;
 
   // ===== HELPERS =====
   function getCurrentLang() {
@@ -163,7 +164,7 @@
     if (el) el.addEventListener('click', handler);
   }
 
-  // ===== TABS SYSTEM =====
+    // ===== TABS SYSTEM =====
   function generateTabId() {
     return 'tab-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
   }
@@ -418,8 +419,7 @@
     isSwitching = false;
     if (richEditor) richEditor.focus();
   }
-  
-    // ===== SAVE INDICATOR =====
+
   function updateSaveIndicator() {
     if (!saveIndicator) return;
     saveIndicator.style.visibility = hasSaveIndicatorHidden() ? 'hidden' : 'visible';
@@ -563,381 +563,21 @@
     showToast(getTrans('text_goal_locked'));
   }
 
-  // ===== SESSION TIMER =====
-  function startSession() {
-    var wordTarget = parseInt(document.getElementById('session-word-target').value) || 500;
-    var timeTarget = parseInt(document.getElementById('session-time-target').value) || 25;
-    sessionWordsTarget = wordTarget;
-    sessionRemaining = timeTarget * 60;
-    sessionWordsStart = getGoalCount();
-    sessionRunning = true;
-    document.getElementById('btn-start-session').style.display = 'none';
-    document.getElementById('btn-stop-session').style.display = '';
-    updateSessionDisplay();
-    sessionInterval = setInterval(function() {
-      if (!sessionRunning) return;
-      sessionRemaining--;
-      updateSessionDisplay();
-      if (sessionRemaining <= 0) completeSession();
-      if (sessionRemaining === 300) playSessionBeep(440, 200);
-    }, 1000);
-    showToast('Session started: ' + sessionWordsTarget + ' words in ' + timeTarget + ' minutes');
-  }
-
-  function stopSession() {
-    sessionRunning = false;
-    clearInterval(sessionInterval);
-    sessionInterval = null;
-    document.getElementById('btn-start-session').style.display = '';
-    document.getElementById('btn-stop-session').style.display = 'none';
-    if (sessionDisplay) sessionDisplay.textContent = '';
-    showToast('Session stopped');
-  }
-
-  function completeSession() {
-    sessionRunning = false;
-    clearInterval(sessionInterval);
-    sessionInterval = null;
-    var currentWords = getGoalCount();
-    var wordsWritten = currentWords - sessionWordsStart;
-    if (sessionDisplay) {
-      sessionDisplay.textContent = getTrans('session_complete') + ' ' + wordsWritten + ' ' + getTrans('text_words');
-      sessionDisplay.classList.add('complete');
-    }
-    document.getElementById('btn-start-session').style.display = 'none';
-    document.getElementById('btn-stop-session').style.display = 'none';
-    playSessionBeep(880, 300);
-    setTimeout(function() { playSessionBeep(880, 300); }, 400);
-    showToast('Session complete! You wrote ' + wordsWritten + ' words.');
-    addVersionSnapshot(activeTabId);
-  }
-
-  function updateSessionDisplay() {
-    if (!sessionDisplay) return;
-    var minutes = Math.floor(sessionRemaining / 60);
-    var seconds = sessionRemaining % 60;
-    var timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-    var currentWords = getGoalCount();
-    var wordsWritten = currentWords - sessionWordsStart;
-    var progress = Math.min(100, Math.max(0, (wordsWritten / sessionWordsTarget) * 100));
-    sessionDisplay.textContent = timeStr + ' \u00B7 ' + wordsWritten + '/' + sessionWordsTarget + ' words (' + Math.round(progress) + '%)';
-    if (sessionRemaining <= 60) {
-      sessionDisplay.classList.add('warning');
+  function toggleGoalBar() {
+    if (!goalBar) return;
+    if (goalBar.style.display === 'flex') {
+      saveCurrentTabMetadata(true);
+      goalBar.style.display = 'none';
     } else {
-      sessionDisplay.classList.remove('warning');
-    }
-  }
-
-  function playSessionBeep(freq, duration) {
-    try {
-      if (!typewriterAudioCtx) {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        typewriterAudioCtx = new AC();
-      }
-      var oscillator = typewriterAudioCtx.createOscillator();
-      var gainNode = typewriterAudioCtx.createGain();
-      oscillator.frequency.value = freq;
-      oscillator.type = 'sine';
-      gainNode.gain.value = 0.1;
-      oscillator.connect(gainNode);
-      gainNode.connect(typewriterAudioCtx.destination);
-      oscillator.start(0);
-      oscillator.stop(typewriterAudioCtx.currentTime + duration / 1000);
-    } catch(e) {}
-  }
-
-  // ===== READING PROGRESS =====
-  function updateReadingProgress() {
-    if (!readingProgressBar || !richWrapper) return;
-    if (localStorage.getItem('oros_reading_progress') !== 'false') {
-      readingProgressBar.style.display = '';
-      var max = richWrapper.scrollHeight - richWrapper.clientHeight;
-      if (max <= 0) { readingProgressBar.style.width = '0%'; return; }
-      var pct = (richWrapper.scrollTop / max) * 100;
-      readingProgressBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
-    } else {
-      readingProgressBar.style.display = 'none';
-    }
-  }
-
-  // ===== SMART TYPOGRAPHY =====
-  function handleSmartTypography() {
-    if (!smartTypographyEnabled || isReplacing || goalLockTriggered) return;
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var range = sel.getRangeAt(0);
-    if (!range.collapsed || !richEditor.contains(range.endContainer)) return;
-    var preRange = range.cloneRange();
-    preRange.selectNodeContents(richEditor);
-    preRange.setEnd(range.endContainer, range.endOffset);
-    var before = preRange.toString();
-    if (!before) return;
-    var deleteLen = 0;
-    var insert = '';
-    var last2 = before.slice(-2);
-    var last1 = before.slice(-1);
-    if (last2 === '--') { deleteLen = 2; insert = '\u2014'; }
-    else if (last1 === '"') {
-      var pc = before.length > 1 ? before[before.length - 2] : ' ';
-      insert = /\w/.test(pc) ? '\u201D' : '\u201C';
-      deleteLen = 1;
-    }
-    else if (last1 === "'") {
-      var pc2 = before.length > 1 ? before[before.length - 2] : ' ';
-      insert = /\w/.test(pc2) ? '\u2019' : '\u2018';
-      deleteLen = 1;
-    }
-    else return;
-    isReplacing = true;
-    for (var i = 0; i < deleteLen; i++) { document.execCommand('delete', false); }
-    document.execCommand('insertText', false, insert);
-    isReplacing = false;
-  }
-
-  // ===== INPUT HANDLER =====
-  function setupEditorInput() {
-    if (!richEditor) return;
-    richEditor.addEventListener('input', function() {
-      saveCurrentTabContent();
-      updateStats();
-      if (outlinePanel && outlinePanel.style.display !== 'none') {
-        clearTimeout(outlineDebounceTimer);
-        outlineDebounceTimer = setTimeout(updateOutline, 300);
-      }
-      if (wordFreqPanel && wordFreqPanel.style.display !== 'none') {
-        clearTimeout(wordFreqDebounce);
-        wordFreqDebounce = setTimeout(updateWordFrequency, 810);
-      }
-      if (focusModeEnabled) highlightFocusedParagraph();
-      if (smartTypographyEnabled && !isReplacing && !goalLockTriggered) {
-        var keys = [' ', "'", '"', '-', '(', '.', ','];
-        if (keys.includes(event ? event.key : '')) {
-          handleSmartTypography();
-        }
-      }
-    });
-    richEditor.addEventListener('scroll', function() {
-      updateReadingProgress();
-      if (focusModeEnabled) highlightFocusedParagraph();
-    }, { passive: true });
-    richEditor.addEventListener('paste', function(e) {
-      if (!smartPasteEnabled || goalLockTriggered) return;
-      e.preventDefault();
-      var clipboardData = e.clipboardData || window.clipboardData;
-      if (!clipboardData) return;
-      var html = clipboardData.getData('text/html');
-      var text = clipboardData.getData('text/plain');
-      if (html) {
-        var temp = document.createElement('div');
-        temp.innerHTML = html;
-        var allowed = ['P','H1','H2','H3','H4','H5','H6','UL','OL','LI','STRONG','EM','B','I','U','A','CODE','PRE','BLOCKQUOTE','BR','SPAN','TABLE','TD','TH','TR'];
-        var all = temp.querySelectorAll('*');
-        for (var j = 0; j < all.length; j++) {
-          var el = all[j];
-          if (allowed.indexOf(el.tagName) === -1) {
-            var txt = document.createTextNode(el.textContent + ' ');
-            el.parentNode.replaceChild(txt, el);
-          } else {
-            while (el.attributes.length > 0) {
-              var attr = el.attributes[0];
-              if (!(el.tagName === 'A' && attr.name === 'href')) el.removeAttribute(attr.name);
-            }
-          }
-        }
-        document.execCommand('insertHTML', false, temp.innerHTML);
-      } else if (text) {
-        document.execCommand('insertText', false, text);
-      }
-      saveCurrentTabContent();
-      updateStats();
-    });
-  }
-
-  // ===== FORMATTING BUTTONS =====
-  function bindFmtButton(id, command, value) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    btn.addEventListener('click', function() {
-      document.execCommand(command, false, value);
-      saveCurrentTabContent();
-      updateStats();
-      setTimeout(updateToolbarStates, 10);
-    });
-  }
-
-  function bindHeadingButton(id, tagName) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    btn.addEventListener('click', function() {
-      document.execCommand('formatBlock', false, tagName);
-      saveCurrentTabContent();
-      updateStats();
-      if (outlinePanel && outlinePanel.style.display !== 'none') {
-        clearTimeout(outlineDebounceTimer);
-        outlineDebounceTimer = setTimeout(updateOutline, 300);
-      }
-      setTimeout(updateToolbarStates, 10);
-    });
-  }
-
-  function setupFormatButtons() {
-    bindFmtButton('btn-bold', 'bold');
-    bindFmtButton('btn-italic', 'italic');
-    bindFmtButton('btn-underline', 'underline');
-    bindFmtButton('btn-strikethrough', 'strikeThrough');
-    bindFmtButton('btn-subscript', 'subscript');
-    bindFmtButton('btn-superscript', 'superscript');
-    bindHeadingButton('btn-h1', 'h1');
-    bindHeadingButton('btn-h2', 'h2');
-    bindHeadingButton('btn-h3', 'h3');
-    bindFmtButton('btn-bullets', 'insertUnorderedList');
-    bindFmtButton('btn-numbers', 'insertOrderedList');
-    bindFmtButton('btn-align-left', 'justifyLeft');
-    bindFmtButton('btn-align-center', 'justifyCenter');
-    bindFmtButton('btn-align-right', 'justifyRight');
-    bindFmtButton('btn-quote', 'formatBlock', 'blockquote');
-    bindFmtButton('btn-code', 'formatBlock', 'pre');
-    bindFmtButton('btn-hr', 'insertHorizontalRule');
-    bindFmtButton('btn-undo', 'undo');
-    bindFmtButton('btn-redo', 'redo');
-  }
-
-  function updateToolbarStates() {
-    if (!richEditor) return;
-    var checkActive = function(ids, tag) {
-      var isActive = document.queryCommandState(ids[0]);
-      ids.forEach(function(id) {
-        var btn = document.getElementById(id);
-        if (btn) btn.classList.toggle('active', isActive);
-      });
-    };
-    checkActive(['btn-bold'], 'strong');
-    checkActive(['btn-italic'], 'em');
-    checkActive(['btn-underline'], 'u');
-    checkActive(['btn-strikethrough'], 's');
-    checkActive(['btn-bullets'], 'ul');
-    checkActive(['btn-numbers'], 'ol');
-  }
-
-  // ===== KEYBOARD SHORTCUTS =====
-  function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
-      if (e.target.closest('.dialog-overlay, .settings-modal, input, textarea, select')) return;
-      var key = [];
-      if (e.ctrlKey) key.push('ctrl');
-      if (e.shiftKey) key.push('shift');
-      if (e.altKey) key.push('alt');
-      key.push(e.key.toLowerCase());
-      var combo = key.join('+');
-      if (shortcutOverrides[combo]) {
-        e.preventDefault();
-        try { shortcutOverrides[combo](); } catch(ex) {}
-        return;
-      }
-      switch(combo) {
-        case 'ctrl+s': e.preventDefault(); saveCurrentTabContent(); showToast(getTrans('text_saved')); break;
-        case 'ctrl+n': e.preventDefault(); createTab({ content: '', metadata: {} }); break;
-        case 'ctrl+w': e.preventDefault(); closeTabById(activeTabId); break;
-        case 'ctrl+k': e.preventDefault(); toggleLinkDialog(); break;
-        case 'ctrl+f': e.preventDefault(); toggleFindBar(); break;
-        case 'ctrl+g': e.preventDefault(); toggleGoalBar(); break;
-        case 'ctrl+enter': e.preventDefault(); insertPageBreak(); break;
-        case 'ctrl+,': e.preventDefault(); document.execCommand('subscript'); saveCurrentTabContent(); break;
-        case 'ctrl+.': e.preventDefault(); document.execCommand('superscript'); saveCurrentTabContent(); break;
-        case 'ctrl+shift+x': e.preventDefault(); document.execCommand('strikeThrough'); saveCurrentTabContent(); break;
-        case 'ctrl+shift+c': e.preventDefault(); toggleCommentsPanel(); break;
-        case 'f9': e.preventDefault(); toggleReadingMode(); break;
-      }
-    });
-  }
-
-  // ===== OUTLINE =====
-  function toggleOutline() {
-    if (!outlinePanel || !outlineList) return;
-    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
-      outlinePanel.style.display = 'flex';
-      updateOutline();
-    } else {
-      outlinePanel.style.display = 'none';
-    }
-  }
-
-  function updateOutline() {
-    if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none' || !richEditor) return;
-    var headings = richEditor.querySelectorAll('h1, h2, h3');
-    if (headings.length === 0) {
-      outlineList.innerHTML = '<div class="outline-empty">' + getTrans('outline_empty') + '</div>';
-      return;
-    }
-    outlineList.innerHTML = '';
-    for (var i = 0; i < headings.length; i++) {
-      (function(h) {
-        var item = document.createElement('div');
-        item.className = 'outline-item outline-item-' + h.tagName.toLowerCase();
-        item.textContent = h.textContent || '(empty)';
-        item.onclick = function() {
-          h.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          h.classList.add('outline-flash');
-          setTimeout(function() { h.classList.remove('outline-flash'); }, 1200);
-          if (richEditor) richEditor.focus();
-        };
-        outlineList.appendChild(item);
-      })(headings[i]);
+      if (goalTargetInput) goalTargetInput.value = goalTarget ? goalTarget.toString() : '500';
+      if (goalUnitSelect) goalUnitSelect.value = goalUnit || 'words';
+      if (goalLockCheckbox) goalLockCheckbox.checked = goalLockEnabled;
+      goalBar.style.display = 'flex';
+      if (goalTargetInput) goalTargetInput.focus();
     }
   }
   
-    // ===== WORD FREQUENCY =====
-  function toggleWordFreqPanel() {
-    if (!wordFreqPanel) return;
-    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
-      wordFreqPanel.style.display = 'flex';
-      updateWordFrequency();
-    } else {
-      wordFreqPanel.style.display = 'none';
-    }
-  }
-
-  function updateWordFrequency() {
-    if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
-    var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
-    if (!text) {
-      wordFreqList.innerHTML = '<div class="wordfreq-empty">' + getTrans('word_freq_empty') + '</div>';
-      if (wordFreqSummary) wordFreqSummary.innerHTML = '';
-      return;
-    }
-    var words = text.split(/\s+/).filter(Boolean);
-    var total = words.length;
-    var freq_map = {};
-    for (var i = 0; i < words.length; i++) {
-      var w = words[i];
-      freq_map[w] = (freq_map[w] || 0) + 1;
-    }
-    var unique = Object.keys(freq_map).length;
-    var diversity = total > 0 ? (unique / total * 100).toFixed(1) : 0;
-    var sorted = Object.keys(freq_map).sort(function(a, b) { return freq_map[b] - freq_map[a]; }).slice(0, 20);
-    var maxFreq = sorted.length > 0 ? freq_map[sorted[0]] : 1;
-    if (wordFreqSummary) {
-      wordFreqSummary.innerHTML =
-        '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
-        '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
-        '<div class="stat-row"><span>' + getTrans('word_freq_diversity') + '</span><span>' + diversity + '%</span></div>';
-    }
-    var listHtml = '';
-    for (var j = 0; j < sorted.length; j++) {
-      var word = sorted[j];
-      var count = freq_map[word];
-      var pct = (count / maxFreq * 100).toFixed(0);
-      var isOverused = count >= 5 && (count / total * 100) > 2;
-      listHtml += '<div class="wordfreq-item' + (isOverused ? ' overused' : '') + '">' +
-        '<span class="wf-word">' + word + '</span>' +
-        '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
-        '<span class="wordfreq-count">' + count + '</span></div>';
-    }
-    wordFreqList.innerHTML = listHtml;
-  }
-
-  // ===== FIND & REPLACE =====
+    // ===== FIND & REPLACE =====
   function clearHighlights() {
     if (!richEditor) return;
     var marks = richEditor.querySelectorAll('mark.find-match');
@@ -1583,7 +1223,7 @@
     showToast(getTrans('toast_lorem_inserted') || 'Sample text inserted');
   }
 
-  // ===== FOCUS MODE =====
+    // ===== FOCUS MODE =====
   function toggleFocusMode() {
     focusModeEnabled = !focusModeEnabled;
     document.body.classList.toggle('focus-mode', focusModeEnabled);
@@ -1728,9 +1368,15 @@
     var fi = document.getElementById('image-file-input');
     var ui = document.getElementById('image-url-input');
     var ci = document.getElementById('image-caption-input');
+    var si = document.getElementById('image-source-type');
     if (fi) fi.value = '';
     if (ui) ui.value = '';
     if (ci) ci.value = '';
+    if (si) si.value = 'upload';
+    var uf = document.getElementById('image-upload-field');
+    var urlf = document.getElementById('image-url-field');
+    if (uf) uf.style.display = '';
+    if (urlf) urlf.style.display = 'none';
     dialog.style.display = 'flex';
   }
 
@@ -1853,11 +1499,11 @@
     saveCurrentTabContent();
     if (richEditor) richEditor.focus();
   }
-  
-    // ===== SPECIAL CHARACTERS =====
+
+  // ===== SPECIAL CHARACTERS =====
   var SPECIAL_CHAR_CATEGORIES = {
     'greek': { label: 'Greek', chars: ['\u0391','\u0392','\u0393','\u0394','\u0395','\u0396','\u0397','\u0398','\u0399','\u039A','\u039B','\u039C','\u039D','\u039E','\u039F','\u03A0','\u03A1','\u03A3','\u03A4','\u03A5','\u03A6','\u03A7','\u03A8','\u03A9','\u03B1','\u03B2','\u03B3','\u03B4','\u03B5','\u03B6','\u03B7','\u03B8','\u03B9','\u03BA','\u03BB','\u03BC','\u03BD','\u03BE','\u03BF','\u03C0','\u03C1','\u03C3','\u03C4','\u03C5','\u03C6','\u03C7','\u03C8','\u03C9','\u0386','\u0388','\u0389','\u038A','\u038C','\u038E','\u038F','\u0390','\u03B0','\u03AA','\u03AB','\u03C2'] },
-    'math': { label: 'Math', chars: ['\u00B1','\u00F7','\u00D7','\u221E','\u221A','\u2211','\u220F','u222B','\u2202','\u2207','\u2248','\u2260','\u2264','\u2265','\u221D','\u2208','\u2209','\u2229','\u222A','\u2282','\u2283','\u2286','\u2287','\u2295','\u2297','\u22A5','\u2220','\u00B0','\u2032','\u2033','\u03C0','\u0192','\u2115','\u2124','\u211A','\u211D','\u2102','\u2200','\u2203','\u00AC','\u2227','\u2228','\u21D2','\u21D4','\u2192','\u2190','\u2194'] },
+    'math': { label: 'Math', chars: ['\u00B1','\u00F7','\u00D7','\u221E','\u221A','\u2211','\u220F','\u222B','\u2202','\u2207','\u2248','\u2260','\u2264','\u2265','\u221D','\u2208','\u2209','\u2229','\u222A','\u2282','\u2283','\u2286','\u2287','\u2295','\u2297','\u22A5','\u2220','\u00B0','\u2032','\u2033','\u03C0','\u0192','\u2115','\u2124','\u211A','\u211D','\u2102','\u2200','\u2203','\u00AC','\u2227','\u2228','\u21D2','\u21D4','\u2192','\u2190','\u2194'] },
     'arrows': { label: 'Arrows', chars: ['\u2191','\u2193','\u2190','\u2192','\u2194','\u2195','\u2197','\u2198','\u2199','\u2196','\u21D1','\u21D3','\u21D0','\u21D2','\u21D4','\u21D5','\u21D7','\u21D8','\u21D9','\u21D6','\u279C','\u27A1','\u2B06','\u2B07','\u2B05','\u2B22','\u2B21','\u25B6','\u25C0','\u25B2','\u25BC','\u25BA','\u25C4'] },
     'currency': { label: 'Currency', chars: ['\u20AC','$','\u00A3','\u00A5','\u20BF','\u00A2','\u00A4','\u20A9','\u20B9','\u20BD','\u20BA','\u20B4'] },
     'punctuation': { label: 'Punctuation', chars: ['\u00AB','\u00BB','\u2039','\u203A','\u201E','\u201C','\u201D','\u2018','\u2019','\u201A','\u201B','\u00A1','\u00BF','\u00A7','\u00B6','\u2020','\u2021','\u2022','\u00B7','\u2026','\u2030','\u203B'] },
@@ -2182,7 +1828,7 @@
     var coreXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + escapeXml(currentMetadata.title||'') + '</dc:title><dc:creator>' + escapeXml(currentMetadata.author||'') + '</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + (currentMetadata.created||new Date().toISOString()) + '</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + '</dcterms:modified></cp:coreProperties>';
     var appXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>orOS Writer</Application></Properties>';
     var docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>';
-    
+
     function procDocxInline(node) {
       var r = '';
       for (var i = 0; i < node.childNodes.length; i++) {
@@ -2326,6 +1972,16 @@
     }
   }
 
+  // ===== CLEAR CONTENT =====
+  function clearContent() {
+    if (!richEditor) return;
+    if (richEditor.innerHTML.trim() && !confirm(getTrans('confirm_clear') || 'Clear all content?')) return;
+    richEditor.innerHTML = '<p><br></p>';
+    saveCurrentTabContent();
+    updateStats();
+    showToast(getTrans('toast_cleared') || 'Content cleared');
+  }
+
   // ===== SETTINGS MODAL =====
   function toggleSettingsModal() {
     var modal = document.getElementById('settings-modal');
@@ -2340,601 +1996,336 @@
 
   function loadSettingsValues() {
     var set = function(id, val) { var el = document.getElementById(id); if (el) el.checked = val; };
-    set('toggle-hide-save', hasSaveIndicatorHidden());
+    set('toggle-hide-save-indicator', hasSaveIndicatorHidden());
     set('toggle-hide-stats', localStorage.getItem('oros_hide_stats') === 'true');
     set('toggle-reading-progress', localStorage.getItem('oros_reading_progress') !== 'false');
     set('toggle-smart-typography', smartTypographyEnabled);
     set('toggle-typewriter-sound', typewriterSoundEnabled);
     set('toggle-smart-paste', smartPasteEnabled);
     set('toggle-focus-mode', focusModeEnabled);
+    // Hide/show toolbar buttons based on stored prefs
+    applyToolbarVisibilityPrefs();
+  }
+
+  function applyToolbarVisibilityPrefs() {
+    var map = {
+      'btn-goal': 'oros_hide_goal_btn',
+      'btn-outline': 'oros_hide_outline_btn',
+      'btn-metadata': 'oros_hide_metadata_btn',
+      'btn-find': 'oros_hide_find_btn',
+      'btn-wordfreq': 'oros_hide_wordfreq_btn',
+      'btn-lorem': 'oros_hide_lorem_btn'
+    };
+    for (var id in map) {
+      var btn = document.getElementById(id);
+      if (btn) btn.style.display = localStorage.getItem(map[id]) === 'true' ? 'none' : '';
+    }
   }
 
   function saveSettings() {
     var get = function(id) { var el = document.getElementById(id); return el ? el.checked : false; };
-    localStorage.setItem('oros_hide_save_indicator', get('toggle-hide-save') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_save_indicator', get('toggle-hide-save-indicator') ? 'true' : 'false');
     localStorage.setItem('oros_hide_stats', get('toggle-hide-stats') ? 'true' : 'false');
     localStorage.setItem('oros_reading_progress', get('toggle-reading-progress') ? 'true' : 'false');
-    smartTypographyEnabled = get('toggle-smart-typography'); localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : 'false');
-    typewriterSoundEnabled = get('toggle-typewriter-sound'); localStorage.setItem('oros_typewriter_sound', typewriterSoundEnabled ? 'true' : 'false');
-    if (typewriterSoundEnabled && !typewriterAudioCtx) initTypewriterSound();
+    localStorage.setItem('oros_hide_goal_btn', get('toggle-hide-goal-btn') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_outline_btn', get('toggle-hide-outline-btn') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_metadata_btn', get('toggle-hide-metadata-btn') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_find_btn', get('toggle-hide-find-btn') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_wordfreq_btn', get('toggle-hide-wordfreq-btn') ? 'true' : 'false');
+    localStorage.setItem('oros_hide_lorem_btn', get('toggle-hide-lorem-btn') ? 'true' : 'false');
+    smartTypographyEnabled = get('toggle-smart-typography'); localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : ''');
     smartPasteEnabled = get('toggle-smart-paste'); localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
-    focusModeEnabled = get('toggle-focus-mode'); localStorage.setItem('oros_focus_mode', focusModeEnabled ? 'true' : 'false');
-    document.body.classList.toggle('focus-mode', focusModeEnabled);
-    if (focusModeEnabled) highlightFocusedParagraph();
-    updateSaveIndicator();
-    updateStats();
-    updateReadingProgress();
-    showToast(getTrans('settings_saved'));
+    
+    // Page size setting
+    var pageSizeSelect = document.getElementById('setting-page-size');
+    if (pageSizeSelect) {
+      var ps = pageSizeSelect.value;
+      var tab = getActiveTab();
+      if (tab) {
+        if (!tab.metadata) tab.metadata = {};
+        tab.metadata.pageSize = ps;
+        persistTabs();
+        applyPageSettings();
+      }
+    }
+    
+    applyToolbarVisibilityPrefs();
+    showToast(getTrans('settings_saved') || 'Settings saved');
   }
 
+  // ===== HELP DIALOG =====
   function toggleHelpDialog() {
     var dialog = document.getElementById('help-dialog-overlay');
     if (!dialog) return;
-    dialog.style.display = dialog.style.display === 'flex' ? 'none' : 'flex';
+    if (dialog.style.display === 'flex') { dialog.style.display = 'none'; return; }
+    dialog.style.display = 'flex';
+    renderHelpShortcuts();
   }
 
-  // ===== SETUP HELPERS =====
-  function setupSettingsTabs() {
-    var tabBtns = document.querySelectorAll('#settings-modal .tab-btn');
-    for (var i = 0; i < tabBtns.length; i++) {
-      tabBtns[i].addEventListener('click', function() {
-        var target = this.getAttribute('data-tab');
-        for (var j = 0; j < tabBtns.length; j++) tabBtns[j].classList.remove('active');
-        this.classList.add('active');
-        var panels = document.querySelectorAll('#settings-modal .settings-tab-panel');
-        for (var k = 0; k < panels.length; k++) panels[k].style.display = 'none';
-        var panel = document.getElementById('settings-tab-' + target);
-        if (panel) panel.style.display = '';
-      });
+  function renderHelpShortcuts() {
+    var list = document.getElementById('shortcuts-list');
+    if (!list) return;
+    var lang = getCurrentLang();
+    var shortcuts = [
+      { k: 'Ctrl+S', d: lang === 'el' ? 'Αποθήκευση' : 'Save' },
+      { k: 'Ctrl+N', d: lang === 'el' ? 'Νέο εγγραφο' : 'New document' },
+      { k: 'Ctrl+W', d: lang === 'el' ? 'Κλείσιμο καρτέλας' : 'Close tab' },
+      { k: 'Ctrl+B', d: 'Bold' },
+      { k: 'Ctrl+I', d: 'Italic' },
+      { k: 'Ctrl+U', d: 'Underline' },
+      { k: 'Ctrl+Shift+X', d: lang === 'el' ? 'Διαγραμμίωση' : 'Strikethrough' },
+      { k: 'Ctrl+F', d: lang === 'el' ? 'Εύρεση' : 'Find' },
+      { k: 'Ctrl+G', d: lang === 'el' ? 'Στόχος λέξεων' : 'Word goal' },
+      { k: 'Ctrl+K', d: lang === 'el' ? 'Εισαγωγή συνδέσμου' : 'Insert link' },
+      { k: 'Ctrl+,', d: lang === 'el' ? 'Κάτω δείκτης' : 'Subscript' },
+      { k: 'Ctrl+.', d: lang === 'el' ? 'Πάνω δείκτης' : 'Superscript' },
+      { k: 'F9', d: lang === 'el' ? 'Λειτουργία ανάγνωσης' : 'Reading mode' },
+      { k: 'Double-click tab', d: lang === 'el' ? 'Μετονομασία καρτέλας' : 'Rename tab' }
+    ];
+    var html = '';
+    for (var i = 0; i < shortcuts.length; i++) {
+      html += '<div class="shortcut-row"><kbd>' + shortcuts[i].k + '</kbd><span>' + shortcuts[i].d + '</span></div>';
     }
+    list.innerHTML = html;
   }
 
-  function setupExportDropdown() {
-    var btn = document.getElementById('btn-export');
-    var menu = document.getElementById('export-menu');
-    if (!btn || !menu) return;
-    btn.addEventListener('click', function(e) { e.stopPropagation(); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; });
-    document.addEventListener('click', function() { menu.style.display = 'none'; });
-    menu.addEventListener('click', function(e) { e.stopPropagation(); });
-    var items = menu.querySelectorAll('button');
-    for (var i = 0; i < items.length; i++) {
-      items[i].addEventListener('click', function() {
-        var fmt = this.getAttribute('data-format');
-        if (fmt) { handleExport(fmt); menu.style.display = 'none'; }
-      });
-    }
+  // ===== UTILITIES =====
+  function downloadBlob(blob, fileName) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
   }
 
-  function setupDropdownToggles() {
-    var toggles = document.querySelectorAll('.dropdown-toggle');
-    for (var i = 0; i < toggles.length; i++) {
-      toggles[i].addEventListener('click', function(e) {
-        e.stopPropagation();
-        var content = this.nextElementSibling;
-        if (content && content.classList.contains('dropdown-content')) {
-          var all = document.querySelectorAll('.dropdown-content');
-          for (var j = 0; j < all.length; j++) { if (all[j] !== content) all[j].style.display = 'none'; }
-          content.style.display = content.style.display === 'block' ? 'none' : 'block';
-        }
-      });
-    }
-    document.addEventListener('click', function() {
-      var all = document.querySelectorAll('.dropdown-content');
-      for (var k = 0; k < all.length; k++) all[k].style.display = 'none';
-    });
+  function getFileName(extension) {
+    var base = (currentMetadata.title || 'untitled').replace(/[^a-zA-Z0-9\u0370-\u03FF\s\-_]/g, '').trim().replace(/\s+/g, '_');
+    return base + '.' + extension;
   }
 
-  function setupAllButtonBindings() {
-    bindClick('btn-open', function() { var fi = document.getElementById('file-input-hidden'); if (fi) fi.click(); });
-    bindClick('btn-lorem', insertLoremIpsum);
-    bindClick('btn-print', function() { window.print(); });
-    bindClick('btn-metadata', toggleMetadataPanel);
-    bindClick('btn-outline', toggleOutline);
-    bindClick('btn-word-freq', toggleWordFreqPanel);
-    bindClick('btn-comments', toggleCommentsPanel);
-    bindClick('btn-toc', toggleToCPanel);
-    bindClick('btn-version-history', toggleVersionPanel);
-    bindClick('btn-goal', toggleGoalBar);
-    bindClick('btn-session', function() { if (sessionBar) sessionBar.style.display = sessionBar.style.display === 'flex' ? 'none' : 'flex'; });
-    bindClick('btn-track-changes', toggleTrackChanges);
-    bindClick('btn-image', toggleImageDialog);
-    bindClick('btn-table', toggleTableDialog);
-    bindClick('btn-link', toggleLinkDialog);
-    bindClick('btn-footnote', toggleFootnoteDialog);
-    bindClick('btn-page-break', insertPageBreak);
-    bindClick('btn-special-chars', toggleSpecialCharsDialog);
-    bindClick('btn-templates', toggleTemplatesDialog);
-    bindClick('btn-reading-mode', toggleReadingMode);
-    bindClick('btn-focus-mode', toggleFocusMode);
-    bindClick('btn-settings', toggleSettingsModal);
-    bindClick('btn-help', toggleHelpDialog);
-    bindClick('btn-find', toggleFindBar);
-    bindClick('btn-save-settings', saveSettings);
-    bindClick('btn-close-settings', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('active'); });
-    bindClick('btn-add-autocorrect-rule', function() {
-      var pi = document.getElementById('ac-pattern'), ri = document.getElementById('ac-replacement');
-      if (pi && ri && pi.value.trim() && ri.value.trim()) {
-        autoCorrections.push({ pattern: pi.value.trim(), replacement: ri.value.trim() });
-        saveAutoCorrections();
-        pi.value = ''; ri.value = '';
-      }
-    });
-    bindClick('btn-start-session', startSession);
-    bindClick('btn-stop-session', stopSession);
-    bindClick('btn-set-goal', setGoal);
-    bindClick('btn-clear-goal', clearGoal);
-    bindClick('btn-find-next', function() { navigateMatch(1); });
-    bindClick('btn-find-prev', function() { navigateMatch(-1); });
-    bindClick('btn-replace', function() { doReplace(false); });
-    bindClick('btn-replace-all', function() { doReplace(true); });
-    bindClick('btn-close-find', toggleFindBar);
-    bindClick('btn-add-comment', addComment);
-    bindClick('btn-insert-footnote', insertFootnote);
-    bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-image-upload', insertImageFromUpload);
-    bindClick('btn-image-url', insertImageFromUrl);
-    bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-create-table', createTable);
-    bindClick('btn-cancel-table', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-ok-link', insertOrUpdateLink);
-    bindClick('btn-cancel-link', function() {
-      var d = document.getElementById('link-dialog-overlay');
-      if (d) d.style.display = 'none';
-      if (richEditor) { var els = richEditor.querySelectorAll('a[data-editing-link="true"]'); for (var i=0;i<els.length;i++) els[i].removeAttribute('data-editing-link'); }
-    });
-    bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-cancel-special-chars', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-accept-all-changes', acceptAllChanges);
-    bindClick('btn-reject-all-changes', rejectAllChanges);
-    bindClick('btn-snapshot-now', function() { addVersionSnapshot(activeTabId); renderVersions(); showToast(getTrans('version_snapshot_created')||'Snapshot created'); });
-    bindClick('btn-insert-toc-doc', insertToCIntoDocument);
-    var so = document.querySelector('.settings-modal-overlay');
-    if (so) so.addEventListener('click', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('active'); });
-    // Panel close buttons
-    var closeBtns = document.querySelectorAll('.panel-close');
-    for (var i = 0; i < closeBtns.length; i++) {
-      closeBtns[i].addEventListener('click', function() {
-        var panel = this.closest('.side-panel');
-        if (panel) panel.style.display = 'none';
-      });
-    }
-    // Dialog close buttons
-    var dCloseBtns = document.querySelectorAll('.dialog-close');
-    for (var j = 0; j < dCloseBtns.length; j++) {
-      dCloseBtns[j].addEventListener('click', function() {
-        var ov = this.closest('.dialog-overlay');
-        if (ov) ov.style.display = 'none';
-      });
-    }
-    // Dialog overlay click-outside
-    var overlays = document.querySelectorAll('.dialog-overlay');
-    for (var k = 0; k < overlays.length; k++) {
-      overlays[k].addEventListener('click', function(e) { if (e.target === this) this.style.display = 'none'; });
-    }
+  function escapeXml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
-  // ===== INIT =====
-  function init() {
+  function formatDate(date) {
+    if (!date || !(date instanceof Date)) return '';
+    var day = String(date.getDate()).padStart(2, '0');
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var year = date.getFullYear();
+    var hour = String(date.getHours()).padStart(2, '0');
+    var min = String(date.getMinutes()).padStart(2, '0');
+    return day + '/' + month + '/' + year + ' ' + hour + ':' + min;
+  }
+
+  function formatNumber(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  function showToast(message) {
+    if (!toastContainer) return;
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    setTimeout(function() {
+      toast.classList.add('show');
+      setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toastContainer.removeChild(toast); }, 300);
+      }, 3000);
+    }, 50);
+  }
+
+  function getCurrentLang() {
+    return (localStorage.getItem('oros_lang') || 'en').substring(0, 2);
+  }
+
+  // ===== DOM BINDING =====
+  function bindDOMElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.getElementById('rich-wrapper');
     tabBar = document.getElementById('tab-bar');
-    saveIndicator = document.getElementById('save-indicator');
-    statsOverlay = document.getElementById('stats-overlay');
-    statsDefaultEl = document.getElementById('stats-default');
-    statsGoalEl = document.getElementById('stats-goal');
-    statsDetailed = document.getElementById('stats-detailed');
-    goalBar = document.getElementById('goal-bar');
-    sessionBar = document.getElementById('session-bar');
-    sessionDisplay = document.getElementById('session-display');
-    findBar = document.getElementById('find-replace-bar');
-    findInput = document.getElementById('find-input');
-    replaceInput = document.getElementById('replace-input');
-    frResults = document.getElementById('fr-results');
-    findFormatFilter = document.getElementById('find-format-filter');
-    trackChangesBar = document.getElementById('track-changes-bar');
-    metadataPanel = document.getElementById('metadata-panel');
-    outlinePanel = document.getElementById('outline-panel');
-    outlineList = document.getElementById('outline-list');
-    wordFreqPanel = document.getElementById('wordfreq-panel');
-    wordFreqList = document.getElementById('wordfreq-list');
-    wordFreqSummary = document.getElementById('wordfreq-summary');
-    commentsPanel = document.getElementById('comments-panel');
-    tocPanel = document.getElementById('toc-panel');
-    versionPanel = document.getElementById('version-history-panel');
-    footnoteArea = document.getElementById('footnote-area');
-    readingProgressBar = document.getElementById('reading-progress-bar');
-    stylesSelect = document.getElementById('styles-select');
     metaTitle = document.getElementById('meta-title');
     metaAuthor = document.getElementById('meta-author');
     metaTags = document.getElementById('meta-tags');
     metaCategory = document.getElementById('meta-category');
     metaCreated = document.getElementById('meta-created');
     metaModified = document.getElementById('meta-modified');
+    saveIndicator = document.getElementById('save-indicator');
+    goalTarget = null;
+    goalUnit = localStorage.getItem('oros_goal_unit') || 'words';
+    goalLockEnabled = localStorage.getItem('oros_goal_lock') === 'true';
     goalTargetInput = document.getElementById('goal-target-input');
     goalUnitSelect = document.getElementById('goal-unit-select');
     goalLockCheckbox = document.getElementById('goal-lock-checkbox');
+    statsDefaultEl = document.getElementById('stats-default');
+    statsGoalEl = document.getElementById('stats-goal');
+    statsDetailed = document.getElementById('stats-detailed');
+    goalBar = document.getElementById('goal-bar');
+    goalBarContent = document.getElementById('goal-bar-content');
+    goalBarFill = document.getElementById('goal-bar-fill');
+    sessionDisplay = document.getElementById('session-display');
+    readingProgressBar = document.getElementById('reading-progress-bar');
+    outlinePanel = document.getElementById('outline-panel');
+    outlineList = document.getElementById('outline-list');
+    wordFreqPanel = document.getElementById('word-freq-panel');
+    wordFreqList = document.getElementById('word-freq-list');
+    wordFreqSummary = document.getElementById('word-freq-summary');
+    commentsPanel = document.getElementById('comments-panel');
+    footnoteArea = document.getElementById('footnote-area');
+    tocPanel = document.getElementById('toc-panel');
+    tocList = document.getElementById('toc-list');
+    versionPanel = document.getElementById('version-panel');
+    metadataPanel = document.getElementById('metadata-panel');
+    findBar = document.getElementById('find-bar');
+    findInput = document.getElementById('find-input');
+    replaceInput = document.getElementById('replace-input');
+    frResults = document.getElementById('fr-results');
+    trackChangesBar = document.getElementById('track-changes-bar');
+    versionPanel = document.getElementById('version-panel');
+    stylesSelect = document.getElementById('styles-select');
+    toastContainer = document.getElementById('toast-container');
+    
+    var btns = [
+      'btn-bold','btn-italic','btn-underline','btn-strikethrough','btn-subscript','btn-superscript',
+      'btn-h1','btn-h2','btn-h3','btn-bullets','btn-numbers','btn-align-left','btn-align-center','btn-align-right',
+      'btn-quote','btn-code','btn-hr','btn-undo','btn-redo','btn-link','btn-image','btn-table','btn-special',
+      'btn-template','btn-track-changes','btn-outline','btn-metadata','btn-comments','btn-toc','btn-wordfreq','btn-version','btn-find',
+      'btn-goalse','btn-session','btn-zen','btn-focus','btn-reading'
+    ];
+    for (var i = 0; i < btns.length; i++) {
+      var b = document.getElementById(btns[i]);
+      if (b) { /* buttons exist */ }
+    }
+  }
 
-    if (!richEditor) { console.error('Writer: #rich-editor not found'); return; }
-
-    // Load persisted settings
-    smartTypographyEnabled = localStorage.getItem('oros_smart_typography') !== 'false';
-    typewriterSoundEnabled = localStorage.getItem('oros_typewriter_sound') === 'true';
-    smartPasteEnabled = localStorage.getItem('oros_smart_paste') !== 'false';
-    focusModeEnabled = localStorage.getItem('oros_focus_mode') === 'true';
-    if (typewriterSoundEnabled) initTypewriterSound();
-    if (focusModeEnabled) document.body.classList.add('focus-mode');
+  // ===== INITIALIZATION =====
+  function init() {
+    loadTranslations();
+    applyLanguage(localStorage.getItem('oros_lang') || 'en');
     loadAutoCorrections();
-
-    // Init tabs
-    loadTabs();
-    getTabsApi().on('switch', onTabSwitch);
-
-    // Setup handlers
-    setupEditorInput();
+    bindDOMElements();
     setupFormatButtons();
-    setupAllButtonBindings();
+    setupEditorInput();
     setupKeyboardShortcuts();
-    setupSettingsTabs();
-    setupExportDropdown();
-    setupDropdownToggles();
-
-    // Selection change
-    document.addEventListener('selectionchange', function() {
-      if (richEditor && document.activeElement === richEditor) {
-        clearTimeout(selectionTimer);
-        selectionTimer = setTimeout(function() { updateToolbarStates(); detectCurrentStyle(); }, 100);
+    loadTabs();
+    onTabSwitch(getActiveTab());
+    if (smartTypographyEnabled) document.addEventListener('keyup', function(e) {
+      if (!isReplacing && !goalLockTriggered) handleSmartTypography();
+    });
+    if (typewriterSoundEnabled && typewriterAudioCtx) document.addEventListener('keypress', function(e) {
+      if (document.activeElement === richEditor && !e.ctrlKey && !e.altKey && e.key.length === 1 && /[a-zA-Z0-9\u03B1-\u03C9\s]/.test(e.key)) {
+        playTypewriterSound();
       }
     });
+    loadSettingsValues();
+    initWindowResize();
+    
+    if (typeof window.onbeforeinstallprompt === 'function' || 'onbeforeinstallprompt' in window) {
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        var installBtn = document.getElementById('btn-install-app');
+        if (installBtn) {
+          installBtn.style.display = '';
+          installBtn.onclick = function() {
+            if (window.deferredPrompt) {
+              window.deferredPrompt.prompt();
+              window.deferredPrompt.userChoice.then(function(choiceResult) {
+                window.deferredPrompt = null;
+                installBtn.style.display = 'none';
+              });
+            }
+          };
+        }
+      });
+    }
 
-    // File input
-    var fi = document.getElementById('file-input-hidden');
-    if (fi) fi.addEventListener('change', function(e) {
-      if (e.target.files && e.target.files.length > 0) { openFile(e.target.files[0]); e.target.value = ''; }
+    window.addEventListener('load', function() {
+      updateStats();
+      updateReadingProgress();
+      updateToolbarStates();
+      applyPageSettings();
     });
 
-    // Find input handlers
-    if (findInput) {
-      findInput.addEventListener('input', function() { clearTimeout(findDebounceTimer); findDebounceTimer = setTimeout(highlightMatches, 300); });
-      findInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); navigateMatch(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') toggleFindBar(); });
-    }
-    if (replaceInput) replaceInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doReplace(false); } });
-    if (findFormatFilter) findFormatFilter.addEventListener('change', highlightMatches);
+    window.addEventListener('resize', function() {
+      clearTimeout(windowResizeDebounce);
+      windowResizeDebounce = setTimeout(function() {
+        updateReadingProgress();
+        highlightFocusedParagraph();
+      }, 100);
+    });
 
-    // Comment input
-    var ci = document.getElementById('comment-input');
-    if (ci) ci.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addComment(); } });
-
-    // Footnote input
-    var fi2 = document.getElementById('footnote-text-input');
-    if (fi2) fi2.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); insertFootnote(); } });
-
-    // Link input
-    var lui = document.getElementById('link-url-input');
-    if (lui) lui.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); insertOrUpdateLink(); } });
-
-    // Styles select
-    if (stylesSelect) stylesSelect.addEventListener('change', function() { applyNamedStyle(stylesSelect.value); });
-
-    // Stats overlay click
-    if (statsOverlay) statsOverlay.addEventListener('click', function() { statsExpanded = !statsExpanded; if (statsDetailed) statsDetailed.style.display = statsExpanded ? 'block' : 'none'; updateStats(); });
-
-    // Metadata inputs
-    var metaInputs = [metaTitle, metaAuthor, metaTags, metaCategory];
-    for (var mi = 0; mi < metaInputs.length; mi++) {
-      (function(inp) { if (inp) inp.addEventListener('blur', function() { saveCurrentTabMetadata(true); }); })(metaInputs[mi]);
-    }
-
-    // Load goal state
-    var savedTarget = localStorage.getItem('oros_goal_target');
-    if (savedTarget) {
-      goalTarget = parseInt(savedTarget);
-      goalUnit = localStorage.getItem('oros_goal_unit') || 'words';
-      goalLockEnabled = localStorage.getItem('oros_goal_lock') === 'true';
-      if (statsDefaultEl) statsDefaultEl.style.display = 'none';
-      if (statsGoalEl) statsGoalEl.style.display = '';
-    }
-
-        // Init autosave interval
-    setInterval(function() {
-      if (activeTabId && richEditor) {
-        saveCurrentTabContent();
-      }
-    }, 30000);
-
-    // Autosave indicator refresh
-    setInterval(updateSaveIndicator, 30000);
-
-    // beforeunload handler — only warn if unsaved changes exist
-    var beforeUnloadHandler = function(e) {
-      var tab = getActiveTab();
-      if (!tab || !tab.lastSaved || (Date.now() - tab.lastSaved) > 5000) {
-        var msg = getTrans('warn_unsaved_changes') || 'You have unsaved changes.';
-        e.returnValue = msg;
-        return msg;
+    setInterval(updateSaveIndicator, 10000);
+    
+    var confirmUnload = function(e) {
+      if (activeTabId && activeTabId !== 'index-home') {
+        e.preventDefault();
+        e.returnValue = getTrans('confirm_leave') || 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
       }
     };
-    window.addEventListener('beforeunload', beforeUnloadHandler);
+    window.addEventListener('beforeunload', confirmUnload);
 
-    // Window resize handler
-    var resizeTimer = null;
-    window.addEventListener('resize', function() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        if (richWrapper) {
-          if (window.innerWidth <= 768) {
-            richWrapper.style.height = (window.innerHeight - 120) + 'px';
-          } else {
-            richWrapper.style.height = (window.innerHeight - 140) + 'px';
-          }
-        }
-        if (focusModeEnabled) highlightFocusedParagraph();
-      }, 150);
-    });
-
-    // Trigger initial resize
-    if (richWrapper) {
-      if (window.innerWidth <= 768) {
-        richWrapper.style.height = (window.innerHeight - 120) + 'px';
-      } else {
-        richWrapper.style.height = (window.innerHeight - 140) + 'px';
-      }
-    }
-
-    // Setup RichEditor focus/blur handlers
-    if (richEditor) {
-      richEditor.addEventListener('focus', function() {
-        if (focusModeEnabled) highlightFocusedParagraph();
-      });
-      richEditor.addEventListener('blur', function() {
-        // Save on blur
-        saveCurrentTabContent();
-      });
-      richEditor.addEventListener('keyup', function(e) {
-        // Handle keyboard typing sounds and auto-corrections
-        if (typewriterSoundEnabled && !isReplacing && !goalLockTriggered && e.key.length === 1) {
-          try {
-            if (typewriterAudioCtx && typewriterAudioBuffer) {
-              var src = typewriterAudioCtx.createBufferSource();
-              src.buffer = typewriterAudioBuffer;
-              var gain = typewriterAudioCtx.createGain();
-              gain.gain.value = 0.08;
-              src.connect(gain);
-              gain.connect(typewriterAudioCtx.destination);
-              src.start(0);
-            }
-          } catch(e2) {}
-        }
-        // Auto-corrections
-        if (!isReplacing && !goalLockTriggered) {
-          applyAutoCorrections();
-        }
-        // Smart typography on space, punctuation
-        if (smartTypographyEnabled && !isReplacing && !goalLockTriggered) {
-          if (e.key === ' ' || e.key === "'" || e.key === '"' || e.key === '-') {
-            handleSmartTypography();
-          }
-        }
-      });
-    }
-
-    // Setup auto-snapshot interval (every 5 minutes)
-    setInterval(function() {
-      if (activeTabId && richEditor && getTextContent().trim().length > 0) {
-        var tab = getActiveTab();
-        if (tab && tab.lastSaved && (Date.now() - tab.lastSaved) > 300000) {
-          addVersionSnapshot(activeTabId);
-        }
-      }
-    }, 300000);
-
-    // Setup click-outside for metadata panel
-    if (metadataPanel) {
-      document.addEventListener('click', function(e) {
-        if (metadataPanel.style.display !== 'none' &&
-            !metadataPanel.contains(e.target) &&
-            !e.target.closest('#btn-metadata') &&
-            !e.target.closest('.dialog-overlay') &&
-            !e.target.closest('.settings-modal')) {
-          saveCurrentTabMetadata(true);
-          metadataPanel.style.display = 'none';
-        }
-      });
-    }
-
-    // Setup keyboard hint for tab rename (double-click on tab label)
-    if (tabBar) {
-      tabBar.addEventListener('dblclick', function(e) {
-        var label = e.target.closest('.tab-label');
-        if (label) {
-          var tabItem = label.closest('.tab-item');
-          if (tabItem) {
-            var tabId = tabItem.getAttribute('data-tab-id');
-            if (tabId) {
-              var newName = prompt(getTrans('tab_rename_prompt') || 'Rename tab:', label.textContent);
-              if (newName && newName.trim()) {
-                renameTab(tabId, newName.trim());
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // Setup paste handler on document for file drops
-    if (richEditor) {
-      richEditor.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        richEditor.classList.add('drag-over');
-      });
-      richEditor.addEventListener('dragleave', function() {
-        richEditor.classList.remove('drag-over');
-      });
-      richEditor.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        richEditor.classList.remove('drag-over');
-        var files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-          for (var i = 0; i < files.length; i++) {
-            if (files[i].type.startsWith('image/')) {
-              var reader = new FileReader();
-              reader.onload = (function(file) {
-                return function(ev) {
-                  insertImage(ev.target.result, file.name);
-                };
-              })(files[i]);
-              reader.readAsDataURL(files[i]);
-            } else {
-              openFile(files[i]);
-            }
-          }
-        } else {
-          var html = e.dataTransfer.getData('text/html');
-          var text = e.dataTransfer.getData('text/plain');
-          if (html) {
-            document.execCommand('insertHTML', false, html);
-          } else if (text) {
-            document.execCommand('insertText', false, text);
-          }
-          saveCurrentTabContent();
-          updateStats();
-        }
-      });
-    }
-
-    // Context menu prevention (optional - remove if needed)
-    if (richEditor) {
-      richEditor.addEventListener('contextmenu', function(e) {
-        // Allow default context menu
-      });
-    }
-
-    // Initial state
-    if (tabsState.length === 0) {
-      createTab({ content: '<p><br></p>', metadata: { title: getTrans('tab_default_name') || 'Untitled' } });
-    } else {
-      onTabSwitch(activeTabId);
-    }
-
-    // Initial stats
-    updateStats();
-    updateGoalProgress();
-    updateSaveIndicator();
-    updateReadingProgress();
-    applyPageSettings();
-
-    // Mark initialized
-    writerInitialized = true;
-
-    console.log('orOS Writer initialized successfully.');
-
-    // Dispatch ready event
-    try {
-      document.dispatchEvent(new CustomEvent('writer:ready'));
-    } catch(e) {}
-
-    // Apply body class
-    document.body.classList.add('writer-app-loaded');
+    console.log('orOS Writer initialized successfully');
+    orOSWriter.ready = true;
   }
 
-  // ===== PRIVATE HELPER: bindClick =====
-  function bindClick(id, handler) {
-    var el = typeof id === 'string' ? document.getElementById(id) : id;
-    if (el) el.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      try { handler(); } catch(ex) { console.error('Click handler error for', id, ex); }
-    });
-  }
-
-  // ===== PRIVATE HELPER: escapeXml =====
-  function escapeXml(text) {
-    if (!text) return '';
-    return text.replace(/&/g, '&amp;')
-               .replace(/</g, '&lt;')
-               .replace(/>/g, '&gt;')
-               .replace(/"/g, '&quot;')
-               .replace(/'/g, '&apos;');
-  }
-
-  // ===== PRIVATE HELPER: downloadBlob =====
-  function downloadBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-  }
-
-  // ===== PRIVATE HELPER: getFileName =====
-  function getFileName(extension) {
-    var base = 'untitled';
-    var tab = getActiveTab();
-    if (tab && tab.metadata && tab.metadata.title) {
-      base = tab.metadata.title.replace(/[^a-zA-Z0-9\u0370-\u03FF\u0391-\u03C9\s\-]/g, '').trim().replace(/\s+/g, '_').toLowerCase();
-      if (!base) base = 'untitled';
+  function playTypewriterSound() {
+    if (!typewriterAudioBuffer) return;
+    if (!typewriterAudioCtx) {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) typewriterAudioCtx = new AC();
+      } catch(e) { return; }
     }
-    return base + '.' + extension;
+    var src = typewriterAudioCtx.createBufferSource();
+    src.buffer = typewriterAudioBuffer;
+    var gain = typewriterAudioCtx.createGain();
+    gain.gain.value = 0.05;
+    src.connect(gain);
+    gain.connect(typewriterAudioCtx.destination);
+    src.start(0);
   }
 
-  // ===== PRIVATE HELPER: formatDate =====
-  function formatDate(d) {
-    var pad = function(n) { return n < 10 ? '0' + n : n; };
-    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
-      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }
-
-  // ===== PRIVATE HELPER: formatNumber =====
-  function formatNumber(n) {
-    if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
-      return new Intl.NumberFormat(getCurrentLang() === 'el' ? 'el-GR' : 'en-US').format(n);
-    }
-    return n.toString();
-  }
-
-  // ===== PRIVATE HELPER: getCurrentLang =====
-  function getCurrentLang() {
-    try {
-      return localStorage.getItem('oros_lang') || (navigator.language || 'en').substring(0, 2);
-    } catch(e) { return 'en'; }
-  }
-
-  // ===== PRIVATE HELPER: toggleGoalBar =====
-  function toggleGoalBar() {
-    if (!goalBar) return;
-    if (goalBar.style.display === 'flex') {
-      saveCurrentTabMetadata(true);
-      goalBar.style.display = 'none';
-    } else {
-      if (goalTargetInput) goalTargetInput.value = goalTarget ? goalTarget.toString() : '500';
-      if (goalUnitSelect) goalUnitSelect.value = goalUnit || 'words';
-      if (goalLockCheckbox) goalLockCheckbox.checked = goalLockEnabled;
-      goalBar.style.display = 'flex';
-      if (goalTargetInput) goalTargetInput.focus();
+  function initWindowResize() {
+    var resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && richWrapper) {
+      resizeObserver = new ResizeObserver(function(entries) {
+        updateReadingProgress();
+        highlightFocusedParagraph();
+      });
+      resizeObserver.observe(richWrapper);
     }
   }
 
   // ===== PUBLIC API =====
-  return {
+  orOSWriter = {
     init: init,
+    tabs: getTabsApi(),
+    settings: {
+      save: saveSettings,
+      load: loadSettingsValues
+    },
+    export: handleExport,
+    insertLoremIpsum: insertLoremIpsum,
+    clearContent: clearContent,
+    addComment: addComment,
+    toggleFocusMode: toggleFocusMode,
+    toggleReadingMode: toggleReadingMode,
+    getActiveTab: getActiveTab,
     createTab: createTab,
     closeTab: closeTabById,
-    switchTab: switchTab,
-    getTabs: function() { return tabsState.slice(); },
-    getActiveTabId: function() { return activeTabId; },
-    exportToFormat: handleExport,
-    insertText: function(text) { document.execCommand('insertText', false, text); saveCurrentTabContent(); updateStats(); },
-    getContent: function() { return richEditor ? richEditor.innerHTML : ''; },
-    setContent: function(html) { if (richEditor) { richEditor.innerHTML = html; saveCurrentTabContent(); updateStats(); } },
-    addVersionSnapshot: function(tid) { addVersionSnapshot(tid || activeTabId); },
-    getVersions: getVersionsForTab,
-    restoreVersion: restoreVersion
+    switchTab: switchTab
   };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
