@@ -2477,31 +2477,83 @@
     }
   });
 
-    // ===== PWA INSTALL HANDLING =====
+      // ===== PWA INSTALL HANDLING =====
   var beforeInstallPrompt = null;
-  var installPromptShown = false;
-  
+
   window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    beforeInstallPrompt = e;
-    
     var installBtn = document.getElementById('btn-install-app');
     if (installBtn) {
+      e.preventDefault();
+      beforeInstallPrompt = e;
       installBtn.style.display = '';
       installBtn.onclick = function() {
-        if (!beforeInstallPrompt || installPromptShown) return;
-        installPromptShown = true;
+        if (!beforeInstallPrompt) return;
         beforeInstallPrompt.prompt();
-        
         beforeInstallPrompt.userChoice.then(function(choiceResult) {
           if (choiceResult.outcome === 'accepted') {
             showToast(getTrans('toast_app_installed') || 'App installed');
           }
           beforeInstallPrompt = null;
+          installBtn.style.display = 'none';
         });
       };
     }
+    // If no install button exists in DOM, do NOT call preventDefault()
+    // — let the browser handle the prompt naturally
   });
+  
+    // ===== MISSING UTILITY FUNCTIONS =====
+  function loadSettings() {
+    smartTypographyEnabled = localStorage.getItem('oros_smart_typography') !== 'false';
+    typewriterSoundEnabled = localStorage.getItem('oros_typewriter_sound') === 'true';
+    smartPasteEnabled = localStorage.getItem('oros_smart_paste') !== 'false';
+    focusModeEnabled = false;
+    readingModeEnabled = false;
+    readingProgressEnabled = localStorage.getItem('oros_reading_progress') !== 'false';
+    hideStats = localStorage.getItem('oros_hide_stats') === 'true';
+  }
+
+  function applyTheme() {
+    // Dark mode is the only mode — no toggle
+    document.body.classList.add('dark-theme');
+  }
+
+  function autoSaveCheck() {
+    var tab = getActiveTab();
+    if (!tab || !richEditor) return;
+    var currentContent = richEditor.innerHTML;
+    if (tab.content !== currentContent) {
+      tab.content = currentContent;
+      tab.hasUnsavedChanges = false;
+      if (!tab.metadata) tab.metadata = {};
+      tab.metadata.modified = new Date().toISOString();
+      persistTabs();
+      showSaveIndicator();
+    }
+  }
+
+  function showSaveIndicator() {
+    var indicator = document.getElementById('save-indicator');
+    if (!indicator) return;
+    if (localStorage.getItem('oros_hide_save_indicator') === 'true') return;
+    indicator.textContent = getTrans('text_saved') || 'Saved';
+    indicator.classList.add('visible');
+    clearTimeout(showSaveIndicator._timer);
+    showSaveIndicator._timer = setTimeout(function() {
+      indicator.classList.remove('visible');
+    }, 1500);
+  }
+
+  function toggleZenMode() {
+    document.body.classList.toggle('zen-mode');
+    var isZen = document.body.classList.contains('zen-mode');
+    showToast(isZen ? 'Zen mode on' : 'Zen mode off');
+    clampToViewport();
+  }
+
+  function hasSaveIndicatorHidden() {
+    return localStorage.getItem('oros_hide_save_indicator') === 'true';
+  }
 
   // ===== INITIALIZATION =====
   function init() {
