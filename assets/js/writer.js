@@ -1984,10 +1984,46 @@ function exportMarkdown() {
     showToast(getTrans('toast_cleared') || 'Content cleared');
   }
 
-  // ===== SETTINGS MODAL =====
-// ΠΡΟΣΟΧΗ: Διορθωμένη η γραμμή με το smartTypographyEnabled (γραφία ""'))
+    // ===== SETTINGS MODAL =====
+  function toggleSettingsModal() {
+    var modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    if (modal.classList.contains('active')) {
+      modal.classList.remove('active');
+    } else {
+      modal.classList.add('active');
+      loadSettingsValues();
+    }
+  }
 
-function saveSettings() {
+  function loadSettingsValues() {
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.checked = val; };
+    set('toggle-hide-save-indicator', hasSaveIndicatorHidden());
+    set('toggle-hide-stats', localStorage.getItem('oros_hide_stats') === 'true');
+    set('toggle-reading-progress', localStorage.getItem('oros_reading_progress') !== 'false');
+    set('toggle-smart-typography', smartTypographyEnabled);
+    set('toggle-typewriter-sound', typewriterSoundEnabled);
+    set('toggle-smart-paste', smartPasteEnabled);
+    set('toggle-focus-mode', focusModeEnabled);
+    applyToolbarVisibilityPrefs();
+  }
+
+  function applyToolbarVisibilityPrefs() {
+    var map = {
+      'btn-goal': 'oros_hide_goal_btn',
+      'btn-outline': 'oros_hide_outline_btn',
+      'btn-metadata': 'oros_hide_metadata_btn',
+      'btn-find': 'oros_hide_find_btn',
+      'btn-wordfreq': 'oros_hide_wordfreq_btn',
+      'btn-lorem': 'oros_hide_lorem_btn'
+    };
+    for (var id in map) {
+      var btn = document.getElementById(id);
+      if (btn) btn.style.display = localStorage.getItem(map[id]) === 'true' ? 'none' : '';
+    }
+  }
+
+  function saveSettings() {
     var get = function(id) { var el = document.getElementById(id); return el ? el.checked : false; };
     localStorage.setItem('oros_hide_save_indicator', get('toggle-hide-save-indicator') ? 'true' : 'false');
     localStorage.setItem('oros_hide_stats', get('toggle-hide-stats') ? 'true' : 'false');
@@ -1998,14 +2034,11 @@ function saveSettings() {
     localStorage.setItem('oros_hide_find_btn', get('toggle-hide-find-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_wordfreq_btn', get('toggle-hide-wordfreq-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_lorem_btn', get('toggle-hide-lorem-btn') ? 'true' : 'false');
-    
-    // ΔΙΟΡΘΩΣΗ: Τώρα σωστά κλεισμένο
-    smartTypographyEnabled = get('toggle-smart-typography'); 
+    smartTypographyEnabled = get('toggle-smart-typography');
     localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : 'false');
-    smartPasteEnabled = get('toggle-smart-paste'); 
+    smartPasteEnabled = get('toggle-smart-paste');
     localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
-    
-    // Page size setting
+
     var pageSizeSelect = document.getElementById('setting-page-size');
     if (pageSizeSelect) {
       var ps = pageSizeSelect.value;
@@ -2017,10 +2050,10 @@ function saveSettings() {
         applyPageSettings();
       }
     }
-    
+
     applyToolbarVisibilityPrefs();
     showToast(getTrans('settings_saved') || 'Settings saved');
-}
+  }
 
   // ===== HELP DIALOG =====
   function toggleHelpDialog() {
@@ -2194,31 +2227,26 @@ function saveSettings() {
     loadSettingsValues();
     initWindowResize();
     
-    // ===== PWA INSTALL HANDLING =====
-if (window.addEventListener) {
+        // ===== PWA INSTALL HANDLING =====
     window.addEventListener('beforeinstallprompt', function(e) {
-        // Prevent Chrome 67+ from showing mini install banner
+      var installBtn = document.getElementById('btn-install-app');
+      if (installBtn) {
         e.preventDefault();
-        
-        // Store the deferred prompt for later use
         window.deferredPrompt = e;
-        
-        // Show custom install button if it exists
-        var installBtn = document.getElementById('btn-install-app');
-        if (installBtn) {
-            installBtn.style.display = '';
-            installBtn.onclick = function() {
-                if (window.deferredPrompt) {
-                    window.deferredPrompt.prompt();
-                    window.deferredPrompt.userChoice.then(function(choiceResult) {
-                        window.deferredPrompt = null;
-                        installBtn.style.display = 'none';
-                    });
-                }
-            };
-        }
+        installBtn.style.display = '';
+        installBtn.onclick = function() {
+          if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            window.deferredPrompt.userChoice.then(function() {
+              window.deferredPrompt = null;
+              installBtn.style.display = 'none';
+            });
+          }
+        };
+      }
+      // Αν δεν υπάρχει install button, δεν καλούμε preventDefault
+      // ώστε να μην εμφανιστεί το browser warning
     });
-}
 
     window.addEventListener('load', function() {
       updateStats();
