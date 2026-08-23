@@ -1695,71 +1695,69 @@
   }
 
   // ===== EXPORT: MARKDOWN =====
-function exportMarkdown() {
+  function exportMarkdown() {
     var md = '';
     var blocks = richEditor.children;
     function procInline(node) {
-        var r = '';
-        if (!node || !node.childNodes) return r;
-        for (var i = 0; i < node.childNodes.length; i++) {
-            var c = node.childNodes[i];
-            if (c.nodeType === 3) { 
-                r += c.textContent; 
-            } else if (c.nodeType === 1) {
-                var ct = c.tagName.toLowerCase();
-                if (ct === 'strong' || ct === 'b') r += '**' + procInline(c) + '**';
-                else if (ct === 'em' || ct === 'i') r += '*' + procInline(c) + '*';
-                else if (ct === 's' || ct === 'del') r += '~~' + procInline(c) + '~~';
-                else if (ct === 'code') r += '`' + c.textContent + '`';
-                else if (ct === 'sub') r += '~' + procInline(c) + '~';
-                else if (ct === 'sup') r += '^' + procInline(c) + '^';
-                else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href')||'') + ')';
-                else if (ct === 'br') r += '\n';
-                else if (ct === 'img') r += '![' + (c.getAttribute('alt')||'') + '](' + (c.getAttribute('src')||'') + ')';
-                else r += procInline(c);
-            }
+      var r = '';
+      for (var i = 0; i < node.childNodes.length; i++) {
+        var c = node.childNodes[i];
+        if (c.nodeType === 3) { r += c.textContent; }
+        else if (c.nodeType === 1) {
+          var ct = c.tagName.toLowerCase();
+          if (ct === 'strong' || ct === 'b') r += '**' + procInline(c) + '**';
+          else if (ct === 'em' || ct === 'i') r += '*' + procInline(c) + '*';
+          else if (ct === 's' || ct === 'del') r += '~~' + procInline(c) + '~~';
+          else if (ct === 'code') r += '`' + c.textContent + '`';
+          else if (ct === 'sub') r += '~' + procInline(c) + '~';
+          else if (ct === 'sup') r += '^' + procInline(c) + '^';
+          else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href')||'') + ')';
+          else if (ct === 'br') r += '\n';
+          else if (ct === 'img') r += '![' + (c.getAttribute('alt')||'') + '](' + (c.getAttribute('src')||'') + ')';
+          else r += procInline(c);
         }
-        return r;
+      }
+      return r;
     }
     for (var i = 0; i < blocks.length; i++) {
-        var n = blocks[i], tag = n.tagName ? n.tagName.toLowerCase() : '';
-        if (tag === 'h1') md += '# ' + (n.textContent || '').trim() + '\n\n';
-        else if (tag === 'h2') md += '## ' + (n.textContent || '').trim() + '\n\n';
-        else if (tag === 'h3') md += '### ' + (n.textContent || '').trim() + '\n\n';
-        else if (tag === 'h4') md += '#### ' + (n.textContent || '').trim() + '\n\n';
-        else if (tag === 'blockquote') md += '> ' + (n.textContent || '').replace(/\n/g, '\n> ') + '\n\n';
-        else if (tag === 'pre') md += '```\n' + (n.textContent || '') + '\n```\n\n';
-        else if (tag === 'ul') {
-            var items = n.querySelectorAll(':scope > li');
-            for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]).replace(/\n/g, ' ') + '\n';
-            md += '\n';
+      var n = blocks[i], tag = n.tagName ? n.tagName.toLowerCase() : '';
+      if (tag === 'h1') md += '# ' + n.textContent + '\n\n';
+      else if (tag === 'h2') md += '## ' + n.textContent + '\n\n';
+      else if (tag === 'h3') md += '### ' + n.textContent + '\n\n';
+      else if (tag === 'h4') md += '#### ' + n.textContent + '\n\n';
+      else if (tag === 'blockquote') md += '> ' + n.textContent.replace(/\n/g,'\n> ') + '\n\n';
+      else if (tag === 'pre') md += '```\n' + n.textContent + '\n```\n\n';
+      else if (tag === 'ul') {
+        var items = n.querySelectorAll(':scope > li');
+        for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]) + '\n';
+        md += '\n';
+      }
+      else if (tag === 'ol') {
+        var items2 = n.querySelectorAll(':scope > li');
+        for (var o = 0; o < items2.length; o++) md += (o+1) + '. ' + procInline(items2[o]) + '\n';
+        md += '\n';
+      }
+      else if (tag === 'table' && n.classList.contains('custom-table')) {
+        var rows = n.querySelectorAll('tr');
+        if (rows.length > 0) {
+          var hc = rows[0].querySelectorAll('th, td');
+          md += '| ' + Array.from(hc).map(function(c){return c.textContent}).join(' | ') + ' |\n';
+          md += '|' + Array.from(hc).map(function(){return '---'}).join('|') + '|\n';
+          for (var ri = 1; ri < rows.length; ri++) {
+            var cells = rows[ri].querySelectorAll('td, th');
+            md += '| ' + Array.from(cells).map(function(c){return c.textContent}).join(' | ') + ' |\n';
+          }
+          md += '\n';
         }
-        else if (tag === 'ol') {
-            var items2 = n.querySelectorAll(':scope > li');
-            for (var o = 0; o < items2.length; o++) md += (o+1) + '. ' + procInline(items2[o]).replace(/\n/g, ' ') + '\n';
-            md += '\n';
-        }
-        else if (tag === 'table' && n.classList.contains('custom-table')) {
-            var rows = n.querySelectorAll('tr');
-            if (rows.length > 0) {
-                var hc = rows[0].querySelectorAll('th, td');
-                md += '| ' + Array.from(hc).map(function(cell){return cell.textContent.trim();}).join(' | ') + ' |\n';
-                md += '|' + Array.from(hc).map(function(){return '---';}).join('|') + '|\n';
-                for (var ri = 1; ri < rows.length; ri++) {
-                    var cells = rows[ri].querySelectorAll('td, th');
-                    md += '| ' + Array.from(cells).map(function(cell){return cell.textContent.trim();}).join(' | ') + ' |\n';
-                }
-                md += '\n';
-            }
-        }
-        else if (tag === 'div' && n.classList.contains('page-break-marker')) md += '\n---\n\n';
-        else if (tag === 'hr') md += '\n---\n\n';
-        else if (tag === 'img') md += '![' + (n.getAttribute('alt')||'') + '](' + (n.getAttribute('src')||'') + ')\n\n';
-        else md += procInline(n).replace(/\n/g, ' ').trim() + '\n\n';
+      }
+      else if (tag === 'div' && n.classList.contains('page-break-marker')) md += '\n---\n\n';
+      else if (tag === 'hr') md += '\n---\n\n';
+      else if (tag === 'img') md += '![' + (n.getAttribute('alt')||'') + '](' + (n.getAttribute('src')||'') + ')\n\n';
+      else md += procInline(n) + '\n\n';
     }
     downloadBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), getFileName('md'));
     showToast(getTrans('toast_exported') || 'Exported');
-}
+  }
 
   // ===== EXPORT: RTF =====
   function exportRtf() {
@@ -1984,7 +1982,7 @@ function exportMarkdown() {
     showToast(getTrans('toast_cleared') || 'Content cleared');
   }
 
-    // ===== SETTINGS MODAL =====
+  // ===== SETTINGS MODAL =====
   function toggleSettingsModal() {
     var modal = document.getElementById('settings-modal');
     if (!modal) return;
@@ -2005,6 +2003,7 @@ function exportMarkdown() {
     set('toggle-typewriter-sound', typewriterSoundEnabled);
     set('toggle-smart-paste', smartPasteEnabled);
     set('toggle-focus-mode', focusModeEnabled);
+    // Hide/show toolbar buttons based on stored prefs
     applyToolbarVisibilityPrefs();
   }
 
@@ -2034,11 +2033,10 @@ function exportMarkdown() {
     localStorage.setItem('oros_hide_find_btn', get('toggle-hide-find-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_wordfreq_btn', get('toggle-hide-wordfreq-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_lorem_btn', get('toggle-hide-lorem-btn') ? 'true' : 'false');
-    smartTypographyEnabled = get('toggle-smart-typography');
-    localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : 'false');
-    smartPasteEnabled = get('toggle-smart-paste');
-    localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
-
+    smartTypographyEnabled = get('toggle-smart-typography'); localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : ''');
+    smartPasteEnabled = get('toggle-smart-paste'); localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
+    
+    // Page size setting
     var pageSizeSelect = document.getElementById('setting-page-size');
     if (pageSizeSelect) {
       var ps = pageSizeSelect.value;
@@ -2050,7 +2048,7 @@ function exportMarkdown() {
         applyPageSettings();
       }
     }
-
+    
     applyToolbarVisibilityPrefs();
     showToast(getTrans('settings_saved') || 'Settings saved');
   }
@@ -2227,26 +2225,24 @@ function exportMarkdown() {
     loadSettingsValues();
     initWindowResize();
     
-        // ===== PWA INSTALL HANDLING =====
-    window.addEventListener('beforeinstallprompt', function(e) {
-      var installBtn = document.getElementById('btn-install-app');
-      if (installBtn) {
+    if (typeof window.onbeforeinstallprompt === 'function' || 'onbeforeinstallprompt' in window) {
+      window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
-        window.deferredPrompt = e;
-        installBtn.style.display = '';
-        installBtn.onclick = function() {
-          if (window.deferredPrompt) {
-            window.deferredPrompt.prompt();
-            window.deferredPrompt.userChoice.then(function() {
-              window.deferredPrompt = null;
-              installBtn.style.display = 'none';
-            });
-          }
-        };
-      }
-      // Αν δεν υπάρχει install button, δεν καλούμε preventDefault
-      // ώστε να μην εμφανιστεί το browser warning
-    });
+        var installBtn = document.getElementById('btn-install-app');
+        if (installBtn) {
+          installBtn.style.display = '';
+          installBtn.onclick = function() {
+            if (window.deferredPrompt) {
+              window.deferredPrompt.prompt();
+              window.deferredPrompt.userChoice.then(function(choiceResult) {
+                window.deferredPrompt = null;
+                installBtn.style.display = 'none';
+              });
+            }
+          };
+        }
+      });
+    }
 
     window.addEventListener('load', function() {
       updateStats();
