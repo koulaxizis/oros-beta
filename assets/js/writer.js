@@ -1985,46 +1985,9 @@ function exportMarkdown() {
   }
 
   // ===== SETTINGS MODAL =====
-  function toggleSettingsModal() {
-    var modal = document.getElementById('settings-modal');
-    if (!modal) return;
-    if (modal.classList.contains('active')) {
-      modal.classList.remove('active');
-    } else {
-      modal.classList.add('active');
-      loadSettingsValues();
-    }
-  }
+// ΠΡΟΣΟΧΗ: Διορθωμένη η γραμμή με το smartTypographyEnabled (γραφία ""'))
 
-  function loadSettingsValues() {
-    var set = function(id, val) { var el = document.getElementById(id); if (el) el.checked = val; };
-    set('toggle-hide-save-indicator', hasSaveIndicatorHidden());
-    set('toggle-hide-stats', localStorage.getItem('oros_hide_stats') === 'true');
-    set('toggle-reading-progress', localStorage.getItem('oros_reading_progress') !== 'false');
-    set('toggle-smart-typography', smartTypographyEnabled);
-    set('toggle-typewriter-sound', typewriterSoundEnabled);
-    set('toggle-smart-paste', smartPasteEnabled);
-    set('toggle-focus-mode', focusModeEnabled);
-    // Hide/show toolbar buttons based on stored prefs
-    applyToolbarVisibilityPrefs();
-  }
-
-  function applyToolbarVisibilityPrefs() {
-    var map = {
-      'btn-goal': 'oros_hide_goal_btn',
-      'btn-outline': 'oros_hide_outline_btn',
-      'btn-metadata': 'oros_hide_metadata_btn',
-      'btn-find': 'oros_hide_find_btn',
-      'btn-wordfreq': 'oros_hide_wordfreq_btn',
-      'btn-lorem': 'oros_hide_lorem_btn'
-    };
-    for (var id in map) {
-      var btn = document.getElementById(id);
-      if (btn) btn.style.display = localStorage.getItem(map[id]) === 'true' ? 'none' : '';
-    }
-  }
-
-  function saveSettings() {
+function saveSettings() {
     var get = function(id) { var el = document.getElementById(id); return el ? el.checked : false; };
     localStorage.setItem('oros_hide_save_indicator', get('toggle-hide-save-indicator') ? 'true' : 'false');
     localStorage.setItem('oros_hide_stats', get('toggle-hide-stats') ? 'true' : 'false');
@@ -2035,8 +1998,12 @@ function exportMarkdown() {
     localStorage.setItem('oros_hide_find_btn', get('toggle-hide-find-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_wordfreq_btn', get('toggle-hide-wordfreq-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_lorem_btn', get('toggle-hide-lorem-btn') ? 'true' : 'false');
-    smartTypographyEnabled = get('toggle-smart-typography'); localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : ''');
-    smartPasteEnabled = get('toggle-smart-paste'); localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
+    
+    // ΔΙΟΡΘΩΣΗ: Τώρα σωστά κλεισμένο
+    smartTypographyEnabled = get('toggle-smart-typography'); 
+    localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : 'false');
+    smartPasteEnabled = get('toggle-smart-paste'); 
+    localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
     
     // Page size setting
     var pageSizeSelect = document.getElementById('setting-page-size');
@@ -2053,7 +2020,7 @@ function exportMarkdown() {
     
     applyToolbarVisibilityPrefs();
     showToast(getTrans('settings_saved') || 'Settings saved');
-  }
+}
 
   // ===== HELP DIALOG =====
   function toggleHelpDialog() {
