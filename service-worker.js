@@ -1,27 +1,28 @@
 // ============================================
 // orOS Service Worker
 // Cache-first strategy with network fallback
-// Version: 0.9.1
+// Version: 1.0.0
 // ============================================
 
-var CACHE_NAME = 'oros-v0.9.1';
+var CACHE_NAME = 'oros-v1.0.0';
 var CACHE_URLS = [
   './',
   './index.html',
-  './editor.html',
+  './writer.html',
   './converter.html',
   './kanban.html',
   './notes.html',
   './config.js',
   './manifest.json',
   './favicon.svg',
-  './translations.json',
+  './assets/js/translations.json',
   // CSS
   './assets/css/style.css',
   './assets/css/icons.css',
   './assets/css/converter.css',
   './assets/css/kanban.css',
   './assets/css/notes.css',
+  './assets/css/writer.css',
   // JS — Core
   './assets/js/global-settings.js',
   './assets/js/seo.js',
@@ -29,8 +30,10 @@ var CACHE_URLS = [
   // JS — Components
   './assets/js/components/header.js',
   './assets/js/components/footer.js',
+  // JS — Libraries
+  './assets/js/lib/jszip.min.js',
   // JS — App Logic
-  './assets/js/editor.js',
+  './assets/js/writer.js',
   './assets/js/converter.js',
   './assets/js/kanban.js',
   './assets/js/notes.js',
@@ -43,10 +46,12 @@ var CACHE_URLS = [
   './assets/fonts/forkawesome-webfont.woff2',
   './assets/fonts/forkawesome-webfont.woff',
   './assets/fonts/forkawesome-webfont.ttf',
+  // Prompter
   './prompter.html',
-'./assets/css/prompter.css',
-'./assets/js/prompter.js',
-'./assets/js/prompts.json',
+  './assets/css/prompter.css',
+  './assets/js/prompter.js',
+  './assets/js/prompts.json',
+  // Habits
   './habits.html',
   './assets/css/habits.css',
   './assets/js/habits.js',
@@ -82,16 +87,12 @@ self.addEventListener('activate', function(event) {
 
 // ========== FETCH ==========
 self.addEventListener('fetch', function(event) {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
-
-  // Skip cross-origin requests
   if (new URL(event.request.url).origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then(function(cachedResponse) {
       if (cachedResponse) {
-        // Return cached version and update in background
         fetch(event.request).then(function(response) {
           if (response && response.status === 200) {
             caches.open(CACHE_NAME).then(function(cache) {
@@ -102,19 +103,16 @@ self.addEventListener('fetch', function(event) {
         return cachedResponse;
       }
 
-      // Not in cache — fetch from network
       return fetch(event.request).then(function(response) {
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        // Cache successful responses
         var responseToCache = response.clone();
         caches.open(CACHE_NAME).then(function(cache) {
           cache.put(event.request, responseToCache);
         });
         return response;
       }).catch(function() {
-        // Offline fallback
         if (event.request.destination === 'document') {
           return caches.match('./index.html');
         }

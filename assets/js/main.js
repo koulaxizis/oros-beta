@@ -424,22 +424,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ========== PWA INSTALL PROMPT ==========
+    // ========== PWA INSTALL PROMPT ==========
   var installBtn = document.getElementById('btn-install');
   var deferredPrompt = null;
 
   window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (installBtn) installBtn.disabled = false;
+    // Only intercept the prompt if we have an install button to show
+    if (installBtn) {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.disabled = false;
+      installBtn.style.display = '';
+    }
+    // If no install button exists, let the browser show its default prompt
   });
 
   if (installBtn) {
+    installBtn.disabled = true;
     installBtn.addEventListener('click', function() {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(result) {
+      deferredPrompt.userChoice.then(function() {
         deferredPrompt = null;
+        installBtn.disabled = true;
       });
     });
   }
