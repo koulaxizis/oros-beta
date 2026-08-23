@@ -37,6 +37,7 @@
   var outlineList = null;
   var wordFreqPanel = null;
   var wordFreqList = null;
+  var wordFreqSummary = null;
   var commentsPanel = null;
   var tocPanel = null;
   var tocList = null;
