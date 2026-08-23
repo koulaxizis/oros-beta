@@ -65,6 +65,7 @@
   <link rel="stylesheet" href="assets/css/writer.css">
 
   <!-- Self-hosted libraries for DOCX/RTF support -->
+  <script src="assets/js/lib/jszip.min.js"></script>
   <script src="assets/js/lib/mammoth.browser.min.js"></script>
   <script src="assets/js/lib/rtf-parser.js"></script>
 
@@ -72,7 +73,7 @@
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
-  <script src="assets/js/tabs.js" defer></script>
+  <!-- FIX #13: tabs.js removed — now integrated into writer.js -->
   <script src="assets/js/main.js" defer></script>
   <script src="assets/js/writer.js" defer></script>
 </head>
@@ -386,6 +387,9 @@
               <tr><td><kbd>Ctrl+B</kbd></td><td data-i18n="help_shortcut_bold">Bold</td></tr>
               <tr><td><kbd>Ctrl+I</kbd></td><td data-i18n="help_shortcut_italic">Italic</td></tr>
               <tr><td><kbd>Ctrl+U</kbd></td><td data-i18n="help_shortcut_underline">Underline</td></tr>
+              <tr><td><kbd>Ctrl+Shift+X</kbd></td><td data-i18n="help_shortcut_strike">Strikethrough</td></tr>
+              <tr><td><kbd>Ctrl+,</kbd></td><td data-i18n="help_shortcut_subscript">Subscript</td></tr>
+              <tr><td><kbd>Ctrl+.</kbd></td><td data-i18n="help_shortcut_superscript">Superscript</td></tr>
               <tr><td><kbd>Ctrl+K</kbd></td><td data-i18n="help_shortcut_link">Insert link</td></tr>
               <tr><td><kbd>Ctrl+F</kbd></td><td data-i18n="help_shortcut_find">Find</td></tr>
               <tr><td><kbd>Ctrl+G</kbd></td><td data-i18n="help_shortcut_goal">Set goal</td></tr>

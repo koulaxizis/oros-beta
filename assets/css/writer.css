@@ -939,3 +939,15 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================
+   FIX #8: Mobile height calculation
+   Header becomes 48px and footer becomes 48px on mobile (≤768px),
+   totaling 96px instead of 112px. Override #editor-wrapper accordingly.
+   ============================================ */
+@media (max-width: 768px) {
+  #editor-wrapper {
+    height: calc(100vh - 96px);
+    margin-top: 48px;
+  }
+}
