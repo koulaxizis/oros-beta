@@ -3,43 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="orOS Writer — Privacy-first rich text editor with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.">
-  
-  <!-- SEO Meta Tags -->
+  <meta name="description" content="orOS Writer — Privacy-first rich text editor with comments, footnotes, templates, track changes, version history and more. Works offline. No tracking.">
   <meta name="author" content="Christos Koulaxizis">
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
-  
-  <!-- Open Graph / Facebook -->
+
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
   <meta property="og:title" content="orOS Writer — Privacy-First Rich Text Editor">
-  <meta property="og:description" content="Write distraction-free with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.">
+  <meta property="og:description" content="Write distraction-free with comments, footnotes, track changes, version history and more. Works offline. No tracking.">
   <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
-  
-  <!-- Twitter Card -->
+
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
   <meta name="twitter:title" content="orOS Writer — Privacy-First Rich Text Editor">
-  <meta name="twitter:description" content="Write distraction-free with autosave, goals, outlines, and word frequency analysis. Works offline. No tracking.">
+  <meta name="twitter:description" content="Write distraction-free with comments, footnotes, track changes, version history and more. Works offline. No tracking.">
   <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
-  <meta name="twitter:creator" content="@koulaxizis">
-  
-  <!-- Additional SEO -->
-  <meta name="keywords" content="rich text editor, writing tool, autosave, goals, distraction-free, offline editor, privacy, open source">
-  
-  <!-- Resource Hints -->
+
+  <meta name="keywords" content="rich text editor, writing tool, comments, footnotes, track changes, version history, templates, offline editor, privacy, open source">
+
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
-  
-  <!-- hreflang — ONLY en + el -->
+
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/writer.html">
   <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/writer.html?lang=el">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/writer.html">
-  
+
   <title>orOS Writer</title>
   <script src="config.js"></script>
   <script>
@@ -61,10 +53,9 @@
 
   <link rel="stylesheet" href="assets/css/icons.css">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/tabs.css">
+  <!-- FIX #2/#3: tabs.css removed — styles integrated into writer.css -->
   <link rel="stylesheet" href="assets/css/writer.css">
 
-  <!-- Self-hosted libraries for DOCX/RTF support -->
   <script src="assets/js/lib/jszip.min.js"></script>
   <script src="assets/js/lib/mammoth.browser.min.js"></script>
   <script src="assets/js/lib/rtf-parser.js"></script>
@@ -73,7 +64,6 @@
   <script src="assets/js/seo.js" defer></script>
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
-  <!-- FIX #13: tabs.js removed — now integrated into writer.js -->
   <script src="assets/js/main.js" defer></script>
   <script src="assets/js/writer.js" defer></script>
 </head>
@@ -90,7 +80,7 @@
     <div class="reading-progress-container">
       <div class="reading-progress-bar" id="reading-progress-bar"></div>
     </div>
-    
+
     <div id="tab-bar" class="tab-bar"></div>
 
     <div class="main-toolbar" id="main-toolbar">
@@ -102,9 +92,24 @@
         <button class="action-btn" id="btn-clear" data-i18n-tooltip="tooltip_clear" title="Clear all content">
           <i class="fa fa-trash-o"></i>
         </button>
+        <span class="tb-separator"></span>
+        <button class="action-btn" id="btn-templates" data-i18n-tooltip="tooltip_templates" title="Document templates">
+          <i class="fa fa-file-text-o"></i>
+        </button>
       </div>
 
       <div class="toolbar-group toolbar-center">
+        <select id="styles-select" class="styles-dropdown" data-i18n-tooltip="tooltip_styles" title="Paragraph styles">
+          <option value="p" data-i18n="style_normal">Normal</option>
+          <option value="h1" data-i18n="style_h1">Heading 1</option>
+          <option value="h2" data-i18n="style_h2">Heading 2</option>
+          <option value="h3" data-i18n="style_h3">Heading 3</option>
+          <option value="h4" data-i18n="style_h4">Heading 4</option>
+          <option value="blockquote" data-i18n="style_quote">Quote</option>
+          <option value="pre" data-i18n="style_code">Code Block</option>
+          <option value="p caption" data-i18n="style_caption">Caption</option>
+        </select>
+        <span class="tb-separator"></span>
         <button class="fmt-text-btn" data-cmd="bold" data-i18n-tooltip="toolbar_bold" title="Bold (Ctrl+B)">
           <i class="fa fa-bold"></i>
         </button>
@@ -154,11 +159,17 @@
         <button class="action-btn" data-cmd="subscript" title="Subscript (Ctrl+,)">
           <i class="fa fa-subscript"></i>
         </button>
-        <button class="action-btn" data-cmd="superscript" title="Superscript (Ctrl+. )">
+        <button class="action-btn" data-cmd="superscript" title="Superscript (Ctrl+.)">
           <i class="fa fa-superscript"></i>
         </button>
         <button class="action-btn" id="btn-hr" title="Insert horizontal rule">
           <i class="fa fa-minus"></i>
+        </button>
+        <button class="action-btn" id="btn-page-break" data-i18n-tooltip="tooltip_page_break" title="Page break (Ctrl+Enter)">
+          <i class="fa fa-scissors"></i>
+        </button>
+        <button class="action-btn" id="btn-footnote" data-i18n-tooltip="tooltip_footnote" title="Insert footnote (Ctrl+Shift+F)">
+          <i class="fa fa-quote-right"></i>
         </button>
         <button class="action-btn" id="btn-table" title="Insert table">
           <i class="fa fa-table"></i>
@@ -169,12 +180,34 @@
         <button class="action-btn" id="btn-image" title="Insert image">
           <i class="fa fa-picture-o"></i>
         </button>
+        <button class="action-btn" id="btn-special-chars" data-i18n-tooltip="tooltip_special_chars" title="Special characters">
+          <i class="fa fa-keyboard-o"></i>
+        </button>
         <span class="tb-separator"></span>
-        <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal tracker (Ctrl+G)">
+        <button class="action-btn" id="btn-comment" data-i18n-tooltip="tooltip_comment" title="Add comment (Ctrl+Shift+C)">
+          <i class="fa fa-comment-o"></i>
+        </button>
+        <button class="action-btn" id="btn-toc" data-i18n-tooltip="tooltip_toc" title="Table of contents">
+          <i class="fa fa-list-alt"></i>
+        </button>
+        <button class="action-btn" id="btn-track-changes" data-i18n-tooltip="tooltip_track_changes" title="Track changes">
+          <i class="fa fa-pencil-square-o"></i>
+        </button>
+        <button class="action-btn" id="btn-version-history" data-i18n-tooltip="tooltip_version_history" title="Version history">
+          <i class="fa fa-history"></i>
+        </button>
+        <button class="action-btn" id="btn-session" data-i18n-tooltip="tooltip_session" title="Writing session timer">
+          <i class="fa fa-clock-o"></i>
+        </button>
+        <button class="action-btn" id="btn-reading-mode" data-i18n-tooltip="tooltip_reading_mode" title="Reading mode">
+          <i class="fa fa-book"></i>
+        </button>
+        <span class="tb-separator"></span>
+        <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
         </button>
         <button class="action-btn" id="btn-outline" data-i18n-tooltip="tooltip_outline" title="Document outline">
-          <i class="fa fa-list-ul"></i>
+          <i class="fa fa-sitemap"></i>
         </button>
         <button class="action-btn" id="btn-metadata" data-i18n-tooltip="tooltip_metadata" title="Document metadata">
           <i class="fa fa-info-circle"></i>
@@ -199,6 +232,7 @@
             <button data-format="txt" data-i18n="export_txt">Plain Text (.txt)</button>
             <button data-format="rtf" data-i18n="export_rtf">Rich Text (.rtf)</button>
             <button data-format="docx" data-i18n="export_docx">Microsoft Word (.docx)</button>
+            <button data-format="epub" data-i18n="export_epub">EPUB (.epub)</button>
             <button data-format="pdf" data-i18n="export_pdf">PDF (.pdf)</button>
           </div>
         </div>
@@ -218,15 +252,44 @@
       <button class="mini-btn" id="btn-close-goal"><i class="fa fa-times"></i></button>
     </div>
 
+    <div class="session-bar" id="session-bar" style="display:none;">
+      <span class="session-label" data-i18n="session_target">Target</span>
+      <input type="number" id="session-word-target" min="1" value="500" style="width:70px;" />
+      <span class="session-label" data-i18n="session_words">words</span>
+      <span class="session-label" data-i18n="session_time">Time</span>
+      <input type="number" id="session-time-target" min="1" value="25" style="width:50px;" />
+      <span class="session-label" data-i18n="session_minutes">min</span>
+      <button class="mini-btn" id="btn-start-session"><i class="fa fa-play"></i></button>
+      <button class="mini-btn" id="btn-stop-session" style="display:none;"><i class="fa fa-stop"></i></button>
+      <span class="session-display" id="session-display"></span>
+      <button class="mini-btn" id="btn-close-session"><i class="fa fa-times"></i></button>
+    </div>
+
     <div class="find-replace-bar" id="find-replace-bar">
       <input type="text" id="find-find" placeholder="Find..." />
       <input type="text" id="find-replace" placeholder="Replace..." />
+      <select id="find-format-filter" class="find-format-filter" data-i18n-tooltip="tooltip_find_format" title="Find by formatting">
+        <option value="" data-i18n="find_format_any">Any format</option>
+        <option value="bold" data-i18n="find_format_bold">Bold text</option>
+        <option value="italic" data-i18n="find_format_italic">Italic text</option>
+        <option value="underline" data-i18n="find_format_underline">Underlined text</option>
+        <option value="h1" data-i18n="find_format_h1">Heading 1</option>
+        <option value="h2" data-i18n="find_format_h2">Heading 2</option>
+        <option value="h3" data-i18n="find_format_h3">Heading 3</option>
+      </select>
       <button class="mini-btn" id="btn-fr-prev" title="Previous"><i class="fa fa-chevron-up"></i></button>
       <button class="mini-btn" id="btn-fr-next" title="Next"><i class="fa fa-chevron-down"></i></button>
       <button class="mini-btn" id="btn-fr-replace" title="Replace"><i class="fa fa-exchange"></i></button>
       <button class="mini-btn" id="btn-fr-replace-all" title="Replace all"><i class="fa fa-refresh"></i></button>
       <span id="fr_results"></span>
       <button class="mini-btn" id="btn-close-fr"><i class="fa fa-times"></i></button>
+    </div>
+
+    <div class="track-changes-bar" id="track-changes-bar" style="display:none;">
+      <span class="tc-label" data-i18n="track_changes_active">Tracking changes</span>
+      <button class="mini-btn" id="btn-tc-accept-all" title="Accept all"><i class="fa fa-check"></i></button>
+      <button class="mini-btn" id="btn-tc-reject-all" title="Reject all"><i class="fa fa-times"></i></button>
+      <button class="mini-btn" id="btn-tc-toggle" title="Stop tracking"><i class="fa fa-pause"></i></button>
     </div>
 
     <div class="rich-wrapper">
@@ -237,6 +300,14 @@
         <div class="stats-detailed" id="stats-detailed"></div>
       </div>
       <div class="rich-editor" id="rich-editor" contenteditable="true" data-placeholder="Start writing..." data-i18n-placeholder="editor_placeholder"></div>
+    </div>
+
+    <div class="footnote-area" id="footnote-area" style="display:none;">
+      <div class="footnote-header">
+        <span class="footnote-title" data-i18n="footnotes_title">Footnotes</span>
+        <button class="mini-btn" id="btn-close-footnotes"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="footnote-list" id="footnote-list"></div>
     </div>
   </div>
 
@@ -267,6 +338,38 @@
         <div class="meta-date-row" id="meta-created"></div>
         <div class="meta-date-row" id="meta-modified"></div>
       </div>
+      <div class="settings-divider"></div>
+      <div class="meta-field">
+        <label data-i18n="page_settings_title">Page Settings</label>
+        <select id="page-size-select">
+          <option value="a4" data-i18n="page_size_a4">A4</option>
+          <option value="letter" data-i18n="page_size_letter">Letter</option>
+          <option value="legal" data-i18n="page_size_legal">Legal</option>
+        </select>
+      </div>
+      <div class="meta-field-inline">
+        <label data-i18n="page_margin_top">Top</label>
+        <input type="number" id="margin-top" value="2.54" min="0" step="0.1" style="width:60px;" /> cm
+      </div>
+      <div class="meta-field-inline">
+        <label data-i18n="page_margin_bottom">Bottom</label>
+        <input type="number" id="margin-bottom" value="2.54" min="0" step="0.1" style="width:60px;" /> cm
+      </div>
+      <div class="meta-field-inline">
+        <label data-i18n="page_margin_left">Left</label>
+        <input type="number" id="margin-left" value="2.54" min="0" step="0.1" style="width:60px;" /> cm
+      </div>
+      <div class="meta-field-inline">
+        <label data-i18n="page_margin_right">Right</label>
+        <input type="number" id="margin-right" value="2.54" min="0" step="0.1" style="width:60px;" /> cm
+      </div>
+      <div class="settings-divider"></div>
+      <div class="meta-field">
+        <label data-i18n="header_footer_title">Header / Footer</label>
+        <input type="text" id="header-text" placeholder="Header text" />
+        <input type="text" id="footer-text" placeholder="Footer text" style="margin-top:4px;" />
+        <label style="display:block;margin-top:4px;"><input type="checkbox" id="footer-page-num" checked> <span data-i18n="footer_page_number">Page number in footer</span></label>
+      </div>
     </div>
   </div>
 
@@ -288,6 +391,42 @@
     <div class="panel-body">
       <div class="wordfreq-summary" id="wordfreq-summary"></div>
       <div class="wordfreq-list" id="wordfreq-list"></div>
+    </div>
+  </div>
+
+  <div class="side-panel" id="comments-panel" style="display:none;">
+    <div class="panel-header">
+      <span class="panel-title" data-i18n="comments_title">Comments</span>
+      <button class="panel-close mini-btn" id="btn-close-comments"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="panel-body">
+      <div id="comments-list"></div>
+      <div class="comment-add-area" id="comment-add-area" style="display:none;">
+        <textarea id="comment-input" placeholder="Write a comment..." rows="3"></textarea>
+        <button class="btn-primary" id="btn-submit-comment" data-i18n="btn_add">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel" id="toc-panel" style="display:none;">
+    <div class="panel-header">
+      <span class="panel-title" data-i18n="toc_title">Table of Contents</span>
+      <button class="mini-btn" id="btn-toc-refresh" title="Refresh"><i class="fa fa-refresh"></i></button>
+      <button class="mini-btn" id="btn-toc-insert" title="Insert ToC"><i class="fa fa-plus"></i></button>
+      <button class="panel-close mini-btn" id="btn-close-toc"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="panel-body">
+      <div id="toc-list"></div>
+    </div>
+  </div>
+
+  <div class="side-panel" id="version-panel" style="display:none;">
+    <div class="panel-header">
+      <span class="panel-title" data-i18n="version_history_title">Version History</span>
+      <button class="panel-close mini-btn" id="btn-close-version"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="panel-body">
+      <div id="version-list"></div>
     </div>
   </div>
 
@@ -368,6 +507,66 @@
     </div>
   </div>
 
+  <!-- Templates Dialog -->
+  <div class="dialog-overlay" id="templates-dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <div class="dialog-header">
+        <h3 data-i18n="templates_title">Document Templates</h3>
+        <button class="dialog-close" id="btn-close-templates"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="templates-grid" id="templates-grid"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-cancel-templates" data-i18n="btn_cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Special Characters Dialog -->
+  <div class="dialog-overlay" id="special-chars-dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <div class="dialog-header">
+        <h3 data-i18n="special_chars_title">Special Characters</h3>
+        <button class="dialog-close" id="btn-close-special-chars"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="special-chars-tabs" id="special-chars-tabs">
+          <button class="sc-tab active" data-cat="greek" data-i18n="sc_greek">Greek</button>
+          <button class="sc-tab" data-cat="math" data-i18n="sc_math">Math</button>
+          <button class="sc-tab" data-cat="arrows" data-i18n="sc_arrows">Arrows</button>
+          <button class="sc-tab" data-cat="currency" data-i18n="sc_currency">Currency</button>
+          <button class="sc-tab" data-cat="punctuation" data-i18n="sc_punctuation">Punctuation</button>
+          <button class="sc-tab" data-cat="symbols" data-i18n="sc_symbols">Symbols</button>
+        </div>
+        <div class="special-chars-grid" id="special-chars-grid"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-primary" id="btn-close-special-chars-ok" data-i18n="btn_ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footnote Editor Dialog -->
+  <div class="dialog-overlay" id="footnote-dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 data-i18n="footnote_dialog_title">Insert Footnote</h3>
+        <button class="dialog-close" id="btn-close-footnote-dialog"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-field">
+          <label data-i18n="footnote_text_label">Footnote text</label>
+          <textarea id="footnote-text-input" rows="4" placeholder="Enter footnote text..."></textarea>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" id="btn-cancel-footnote" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn-primary" id="btn-insert-footnote" data-i18n="btn_insert">Insert</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Help / Tutorial Modal -->
   <div class="dialog-overlay" id="help-dialog-overlay" style="display:none;">
     <div class="dialog dialog-large">
@@ -393,6 +592,9 @@
               <tr><td><kbd>Ctrl+K</kbd></td><td data-i18n="help_shortcut_link">Insert link</td></tr>
               <tr><td><kbd>Ctrl+F</kbd></td><td data-i18n="help_shortcut_find">Find</td></tr>
               <tr><td><kbd>Ctrl+G</kbd></td><td data-i18n="help_shortcut_goal">Set goal</td></tr>
+              <tr><td><kbd>Ctrl+Enter</kbd></td><td data-i18n="help_shortcut_page_break">Page break</td></tr>
+              <tr><td><kbd>Ctrl+Shift+F</kbd></td><td data-i18n="help_shortcut_footnote">Insert footnote</td></tr>
+              <tr><td><kbd>Ctrl+Shift+C</kbd></td><td data-i18n="help_shortcut_comment">Add comment</td></tr>
               <tr><td><kbd>F9</kbd></td><td data-i18n="help_shortcut_zen">Zen Mode</td></tr>
               <tr><td><kbd>Esc</kbd></td><td data-i18n="help_shortcut_esc">Close panels/dialogs</td></tr>
             </tbody>
@@ -406,8 +608,20 @@
             <li data-i18n="help_feature_goals">Writing goals with lock option</li>
             <li data-i18n="help_feature_outline">Document outline navigation</li>
             <li data-i18n="help_feature_frequency">Word frequency analysis</li>
+            <li data-i18n="help_feature_comments">Comments and annotations</li>
+            <li data-i18n="help_feature_footnotes">Footnotes and endnotes</li>
+            <li data-i18n="help_feature_toc">Auto-generated table of contents</li>
+            <li data-i18n="help_feature_track_changes">Track changes with accept/reject</li>
+            <li data-i18n="help_feature_templates">Document templates</li>
+            <li data-i18n="help_feature_version_history">Version history with restore</li>
+            <li data-i18n="help_feature_special_chars">Special characters picker</li>
+            <li data-i18n="help_feature_session">Writing session timer (Pomodoro)</li>
+            <li data-i18n="help_feature_reading_mode">Distraction-free reading mode</li>
+            <li data-i18n="help_feature_page_settings">Page size and margins</li>
+            <li data-i18n="help_feature_header_footer">Headers and footers</li>
+            <li data-i18n="help_feature_autocorrect">Custom auto-correction rules</li>
             <li data-i18n="help_feature_import">Import .txt, .md, .rtf, .docx</li>
-            <li data-i18n="help_feature_export">Export to .md, .txt, .rtf, .docx, .pdf</li>
+            <li data-i18n="help_feature_export">Export to .md, .txt, .rtf, .docx, .epub, .pdf</li>
           </ul>
         </div>
       </div>
@@ -428,6 +642,7 @@
       <div class="settings-nav">
         <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
         <button class="tab-btn" data-tab="writer-settings" data-i18n="tab_writer">Writer</button>
+        <button class="tab-btn" data-tab="advanced-settings" data-i18n="tab_advanced">Advanced</button>
       </div>
       <div class="settings-body">
         <div class="tab-panel" id="global-settings" style="display:flex;">
@@ -493,6 +708,21 @@
               <span class="toggle-label" data-i18n="setting_hide_lorem_btn">Hide Lorem Ipsum Button</span>
               <label class="switch"><input type="checkbox" id="toggle-hide-lorem-btn"><span class="slider"></span></label>
             </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="advanced-settings" style="display:none;">
+          <div class="toggles-container">
+            <h4 data-i18n="autocorrect_title">Auto-Correction Rules</h4>
+            <div id="autocorrect-rules-container"></div>
+            <div class="autocorrect-add-row">
+              <input type="text" id="ac-pattern" placeholder="(tm)" style="width:120px;" />
+              <span>→</span>
+              <input type="text" id="ac-replacement" placeholder="™" style="width:120px;" />
+              <button class="mini-btn" id="btn-add-autocorrect"><i class="fa fa-plus"></i></button>
+            </div>
+            <div class="settings-divider"></div>
+            <h4 data-i18n="shortcuts_custom_title">Keyboard Shortcuts</h4>
+            <div id="shortcuts-custom-container"></div>
           </div>
         </div>
       </div>
