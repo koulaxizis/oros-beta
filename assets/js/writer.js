@@ -1695,69 +1695,71 @@
   }
 
   // ===== EXPORT: MARKDOWN =====
-  function exportMarkdown() {
+function exportMarkdown() {
     var md = '';
     var blocks = richEditor.children;
     function procInline(node) {
-      var r = '';
-      for (var i = 0; i < node.childNodes.length; i++) {
-        var c = node.childNodes[i];
-        if (c.nodeType === 3) { r += c.textContent; }
-        else if (c.nodeType === 1) {
-          var ct = c.tagName.toLowerCase();
-          if (ct === 'strong' || ct === 'b') r += '**' + procInline(c) + '**';
-          else if (ct === 'em' || ct === 'i') r += '*' + procInline(c) + '*';
-          else if (ct === 's' || ct === 'del') r += '~~' + procInline(c) + '~~';
-          else if (ct === 'code') r += '`' + c.textContent + '`';
-          else if (ct === 'sub') r += '~' + procInline(c) + '~';
-          else if (ct === 'sup') r += '^' + procInline(c) + '^';
-          else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href')||'') + ')';
-          else if (ct === 'br') r += '\n';
-          else if (ct === 'img') r += '![' + (c.getAttribute('alt')||'') + '](' + (c.getAttribute('src')||'') + ')';
-          else r += procInline(c);
+        var r = '';
+        if (!node || !node.childNodes) return r;
+        for (var i = 0; i < node.childNodes.length; i++) {
+            var c = node.childNodes[i];
+            if (c.nodeType === 3) { 
+                r += c.textContent; 
+            } else if (c.nodeType === 1) {
+                var ct = c.tagName.toLowerCase();
+                if (ct === 'strong' || ct === 'b') r += '**' + procInline(c) + '**';
+                else if (ct === 'em' || ct === 'i') r += '*' + procInline(c) + '*';
+                else if (ct === 's' || ct === 'del') r += '~~' + procInline(c) + '~~';
+                else if (ct === 'code') r += '`' + c.textContent + '`';
+                else if (ct === 'sub') r += '~' + procInline(c) + '~';
+                else if (ct === 'sup') r += '^' + procInline(c) + '^';
+                else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href')||'') + ')';
+                else if (ct === 'br') r += '\n';
+                else if (ct === 'img') r += '![' + (c.getAttribute('alt')||'') + '](' + (c.getAttribute('src')||'') + ')';
+                else r += procInline(c);
+            }
         }
-      }
-      return r;
+        return r;
     }
     for (var i = 0; i < blocks.length; i++) {
-      var n = blocks[i], tag = n.tagName ? n.tagName.toLowerCase() : '';
-      if (tag === 'h1') md += '# ' + n.textContent + '\n\n';
-      else if (tag === 'h2') md += '## ' + n.textContent + '\n\n';
-      else if (tag === 'h3') md += '### ' + n.textContent + '\n\n';
-      else if (tag === 'h4') md += '#### ' + n.textContent + '\n\n';
-      else if (tag === 'blockquote') md += '> ' + n.textContent.replace(/\n/g,'\n> ') + '\n\n';
-      else if (tag === 'pre') md += '```\n' + n.textContent + '\n```\n\n';
-      else if (tag === 'ul') {
-        var items = n.querySelectorAll(':scope > li');
-        for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]) + '\n';
-        md += '\n';
-      }
-      else if (tag === 'ol') {
-        var items2 = n.querySelectorAll(':scope > li');
-        for (var o = 0; o < items2.length; o++) md += (o+1) + '. ' + procInline(items2[o]) + '\n';
-        md += '\n';
-      }
-      else if (tag === 'table' && n.classList.contains('custom-table')) {
-        var rows = n.querySelectorAll('tr');
-        if (rows.length > 0) {
-          var hc = rows[0].querySelectorAll('th, td');
-          md += '| ' + Array.from(hc).map(function(c){return c.textContent}).join(' | ') + ' |\n';
-          md += '|' + Array.from(hc).map(function(){return '---'}).join('|') + '|\n';
-          for (var ri = 1; ri < rows.length; ri++) {
-            var cells = rows[ri].querySelectorAll('td, th');
-            md += '| ' + Array.from(cells).map(function(c){return c.textContent}).join(' | ') + ' |\n';
-          }
-          md += '\n';
+        var n = blocks[i], tag = n.tagName ? n.tagName.toLowerCase() : '';
+        if (tag === 'h1') md += '# ' + (n.textContent || '').trim() + '\n\n';
+        else if (tag === 'h2') md += '## ' + (n.textContent || '').trim() + '\n\n';
+        else if (tag === 'h3') md += '### ' + (n.textContent || '').trim() + '\n\n';
+        else if (tag === 'h4') md += '#### ' + (n.textContent || '').trim() + '\n\n';
+        else if (tag === 'blockquote') md += '> ' + (n.textContent || '').replace(/\n/g, '\n> ') + '\n\n';
+        else if (tag === 'pre') md += '```\n' + (n.textContent || '') + '\n```\n\n';
+        else if (tag === 'ul') {
+            var items = n.querySelectorAll(':scope > li');
+            for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]).replace(/\n/g, ' ') + '\n';
+            md += '\n';
         }
-      }
-      else if (tag === 'div' && n.classList.contains('page-break-marker')) md += '\n---\n\n';
-      else if (tag === 'hr') md += '\n---\n\n';
-      else if (tag === 'img') md += '![' + (n.getAttribute('alt')||'') + '](' + (n.getAttribute('src')||'') + ')\n\n';
-      else md += procInline(n) + '\n\n';
+        else if (tag === 'ol') {
+            var items2 = n.querySelectorAll(':scope > li');
+            for (var o = 0; o < items2.length; o++) md += (o+1) + '. ' + procInline(items2[o]).replace(/\n/g, ' ') + '\n';
+            md += '\n';
+        }
+        else if (tag === 'table' && n.classList.contains('custom-table')) {
+            var rows = n.querySelectorAll('tr');
+            if (rows.length > 0) {
+                var hc = rows[0].querySelectorAll('th, td');
+                md += '| ' + Array.from(hc).map(function(cell){return cell.textContent.trim();}).join(' | ') + ' |\n';
+                md += '|' + Array.from(hc).map(function(){return '---';}).join('|') + '|\n';
+                for (var ri = 1; ri < rows.length; ri++) {
+                    var cells = rows[ri].querySelectorAll('td, th');
+                    md += '| ' + Array.from(cells).map(function(cell){return cell.textContent.trim();}).join(' | ') + ' |\n';
+                }
+                md += '\n';
+            }
+        }
+        else if (tag === 'div' && n.classList.contains('page-break-marker')) md += '\n---\n\n';
+        else if (tag === 'hr') md += '\n---\n\n';
+        else if (tag === 'img') md += '![' + (n.getAttribute('alt')||'') + '](' + (n.getAttribute('src')||'') + ')\n\n';
+        else md += procInline(n).replace(/\n/g, ' ').trim() + '\n\n';
     }
     downloadBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), getFileName('md'));
     showToast(getTrans('toast_exported') || 'Exported');
-  }
+}
 
   // ===== EXPORT: RTF =====
   function exportRtf() {
@@ -2225,24 +2227,31 @@
     loadSettingsValues();
     initWindowResize();
     
-    if (typeof window.onbeforeinstallprompt === 'function' || 'onbeforeinstallprompt' in window) {
-      window.addEventListener('beforeinstallprompt', function(e) {
+    // ===== PWA INSTALL HANDLING =====
+if (window.addEventListener) {
+    window.addEventListener('beforeinstallprompt', function(e) {
+        // Prevent Chrome 67+ from showing mini install banner
         e.preventDefault();
+        
+        // Store the deferred prompt for later use
+        window.deferredPrompt = e;
+        
+        // Show custom install button if it exists
         var installBtn = document.getElementById('btn-install-app');
         if (installBtn) {
-          installBtn.style.display = '';
-          installBtn.onclick = function() {
-            if (window.deferredPrompt) {
-              window.deferredPrompt.prompt();
-              window.deferredPrompt.userChoice.then(function(choiceResult) {
-                window.deferredPrompt = null;
-                installBtn.style.display = 'none';
-              });
-            }
-          };
+            installBtn.style.display = '';
+            installBtn.onclick = function() {
+                if (window.deferredPrompt) {
+                    window.deferredPrompt.prompt();
+                    window.deferredPrompt.userChoice.then(function(choiceResult) {
+                        window.deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    });
+                }
+            };
         }
-      });
-    }
+    });
+}
 
     window.addEventListener('load', function() {
       updateStats();
