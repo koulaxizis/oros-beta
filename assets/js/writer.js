@@ -1,9 +1,6 @@
 (function() {
   'use strict';
   
-  // Add this near top of writer.js with other var declarations
-var initialized = false;
-
   // ===== CONSTANTS =====
   var TABS_STORAGE_KEY = 'oros_writer_tabs_v2';
   var VERSION_HISTORY_KEY = 'oros_writer_versions';
@@ -98,6 +95,7 @@ var initialized = false;
   var goalBarContent = null;
   var goalBarFill = null;
   var windowResizeDebounce = null;
+  var initialized = false;
 
   // ===== HELPERS =====
   function getCurrentLang() {
