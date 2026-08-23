@@ -2615,6 +2615,7 @@
 
     // Expose public API
     window.orOSWriter = {
+	  init: init,
       exportTxt: exportTxt,
       exportMarkdown: exportMarkdown,
       exportRtf: exportRtf,
