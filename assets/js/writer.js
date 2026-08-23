@@ -1,5 +1,8 @@
 (function() {
   'use strict';
+  
+  // Add this near top of writer.js with other var declarations
+var initialized = false;
 
   // ===== CONSTANTS =====
   var TABS_STORAGE_KEY = 'oros_writer_tabs_v2';
@@ -2476,11 +2479,30 @@
     }
   });
 
-  // ===== PWA INSTALL HANDLING =====
+    // ===== PWA INSTALL HANDLING =====
   var beforeInstallPrompt = null;
+  var installPromptShown = false;
+  
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     beforeInstallPrompt = e;
+    
+    var installBtn = document.getElementById('btn-install-app');
+    if (installBtn) {
+      installBtn.style.display = '';
+      installBtn.onclick = function() {
+        if (!beforeInstallPrompt || installPromptShown) return;
+        installPromptShown = true;
+        beforeInstallPrompt.prompt();
+        
+        beforeInstallPrompt.userChoice.then(function(choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            showToast(getTrans('toast_app_installed') || 'App installed');
+          }
+          beforeInstallPrompt = null;
+        });
+      };
+    }
   });
 
   // ===== INITIALIZATION =====
