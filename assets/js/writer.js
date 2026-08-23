@@ -89,9 +89,16 @@
   var activeCommentId = null;
   var writerInitialized = false;
 
+  // --- FIX: Missing declarations ---
+  var orOSWriter;
+  var toastContainer = null;
+  var goalBarContent = null;
+  var goalBarFill = null;
+  var windowResizeDebounce = null;
+
   // ===== HELPERS =====
   function getCurrentLang() {
-    return localStorage.getItem('oros-language') || 'en';
+    return (localStorage.getItem('oros_lang') || 'en').substring(0, 2);
   }
 
   function getTrans(key) {
@@ -113,12 +120,13 @@
   }
 
   function escapeXml(text) {
+    if (!text) return '';
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
   function formatDate(d) {
-    if (isNaN(d.getTime())) return '\u2014';
+    if (!d || isNaN(d.getTime())) return '\u2014';
     var day = String(d.getDate()).padStart(2, '0');
     var month = String(d.getMonth() + 1).padStart(2, '0');
     var year = d.getFullYear();
@@ -163,7 +171,7 @@
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', handler);
   }
-
+  
     // ===== TABS SYSTEM =====
   function generateTabId() {
     return 'tab-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
@@ -239,7 +247,6 @@
         id: generateTabId(), title: '', content: '', metadata: {}, timestamp: Date.now(), versions: []
       });
     }
-    // Ensure each tab has versions array
     for (var i = 0; i < tabsState.length; i++) {
       if (!tabsState[i].versions) tabsState[i].versions = [];
     }
@@ -1037,7 +1044,182 @@
     showToast(getTrans('toc_inserted') || 'Table of contents inserted');
   }
 
-  // ===== TRACK CHANGES =====
+  // ===== OUTLINE =====
+  function toggleOutline() {
+    if (!outlinePanel || !outlineList) return;
+    if (outlinePanel.style.display === 'none' || !outlinePanel.style.display) {
+      outlinePanel.style.display = 'flex';
+      updateOutline();
+    } else {
+      outlinePanel.style.display = 'none';
+    }
+  }
+
+  function updateOutline() {
+    if (!outlineList || !outlinePanel || outlinePanel.style.display === 'none' || !richEditor) return;
+    var headings = richEditor.querySelectorAll('h1, h2, h3');
+    if (headings.length === 0) {
+      outlineList.innerHTML = '<div class="wordfreq-empty">' + getTrans('outline_empty') + '</div>';
+      return;
+    }
+    outlineList.innerHTML = '';
+    for (var i = 0; i < headings.length; i++) {
+      (function(h) {
+        var item = document.createElement('div');
+        item.className = 'outline-item outline-item-' + h.tagName.toLowerCase();
+        item.textContent = h.textContent || '(empty)';
+        item.onclick = function() {
+          h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          h.classList.add('outline-flash');
+          setTimeout(function() { h.classList.remove('outline-flash'); }, 1200);
+          if (richEditor) richEditor.focus();
+        };
+        outlineList.appendChild(item);
+      })(headings[i]);
+    }
+  }
+
+  // ===== WORD FREQUENCY =====
+  function toggleWordFreqPanel() {
+    if (!wordFreqPanel) return;
+    if (wordFreqPanel.style.display === 'none' || !wordFreqPanel.style.display) {
+      wordFreqPanel.style.display = 'flex';
+      updateWordFrequency();
+    } else {
+      wordFreqPanel.style.display = 'none';
+    }
+  }
+
+  function updateWordFrequency() {
+    if (!wordFreqList || !wordFreqPanel || wordFreqPanel.style.display === 'none' || !richEditor) return;
+    var text = getTextContent().toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, '').trim();
+    if (!text) {
+      wordFreqList.innerHTML = '<div class="wordfreq-empty">' + getTrans('word_freq_empty') + '</div>';
+      if (wordFreqSummary) wordFreqSummary.innerHTML = '';
+      return;
+    }
+    var words = text.split(/\s+/).filter(Boolean);
+    var total = words.length;
+    var freq_map = {};
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      freq_map[w] = (freq_map[w] || 0) + 1;
+    }
+    var unique = Object.keys(freq_map).length;
+    var diversity = total > 0 ? (unique / total * 100).toFixed(1) : 0;
+    var sorted = Object.keys(freq_map).sort(function(a, b) { return freq_map[b] - freq_map[a]; }).slice(0, 20);
+    var maxFreq = sorted.length > 0 ? freq_map[sorted[0]] : 1;
+    if (wordFreqSummary) {
+      wordFreqSummary.innerHTML =
+        '<div class="stat-row"><span>' + getTrans('word_freq_unique') + '</span><span>' + unique + '</span></div>' +
+        '<div class="stat-row"><span>' + getTrans('word_freq_total') + '</span><span>' + total + '</span></div>' +
+        '<div class="stat-row"><span>' + getTrans('word_freq_diversity') + '</span><span>' + diversity + '%</span></div>';
+    }
+    var listHtml = '';
+    for (var j = 0; j < sorted.length; j++) {
+      var word = sorted[j];
+      var count = freq_map[word];
+      var pct = (count / maxFreq * 100).toFixed(0);
+      var isOverused = count >= 5 && (count / total * 100) > 2;
+      listHtml += '<div class="wordfreq-item' + (isOverused ? ' overused' : '') + '">' +
+        '<span class="wf-word">' + word + '</span>' +
+        '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="wordfreq-count">' + count + '</span></div>';
+    }
+    wordFreqList.innerHTML = listHtml;
+  }
+
+  // ===== SESSION TIMER =====
+  function startSession() {
+    var wordTarget = parseInt(document.getElementById('session-word-target').value) || 500;
+    var timeTarget = parseInt(document.getElementById('session-time-target').value) || 25;
+    sessionWordsTarget = wordTarget;
+    sessionRemaining = timeTarget * 60;
+    sessionWordsStart = getGoalCount();
+    sessionRunning = true;
+    var startBtn = document.getElementById('btn-start-session');
+    var stopBtn = document.getElementById('btn-stop-session');
+    if (startBtn) startBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = '';
+    updateSessionDisplay();
+    sessionInterval = setInterval(function() {
+      if (!sessionRunning) return;
+      sessionRemaining--;
+      updateSessionDisplay();
+      if (sessionRemaining <= 0) completeSession();
+      if (sessionRemaining === 300) playSessionBeep(440, 200);
+    }, 1000);
+    showToast('Session started: ' + sessionWordsTarget + ' words in ' + timeTarget + ' minutes');
+  }
+
+  function stopSession() {
+    sessionRunning = false;
+    clearInterval(sessionInterval);
+    sessionInterval = null;
+    var startBtn = document.getElementById('btn-start-session');
+    var stopBtn = document.getElementById('btn-stop-session');
+    if (startBtn) startBtn.style.display = '';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (sessionDisplay) sessionDisplay.textContent = '';
+    showToast('Session stopped');
+  }
+
+  function completeSession() {
+    sessionRunning = false;
+    clearInterval(sessionInterval);
+    sessionInterval = null;
+    var currentWords = getGoalCount();
+    var wordsWritten = currentWords - sessionWordsStart;
+    if (sessionDisplay) {
+      sessionDisplay.textContent = getTrans('session_complete') + ' ' + wordsWritten + ' ' + getTrans('text_words');
+      sessionDisplay.classList.add('complete');
+    }
+    var startBtn = document.getElementById('btn-start-session');
+    var stopBtn = document.getElementById('btn-stop-session');
+    if (startBtn) startBtn.style.display = '';
+    if (stopBtn) stopBtn.style.display = 'none';
+    playSessionBeep(880, 300);
+    setTimeout(function() { playSessionBeep(880, 300); }, 400);
+    showToast('Session complete! You wrote ' + wordsWritten + ' words.');
+    addVersionSnapshot(activeTabId);
+  }
+
+  function updateSessionDisplay() {
+    if (!sessionDisplay) return;
+    var minutes = Math.floor(sessionRemaining / 60);
+    var seconds = sessionRemaining % 60;
+    var timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    var currentWords = getGoalCount();
+    var wordsWritten = currentWords - sessionWordsStart;
+    var progress = Math.min(100, Math.max(0, (wordsWritten / sessionWordsTarget) * 100));
+    sessionDisplay.textContent = timeStr + ' \u00B7 ' + wordsWritten + '/' + sessionWordsTarget + ' words (' + Math.round(progress) + '%)';
+    if (sessionRemaining <= 60) {
+      sessionDisplay.classList.add('warning');
+    } else {
+      sessionDisplay.classList.remove('warning');
+    }
+  }
+
+  function playSessionBeep(freq, duration) {
+    try {
+      if (!typewriterAudioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        typewriterAudioCtx = new AC();
+      }
+      var oscillator = typewriterAudioCtx.createOscillator();
+      var gainNode = typewriterAudioCtx.createGain();
+      oscillator.frequency.value = freq;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.1;
+      oscillator.connect(gainNode);
+      gainNode.connect(typewriterAudioCtx.destination);
+      oscillator.start(0);
+      oscillator.stop(typewriterAudioCtx.currentTime + duration / 1000);
+    } catch(e) {}
+  }
+  
+    // ===== TRACK CHANGES =====
   function toggleTrackChanges() {
     trackingChanges = !trackingChanges;
     var btn = document.getElementById('btn-track-changes');
@@ -1223,7 +1405,7 @@
     showToast(getTrans('toast_lorem_inserted') || 'Sample text inserted');
   }
 
-    // ===== FOCUS MODE =====
+  // ===== FOCUS MODE =====
   function toggleFocusMode() {
     focusModeEnabled = !focusModeEnabled;
     document.body.classList.toggle('focus-mode', focusModeEnabled);
@@ -1358,6 +1540,23 @@
       }
       typewriterAudioBuffer = buf;
     } catch(e) { typewriterAudioCtx = null; }
+  }
+
+  function playTypewriterSound() {
+    if (!typewriterAudioBuffer) return;
+    if (!typewriterAudioCtx) {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) typewriterAudioCtx = new AC();
+      } catch(e) { return; }
+    }
+    var src = typewriterAudioCtx.createBufferSource();
+    src.buffer = typewriterAudioBuffer;
+    var gain = typewriterAudioCtx.createGain();
+    gain.gain.value = 0.05;
+    src.connect(gain);
+    gain.connect(typewriterAudioCtx.destination);
+    src.start(0);
   }
 
   // ===== IMAGE INSERTION =====
@@ -1499,8 +1698,8 @@
     saveCurrentTabContent();
     if (richEditor) richEditor.focus();
   }
-
-  // ===== SPECIAL CHARACTERS =====
+  
+    // ===== SPECIAL CHARACTERS =====
   var SPECIAL_CHAR_CATEGORIES = {
     'greek': { label: 'Greek', chars: ['\u0391','\u0392','\u0393','\u0394','\u0395','\u0396','\u0397','\u0398','\u0399','\u039A','\u039B','\u039C','\u039D','\u039E','\u039F','\u03A0','\u03A1','\u03A3','\u03A4','\u03A5','\u03A6','\u03A7','\u03A8','\u03A9','\u03B1','\u03B2','\u03B3','\u03B4','\u03B5','\u03B6','\u03B7','\u03B8','\u03B9','\u03BA','\u03BB','\u03BC','\u03BD','\u03BE','\u03BF','\u03C0','\u03C1','\u03C3','\u03C4','\u03C5','\u03C6','\u03C7','\u03C8','\u03C9','\u0386','\u0388','\u0389','\u038A','\u038C','\u038E','\u038F','\u0390','\u03B0','\u03AA','\u03AB','\u03C2'] },
     'math': { label: 'Math', chars: ['\u00B1','\u00F7','\u00D7','\u221E','\u221A','\u2211','\u220F','\u222B','\u2202','\u2207','\u2248','\u2260','\u2264','\u2265','\u221D','\u2208','\u2209','\u2229','\u222A','\u2282','\u2283','\u2286','\u2287','\u2295','\u2297','\u22A5','\u2220','\u00B0','\u2032','\u2033','\u03C0','\u0192','\u2115','\u2124','\u211A','\u211D','\u2102','\u2200','\u2203','\u00AC','\u2227','\u2228','\u21D2','\u21D4','\u2192','\u2190','\u2194'] },
@@ -1574,8 +1773,8 @@
     },
     'meeting': { icon: 'fa-users', title: 'Meeting Notes', description: 'Structured meeting notes',
       generate: function(lang) {
-        if (lang === 'el') return '<h1>\u03A0\u03C1\u03B1\u03BA\u03C4\u03B9\u03BA\u03AC \u03A3\u03C5\u03BD\u03AC\u03BD\u03C4\u03B7\u03C3\u03B7\u03C2</h1><p><strong>\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1:</strong> [\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1]</p><h2>\u0391\u03C4\u03B6\u03AD\u03BD\u03C4\u03B1</h2><ol><li>[\u0398\u03AD\u03BC\u03B1 1]</li><li>[\u0398\u03AD\u03BC\u03B1 2]</li></ol><h2>\u03A3\u03C5\u03B6\u03AE\u03C4\u03B7\u03C3\u03B7</h2><p>[\u03A3\u03CD\u03BD\u03BF\u03C8\u03B7.]</p><h2>\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B5\u03C2</h2><table class="custom-table"><tr><th>\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B1</th><th>\u03A5\u03C0\u03B5\u03CD\u03B8\u03C5\u03BD\u03BF\u03C2</th><th>\u03A0\u03C1\u03BF\u03B8\u03B5\u03C3\u03BC\u03AF\u03B1</th></tr><tr><td>[\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B1]</td><td>[\u038C\u03BD\u03BF\u03BC\u03B1]</td><td>[\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1]</td></tr></table>';
-        return '<h1>Meeting Minutes</h1><p><strong>Date:</strong> [Date]<br><strong>Attendees:</strong> [Names]</p><h2>Agenda</h2><ol><li>[Topic 1]</li><li>[Topic 2]</li></ol><h2>Discussion & Decisions</h2><p>[Summary of discussion and decision.]</p><h2>Action Items</h2><table class="custom-table"><tr><th>Action</th><th>Owner</th><th>Deadline</th></tr><tr><td>[Action 1]</td><td>[Name]</td><td>[Date]</td></tr></table>';
+        if (lang === 'el') return '<h1>\u03A0\u03C1\u03B1\u03BA\u03C4\u03B9\u03BA\u03AC \u03A3\u03C5\u03BD\u03AC\u03BD\u03C4\u03B7\u03C3\u03B7\u03C2</h1><p><strong>\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1:</strong> [\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1]</p><h2>\u0390\u03B6\u03AD\u03BD\u03C4\u03B1</h2><ol><li>[\u0398\u03AD\u03BC\u03B1 1]</li><li>[\u0398\u03AD\u03BC\u03B1 2]</li></ol><h2>\u03A3\u03C5\u03B6\u03AE\u03C4\u03B7\u03C3\u03B7</h2><p>[\u03A3\u03CD\u03BD\u03BF\u03C8\u03B7.]</p><h2>\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B5\u03C2</h2><table class="custom-table"><tr><th>\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B1</th><th>\u03A5\u03C0\u03B5\u03CD\u03B8\u03C5\u03BD\u03BF\u03C2</th><th>\u03A0\u03C1\u03BF\u03B8\u03B5\u03C3\u03BC\u03AF\u03B1</th></tr><tr><td>[\u0395\u03BD\u03AD\u03C1\u03B3\u03B5\u03B9\u03B1]</td><td>[\u038C\u03BD\u03BF\u03BC\u03B1]</td><td>[\u0397\u03BC\u03B5\u03C1\u03BF\u03BC\u03B7\u03BD\u03AF\u03B1]</td></tr></table>';
+        return '<h1>Meeting Minutes</h1><p><strong>Date:</strong> [Date]<br><strong>Attendees:</strong> [Names]</p><h2>Agenda</h2><ol><li>[Topic 1]</li><li>[Topic 2]</li></ol><h2>Discussion &amp; Decisions</h2><p>[Summary of discussion and decision.]</p><h2>Action Items</h2><table class="custom-table"><tr><th>Action</th><th>Owner</th><th>Deadline</th></tr><tr><td>[Action 1]</td><td>[Name]</td><td>[Date]</td></tr></table>';
       }
     },
     'blank': { icon: 'fa-file-o', title: 'Blank', description: 'Empty document', generate: function() { return '<p><br></p>'; } }
@@ -1700,10 +1899,12 @@
     var blocks = richEditor.children;
     function procInline(node) {
       var r = '';
+      if (!node || !node.childNodes) return r;
       for (var i = 0; i < node.childNodes.length; i++) {
         var c = node.childNodes[i];
-        if (c.nodeType === 3) { r += c.textContent; }
-        else if (c.nodeType === 1) {
+        if (c.nodeType === 3) {
+          r += c.textContent;
+        } else if (c.nodeType === 1) {
           var ct = c.tagName.toLowerCase();
           if (ct === 'strong' || ct === 'b') r += '**' + procInline(c) + '**';
           else if (ct === 'em' || ct === 'i') r += '*' + procInline(c) + '*';
@@ -1711,9 +1912,9 @@
           else if (ct === 'code') r += '`' + c.textContent + '`';
           else if (ct === 'sub') r += '~' + procInline(c) + '~';
           else if (ct === 'sup') r += '^' + procInline(c) + '^';
-          else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href')||'') + ')';
+          else if (ct === 'a') r += '[' + c.textContent + '](' + (c.getAttribute('href') || '') + ')';
           else if (ct === 'br') r += '\n';
-          else if (ct === 'img') r += '![' + (c.getAttribute('alt')||'') + '](' + (c.getAttribute('src')||'') + ')';
+          else if (ct === 'img') r += '![' + (c.getAttribute('alt') || '') + '](' + (c.getAttribute('src') || '') + ')';
           else r += procInline(c);
         }
       }
@@ -1721,39 +1922,39 @@
     }
     for (var i = 0; i < blocks.length; i++) {
       var n = blocks[i], tag = n.tagName ? n.tagName.toLowerCase() : '';
-      if (tag === 'h1') md += '# ' + n.textContent + '\n\n';
-      else if (tag === 'h2') md += '## ' + n.textContent + '\n\n';
-      else if (tag === 'h3') md += '### ' + n.textContent + '\n\n';
-      else if (tag === 'h4') md += '#### ' + n.textContent + '\n\n';
-      else if (tag === 'blockquote') md += '> ' + n.textContent.replace(/\n/g,'\n> ') + '\n\n';
-      else if (tag === 'pre') md += '```\n' + n.textContent + '\n```\n\n';
+      if (tag === 'h1') md += '# ' + (n.textContent || '').trim() + '\n\n';
+      else if (tag === 'h2') md += '## ' + (n.textContent || '').trim() + '\n\n';
+      else if (tag === 'h3') md += '### ' + (n.textContent || '').trim() + '\n\n';
+      else if (tag === 'h4') md += '#### ' + (n.textContent || '').trim() + '\n\n';
+      else if (tag === 'blockquote') md += '> ' + (n.textContent || '').replace(/\n/g, '\n> ') + '\n\n';
+      else if (tag === 'pre') md += '```\n' + (n.textContent || '') + '\n```\n\n';
       else if (tag === 'ul') {
         var items = n.querySelectorAll(':scope > li');
-        for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]) + '\n';
+        for (var u = 0; u < items.length; u++) md += '- ' + procInline(items[u]).replace(/\n/g, ' ') + '\n';
         md += '\n';
       }
       else if (tag === 'ol') {
         var items2 = n.querySelectorAll(':scope > li');
-        for (var o = 0; o < items2.length; o++) md += (o+1) + '. ' + procInline(items2[o]) + '\n';
+        for (var o = 0; o < items2.length; o++) md += (o + 1) + '. ' + procInline(items2[o]).replace(/\n/g, ' ') + '\n';
         md += '\n';
       }
       else if (tag === 'table' && n.classList.contains('custom-table')) {
         var rows = n.querySelectorAll('tr');
         if (rows.length > 0) {
           var hc = rows[0].querySelectorAll('th, td');
-          md += '| ' + Array.from(hc).map(function(c){return c.textContent}).join(' | ') + ' |\n';
-          md += '|' + Array.from(hc).map(function(){return '---'}).join('|') + '|\n';
+          md += '| ' + Array.from(hc).map(function(cell) { return cell.textContent.trim(); }).join(' | ') + ' |\n';
+          md += '|' + Array.from(hc).map(function() { return '---'; }).join('|') + '|\n';
           for (var ri = 1; ri < rows.length; ri++) {
             var cells = rows[ri].querySelectorAll('td, th');
-            md += '| ' + Array.from(cells).map(function(c){return c.textContent}).join(' | ') + ' |\n';
+            md += '| ' + Array.from(cells).map(function(cell) { return cell.textContent.trim(); }).join(' | ') + ' |\n';
           }
           md += '\n';
         }
       }
       else if (tag === 'div' && n.classList.contains('page-break-marker')) md += '\n---\n\n';
       else if (tag === 'hr') md += '\n---\n\n';
-      else if (tag === 'img') md += '![' + (n.getAttribute('alt')||'') + '](' + (n.getAttribute('src')||'') + ')\n\n';
-      else md += procInline(n) + '\n\n';
+      else if (tag === 'img') md += '![' + (n.getAttribute('alt') || '') + '](' + (n.getAttribute('src') || '') + ')\n\n';
+      else md += procInline(n).replace(/\n/g, ' ').trim() + '\n\n';
     }
     downloadBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), getFileName('md'));
     showToast(getTrans('toast_exported') || 'Exported');
@@ -1762,7 +1963,7 @@
   // ===== EXPORT: RTF =====
   function exportRtf() {
     var rtf = '{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}{\\f1 Courier New;}}\n';
-    function esc(text) { return text.replace(/\\/g,'\\\\').replace(/\{/g,'\\{').replace(/\}/g,'\\}').replace(/\n/g,'\\line\n'); }
+    function esc(text) { return text.replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}').replace(/\n/g, '\\line\n'); }
     function procInline(node) {
       var r = '';
       for (var i = 0; i < node.childNodes.length; i++) {
@@ -1798,7 +1999,7 @@
       }
       else if (tag === 'ol') {
         var items2 = n.querySelectorAll(':scope > li');
-        for (var o = 0; o < items2.length; o++) rtf += '{\\pntext ' + (o+1) + '.\\tab ' + procInline(items2[o]) + '}\\par\n';
+        for (var o = 0; o < items2.length; o++) rtf += '{\\pntext ' + (o + 1) + '.\\tab ' + procInline(items2[o]) + '}\\par\n';
       }
       else if (tag === 'div' && n.classList.contains('page-break-marker')) rtf += '\\page\n';
       else if (tag === 'table' && n.classList.contains('custom-table')) {
@@ -1821,11 +2022,11 @@
 
   // ===== EXPORT: DOCX =====
   function exportDocx() {
-    if (typeof JSZip === 'undefined') { showToast('JSZip library not found. Place jszip.min.js in assets/js/lib/'); return; }
+    if (typeof JSZip === 'undefined') { showToast('JSZip library not found'); return; }
     var zip = new JSZip();
     var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
     var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
-    var coreXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + escapeXml(currentMetadata.title||'') + '</dc:title><dc:creator>' + escapeXml(currentMetadata.author||'') + '</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + (currentMetadata.created||new Date().toISOString()) + '</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + '</dcterms:modified></cp:coreProperties>';
+    var coreXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + escapeXml(currentMetadata.title || '') + '</dc:title><dc:creator>' + escapeXml(currentMetadata.author || '') + '</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + (currentMetadata.created || new Date().toISOString()) + '</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">' + new Date().toISOString() + '</dcterms:modified></cp:coreProperties>';
     var appXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>orOS Writer</Application></Properties>';
     var docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>';
 
@@ -1834,8 +2035,7 @@
       for (var i = 0; i < node.childNodes.length; i++) {
         var c = node.childNodes[i];
         if (c.nodeType === 3) {
-          var esc = escapeXml(c.textContent);
-          r += '<w:r><w:t xml:space="preserve">' + esc + '</w:t></w:r>';
+          r += '<w:r><w:t xml:space="preserve">' + escapeXml(c.textContent) + '</w:t></w:r>';
         } else if (c.nodeType === 1) {
           var ct = c.tagName.toLowerCase();
           if (ct === 'strong' || ct === 'b') r += '<w:r><w:rPr><w:b/></w:rPr>' + procDocxInline(c) + '</w:r>';
@@ -1860,10 +2060,10 @@
       if (tag === 'h1') docBody += '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>' + procDocxInline(n) + '</w:p>';
       else if (tag === 'h2') docBody += '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr>' + procDocxInline(n) + '</w:p>';
       else if (tag === 'h3') docBody += '<w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr>' + procDocxInline(n) + '</w:p>';
-      else if (tag === 'h4'||tag==='h5'||tag==='h6') docBody += '<w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr>' + procDocxInline(n) + '</w:p>';
+      else if (tag === 'h4' || tag === 'h5' || tag === 'h6') docBody += '<w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr>' + procDocxInline(n) + '</w:p>';
       else if (tag === 'blockquote') docBody += '<w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr>' + procDocxInline(n) + '</w:p>';
       else if (tag === 'pre') {
-        var lines = (n.textContent||'').split('\n');
+        var lines = (n.textContent || '').split('\n');
         for (var l = 0; l < lines.length; l++) {
           docBody += '<w:p><w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/></w:rPr><w:t xml:space="preserve">' + escapeXml(lines[l]) + '</w:t></w:r></w:p>';
         }
@@ -1884,7 +2084,7 @@
           var cells = rows[r].querySelectorAll('td, th');
           docBody += '<w:tr>';
           for (var cc = 0; cc < cells.length; cc++) {
-            docBody += '<w:tc><w:tcPr><w:tcW w:w="2500" w:type="dxa"/></w:tcPr><w:p>' + (cells[cc].tagName==='TH'?'<w:rPr><w:b/></w:rPr>':'') + procDocxInline(cells[cc]) + '</w:p></w:tc>';
+            docBody += '<w:tc><w:tcPr><w:tcW w:w="2500" w:type="dxa"/></w:tcPr><w:p>' + (cells[cc].tagName === 'TH' ? '<w:rPr><w:b/></w:rPr>' : '') + procDocxInline(cells[cc]) + '</w:p></w:tc>';
           }
           docBody += '</w:tr>';
         }
@@ -1942,14 +2142,14 @@
     if (chapters.length === 0) chapters.push({ title: title, html: richEditor.innerHTML });
     var manifestItems = '', spineItems = '', navItems = '';
     for (var j = 0; j < chapters.length; j++) {
-      var fn = 'chapter' + (j+1) + '.xhtml';
+      var fn = 'chapter' + (j + 1) + '.xhtml';
       var cleaned = chapters[j].html.replace(/contenteditable="[^"]*"/g, '').replace(/data-[a-z-]+="[^"]*"/g, '');
       zip.file('OEBPS/' + fn, '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>' + escapeXml(chapters[j].title) + '</title><link rel="stylesheet" href="style.css" type="text/css"/></head><body>' + cleaned + '</body></html>');
-      manifestItems += '<item id="chap' + (j+1) + '" href="' + fn + '" media-type="application/xhtml+xml"/>';
-      spineItems += '<itemref idref="chap' + (j+1) + '"/>';
+      manifestItems += '<item id="chap' + (j + 1) + '" href="' + fn + '" media-type="application/xhtml+xml"/>';
+      spineItems += '<itemref idref="chap' + (j + 1) + '"/>';
       navItems += '<li><a href="' + fn + '">' + escapeXml(chapters[j].title) + '</a></li>';
     }
-    var opfXml = '<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf"><dc:identifier id="BookId">urn:uuid:' + bookId + '</dc:identifier><dc:title>' + title + '</dc:title><dc:creator>' + author + '</dc:creator><dc:language>' + (getCurrentLang()==='el'?'el':'en') + '</dc:language></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="css" href="style.css" media-type="text/css"/>' + manifestItems + '</manifest><spine>' + spineItems + '</spine></package>';
+    var opfXml = '<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf"><dc:identifier id="BookId">urn:uuid:' + bookId + '</dc:identifier><dc:title>' + title + '</dc:title><dc:creator>' + author + '</dc:creator><dc:language>' + (getCurrentLang() === 'el' ? 'el' : 'en') + '</dc:language></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="css" href="style.css" media-type="text/css"/>' + manifestItems + '</manifest><spine>' + spineItems + '</spine></package>';
     var navXhtml = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Table of Contents</title></head><body><nav epub:type="toc"><h1>Table of Contents</h1><ol>' + navItems + '</ol></nav></body></html>';
     var css = 'body{font-family:Georgia,serif;line-height:1.6;margin:1em;}h1{font-size:1.8em;}h2{font-size:1.4em;}blockquote{margin-left:1em;font-style:italic;border-left:3px solid #ccc;padding-left:1em;}pre{font-family:monospace;}table{border-collapse:collapse;}td,th{border:1px solid #ccc;padding:0.3em;}';
     zip.file('META-INF/container.xml', containerXml);
@@ -2003,7 +2203,6 @@
     set('toggle-typewriter-sound', typewriterSoundEnabled);
     set('toggle-smart-paste', smartPasteEnabled);
     set('toggle-focus-mode', focusModeEnabled);
-    // Hide/show toolbar buttons based on stored prefs
     applyToolbarVisibilityPrefs();
   }
 
@@ -2033,10 +2232,11 @@
     localStorage.setItem('oros_hide_find_btn', get('toggle-hide-find-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_wordfreq_btn', get('toggle-hide-wordfreq-btn') ? 'true' : 'false');
     localStorage.setItem('oros_hide_lorem_btn', get('toggle-hide-lorem-btn') ? 'true' : 'false');
-    smartTypographyEnabled = get('toggle-smart-typography'); localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : ''');
-    smartPasteEnabled = get('toggle-smart-paste'); localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
-    
-    // Page size setting
+    smartTypographyEnabled = get('toggle-smart-typography');
+    localStorage.setItem('oros_smart_typography', smartTypographyEnabled ? 'true' : 'false');
+    smartPasteEnabled = get('toggle-smart-paste');
+    localStorage.setItem('oros_smart_paste', smartPasteEnabled ? 'true' : 'false');
+
     var pageSizeSelect = document.getElementById('setting-page-size');
     if (pageSizeSelect) {
       var ps = pageSizeSelect.value;
@@ -2048,7 +2248,7 @@
         applyPageSettings();
       }
     }
-    
+
     applyToolbarVisibilityPrefs();
     showToast(getTrans('settings_saved') || 'Settings saved');
   }
@@ -2067,20 +2267,20 @@
     if (!list) return;
     var lang = getCurrentLang();
     var shortcuts = [
-      { k: 'Ctrl+S', d: lang === 'el' ? 'Αποθήκευση' : 'Save' },
-      { k: 'Ctrl+N', d: lang === 'el' ? 'Νέο εγγραφο' : 'New document' },
-      { k: 'Ctrl+W', d: lang === 'el' ? 'Κλείσιμο καρτέλας' : 'Close tab' },
+      { k: 'Ctrl+S', d: lang === 'el' ? '\u0391\u03C0\u03BF\u03B8\u03AE\u03BA\u03B5\u03C5\u03C3\u03B7' : 'Save' },
+      { k: 'Ctrl+N', d: lang === 'el' ? '\u039D\u03AD\u03BF \u03B5\u03B3\u03B3\u03C1\u03B1\u03C6\u03BF' : 'New document' },
+      { k: 'Ctrl+W', d: lang === 'el' ? '\u039A\u03BB\u03B5\u03AF\u03C3\u03B9\u03BC\u03BF \u03BA\u03B1\u03C1\u03C4\u03AD\u03BB\u03B1\u03C2' : 'Close tab' },
       { k: 'Ctrl+B', d: 'Bold' },
       { k: 'Ctrl+I', d: 'Italic' },
       { k: 'Ctrl+U', d: 'Underline' },
-      { k: 'Ctrl+Shift+X', d: lang === 'el' ? 'Διαγραμμίωση' : 'Strikethrough' },
-      { k: 'Ctrl+F', d: lang === 'el' ? 'Εύρεση' : 'Find' },
-      { k: 'Ctrl+G', d: lang === 'el' ? 'Στόχος λέξεων' : 'Word goal' },
-      { k: 'Ctrl+K', d: lang === 'el' ? 'Εισαγωγή συνδέσμου' : 'Insert link' },
-      { k: 'Ctrl+,', d: lang === 'el' ? 'Κάτω δείκτης' : 'Subscript' },
-      { k: 'Ctrl+.', d: lang === 'el' ? 'Πάνω δείκτης' : 'Superscript' },
-      { k: 'F9', d: lang === 'el' ? 'Λειτουργία ανάγνωσης' : 'Reading mode' },
-      { k: 'Double-click tab', d: lang === 'el' ? 'Μετονομασία καρτέλας' : 'Rename tab' }
+      { k: 'Ctrl+Shift+X', d: lang === 'el' ? '\u0394\u03B9\u03B1\u03B3\u03C1\u03B1\u03BC\u03BC\u03AF\u03C9\u03C3\u03B7' : 'Strikethrough' },
+      { k: 'Ctrl+F', d: lang === 'el' ? '\u0395\u03CD\u03C1\u03B5\u03C3\u03B7' : 'Find' },
+      { k: 'Ctrl+G', d: lang === 'el' ? '\u03A3\u03C4\u03CC\u03C7\u03BF\u03C2 \u03BB\u03AD\u03BE\u03B5\u03C9\u03BD' : 'Word goal' },
+      { k: 'Ctrl+K', d: lang === 'el' ? '\u0395\u03B9\u03C3\u03B1\u03B3\u03C9\u03B3\u03AE \u03C3\u03C5\u03BD\u03B4\u03AD\u03C3\u03BC\u03BF\u03C5' : 'Insert link' },
+      { k: 'Ctrl+,', d: lang === 'el' ? '\u039A\u03AC\u03C4\u03C9 \u03B4\u03B5\u03AF\u03BA\u03C4\u03B7\u03C2' : 'Subscript' },
+      { k: 'Ctrl+.', d: lang === 'el' ? '\u03A0\u03AC\u03BD\u03C9 \u03B4\u03B5\u03AF\u03BA\u03C4\u03B7\u03C2' : 'Superscript' },
+      { k: 'F9', d: lang === 'el' ? '\u039B\u03B5\u03B9\u03C4\u03BF\u03C5\u03C1\u03B3\u03AF\u03B1 \u03B1\u03BD\u03AC\u03B3\u03BD\u03C9\u03C3\u03B7\u03C2' : 'Reading mode' },
+      { k: 'Double-click tab', d: lang === 'el' ? '\u039C\u03B5\u03C4\u03BF\u03BD\u03BF\u03BC\u03B1\u03C3\u03AF\u03B1 \u03BA\u03B1\u03C1\u03C4\u03AD\u03BB\u03B1\u03C2' : 'Rename tab' }
     ];
     var html = '';
     for (var i = 0; i < shortcuts.length; i++) {
@@ -2088,244 +2288,310 @@
     }
     list.innerHTML = html;
   }
-
-  // ===== UTILITIES =====
-  function downloadBlob(blob, fileName) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 100);
+  
+    // ===== MISSING FUNCTIONS (called by init) =====
+  function loadTranslations() {
+    // Translations loaded externally via window.OROS_TRANSLATIONS
   }
 
-  function getFileName(extension) {
-    var base = (currentMetadata.title || 'untitled').replace(/[^a-zA-Z0-9\u0370-\u03FF\s\-_]/g, '').trim().replace(/\s+/g, '_');
-    return base + '.' + extension;
+  function applyLanguage(lang) {
+    localStorage.setItem('oros_lang', lang);
+    var translatable = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < translatable.length; i++) {
+      var key = translatable[i].getAttribute('data-i18n');
+      var val = getTrans(key);
+      if (val && val !== key) translatable[i].textContent = val;
+    }
   }
 
-  function escapeXml(text) {
-    if (!text) return '';
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  function setupFormatButtons() {
+    bindClick('btn-bold', function() { document.execCommand('bold'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-italic', function() { document.execCommand('italic'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-underline', function() { document.execCommand('underline'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-strikethrough', function() { document.execCommand('strikeThrough'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-subscript', function() { document.execCommand('subscript'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-superscript', function() { document.execCommand('superscript'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-h1', function() { document.execCommand('formatBlock', false, 'h1'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-h2', function() { document.execCommand('formatBlock', false, 'h2'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-h3', function() { document.execCommand('formatBlock', false, 'h3'); saveCurrentTabContent(); updateStats(); setTimeout(updateToolbarStates, 10); });
+    bindClick('btn-bullets', function() { document.execCommand('insertUnorderedList'); saveCurrentTabContent(); updateStats(); });
+    bindClick('btn-numbers', function() { document.execCommand('insertOrderedList'); saveCurrentTabContent(); updateStats(); });
+    bindClick('btn-align-left', function() { document.execCommand('justifyLeft'); saveCurrentTabContent(); });
+    bindClick('btn-align-center', function() { document.execCommand('justifyCenter'); saveCurrentTabContent(); });
+    bindClick('btn-align-right', function() { document.execCommand('justifyRight'); saveCurrentTabContent(); });
+    bindClick('btn-quote', function() { document.execCommand('formatBlock', false, 'blockquote'); saveCurrentTabContent(); updateStats(); });
+    bindClick('btn-code', function() { document.execCommand('formatBlock', false, 'pre'); saveCurrentTabContent(); updateStats(); });
+    bindClick('btn-hr', function() { document.execCommand('insertHorizontalRule'); saveCurrentTabContent(); });
+    bindClick('btn-undo', function() { document.execCommand('undo'); saveCurrentTabContent(); updateStats(); });
+    bindClick('btn-redo', function() { document.execCommand('redo'); saveCurrentTabContent(); updateStats(); });
   }
 
-  function formatDate(date) {
-    if (!date || !(date instanceof Date)) return '';
-    var day = String(date.getDate()).padStart(2, '0');
-    var month = String(date.getMonth() + 1).padStart(2, '0');
-    var year = date.getFullYear();
-    var hour = String(date.getHours()).padStart(2, '0');
-    var min = String(date.getMinutes()).padStart(2, '0');
-    return day + '/' + month + '/' + year + ' ' + hour + ':' + min;
+  function setupEditorInput() {
+    if (!richEditor) return;
+    richEditor.addEventListener('input', function() {
+      saveCurrentTabContent();
+      updateStats();
+      if (focusModeEnabled) highlightFocusedParagraph();
+    });
+    richEditor.addEventListener('scroll', function() {
+      updateReadingProgress();
+      if (focusModeEnabled) highlightFocusedParagraph();
+    }, { passive: true });
+    richEditor.addEventListener('paste', function(e) {
+      if (!smartPasteEnabled || goalLockTriggered) return;
+      e.preventDefault();
+      var cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      var html = cd.getData('text/html');
+      var text = cd.getData('text/plain');
+      if (html) {
+        var temp = document.createElement('div');
+        temp.innerHTML = html;
+        var allowed = ['P','H1','H2','H3','H4','H5','H6','UL','OL','LI','STRONG','EM','B','I','U','A','CODE','PRE','BLOCKQUOTE','BR','SPAN','TABLE','TD','TH','TR'];
+        var all = temp.querySelectorAll('*');
+        for (var j = 0; j < all.length; j++) {
+          var el = all[j];
+          if (allowed.indexOf(el.tagName) === -1) {
+            var txt = document.createTextNode(el.textContent + ' ');
+            el.parentNode.replaceChild(txt, el);
+          } else {
+            while (el.attributes.length > 0) {
+              var attr = el.attributes[0];
+              if (!(el.tagName === 'A' && attr.name === 'href')) el.removeAttribute(attr.name);
+            }
+          }
+        }
+        document.execCommand('insertHTML', false, temp.innerHTML);
+      } else if (text) {
+        document.execCommand('insertText', false, text);
+      }
+      saveCurrentTabContent();
+      updateStats();
+    });
   }
 
-  function formatNumber(n) {
-    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+      if (e.target.closest('.dialog-overlay, .settings-modal, input, textarea, select')) return;
+      var key = [];
+      if (e.ctrlKey) key.push('ctrl');
+      if (e.shiftKey) key.push('shift');
+      if (e.altKey) key.push('alt');
+      key.push(e.key.toLowerCase());
+      var combo = key.join('+');
+      switch (combo) {
+        case 'ctrl+s': e.preventDefault(); saveCurrentTabContent(); showToast(getTrans('text_saved') || 'Saved'); break;
+        case 'ctrl+n': e.preventDefault(); createTab({ content: '', metadata: {} }); break;
+        case 'ctrl+f': e.preventDefault(); toggleFindBar(); break;
+        case 'ctrl+g': e.preventDefault(); toggleGoalBar(); break;
+        case 'ctrl+k': e.preventDefault(); toggleLinkDialog(); break;
+        case 'ctrl+enter': e.preventDefault(); insertPageBreak(); saveCurrentTabContent(); break;
+        case 'ctrl+,': e.preventDefault(); document.execCommand('subscript'); saveCurrentTabContent(); break;
+        case 'ctrl+.': e.preventDefault(); document.execCommand('superscript'); saveCurrentTabContent(); break;
+        case 'ctrl+shift+x': e.preventDefault(); document.execCommand('strikeThrough'); saveCurrentTabContent(); break;
+        case 'f9': e.preventDefault(); toggleReadingMode(); break;
+      }
+    });
   }
 
-  function showToast(message) {
-    if (!toastContainer) return;
-    var toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-    toastContainer.appendChild(toast);
-    setTimeout(function() {
-      toast.classList.add('show');
-      setTimeout(function() {
-        toast.classList.remove('show');
-        setTimeout(function() { toastContainer.removeChild(toast); }, 300);
-      }, 3000);
-    }, 50);
+  function handleSmartTypography() {
+    if (!smartTypographyEnabled || isReplacing || goalLockTriggered || !richEditor) return;
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!range.collapsed || !richEditor.contains(range.endContainer)) return;
+    var preRange = range.cloneRange();
+    preRange.selectNodeContents(richEditor);
+    preRange.setEnd(range.endContainer, range.endOffset);
+    var before = preRange.toString();
+    if (!before) return;
+    var deleteLen = 0;
+    var insert = '';
+    var last2 = before.slice(-2);
+    var last1 = before.slice(-1);
+    if (last2 === '--') { deleteLen = 2; insert = '\u2014'; }
+    else if (last1 === '"') {
+      var pc = before.length > 1 ? before[before.length - 2] : ' ';
+      insert = /\w/.test(pc) ? '\u201D' : '\u201C';
+      deleteLen = 1;
+    } else if (last1 === "'") {
+      var pc2 = before.length > 1 ? before[before.length - 2] : ' ';
+      insert = /\w/.test(pc2) ? '\u2019' : '\u2018';
+      deleteLen = 1;
+    } else return;
+    isReplacing = true;
+    for (var i = 0; i < deleteLen; i++) document.execCommand('delete', false);
+    document.execCommand('insertText', false, insert);
+    isReplacing = false;
   }
 
-  function getCurrentLang() {
-    return (localStorage.getItem('oros_lang') || 'en').substring(0, 2);
+  function updateReadingProgress() {
+    if (!progressBar || !richEditor || !readingProgressEnabled) return;
+    var editorHeight = richEditor.scrollHeight;
+    var scrollPos = richWrapper.scrollTop;
+    var viewHeight = richWrapper.clientHeight;
+    var progress = Math.max(0, Math.min(100, ((scrollPos + viewHeight) / editorHeight * 100) - (viewHeight / editorHeight * 100)));
+    progressBar.style.width = progress + '%';
   }
 
-  // ===== DOM BINDING =====
-  function bindDOMElements() {
-    richEditor = document.getElementById('rich-editor');
-    richWrapper = document.getElementById('rich-wrapper');
-    tabBar = document.getElementById('tab-bar');
+  function updateToolbarStates() {
+    if (!richEditor) return;
+    var activeEl = document.activeElement;
+    var isActive = activeEl === richEditor || (activeEl && richEditor.contains(activeEl));
+    document.getElementById('btn-bold').classList.toggle('active', isActive && document.queryCommandState('bold'));
+    document.getElementById('btn-italic').classList.toggle('active', isActive && document.queryCommandState('italic'));
+    document.getElementById('btn-underline').classList.toggle('active', isActive && document.queryCommandState('underline'));
+    document.getElementById('btn-strikethrough').classList.toggle('active', isActive && document.queryCommandState('strikeThrough'));
+    detectCurrentStyle();
+  }
+
+  function bindClick(id, handler) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', handler);
+  }
+
+  // ===== WINDOW RESIZE =====
+  function clampToViewport() {
+    if (!richEditor) return;
+    if (window.innerWidth <= 768) {
+      richEditor.style.minHeight = (window.innerHeight - 180) + 'px';
+    } else {
+      richEditor.style.minHeight = (window.innerHeight - 140) + 'px';
+    }
+  }
+
+  window.addEventListener('resize', function() {
+    clampToViewport();
+    updateToC();
+    updateOutline();
+  });
+
+  // ===== BEFORE UNLOAD WARNING =====
+  window.addEventListener('beforeunload', function(e) {
+    var tab = getActiveTab();
+    if (tab && tab.hasUnsavedChanges) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
+  // ===== PWA INSTALL HANDLING =====
+  var beforeInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    beforeInstallPrompt = e;
+  });
+
+  // ===== INITIALIZATION =====
+  function init() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+      return;
+    }
+    if (initialized) return;
+    initialized = true;
+
+    loadTranslations();
+    loadAutoCorrections();
+    initTypewriterSound();
+    loadSettings();
+    applyTheme();
+    clampToViewport();
+
+    var lang = getCurrentLang();
+    if (trans) trans.lang = lang;
+    if (applyLanguage) applyLanguage(lang);
+    applyPageSettings();
+    setupTabsUI();
+
+    richEditor = document.getElementById('editor-content');
+    richWrapper = document.getElementById('editor-wrapper');
+    progressBar = document.getElementById('reading-progress-bar');
+    stats = document.getElementById('word-count');
+    readingTime = document.getElementById('reading-time');
+    wordCountTarget = document.getElementById('word-count-target');
+    findBar = document.getElementById('find-bar');
+    findInput = document.getElementById('find-input');
+    replaceInput = document.getElementById('replace-input');
+    frResults = document.getElementById('fr-results');
+    findFormatFilter = document.getElementById('find-format-filter');
+    stylesSelect = document.getElementById('styles-select');
+    trackChangesBar = document.getElementById('track-changes-bar');
+    commentsPanel = document.getElementById('comments-panel');
+    tocPanel = document.getElementById('toc-panel');
+    outlinePanel = document.getElementById('outline-panel');
+    wordFreqPanel = document.getElementById('word-freq-panel');
+    versionPanel = document.getElementById('version-history-panel');
+    metadataPanel = document.getElementById('metadata-panel');
+    tocList = document.getElementById('toc-list');
+    outlineList = document.getElementById('outline-list');
+    wordFreqList = document.getElementById('word-freq-list');
+    wordFreqSummary = document.getElementById('word-freq-summary');
+    versionList = document.getElementById('version-list');
     metaTitle = document.getElementById('meta-title');
     metaAuthor = document.getElementById('meta-author');
     metaTags = document.getElementById('meta-tags');
     metaCategory = document.getElementById('meta-category');
     metaCreated = document.getElementById('meta-created');
     metaModified = document.getElementById('meta-modified');
-    saveIndicator = document.getElementById('save-indicator');
-    goalTarget = null;
-    goalUnit = localStorage.getItem('oros_goal_unit') || 'words';
-    goalLockEnabled = localStorage.getItem('oros_goal_lock') === 'true';
-    goalTargetInput = document.getElementById('goal-target-input');
-    goalUnitSelect = document.getElementById('goal-unit-select');
-    goalLockCheckbox = document.getElementById('goal-lock-checkbox');
-    statsDefaultEl = document.getElementById('stats-default');
-    statsGoalEl = document.getElementById('stats-goal');
-    statsDetailed = document.getElementById('stats-detailed');
-    goalBar = document.getElementById('goal-bar');
-    goalBarContent = document.getElementById('goal-bar-content');
-    goalBarFill = document.getElementById('goal-bar-fill');
     sessionDisplay = document.getElementById('session-display');
-    readingProgressBar = document.getElementById('reading-progress-bar');
-    outlinePanel = document.getElementById('outline-panel');
-    outlineList = document.getElementById('outline-list');
-    wordFreqPanel = document.getElementById('word-freq-panel');
-    wordFreqList = document.getElementById('word-freq-list');
-    wordFreqSummary = document.getElementById('word-freq-summary');
-    commentsPanel = document.getElementById('comments-panel');
-    footnoteArea = document.getElementById('footnote-area');
-    tocPanel = document.getElementById('toc-panel');
-    tocList = document.getElementById('toc-list');
-    versionPanel = document.getElementById('version-panel');
-    metadataPanel = document.getElementById('metadata-panel');
-    findBar = document.getElementById('find-bar');
-    findInput = document.getElementById('find-input');
-    replaceInput = document.getElementById('replace-input');
-    frResults = document.getElementById('fr-results');
-    trackChangesBar = document.getElementById('track-changes-bar');
-    versionPanel = document.getElementById('version-panel');
-    stylesSelect = document.getElementById('styles-select');
-    toastContainer = document.getElementById('toast-container');
-    
-    var btns = [
-      'btn-bold','btn-italic','btn-underline','btn-strikethrough','btn-subscript','btn-superscript',
-      'btn-h1','btn-h2','btn-h3','btn-bullets','btn-numbers','btn-align-left','btn-align-center','btn-align-right',
-      'btn-quote','btn-code','btn-hr','btn-undo','btn-redo','btn-link','btn-image','btn-table','btn-special',
-      'btn-template','btn-track-changes','btn-outline','btn-metadata','btn-comments','btn-toc','btn-wordfreq','btn-version','btn-find',
-      'btn-goalse','btn-session','btn-zen','btn-focus','btn-reading'
-    ];
-    for (var i = 0; i < btns.length; i++) {
-      var b = document.getElementById(btns[i]);
-      if (b) { /* buttons exist */ }
-    }
-  }
 
-  // ===== INITIALIZATION =====
-  function init() {
     loadTranslations();
-    applyLanguage(localStorage.getItem('oros_lang') || 'en');
-    loadAutoCorrections();
-    bindDOMElements();
     setupFormatButtons();
     setupEditorInput();
     setupKeyboardShortcuts();
     loadTabs();
-    onTabSwitch(getActiveTab());
-    if (smartTypographyEnabled) document.addEventListener('keyup', function(e) {
-      if (!isReplacing && !goalLockTriggered) handleSmartTypography();
-    });
-    if (typewriterSoundEnabled && typewriterAudioCtx) document.addEventListener('keypress', function(e) {
-      if (document.activeElement === richEditor && !e.ctrlKey && !e.altKey && e.key.length === 1 && /[a-zA-Z0-9\u03B1-\u03C9\s]/.test(e.key)) {
-        playTypewriterSound();
-      }
-    });
-    loadSettingsValues();
-    initWindowResize();
-    
-    if (typeof window.onbeforeinstallprompt === 'function' || 'onbeforeinstallprompt' in window) {
-      window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        var installBtn = document.getElementById('btn-install-app');
-        if (installBtn) {
-          installBtn.style.display = '';
-          installBtn.onclick = function() {
-            if (window.deferredPrompt) {
-              window.deferredPrompt.prompt();
-              window.deferredPrompt.userChoice.then(function(choiceResult) {
-                window.deferredPrompt = null;
-                installBtn.style.display = 'none';
-              });
-            }
-          };
-        }
-      });
-    }
+    createTab({ content: '<p><br></p>', metadata: { created: new Date().toISOString(), modified: new Date().toISOString(), author: '', tags: '', category: '', title: 'Untitled', pageSize: 'a4' } }, false);
+    applyLanguage(getCurrentLang());
 
-    window.addEventListener('load', function() {
-      updateStats();
-      updateReadingProgress();
-      updateToolbarStates();
-      applyPageSettings();
-    });
+    if (findInput) findInput.addEventListener('input', highlightMatches);
+    if (findFormatFilter) findFormatFilter.addEventListener('change', highlightMatches);
+    setInterval(autoSaveCheck, AUTO_SAVE_INTERVAL_MS);
 
-    window.addEventListener('resize', function() {
-      clearTimeout(windowResizeDebounce);
-      windowResizeDebounce = setTimeout(function() {
-        updateReadingProgress();
-        highlightFocusedParagraph();
-      }, 100);
-    });
+    setTimeout(function() {
+      document.body.classList.add('loaded');
+    }, 100);
 
-    setInterval(updateSaveIndicator, 10000);
-    
-    var confirmUnload = function(e) {
-      if (activeTabId && activeTabId !== 'index-home') {
-        e.preventDefault();
-        e.returnValue = getTrans('confirm_leave') || 'You have unsaved changes. Are you sure you want to leave?';
-        return e.returnValue;
-      }
+    window.orOSWriter = {
+      exportTxt: exportTxt,
+      exportMarkdown: exportMarkdown,
+      exportRtf: exportRtf,
+      exportDocx: exportDocx,
+      exportEpub: exportEpub,
+      handleExport: handleExport,
+      toggleComments: toggleCommentsPanel,
+      toggleToC: toggleToCPanel,
+      toggleOutline: toggleOutline,
+      toggleWordFrequency: toggleWordFreqPanel,
+      toggleMetadata: toggleMetadataPanel,
+      toggleTemplates: toggleTemplatesDialog,
+      toggleSpecialChars: toggleSpecialCharsDialog,
+      toggleSettings: toggleSettingsModal,
+      toggleHelp: toggleHelpDialog,
+      clearContent: clearContent,
+      insertPageBreak: insertPageBreak,
+      toggleZenMode: toggleZenMode,
+      toggleFocusMode: toggleFocusMode,
+      toggleReadingMode: toggleReadingMode,
+      addVersionSnapshot: addVersionSnapshot,
+      restoreVersion: restoreVersion,
+      acceptAllTrackChanges: acceptAllChanges,
+      rejectAllTrackChanges: rejectAllChanges,
+      toggleTrackChanges: toggleTrackChanges
     };
-    window.addEventListener('beforeunload', confirmUnload);
 
-    console.log('orOS Writer initialized successfully');
-    orOSWriter.ready = true;
+    showToast('Welcome to orOS Writer!');
   }
 
-  function playTypewriterSound() {
-    if (!typewriterAudioBuffer) return;
-    if (!typewriterAudioCtx) {
-      try {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) typewriterAudioCtx = new AC();
-      } catch(e) { return; }
-    }
-    var src = typewriterAudioCtx.createBufferSource();
-    src.buffer = typewriterAudioBuffer;
-    var gain = typewriterAudioCtx.createGain();
-    gain.gain.value = 0.05;
-    src.connect(gain);
-    gain.connect(typewriterAudioCtx.destination);
-    src.start(0);
-  }
+  // ===== PUBLIC API (for external access) =====
+  window.orOSWriterInit = init;
 
-  function initWindowResize() {
-    var resizeObserver = null;
-    if (typeof ResizeObserver !== 'undefined' && richWrapper) {
-      resizeObserver = new ResizeObserver(function(entries) {
-        updateReadingProgress();
-        highlightFocusedParagraph();
-      });
-      resizeObserver.observe(richWrapper);
-    }
-  }
-
-  // ===== PUBLIC API =====
-  orOSWriter = {
-    init: init,
-    tabs: getTabsApi(),
-    settings: {
-      save: saveSettings,
-      load: loadSettingsValues
-    },
-    export: handleExport,
-    insertLoremIpsum: insertLoremIpsum,
-    clearContent: clearContent,
-    addComment: addComment,
-    toggleFocusMode: toggleFocusMode,
-    toggleReadingMode: toggleReadingMode,
-    getActiveTab: getActiveTab,
-    createTab: createTab,
-    closeTab: closeTabById,
-    switchTab: switchTab
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
+  // ===== BOOTSTRAP =====
+  if (document.readyState === 'complete') {
     init();
+  } else {
+    document.addEventListener('DOMContentLoaded', init);
   }
 
 })();
