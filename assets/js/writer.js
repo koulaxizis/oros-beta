@@ -2060,7 +2060,7 @@
     else { var active = tabsModule.getActive(); if (active && richEditor) { richEditor.innerHTML = active.content || '<p><br></p>'; updateStats(); } }
   }
 
-   // ===== INITIALIZATION =====
+     // ===== INITIALIZATION =====
   function init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
@@ -2069,13 +2069,22 @@
     if (initialized) return;
     initialized = true;
 
-    // ===== WAIT FOR TRANSLATIONS =====
+    // ===== WAIT FOR TRANSLATIONS (polling) =====
     if (!loadTranslations()) {
       console.info('Writer: waiting for translations...');
-      window.addEventListener('oros-translations-loaded', function(e) {
-        activeTranslations = e.detail.translations;
-        continueInit(e.detail.lang);
-      }, { once: true });
+      var pollCount = 0;
+      var pollTrans = setInterval(function() {
+        pollCount++;
+        if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
+          clearInterval(pollTrans);
+          activeTranslations = window.OROS_TRANSLATIONS;
+          continueInit(getCurrentLang());
+        } else if (pollCount > 60) {
+          clearInterval(pollTrans);
+          console.warn('Writer: translations timeout after 3s, starting with fallback');
+          continueInit(getCurrentLang());
+        }
+      }, 50);
       return;
     }
 
