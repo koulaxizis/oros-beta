@@ -571,8 +571,23 @@
     else document.documentElement.removeAttribute('data-theme');
   }
 
-  // ===== LANGUAGE =====
-  function loadTranslations() { if (!window.OROS_TRANSLATIONS) console.warn('OROS_TRANSLATIONS not loaded yet'); }
+    // ===== LANGUAGE =====
+  var activeTranslations = null;
+
+  function loadTranslations() {
+    if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
+      activeTranslations = window.OROS_TRANSLATIONS;
+      return true;
+    }
+    var stored = localStorage.getItem('oros-translations');
+    if (stored) {
+      try {
+        activeTranslations = JSON.parse(stored);
+        return true;
+      } catch(e) { console.warn('Stored translations parse error:', e); }
+    }
+    return false;
+  }
 
   function applyLanguage(lang) {
     currentLang = lang;
@@ -2045,7 +2060,7 @@
     else { var active = tabsModule.getActive(); if (active && richEditor) { richEditor.innerHTML = active.content || '<p><br></p>'; updateStats(); } }
   }
 
-  // ===== INITIALIZATION =====
+   // ===== INITIALIZATION =====
   function init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
@@ -2054,16 +2069,29 @@
     if (initialized) return;
     initialized = true;
 
-    // Load settings & translations
-    loadTranslations();
+    // ===== WAIT FOR TRANSLATIONS =====
+    if (!loadTranslations()) {
+      console.info('Writer: waiting for translations...');
+      window.addEventListener('oros-translations-loaded', function(e) {
+        activeTranslations = e.detail.translations;
+        continueInit(e.detail.lang);
+      }, { once: true });
+      return;
+    }
+
+    continueInit(getCurrentLang());
+  }
+
+  function continueInit(initialLang) {
+    // Load settings
     loadAutoCorrections();
     initTypewriterSound();
     loadSettings();
     applyTheme();
 
     // Apply language
-    var lang = getCurrentLang();
-    applyLanguage(lang);
+    if (initialLang) currentLang = initialLang;
+    applyLanguage(currentLang);
 
     // Apply page-specific settings
     applyPageSettings();
