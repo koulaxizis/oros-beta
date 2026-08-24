@@ -121,10 +121,6 @@
           <i class="fa fa-strikethrough"></i>
         </button>
         <span class="tb-separator"></span>
-        <button class="fmt-text-btn" id="btn-h1" data-i18n-tooltip="toolbar_h1" title="Heading 1">H1</button>
-        <button class="fmt-text-btn" id="btn-h2" data-i18n-tooltip="toolbar_h2" title="Heading 2">H2</button>
-        <button class="fmt-text-btn" id="btn-h3" data-i18n-tooltip="toolbar_h3" title="Heading 3">H3</button>
-        <span class="tb-separator"></span>
         <button class="action-btn" id="btn-indent" data-i18n-tooltip="toolbar_indent" title="Increase indent">
           <i class="fa fa-indent"></i>
         </button>
@@ -295,8 +291,19 @@
       <div class="stats-overlay" id="stats-overlay">
         <div class="stats-default" id="stats-default"></div>
         <div class="stats-goal" id="stats-goal" style="display:none;"></div>
-        <div class="stats-detailed" id="stats-detailed"></div>
+        <div class="stats-detailed" id="stats-detailed">
+          <div class="stat-row"><span>Words:</span><span>0</span></div>
+          <div class="stat-row"><span>Characters:</span><span>0</span></div>
+          <div class="stat-row"><span>Chars (no spaces):</span><span>0</span></div>
+          <div class="stat-row"><span>Sentences:</span><span>0</span></div>
+          <div class="stat-row"><span>Paragraphs:</span><span>0</span></div>
+          <div class="stat-row"><span>Reading time:</span><span>0 min</span></div>
+          <div class="stat-row"><span>Speaking time:</span><span>0 min</span></div>
+        </div>
       </div>
+      <button class="action-btn" id="btn-exit-reading-mode" style="display:none;position:fixed;top:16px;right:16px;z-index:1001;background:var(--bg-panel);border:1px solid var(--accent-gold);">
+        <i class="fa fa-times"></i> Exit Reading
+      </button>
       <div class="rich-editor" id="rich-editor" contenteditable="true" data-placeholder="Start writing..." data-i18n-placeholder="editor_placeholder"></div>
     </div>
 
@@ -424,6 +431,9 @@
       <button class="panel-close mini-btn" id="btn-close-version"><i class="fa fa-times"></i></button>
     </div>
     <div class="panel-body">
+      <div style="padding:8px 14px;border-bottom:1px solid var(--border-color);">
+        <button class="btn-primary" id="btn-add-version" style="width:100%;"><i class="fa fa-camera"></i> Save Snapshot</button>
+      </div>
       <div id="version-list"></div>
     </div>
   </div>
@@ -504,8 +514,7 @@
       </div>
       <div class="dialog-actions">
         <button class="btn-cancel" id="btn-cancel-image" data-i18n="btn_cancel">Cancel</button>
-        <button class="btn-primary" id="btn-image-upload" data-i18n="btn_insert">Upload</button>
-        <button class="btn-primary" id="btn-image-url" data-i18n="btn_insert">Insert URL</button>
+        <button class="btn-primary" id="btn-image-confirm" data-i18n="btn_insert">Insert</button>
       </div>
     </div>
   </div>
@@ -537,7 +546,7 @@
         <div class="special-chars-tabs" id="special-chars-tabs">
           <button class="sc-tab active" data-cat="greek" data-i18n="sc_greek">Greek</button>
           <button class="sc-tab" data-cat="math" data-i18n="sc_math">Math</button>
-          <button class="sc-tab" data-cat="arrows" data-cat="arrows" data-i18n="sc_arrows">Arrows</button>
+          <button class="sc-tab" data-cat="arrows" data-i18n="sc_arrows">Arrows</button>
           <button class="sc-tab" data-cat="currency" data-i18n="sc_currency">Currency</button>
           <button class="sc-tab" data-cat="punctuation" data-i18n="sc_punctuation">Punctuation</button>
           <button class="sc-tab" data-cat="symbols" data-i18n="sc_symbols">Symbols</button>
@@ -735,6 +744,8 @@
       </div>
     </div>
   </div>
+
+  <div class="zentool-toast" id="zentool-toast"></div>
 
   <div id="oros-footer"></div>
 
