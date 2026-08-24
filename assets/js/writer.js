@@ -2848,6 +2848,18 @@
 
     waitForTranslations();
   }
+  
+  // Add this AFTER init() completes
+setTimeout(function() {
+  if (typeof tabsModule !== 'undefined' && tabsModule.init) {
+    tabsModule.init('#tab-bar');
+    if (!tabsModule.tabBar) {
+      console.error('TAB BAR NOT FOUND');
+    } else {
+      console.log('Tabs initialized:', tabsModule.getAll().length);
+    }
+  }
+}, 200);
 
   // ===== PUBLIC API =====
   window.orOSWriter = {
