@@ -9,28 +9,27 @@
   <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#c8a96e">
 
-  <meta property="og:type" content="article">
-  <meta property="og:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
+  <!-- FIX: Dynamic OG/Twitter URLs instead of hardcoded beta branch -->
+  <meta property="og:type" content="article" id="og-url-meta">
   <meta property="og:title" content="orOS Writer — Privacy-First Rich Text Editor">
   <meta property="og:description" content="Write distraction-free with comments, footnotes, track changes, version history and more. Works offline. No tracking.">
-  <meta property="og:image" content="https://koulaxizis.github.io/oros-beta/og-image.png">
+  <meta property="og:image" id="og-image-meta">
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/writer.html">
   <meta name="twitter:title" content="orOS Writer — Privacy-First Rich Text Editor">
   <meta name="twitter:description" content="Write distraction-free with comments, footnotes, track changes, version history and more. Works offline. No tracking.">
-  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
+  <meta name="twitter:image" id="twitter-image-meta">
 
   <meta name="keywords" content="rich text editor, writing tool, comments, footnotes, track changes, version history, templates, offline editor, privacy, open source">
 
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
 
-  <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/writer.html">
-  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/writer.html?lang=el">
-  <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/writer.html">
+  <link rel="alternate" hreflang="en" id="hreflang-en">
+  <link rel="alternate" hreflang="el" id="hreflang-el">
+  <link rel="alternate" hreflang="x-default" id="hreflang-default">
 
   <title>orOS Writer</title>
   <script src="config.js"></script>
@@ -40,6 +39,16 @@
     cLink.rel = 'canonical';
     cLink.href = window.location.origin + window.location.pathname;
     document.head.appendChild(cLink);
+
+    // FIX: Set dynamic OG/Twitter/hreflang URLs based on actual location
+    var pageUrl = window.location.href;
+    var baseUrl = window.location.origin + (OROS_CONFIG.baseHref || '/');
+    document.getElementById('og-url-meta').setAttribute('content', pageUrl);
+    document.getElementById('og-image-meta').setAttribute('content', baseUrl + 'og-image.png');
+    document.getElementById('twitter-image-meta').setAttribute('content', baseUrl + 'twitter-card.png');
+    document.getElementById('hreflang-en').setAttribute('href', baseUrl + 'writer.html');
+    document.getElementById('hreflang-el').setAttribute('href', baseUrl + 'writer.html?lang=el');
+    document.getElementById('hreflang-default').setAttribute('href', baseUrl + 'writer.html');
   </script>
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -301,7 +310,7 @@
           <div class="stat-row"><span>Speaking time:</span><span>0 min</span></div>
         </div>
       </div>
-      <button class="action-btn" id="btn-exit-reading-mode" style="display:none;position:fixed;top:16px;right:16px;z-index:1001;background:var(--bg-panel);border:1px solid var(--accent-gold);">
+      <button class="action-btn" id="btn-exit-reading-mode" style="display:none;">
         <i class="fa fa-times"></i> Exit Reading
       </button>
       <div class="rich-editor" id="rich-editor" contenteditable="true" data-placeholder="Start writing..." data-i18n-placeholder="editor_placeholder"></div>
@@ -315,8 +324,8 @@
       <div class="footnote-list" id="footnote-list"></div>
     </div>
   </div>
-
-  <!-- Side Panels -->
+  
+    <!-- Side Panels -->
   <div class="side-panel" id="metadata-panel" style="display:none;">
     <div class="panel-header">
       <span class="panel-title" data-i18n="meta_panel_title">Document Info</span>
@@ -760,7 +769,7 @@
         });
       });
     }
-    
+
     // Initialize Writer app when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof orOSWriter !== 'undefined') {

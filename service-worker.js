@@ -1,10 +1,10 @@
 // ============================================
 // orOS Service Worker
 // Cache-first strategy with network fallback
-// Version: 1.0.0
+// Version: 2.0.0
 // ============================================
 
-var CACHE_NAME = 'oros-v1.0.0';
+var CACHE_NAME = 'oros-v2.0.0';
 var CACHE_URLS = [
   './',
   './index.html',
@@ -12,9 +12,13 @@ var CACHE_URLS = [
   './converter.html',
   './kanban.html',
   './notes.html',
+  './prompter.html',
+  './habits.html',
   './config.js',
   './manifest.json',
   './favicon.svg',
+  './service-worker.js',
+  // Translations
   './assets/js/translations.json',
   // CSS
   './assets/css/style.css',
@@ -23,6 +27,8 @@ var CACHE_URLS = [
   './assets/css/kanban.css',
   './assets/css/notes.css',
   './assets/css/writer.css',
+  './assets/css/prompter.css',
+  './assets/css/habits.css',
   // JS — Core
   './assets/js/global-settings.js',
   './assets/js/seo.js',
@@ -32,11 +38,16 @@ var CACHE_URLS = [
   './assets/js/components/footer.js',
   // JS — Libraries
   './assets/js/lib/jszip.min.js',
+  './assets/js/lib/mammoth.browser.min.js',
+  './assets/js/lib/rtf-parser.js',
   // JS — App Logic
   './assets/js/writer.js',
   './assets/js/converter.js',
   './assets/js/kanban.js',
   './assets/js/notes.js',
+  './assets/js/prompter.js',
+  './assets/js/prompts.json',
+  './assets/js/habits.js',
   // Fonts
   './assets/fonts/nunito-regular.woff2',
   './assets/fonts/nunito-medium.woff2',
@@ -45,16 +56,7 @@ var CACHE_URLS = [
   './assets/fonts/nunito-extrabold.woff2',
   './assets/fonts/forkawesome-webfont.woff2',
   './assets/fonts/forkawesome-webfont.woff',
-  './assets/fonts/forkawesome-webfont.ttf',
-  // Prompter
-  './prompter.html',
-  './assets/css/prompter.css',
-  './assets/js/prompter.js',
-  './assets/js/prompts.json',
-  // Habits
-  './habits.html',
-  './assets/css/habits.css',
-  './assets/js/habits.js',
+  './assets/fonts/forkawesome-webfont.ttf'
 ];
 
 // ========== INSTALL ==========
@@ -93,6 +95,7 @@ self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request).then(function(cachedResponse) {
       if (cachedResponse) {
+        // Stale-while-revalidate: return cache, update in background
         fetch(event.request).then(function(response) {
           if (response && response.status === 200) {
             caches.open(CACHE_NAME).then(function(cache) {
@@ -113,8 +116,13 @@ self.addEventListener('fetch', function(event) {
         });
         return response;
       }).catch(function() {
+        // FIX: Offline fallback for document requests
         if (event.request.destination === 'document') {
           return caches.match('./index.html');
+        }
+        // FIX: Offline fallback for translation JSON
+        if (event.request.destination === '' && event.request.url.indexOf('translations.json') !== -1) {
+          return caches.match('./assets/js/translations.json');
         }
       });
     })

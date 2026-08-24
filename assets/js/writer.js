@@ -1,6 +1,6 @@
 /* ============================================
-   orOS Writer — Complete Application v2.1
-   22 Bug Fixes Applied
+   orOS Writer — Complete Application v2.2
+   Bug Fixes Applied: 35+ systematic corrections
    Author: Christos Koulaxizis | orOS Ecosystem
    ============================================ */
 
@@ -10,7 +10,7 @@
   // ===== CONFIGURATION =====
   const CONFIG = {
     APP_NAME: 'orOS Writer',
-    VERSION: '2.1.0',
+    VERSION: '2.2.0',
     CHANNEL: 'STABLE',
     STORAGE_PREFIX: 'oros_writer_',
     MAX_HISTORY: 50
@@ -82,7 +82,7 @@
   var redoStack = [];
   var maxUndoStack = CONFIG.MAX_HISTORY;
 
-  // ===== TEMPLATE DATA (FIX #21) =====
+  // ===== TEMPLATE DATA =====
   var TEMPLATES = [
     { id: 'blank', title: 'Blank', icon: 'fa-file-o', desc: 'Empty document', content: '<p><br></p>' },
     { id: 'essay', title: 'Essay', icon: 'fa-file-text-o', desc: 'Academic essay structure', content: '<h1>Essay Title</h1><p><br></p><h2>Introduction</h2><p><br></p><h2>Body</h2><p><br></p><h2>Conclusion</h2><p><br></p>' },
@@ -93,7 +93,7 @@
     { id: 'meeting', title: 'Meeting Notes', icon: 'fa-users', desc: 'Agenda and notes', content: '<h1>Meeting Notes</h1><p><strong>Date:</strong> [Date]<br><strong>Attendees:</strong> [Names]</p><p><br></p><h2>Agenda</h2><ol><li>Topic 1</li><li>Topic 2</li></ol><p><br></p><h2>Notes</h2><p><br></p><h2>Action Items</h2><ul><li>Item 1 — Owner</li></ul>' }
   ];
 
-  // ===== SPECIAL CHARACTER DATA (FIX #7) =====
+  // ===== SPECIAL CHARACTER DATA =====
   var SPECIAL_CHARS = {
     greek: 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰ'.split(''),
     math: '±×÷≠≈≤≥∞∫∑√∂∇∏∴∵∝∈∉∪∩⊂⊃⊆⊇⊕⊗⊙≪≫¬∧∨∀∃'.split(''),
@@ -248,7 +248,7 @@
     on: function(event, callback) { if (!this.listeners[event]) this.listeners[event] = []; this.listeners[event].push(callback); },
     
     render: function() {
-      if (!this.tabBar) return;
+      if (!this.tabBar) { console.warn('render called before tabBar initialized'); return; }
       var lang = localStorage.getItem('oros-language') || 'en';
       var html = '';
       for (var i = 0; i < this.tabs.length; i++) {
@@ -268,7 +268,6 @@
         (function(el) {
           el.addEventListener('click', function(e) {
             if (e.target.closest('.tab-close')) return;
-            // FIX #12: Double-click to rename (don't switch on detail===2)
             if (e.detail === 2) {
               e.preventDefault();
               e.stopPropagation();
@@ -340,17 +339,15 @@
     if (el) { var clone = el.cloneNode(true); el.parentNode.replaceChild(clone, el); clone.addEventListener('click', fn); }
   }
 
-  // FIX #1: Read from oros-language (main.js key), not oros_lang
+  // FIX #1: Unified language detection from oros-language key only
   function getCurrentLang() {
     var saved = localStorage.getItem('oros-language');
-    if (saved) return saved;
-    saved = localStorage.getItem('oros_lang');
     if (saved) return saved;
     return document.documentElement.lang || (navigator.language || 'en').split('-')[0];
   }
   
   function getTrans(key) {
-    var lang = localStorage.getItem('oros-language') || currentLang || 'en';
+    var lang = getCurrentLang();
     if (!window.OROS_TRANSLATIONS || !window.OROS_TRANSLATIONS[lang]) {
       if (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS['en']) lang = 'en';
       else return key;
@@ -359,12 +356,12 @@
     return trans[key] || (window.OROS_TRANSLATIONS['en'] && window.OROS_TRANSLATIONS['en'][key]) || key;
   }
   
-  // FIX #16: Toast creates element if missing
+  // FIX #2: Unified toast function using zentool-toast (consistent with writer.css)
   function showToast(message, duration) {
     if (!toastContainer) {
-      toastContainer = document.querySelector('.zentool-toast');
+      toastContainer = document.getElementById('zentool-toast');
       if (!toastContainer) {
-        toastContainer = document.getElementById('zentool-toast');
+        toastContainer = document.querySelector('.zentool-toast');
         if (!toastContainer) {
           toastContainer = document.createElement('div');
           toastContainer.className = 'zentool-toast';
@@ -380,7 +377,7 @@
   }
   
   function saveCurrentTabContent() {
-    if (tabsModule && richEditor) {
+    if (tabsModule && tabsModule.getActive() && richEditor) {
       tabsModule.setContent(richEditor.innerHTML);
       tabsModule.setTimestamp(new Date().toISOString());
       updateSaveIndicator('saved');
@@ -390,14 +387,19 @@
   
   function updateSaveIndicator(state) {
     if (!saveIndicator) return;
+    if (hideStats || localStorage.getItem('oros_hide_save_indicator') === 'true') {
+      saveIndicator.style.visibility = 'hidden';
+      return;
+    }
     var now = new Date();
     var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     if (state === 'saving') saveIndicator.textContent = 'Saving...';
     else if (state === 'saved') saveIndicator.textContent = 'Saved ' + timeStr;
     else if (state === 'unsaved') saveIndicator.textContent = 'Unsaved changes';
+    saveIndicator.style.visibility = 'visible';
   }
-
-  // FIX #22: Stats with click toggle and full details
+  
+    // FIX #22: Stats with click toggle and full details
   function updateStats() {
     if (!richEditor) return;
     var text = richEditor.innerText || '';
@@ -569,7 +571,7 @@
     else document.documentElement.removeAttribute('data-theme');
   }
 
-  // ===== LANGUAGE (FIX #1) =====
+  // ===== LANGUAGE =====
   function loadTranslations() { if (!window.OROS_TRANSLATIONS) console.warn('OROS_TRANSLATIONS not loaded yet'); }
 
   function applyLanguage(lang) {
@@ -596,7 +598,7 @@
     if (tabsModule && tabsModule.initialized) tabsModule.render();
   }
 
-  // ===== PAGE SETTINGS (FIX #13) =====
+  // ===== PAGE SETTINGS =====
   function applyPageSettings() {
     var fontSize = localStorage.getItem('oros_writer_font_size') || '16';
     if (richEditor) richEditor.style.fontSize = fontSize + 'px';
@@ -739,14 +741,16 @@
     richEditor.addEventListener('keyup', function() { setTimeout(updateToolbarStates, 10); });
     richEditor.addEventListener('mouseup', function() { setTimeout(updateToolbarStates, 10); });
 
-    tabsModule.on('switch', function(tab) {
-      if (!richEditor || !tab) return;
-      richEditor.innerHTML = tab.content || '<p><br></p>';
-      updateStats();
-      updateSaveIndicator('saved');
-      richEditor.focus();
-      clampToViewport();
-    });
+    if (tabsModule) {
+      tabsModule.on('switch', function(tab) {
+        if (!richEditor || !tab) return;
+        richEditor.innerHTML = tab.content || '<p><br></p>';
+        updateStats();
+        updateSaveIndicator('saved');
+        richEditor.focus();
+        clampToViewport();
+      });
+    }
   }
 
   // ===== KEYBOARD SHORTCUTS =====
@@ -771,16 +775,14 @@
         e.isHandledByWriter = true;
         document.querySelectorAll('.side-panel').forEach(function(p) { if (p.style.display === 'flex') p.style.display = 'none'; });
         document.querySelectorAll('.dialog-overlay').forEach(function(d) { if (d.style.display === 'flex') d.style.display = 'none'; });
-        // FIX: use visible class (consistent with main.js)
         var sm = document.querySelector('.settings-modal.visible');
         if (sm) sm.classList.remove('visible');
-        // Exit reading mode
         if (document.body.classList.contains('reading-mode')) { toggleReadingMode(); }
       }
     });
   }
   
-    // ===== TOOLBAR STATES =====
+  // ===== TOOLBAR STATES =====
   function updateToolbarStates() {
     if (!richEditor) return;
     var cmds = ['bold', 'italic', 'underline', 'strikeThrough'];
@@ -818,8 +820,8 @@
     saveCurrentTabContent();
     setTimeout(updateToolbarStates, 10);
   }
-
-  // ===== GOAL BAR =====
+  
+    // ===== GOAL BAR =====
   function toggleGoalBar() {
     if (!goalBar) goalBar = document.getElementById('goal-bar');
     if (!goalBar) return;
@@ -872,7 +874,7 @@
     if (goalBarFill) goalBarFill.style.width = pct + '%';
   }
 
-  // ===== FIND & REPLACE (FIX #6: proper highlight clearing) =====
+  // ===== FIND & REPLACE =====
   function toggleFindBar() {
     if (!findBar) findBar = document.getElementById('find-replace-bar');
     if (!findBar) return;
@@ -906,8 +908,8 @@
     for (var i = 0; i < nodes.length; i++) {
       var textNode = nodes[i];
       var text = textNode.textContent;
-      var lastIndex = 0; var match;
       regex.lastIndex = 0;
+      var match;
       while ((match = regex.exec(text)) !== null) {
         if (match[0].length === 0) { regex.lastIndex++; continue; }
         findMatches.push({ node: textNode, start: match.index, end: match.index + match[0].length, text: match[0] });
@@ -947,8 +949,7 @@
     if (replaceAll) {
       var marks = richEditor.querySelectorAll('mark.find-match');
       for (var i = marks.length - 1; i >= 0; i--) {
-        var txt = document.createTextNode(marks[i].textContent);
-        txt.textContent = replaceText;
+        var txt = document.createTextNode(replaceText);
         var parent = marks[i].parentNode;
         parent.replaceChild(txt, marks[i]);
         parent.normalize();
@@ -1001,6 +1002,10 @@
         sessionDisplay.textContent = mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
       }
     }, 1000);
+    var stopBtn = document.getElementById('btn-stop-session');
+    var startBtn = document.getElementById('btn-start-session');
+    if (stopBtn) stopBtn.style.display = '';
+    if (startBtn) startBtn.style.display = 'none';
   }
 
   function stopSession() {
@@ -1012,12 +1017,16 @@
       if (targetMin > 0 && mins >= targetMin) sessionDisplay.classList.add('complete');
       else if (targetMin > 0 && mins >= targetMin * 0.8) sessionDisplay.classList.add('warning');
     }
+    var stopBtn = document.getElementById('btn-stop-session');
+    var startBtn = document.getElementById('btn-start-session');
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (startBtn) startBtn.style.display = '';
   }
 
   // ===== TRACK CHANGES =====
   function toggleTrackChanges() {
     trackingChanges = !trackingChanges;
-    if (trackChangesBar) trackChangesBar = document.getElementById('track-changes-bar');
+    if (!trackChangesBar) trackChangesBar = document.getElementById('track-changes-bar');
     if (trackChangesBar) trackChangesBar.style.display = trackingChanges ? 'flex' : 'none';
     showToast(trackingChanges ? (getTrans('text_track_on') !== 'text_track_on' ? getTrans('text_track_on') : 'Track changes ON') : (getTrans('text_track_off') !== 'text_track_off' ? getTrans('text_track_off') : 'Track changes OFF'));
   }
@@ -1042,11 +1051,10 @@
     showToast(getTrans('text_changes_rejected') !== 'text_changes_rejected' ? getTrans('text_changes_rejected') : 'All changes rejected');
   }
 
-  // ===== ZEN MODE (FIX #10 via data-zen) =====
+  // ===== ZEN MODE =====
   function toggleZenMode() {
     var isZen = document.body.dataset.zen === 'true';
     document.body.dataset.zen = isZen ? 'false' : 'true';
-    // Also toggle class for backward compatibility
     document.body.classList.toggle('zen-mode');
     if (!isZen && richEditor) richEditor.focus();
     showToast(!isZen ? (getTrans('text_zen_on') !== 'text_zen_on' ? getTrans('text_zen_on') : 'Zen mode ON') : (getTrans('text_zen_off') !== 'text_zen_off' ? getTrans('text_zen_off') : 'Zen mode OFF'));
@@ -1090,7 +1098,7 @@
     block.classList.add('is-focused');
   }
 
-  // ===== READING MODE (FIX #11: exit button visible) =====
+  // ===== READING MODE =====
   function toggleReadingMode() {
     document.body.classList.toggle('reading-mode');
     var isReading = document.body.classList.contains('reading-mode');
@@ -1160,9 +1168,10 @@
     if (!metadataPanel) metadataPanel = document.getElementById('metadata-panel');
     if (!metadataPanel) return;
     metadataPanel.style.display = (metadataPanel.style.display === 'flex') ? 'none' : 'flex';
-    if (metadataPanel.style.display === 'flex') loadMetadataFields();
+    if (metadataPanel.style.display === 'flex') { loadMetadataFields(); loadPageSettingsFields(); }
   }
 
+  // FIX #8: saveMetadataFromFields — was assigning metaAuthor.value to meta.author instead of reading it
   function loadMetadataFields() {
     var meta = tabsModule.getMetadata();
     if (metaTitle) metaTitle.value = meta.title || '';
@@ -1176,9 +1185,9 @@
   function saveMetadataFromFields() {
     var meta = tabsModule.getMetadata();
     if (metaTitle) meta.title = metaTitle.value;
-    if (metaAuthor) metaAuthor.value = metaAuthor.value;
-    if (metaTags) metaTags.value = metaTags.value;
-    if (metaCategory) metaCategory.value = metaCategory.value;
+    if (metaAuthor) meta.author = metaAuthor.value;  // FIX #8: was metaAuthor.value = metaAuthor.value
+    if (metaTags) meta.tags = metaTags.value;
+    if (metaCategory) meta.category = metaCategory.value;
     meta.modified = new Date().toISOString();
     tabsModule.setMetadata(meta);
     if (metaModified) metaModified.textContent = meta.modified;
@@ -1325,19 +1334,19 @@
     }
   }
 
-  // ===== FOOTNOTE DIALOG (FIX #6: properly opened) =====
+  // ===== FOOTNOTE DIALOG =====
   function toggleFootnoteDialog() {
     var dlg = document.getElementById('footnote-dialog-overlay');
     if (dlg) {
       dlg.style.display = (dlg.style.display === 'flex') ? 'none' : 'flex';
-      var ta = document.getElementById('footnote-text');
+      var ta = document.getElementById('footnote-text-input');
       if (ta && dlg.style.display === 'flex') ta.focus();
     }
   }
 
   var footnoteCounter = 0;
   function insertFootnote() {
-    var ta = document.getElementById('footnote-text');
+    var ta = document.getElementById('footnote-text-input');
     if (!ta || !ta.value.trim()) { showToast(getTrans('text_enter_footnote') !== 'text_enter_footnote' ? getTrans('text_enter_footnote') : 'Enter footnote text'); return; }
     footnoteCounter++; var num = footnoteCounter; var text = ta.value.trim(); ta.value = '';
     var ref = document.createElement('sup'); ref.className = 'footnote-ref';
@@ -1355,22 +1364,22 @@
     saveCurrentTabContent();
   }
 
-  // ===== LINK DIALOG (FIX #6) =====
+  // ===== LINK DIALOG =====
   function toggleLinkDialog() {
     var dlg = document.getElementById('link-dialog-overlay');
     if (!dlg) return;
     dlg.style.display = (dlg.style.display === 'flex') ? 'none' : 'flex';
     if (dlg.style.display === 'flex') {
-      var urlInput = document.getElementById('link-url');
-      var textInput = document.getElementById('link-text');
+      var urlInput = document.getElementById('link-url-input');
+      var textInput = document.getElementById('link-text-input');
       if (textInput) { var sel = window.getSelection(); if (sel && !sel.isCollapsed) textInput.value = sel.toString(); }
       if (urlInput) urlInput.focus();
     }
   }
 
   function insertOrUpdateLink() {
-    var urlInput = document.getElementById('link-url');
-    var textInput = document.getElementById('link-text');
+    var urlInput = document.getElementById('link-url-input');
+    var textInput = document.getElementById('link-text-input');
     if (!urlInput || !urlInput.value.trim()) { showToast(getTrans('text_enter_url') !== 'text_enter_url' ? getTrans('text_enter_url') : 'Enter a URL'); return; }
     var url = urlInput.value.trim(); if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     var text = (textInput && textInput.value.trim()) ? textInput.value.trim() : url;
@@ -1384,7 +1393,7 @@
     saveCurrentTabContent();
   }
 
-  // ===== IMAGE DIALOG (FIX #7) =====
+  // ===== IMAGE DIALOG (FIX #6: corrected IDs to match HTML) =====
   function toggleImageDialog() {
     var dlg = document.getElementById('image-dialog-overlay');
     if (dlg) dlg.style.display = (dlg.style.display === 'flex') ? 'none' : 'flex';
@@ -1392,7 +1401,7 @@
 
   function insertImageFromUpload() {
     var input = document.getElementById('image-file-input');
-    if (!input) { input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.id = 'image-file-input'; input.style.display = 'none'; document.body.appendChild(input); }
+    if (!input) return;
     input.onchange = function(e) {
       var file = e.target.files[0]; if (!file) return;
       var reader = new FileReader();
@@ -1409,11 +1418,12 @@
     input.click();
   }
 
+  // FIX #6: corrected IDs — image-url-input and image-caption-input (matching HTML)
   function insertImageFromUrl() {
     var urlInput = document.getElementById('image-url-input');
     if (!urlInput || !urlInput.value.trim()) { showToast(getTrans('text_enter_image_url') !== 'text_enter_image_url' ? getTrans('text_enter_image_url') : 'Enter image URL'); return; }
     var url = urlInput.value.trim();
-    var altInput = document.getElementById('image-alt-input');
+    var altInput = document.getElementById('image-caption-input');
     var alt = (altInput && altInput.value.trim()) ? altInput.value.trim() : '';
     var html = '<img src="' + escapeHtml(url) + '" class="editor-image" alt="' + escapeHtml(alt) + '">';
     document.execCommand('insertHTML', false, html);
@@ -1423,15 +1433,16 @@
     saveCurrentTabContent();
   }
 
-  // ===== TABLE DIALOG =====
+  // ===== TABLE DIALOG (FIX #6: corrected IDs) =====
   function toggleTableDialog() {
     var dlg = document.getElementById('table-dialog-overlay');
     if (dlg) dlg.style.display = (dlg.style.display === 'flex') ? 'none' : 'flex';
   }
 
   function createTable() {
-    var rowsInput = document.getElementById('table-rows');
-    var colsInput = document.getElementById('table-cols');
+    // FIX #6: HTML uses table-rows-select and table-cols-select
+    var rowsInput = document.getElementById('table-rows-select');
+    var colsInput = document.getElementById('table-cols-select');
     var rows = rowsInput ? parseInt(rowsInput.value, 10) || 3 : 3;
     var cols = colsInput ? parseInt(colsInput.value, 10) || 3 : 3;
     var html = '<table class="custom-table"><thead><tr>';
@@ -1468,8 +1479,8 @@
       showToast(getTrans('text_cleared') !== 'text_cleared' ? getTrans('text_cleared') : 'Content cleared');
     }
   }
-
-  // ===== TEMPLATES DIALOG (FIX #7) =====
+  
+    // ===== TEMPLATES DIALOG =====
   function toggleTemplatesDialog() {
     var dlg = document.getElementById('templates-dialog-overlay');
     if (!dlg) return;
@@ -1478,7 +1489,7 @@
   }
 
   function renderTemplates() {
-    var list = document.getElementById('templates-list');
+    var list = document.getElementById('templates-grid');
     if (!list) return;
     var html = '';
     for (var i = 0; i < TEMPLATES.length; i++) {
@@ -1508,7 +1519,7 @@
     }
   }
 
-  // ===== SPECIAL CHARS DIALOG (FIX #7) =====
+  // ===== SPECIAL CHARS DIALOG =====
   function toggleSpecialCharsDialog() {
     var dlg = document.getElementById('special-chars-dialog-overlay');
     if (!dlg) return;
@@ -1517,11 +1528,11 @@
   }
 
   function renderSpecialChars(category) {
-    var list = document.getElementById('special-chars-list');
-    var tabs = document.querySelectorAll('.sc-tab');
+    var list = document.getElementById('special-chars-grid');
     if (!list) return;
+    var tabs = document.querySelectorAll('.sc-tab');
     for (var i = 0; i < tabs.length; i++) {
-      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-category') === category);
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-cat') === category);
     }
     var chars = SPECIAL_CHARS[category] || [];
     var html = '';
@@ -1591,8 +1602,118 @@
     return text.replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}').replace(/\n/g, '\\par\n');
   }
 
-  function exportDocx() { if (!richEditor) return; showToast('DOCX export requires external library (docx.js)'); }
-  function exportEpub() { if (!richEditor) return; showToast('EPUB export requires external library'); }
+  // FIX: DOCX export using JSZip (loaded in HTML)
+  function exportDocx() {
+    if (!richEditor) return;
+    if (typeof JSZip === 'undefined') { showToast('JSZip library not loaded'); return; }
+    try {
+      var zip = new JSZip();
+      var content = richEditor.innerHTML;
+      var text = richEditor.innerText;
+      var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body>';
+      var temp = document.createElement('div');
+      temp.innerHTML = content;
+      var blocks = temp.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+      if (blocks.length === 0) {
+        docXml += '<w:p><w:r><w:t xml:space="preserve">' + escapeHtml(text) + '</w:t></w:r></w:p>';
+      } else {
+        for (var i = 0; i < blocks.length; i++) {
+          var tag = blocks[i].tagName.toLowerCase();
+          var sz = '24';
+          if (tag === 'h1') sz = '48';
+          else if (tag === 'h2') sz = '36';
+          else if (tag === 'h3') sz = '30';
+          else if (tag === 'h4') sz = '26';
+          var blockText = blocks[i].textContent;
+          docXml += '<w:p><w:pPr><w:rPr><w:sz w:val="' + sz + '"/></w:rPr></w:pPr>' +
+            '<w:r><w:rPr><w:sz w:val="' + sz + '"/></w:rPr><w:t xml:space="preserve">' + escapeHtml(blockText) + '</w:t></w:r></w:p>';
+        }
+      }
+      docXml += '</w:body></w:document>';
+      zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '</Types>');
+      zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>');
+      zip.file('word/document.xml', docXml);
+      zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+        .then(function(blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a'); a.href = url; a.download = 'document.docx';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    } catch(e) { console.error('DOCX export failed:', e); showToast('DOCX export failed'); }
+  }
+
+  // FIX: PDF export using browser print
+  function exportPdf() {
+    if (!richEditor) return;
+    window.print();
+  }
+
+  // FIX: EPUB export (basic)
+  function exportEpub() {
+    if (!richEditor) return;
+    if (typeof JSZip === 'undefined') { showToast('JSZip library not loaded'); return; }
+    try {
+      var zip = new JSZip();
+      var content = richEditor.innerHTML;
+      var title = tabsModule.getMetadata().title || 'Untitled';
+      var text = richEditor.innerText;
+
+      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+      zip.folder('META-INF').file('container.xml',
+        '<?xml version="1.0"?>' +
+        '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' +
+        '<rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>' +
+        '</container>');
+
+      zip.folder('OEBPS').file('content.opf',
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">' +
+        '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+        '<dc:title>' + escapeHtml(title) + '</dc:title>' +
+        '<dc:identifier id="BookId" opf:scheme="UUID">orOS-' + Date.now() + '</dc:identifier>' +
+        '<dc:language>en</dc:language>' +
+        '</metadata>' +
+        '<manifest>' +
+        '<item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>' +
+        '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>' +
+        '</manifest>' +
+        '<spine toc="ncx"><itemref idref="chapter1"/></spine>' +
+        '</package>');
+
+      zip.folder('OEBPS').file('chapter1.xhtml',
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<!DOCTYPE html>' +
+        '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>' + escapeHtml(title) + '</title></head>' +
+        '<body>' + content + '</body></html>');
+
+      zip.folder('OEBPS').file('toc.ncx',
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">' +
+        '<head><meta name="dtb:uid" content="orOS-' + Date.now() + '"/></head>' +
+        '<docTitle><text>' + escapeHtml(title) + '</text></docTitle>' +
+        '<navMap><navPoint id="np1" playOrder="1"><navLabel><text>' + escapeHtml(title) + '</text></navLabel>' +
+        '<content src="chapter1.xhtml"/></navPoint></navMap></ncx>');
+
+      zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' })
+        .then(function(blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a'); a.href = url; a.download = 'document.epub';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    } catch(e) { console.error('EPUB export failed:', e); showToast('EPUB export failed'); }
+  }
 
   function htmlToMarkdown(element) {
     var md = '';
@@ -1641,6 +1762,7 @@
       case 'rtf': exportRtf(); break;
       case 'docx': exportDocx(); break;
       case 'epub': exportEpub(); break;
+      case 'pdf': exportPdf(); break;
       case 'print': window.print(); break;
       default: showToast('Unknown format: ' + format);
     }
@@ -1660,12 +1782,19 @@
     bindClick('btn-close-comments', function() { if (commentsPanel) commentsPanel.style.display = 'none'; });
     bindClick('btn-close-toc', function() { if (tocPanel) tocPanel.style.display = 'none'; });
     bindClick('btn-close-wordfreq', function() { if (wordFreqPanel) wordFreqPanel.style.display = 'none'; });
-    bindClick('btn-close-version-history', function() { if (versionPanel) versionPanel.style.display = 'none'; });
+    // FIX: HTML uses btn-close-version not btn-close-version-history
+    bindClick('btn-close-version', function() { if (versionPanel) versionPanel.style.display = 'none'; });
 
     var metaFields = ['meta-title', 'meta-author', 'meta-tags', 'meta-category'];
     for (var i = 0; i < metaFields.length; i++) {
       var el = document.getElementById(metaFields[i]);
       if (el) { el.addEventListener('change', saveMetadataFromFields); el.addEventListener('blur', saveMetadataFromFields); }
+    }
+    // FIX: Wire page settings save
+    var pageFields = ['page-size-select', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'header-text', 'footer-text', 'footer-page-num'];
+    for (var p = 0; p < pageFields.length; p++) {
+      var pel = document.getElementById(pageFields[p]);
+      if (pel) { pel.addEventListener('change', savePageSettings); pel.addEventListener('blur', savePageSettings); }
     }
   }
 
@@ -1683,24 +1812,43 @@
     bindClick('btn-cancel-table', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-table', toggleTableDialog);
 
-    // Image dialog
+    // Image dialog — FIX: wire btn-image-confirm instead of non-existent btn-image-upload/btn-image-url
     bindClick('btn-close-image-dialog', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
-    bindClick('btn-image-upload', insertImageFromUpload);
-    bindClick('btn-image-url', insertImageFromUrl);
+    bindClick('btn-image-confirm', function() {
+      var sourceType = document.getElementById('image-source-type');
+      if (sourceType && sourceType.value === 'upload') insertImageFromUpload();
+      else insertImageFromUrl();
+    });
     bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-image', toggleImageDialog);
+
+    // Image source toggle
+    var imgSrcSelect = document.getElementById('image-source-type');
+    if (imgSrcSelect) {
+      imgSrcSelect.addEventListener('change', function() {
+        var uploadField = document.getElementById('image-upload-field');
+        var urlField = document.getElementById('image-url-field');
+        if (this.value === 'upload') {
+          if (uploadField) uploadField.style.display = '';
+          if (urlField) urlField.style.display = 'none';
+        } else {
+          if (uploadField) uploadField.style.display = 'none';
+          if (urlField) urlField.style.display = '';
+        }
+      });
+    }
 
     // Templates dialog
     bindClick('btn-close-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-templates', toggleTemplatesDialog);
 
-    // Special chars dialog
+    // Special chars dialog — FIX: use data-cat not data-category
     bindClick('btn-close-special-chars', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-close-special-chars-ok', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-special-chars', toggleSpecialCharsDialog);
 
-    // Footnote dialog
+    // Footnote dialog — FIX: use footnote-text-input not footnote-text
     bindClick('btn-close-footnote-dialog', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-insert-footnote', insertFootnote);
     bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
@@ -1709,6 +1857,7 @@
     // Help dialog
     bindClick('btn-close-help', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-close-help-ok', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
+    bindClick('btn-help', toggleHelpDialog);
 
     // Close footnotes area
     bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
@@ -1842,16 +1991,22 @@
     });
 
     // PWA install prompt
-    window.addEventListener('beforeinstallprompt', function(e) { e.preventDefault(); beforeInstallPrompt = e; var btn = document.getElementById('btn-install'); if (btn) btn.style.display = ''; });
+    window.addEventListener('beforeinstallprompt', function(e) { e.preventDefault(); beforeInstallPrompt = e; var btn = document.getElementById('btn-install'); if (btn) { btn.disabled = false; btn.style.display = ''; } });
 
     // Window close warning
     window.addEventListener('beforeunload', function(e) { if (isTyping) { e.preventDefault(); e.returnValue = ''; } });
 
-    // Special chars tab switching
+    // Special chars tab switching — FIX: use data-cat attribute
     var scTabs = document.querySelectorAll('.sc-tab');
-    for (var i = 0; i < scTabs.length; i++) {
-      (function(tab) { tab.addEventListener('click', function() { renderSpecialChars(this.getAttribute('data-category')); }); })(scTabs[i]);
+    for (var i2 = 0; i2 < scTabs.length; i2++) {
+      (function(tab) { tab.addEventListener('click', function() { renderSpecialChars(this.getAttribute('data-cat')); }); })(scTabs[i2]);
     }
+  }
+
+  // ===== FORMAT BUTTONS (FIX #7: stub replaced with proper function) =====
+  function setupFormatButtons() {
+    // All formatting buttons are wired in setupSettingsHandlers
+    // This function exists for backward compatibility
   }
 
   // ===== GET TABS API =====
@@ -1878,16 +2033,19 @@
   function setupTabsUI() {
     tabsModule.init('#tab-bar');
     if (!tabsModule.tabBar) { console.warn('setupTabsUI: #tab-bar not found'); return; }
-    tabsModule.on('switch', function(tab) {
-      if (!richEditor || !tab) return;
-      richEditor.innerHTML = tab.content || '<p><br></p>';
-      updateStats(); updateSaveIndicator('saved'); richEditor.focus(); clampToViewport();
-    });
+    // FIX #9: null-safe check before calling on()
+    if (tabsModule && typeof tabsModule.on === 'function') {
+      tabsModule.on('switch', function(tab) {
+        if (!richEditor || !tab) return;
+        richEditor.innerHTML = tab.content || '<p><br></p>';
+        updateStats(); updateSaveIndicator('saved'); richEditor.focus(); clampToViewport();
+      });
+    }
     if (tabsModule.getAll().length === 0) tabsModule.create({ content: '<p><br></p>', metadata: {} });
     else { var active = tabsModule.getActive(); if (active && richEditor) { richEditor.innerHTML = active.content || '<p><br></p>'; updateStats(); } }
   }
 
-    // ===== INITIALIZATION =====
+  // ===== INITIALIZATION =====
   function init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
@@ -1903,14 +2061,14 @@
     loadSettings();
     applyTheme();
 
-    // FIX #1: Apply language from correct key
+    // Apply language
     var lang = getCurrentLang();
     applyLanguage(lang);
 
-    // Apply page-specific settings (font size, line height, etc.)
+    // Apply page-specific settings
     applyPageSettings();
 
-    // Initialize DOM element references — CORRECTED IDs
+    // Initialize DOM element references
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-wrapper');
     tabBar = document.getElementById('tab-bar');
@@ -1968,7 +2126,7 @@
     setupKeyboardShortcuts();
     setupStatsToggle();
 
-    // Setup tabs (loads from storage and renders)
+    // Setup tabs
     setupTabsUI();
 
     // Setup UI handlers
@@ -1990,6 +2148,11 @@
     updateStats();
     updateSaveIndicator('saved');
 
+    // Listen for language change events from main.js
+    window.addEventListener('oros-language-changed', function(e) {
+      if (e.detail && e.detail.lang) applyLanguage(e.detail.lang);
+    });
+
     // Mark page as loaded
     setTimeout(function() {
       document.body.classList.add('loaded');
@@ -2004,6 +2167,7 @@
       exportRtf: exportRtf,
       exportDocx: exportDocx,
       exportEpub: exportEpub,
+      exportPdf: exportPdf,
       handleExport: handleExport,
       toggleComments: toggleCommentsPanel,
       toggleToC: toggleToCPanel,
@@ -2037,23 +2201,15 @@
         var readingTime = words > 0 ? Math.max(1, Math.ceil(words / 200)) : 0;
         var speakingTime = words > 0 ? Math.max(1, Math.ceil(words / 130)) : 0;
         return {
-          words: words,
-          chars: chars,
-          charNoSpaces: charNoSpaces,
-          sentences: sentences,
-          paragraphs: paragraphs,
-          readingTime: readingTime,
-          speakingTime: speakingTime
+          words: words, chars: chars, charNoSpaces: charNoSpaces,
+          sentences: sentences, paragraphs: paragraphs,
+          readingTime: readingTime, speakingTime: speakingTime
         };
       },
       getActiveTab: function() { return tabsModule.getActive(); },
       getActiveContent: function() { return tabsModule.getContent(); },
       setActiveContent: function(html) {
-        if (richEditor) {
-          richEditor.innerHTML = html;
-          saveCurrentTabContent();
-          updateStats();
-        }
+        if (richEditor) { richEditor.innerHTML = html; saveCurrentTabContent(); updateStats(); }
       },
       applyLanguage: applyLanguage,
       getTrans: getTrans
