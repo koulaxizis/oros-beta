@@ -116,14 +116,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-    // ========== LOAD TRANSLATIONS ==========
+      // ========== LOAD TRANSLATIONS ==========
   fetch('assets/js/translations.json')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       window.OROS_TRANSLATIONS = data;
       translatePage();
 
-      // Dispatch event when translations are ready
+      // Dispatch translation loaded event for dependent apps
       window.dispatchEvent(new CustomEvent('oros-translations-loaded', {
         detail: {
           translations: data,
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }));
 
-      // Also dispatch language-changed so writer.js can react
+      // Also dispatch language change
       window.dispatchEvent(new CustomEvent('oros-language-changed', {
         detail: { lang: localStorage.getItem('oros-language') || 'en' }
       }));
