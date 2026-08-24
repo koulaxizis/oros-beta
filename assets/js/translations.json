@@ -1974,7 +1974,7 @@ I notice serious corruption in this EL section — there are duplicate keys with
     "desc_novel": "Chapter structure",
     "desc_screenplay": "Film script format",
     "desc_poem": "Centered verse format",
-    "desc_meeting": "Agenda and notes"
+        "desc_meeting": "Agenda and notes"
   },
   "el": {
     "editor_placeholder": "Ξεκίνα να γράφεις...",
