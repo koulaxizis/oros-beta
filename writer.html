@@ -355,10 +355,14 @@
       <div class="settings-divider"></div>
       <div class="meta-field">
         <label data-i18n="page_settings_title">Page Settings</label>
-        <select id="page-size-select">
-          <option value="a4" data-i18n="page_size_a4">A4</option>
-          <option value="letter" data-i18n="page_size_letter">Letter</option>
-          <option value="legal" data-i18n="page_size_legal">Legal</option>
+                <select id="page-size-select">
+          <option value="a4" data-i18n="page_size_a4">A4 (210×297mm)</option>
+          <option value="letter" data-i18n="page_size_letter">Letter (216×279mm)</option>
+          <option value="legal" data-i18n="page_size_legal">Legal (216×356mm)</option>
+          <option value="a3">A3 (297×420mm)</option>
+          <option value="a5">A5 (148×210mm)</option>
+          <option value="b5">B5 (176×250mm)</option>
+          <option value="full-width">Full Width (Screen)</option>
         </select>
       </div>
       <div class="meta-field-inline">
@@ -538,9 +542,17 @@
       <div class="dialog-body">
         <div class="templates-grid" id="templates-grid"></div>
       </div>
-      <div class="dialog-actions">
-        <button class="btn-cancel" id="btn-cancel-templates" data-i18n="btn_cancel">Cancel</button>
+            <div class="templates-dialog-actions">
+        <div class="templates-actions-left">
+          <button class="btn-primary" id="btn-save-as-template"><i class="fa fa-bookmark"></i> Save Current as Template</button>
+        </div>
+        <div class="templates-actions-right">
+          <button class="btn-cancel" id="btn-import-templates"><i class="fa fa-upload"></i> Import</button>
+          <button class="btn-cancel" id="btn-export-templates"><i class="fa fa-download"></i> Export</button>
+          <button class="btn-cancel" id="btn-cancel-templates" data-i18n="btn_cancel">Cancel</button>
+        </div>
       </div>
+      <input type="file" id="templates-import-input" accept=".json" style="display:none;">
     </div>
   </div>
 
@@ -743,10 +755,14 @@
                 <input type="text" id="ac-new-replacement" placeholder="Replacement…" data-i18n-placeholder="ac_replacement_ph" style="width:140px;" />
                 <button class="mini-btn" id="btn-add-autocorrect" title="Add rule"><i class="fa fa-plus"></i></button>
               </div>
-              <div class="autocorrect-actions" style="margin-top:8px;">
+                            <div class="autocorrect-actions" style="margin-top:8px;">
                 <button class="btn btn-secondary" id="btn-reset-autocorrect" data-i18n="btn_reset_defaults" style="font-size:0.8rem;padding:6px 12px;">Reset to Defaults</button>
               </div>
             </div>
+            <div class="settings-divider"></div>
+            <h4>Database Management</h4>
+            <p class="settings-desc" style="font-size:0.8rem;color:var(--text-muted,#888);margin-bottom:12px;">Export all Writer data: settings, tabs, templates, autocorrect rules, and version history.</p>
+            <button class="db-export-btn" id="btn-export-database"><i class="fa fa-database"></i> Export Full Database (.json)</button>
           </div>
         </div>
       <div class="dialog-actions">

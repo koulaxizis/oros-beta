@@ -1,7 +1,8 @@
 /* ============================================
-   orOS Writer — Complete Stylesheet v1.2
-   Fixes: z-index hierarchy, dialog/panel layering,
-   progress bar positioning, print exclusions
+   orOS Writer — Complete Stylesheet v1.3
+   Fixes: Single-row toolbar, page sizes, 
+   word count arrow, session centering, 
+   exit reading position, track changes, comments
    Author: Christos Koulaxizis | orOS Ecosystem
    ============================================ */
 
@@ -307,12 +308,15 @@
 
 .session-label { font-size: 13px; color: var(--text-secondary); }
 
+/* FIX #11: Session timer centered */
 .session-display {
   font-size: 14px;
   font-weight: 600;
   color: var(--accent-gold);
   margin-left: auto;
+  margin-right: auto;
   font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .session-display.complete { color: var(--success); }
@@ -410,6 +414,24 @@
   caret-color: var(--accent-gold);
   max-width: 900px;
   margin: 0 auto;
+}
+
+/* FIX #1: Page size variations */
+.rich-editor[data-page-size="full-width"] {
+  max-width: none;
+  padding: 48px 40px 120px;
+}
+
+.rich-editor[data-page-size="a5"] {
+  max-width: 600px;
+}
+
+.rich-editor[data-page-size="b5"] {
+  max-width: 760px;
+}
+
+.rich-editor[data-page-size="a3"] {
+  max-width: 1000px;
 }
 
 .rich-editor:empty::before {
@@ -552,8 +574,25 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   padding: 4px 8px;
 }
 
-.stats-default { cursor: pointer; opacity: 0.7; transition: opacity 0.15s; user-select: none; }
+/* FIX #2: Stats with up arrow indicator */
+.stats-default { 
+  cursor: pointer; 
+  opacity: 0.7; 
+  transition: opacity 0.15s; 
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .stats-default:hover { opacity: 1; color: var(--accent-gold-light); }
+.stats-up-arrow { 
+  font-size: 10px; 
+  color: var(--accent-gold); 
+  transition: transform 0.2s;
+}
+.stats-default:hover .stats-up-arrow { 
+  transform: translateY(-2px);
+}
 .stats-goal { color: var(--accent-gold); opacity: 0.8; }
 
 .stats-detailed {
@@ -579,9 +618,7 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .stat-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text-secondary); }
 .stat-row span:last-child { color: var(--text-primary); font-weight: 600; }
 
-/* ===== SIDE PANELS — FIX #9: z-index hierarchy corrected ===== 
-   Hierarchy: Toolbar (998) < Tabs (999) < Stats (1050) < Side Panels (1001) < Dialogs (200) < Settings (300) < Dropdowns (1100)
-*/
+/* ===== SIDE PANELS ===== */
 .side-panel {
   position: fixed;
   top: 112px;
@@ -695,7 +732,7 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .meta-date-row { font-size: 11px; color: var(--text-muted); padding: 2px 0; }
 .settings-divider { height: 1px; background: var(--border-color); margin: 12px 0; }
 
-/* ===== DIALOGS — z-index corrected ===== */
+/* ===== DIALOGS ===== */
 .dialog-overlay {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -755,6 +792,41 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .template-card h4 { margin: 4px 0; font-size: 14px; color: var(--text-primary); }
 .template-card p { margin: 0; font-size: 11px; color: var(--text-muted); }
 
+/* FIX #4: Custom template card */
+.template-card.custom-template {
+  border-color: var(--accent-gold);
+  position: relative;
+}
+.template-card.custom-template::after {
+  content: 'CUSTOM';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 8px;
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.custom-template-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.btn-delete-template {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--danger);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-delete-template:hover {
+  background: rgba(231, 76, 60, 0.15);
+}
+
 /* ===== SPECIAL CHARACTERS DIALOG ===== */
 .special-chars-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
 .sc-tab { padding: 6px 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); font-size: 12px; font-family: var(--font-primary); cursor: pointer; transition: all 0.15s; }
@@ -765,7 +837,7 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .sc-char { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 4px; font-size: 18px; color: var(--text-primary); cursor: pointer; transition: all 0.15s; }
 .sc-char:hover { background: var(--bg-hover); border-color: var(--accent-gold); color: var(--accent-gold); transform: scale(1.1); }
 
-/* ===== SETTINGS MODAL — z-index corrected ===== */
+/* ===== SETTINGS MODAL ===== */
 .settings-modal {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
@@ -862,13 +934,13 @@ body.reading-mode .rich-wrapper {
   background: var(--bg-dark);
 }
 
-/* FIX #11: Exit Reading Mode button */
+/* FIX #12: Exit reading button below header */
 #btn-exit-reading-mode {
   display: none;
   position: fixed;
-  top: 16px;
+  top: 56px;
   right: 16px;
-  z-index: 2200;
+  z-index: 2100;
   background: var(--bg-panel);
   border: 1px solid var(--accent-gold);
   color: var(--accent-gold);
@@ -1104,7 +1176,7 @@ body[data-zen="true"] .side-panel {
   padding: 2px 0;
 }
 
-/* ===== PRINT STYLES — FIX: Added .zentool-toast exclusion ===== */
+/* ===== PRINT STYLES ===== */
 @media print {
   .header,
   #oros-header,
@@ -1253,80 +1325,6 @@ body[data-zen="true"] .side-panel {
   }
 }
 
-/* ===== SINGLE-ROW TOOLBAR (1200px+) ===== */
-@media (min-width: 1200px) {
-  .main-toolbar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 4px 8px;
-    gap: 0;
-    scrollbar-width: none;
-  }
-  .main-toolbar::-webkit-scrollbar { display: none; }
-
-  .toolbar-group,
-  .toolbar-left,
-  .toolbar-center,
-  .toolbar-right {
-    gap: 1px;
-    padding: 0 1px;
-    flex-shrink: 0;
-  }
-
-  .toolbar-center {
-    flex: none;
-    justify-content: flex-start;
-  }
-
-  .action-btn,
-  .fmt-text-btn {
-    min-width: 26px;
-    height: 26px;
-    padding: 0 3px;
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
-  .tb-separator {
-    width: 1px;
-    height: 16px;
-    margin: 0 1px;
-    flex-shrink: 0;
-  }
-
-  .styles-dropdown {
-    height: 26px;
-    padding: 0 4px 0 6px;
-    font-size: 11px;
-    max-width: 96px;
-    flex-shrink: 0;
-  }
-
-  .dropdown { flex-shrink: 0; }
-}
-
-/* ===== EXTRA TIGHT (1400px+) — no horizontal scroll needed ===== */
-@media (min-width: 1400px) {
-  .main-toolbar {
-    overflow-x: visible;
-  }
-
-  .action-btn,
-  .fmt-text-btn {
-    min-width: 28px;
-    height: 28px;
-    padding: 0 4px;
-    font-size: 13px;
-  }
-
-  .styles-dropdown {
-    height: 28px;
-    font-size: 12px;
-    max-width: 110px;
-  }
-}
-
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1448,7 +1446,7 @@ body[data-zen="true"] .side-panel {
   gap: 8px;
 }
 
-/* ===== QUICK FORMAT MENU (Alt+Right-Click) ===== */
+/* ===== QUICK FORMAT MENU ===== */
 .quick-format-menu {
   display: none;
   position: fixed;
@@ -1493,4 +1491,100 @@ body[data-zen="true"] .side-panel {
 }
 .qfm-btn.qfm-action {
   color: var(--accent, #6d4aff);
+}
+
+/* ===== SINGLE-ROW TOOLBAR (1200px+) ===== */
+@media (min-width: 1200px) {
+  .main-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .main-toolbar::-webkit-scrollbar { display: none; }
+  .toolbar-group,
+  .toolbar-left,
+  .toolbar-center,
+  .toolbar-right {
+    gap: 1px;
+    padding: 0 1px;
+    flex-shrink: 0;
+  }
+  .toolbar-center {
+    flex: none;
+    justify-content: flex-start;
+  }
+  .action-btn,
+  .fmt-text-btn {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 3px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .tb-separator {
+    width: 1px;
+    height: 16px;
+    margin: 0 1px;
+    flex-shrink: 0;
+  }
+  .styles-dropdown {
+    height: 26px;
+    padding: 0 4px 0 6px;
+    font-size: 11px;
+    max-width: 96px;
+    flex-shrink: 0;
+  }
+  .dropdown { flex-shrink: 0; }
+}
+
+@media (min-width: 1400px) {
+  .main-toolbar { overflow-x: visible; }
+  .action-btn, .fmt-text-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+  .styles-dropdown {
+    height: 28px;
+    font-size: 12px;
+    max-width: 110px;
+  }
+}
+
+/* ===== DB EXPORT & TEMPLATE ACTIONS ===== */
+.db-export-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 16px;
+}
+.db-export-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-gold-light);
+  border-color: var(--accent-gold);
+}
+.templates-dialog-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color);
+  justify-content: space-between;
+}
+.templates-actions-left,
+.templates-actions-right {
+  display: flex;
+  gap: 8px;
 }
