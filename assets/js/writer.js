@@ -571,52 +571,11 @@
     else document.documentElement.removeAttribute('data-theme');
   }
 
-    // ===== LANGUAGE =====
-  var currentLang = null;
-  var activeTranslations = null;
-
-  function loadTranslations() {
-    // Προτεραιότητα 1: Global object από main.js
-    if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
-      activeTranslations = window.OROS_TRANSLATIONS;
-      return true;
-    }
-    
-    // Προτεραιότητα 2: localStorage (fallback)
-    var stored = localStorage.getItem('oros-translations');
-    if (stored) {
-      try {
-        activeTranslations = JSON.parse(stored);
-        return true;
-      } catch (e) {
-        console.warn('Stored translations parse error:', e);
-      }
-    }
-    
-    // Τελευταία επιλογή: γλώσσα από localStorage + default EN
-    var savedLang = localStorage.getItem('oros-language') || 'en';
-    activeTranslations = { en: {} }; // κενό fallback
-    
-    console.warn('OROS_TRANSLATIONS not loaded yet');
-    return false;
-  }
-
-  function getTrans(key) {
-    if (!activeTranslations) {
-      console.error('getTrans() called before translations loaded');
-      return key;
-    }
-    if (!currentLang) {
-      currentLang = localStorage.getItem('oros-language') || 'en';
-    }
-    return activeTranslations[currentLang] && activeTranslations[currentLang][key] 
-      ? activeTranslations[currentLang][key] 
-      : (activeTranslations.en[key] || key);
-  }
+  // ===== LANGUAGE =====
+  function loadTranslations() { if (!window.OROS_TRANSLATIONS) console.warn('OROS_TRANSLATIONS not loaded yet'); }
 
   function applyLanguage(lang) {
     currentLang = lang;
-    localStorage.setItem('oros-language', lang);
     document.documentElement.lang = lang;
     var translatable = document.querySelectorAll('[data-i18n]');
     for (var i = 0; i < translatable.length; i++) {
@@ -630,14 +589,6 @@
       var phVal = getTrans(phKey);
       if (phVal && phVal !== phKey) { placeholders[j].setAttribute('placeholder', phVal); placeholders[j].setAttribute('data-placeholder', phVal); }
     }
-    var tooltips = document.querySelectorAll('[data-i18n-tooltip]');
-    for (var t = 0; t < tooltips.length; t++) {
-      var ttKey = tooltips[t].getAttribute('data-i18n-tooltip');
-      var ttVal = getTrans(ttKey);
-      if (ttVal && ttVal !== ttKey) tooltips[t].title = ttVal;
-    }
-    if (tabsModule && tabsModule.initialized) tabsModule.render();
-  }
     var tooltips = document.querySelectorAll('[data-i18n-tooltip]');
     for (var t = 0; t < tooltips.length; t++) {
       var ttKey = tooltips[t].getAttribute('data-i18n-tooltip');
