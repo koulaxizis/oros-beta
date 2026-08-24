@@ -1253,71 +1253,77 @@ body[data-zen="true"] .side-panel {
   }
 }
 
-/* ===== LARGE SCREEN OPTIMIZATION ===== */
-@media (min-width: 1920px) {
-  /* Tighter toolbar layout for single-row fit */
+/* ===== SINGLE-ROW TOOLBAR (1200px+) ===== */
+@media (min-width: 1200px) {
   .main-toolbar {
-    padding: 4px 16px;
-    gap: 2px;
     flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px;
+    gap: 0;
+    scrollbar-width: none;
   }
+  .main-toolbar::-webkit-scrollbar { display: none; }
 
   .toolbar-group,
   .toolbar-left,
   .toolbar-center,
   .toolbar-right {
-    gap: 2px;
-    padding: 0 2px;
+    gap: 1px;
+    padding: 0 1px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-center {
+    flex: none;
+    justify-content: flex-start;
   }
 
   .action-btn,
   .fmt-text-btn {
-    min-width: 30px;
-    height: 30px;
-    padding: 0 4px;
-    font-size: 13px;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 3px;
+    font-size: 12px;
+    flex-shrink: 0;
   }
 
   .tb-separator {
     width: 1px;
-    height: 20px;
-    margin: 0 2px;
+    height: 16px;
+    margin: 0 1px;
+    flex-shrink: 0;
   }
 
-  /* Tighter style dropdown */
   .styles-dropdown {
-    padding: 0 6px;
-    font-size: 12px;
-    max-width: 120px;
+    height: 26px;
+    padding: 0 4px 0 6px;
+    font-size: 11px;
+    max-width: 96px;
+    flex-shrink: 0;
   }
 
-  /* Compact secondary bars */
-  .goal-bar,
-  .session-bar,
-  .find-replace-bar,
-  .track-changes-bar {
-    padding: 4px 16px;
-    gap: 6px;
+  .dropdown { flex-shrink: 0; }
+}
+
+/* ===== EXTRA TIGHT (1400px+) — no horizontal scroll needed ===== */
+@media (min-width: 1400px) {
+  .main-toolbar {
+    overflow-x: visible;
   }
 
-  .goal-bar input[type="number"],
-  .goal-bar select,
-  .session-bar input[type="number"],
-  .find-replace-bar input[type="text"] {
+  .action-btn,
+  .fmt-text-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .styles-dropdown {
     height: 28px;
     font-size: 12px;
-    padding: 0 6px;
-  }
-
-  .goal-bar input[type="number"] {
-    width: 70px;
-  }
-
-  .mini-btn {
-    width: 26px;
-    height: 26px;
-    font-size: 11px;
-    padding: 0 3px;
+    max-width: 110px;
   }
 }
 
@@ -1487,14 +1493,4 @@ body[data-zen="true"] .side-panel {
 }
 .qfm-btn.qfm-action {
   color: var(--accent, #6d4aff);
-}
-
-@media (min-width: 1920px) {
-  .fmt-text-btn i.fa {
-    font-size: 12px;
-  }
-  
-  .action-btn i.fa {
-    font-size: 12px;
-  }
 }
