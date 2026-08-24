@@ -688,17 +688,127 @@
   }
 
   // ===== AUTOCORRECT =====
+    var DEFAULT_AUTOCORRECT = {
+    'dont': "don't", 'cant': "can't", 'wont': "won't", 'isnt': "isn't",
+    'wasnt': "wasn't", 'havent': "haven't", 'didnt': "didn't",
+    'wouldnt': "wouldn't", 'couldnt': "couldn't", 'shouldnt': "shouldn't",
+    'im': "I'm", 'ive': "I've", 'ill': "I'll", 'id': "I'd",
+    'teh': 'the', 'recieve': 'receive', 'seperate': 'separate',
+    'definately': 'definitely', 'occured': 'occurred', 'untill': 'until',
+    'thier': 'their', 'freind': 'friend', 'wich': 'which',
+    'alot': 'a lot', 'thier': 'their',
+    'δενειναι': 'δεν είναι', 'μισο': 'μισό', 'δυο': 'δύο',
+    'ηταν': 'était'
+  };
   var autocorrectRules = {};
-  function loadAutoCorrections() { try { var raw = localStorage.getItem(CONFIG.STORAGE_PREFIX + 'autocorrect'); if (raw) autocorrectRules = JSON.parse(raw); } catch(e) { autocorrectRules = {}; } }
-  function applyAutocorrect(text) {
-    if (!text) return text;
-    for (var trigger in autocorrectRules) {
-      if (autocorrectRules.hasOwnProperty(trigger)) {
-        var regex = new RegExp('\\b' + trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-        text = text.replace(regex, autocorrectRules[trigger]);
+    function loadAutoCorrections() {
+    try {
+      var raw = localStorage.getItem(CONFIG.STORAGE_PREFIX + 'autocorrect');
+      if (raw) {
+        autocorrectRules = JSON.parse(raw);
+      } else {
+        autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT);
+        saveAutoCorrections();
       }
+    } catch(e) {
+      autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT);
     }
-    return text;
+  }
+
+  function saveAutoCorrections() {
+    try {
+      localStorage.setItem(CONFIG.STORAGE_PREFIX + 'autocorrect', JSON.stringify(autocorrectRules));
+    } catch(e) {}
+  }
+
+  function renderAutocorrectRules() {
+    var list = document.getElementById('autocorrect-rules-list');
+    if (!list) return;
+    var keys = Object.keys(autocorrectRules).sort();
+    if (keys.length === 0) {
+      list.innerHTML = '<div class="autocorrect-empty">No rules yet. Add one below.</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < keys.length; i++) {
+      var trigger = keys[i];
+      var replacement = autocorrectRules[trigger];
+      var isDefault = DEFAULT_AUTOCORRECT.hasOwnProperty(trigger);
+      html += '<div class="autocorrect-rule-row">' +
+        '<input type="text" class="ac-trigger" value="' + escapeHtml(trigger) + '" data-original="' + escapeHtml(trigger) + '">' +
+        '<span class="ac-arrow">→</span>' +
+        '<input type="text" class="ac-replacement" value="' + escapeHtml(replacement) + '" data-trigger="' + escapeHtml(trigger) + '">' +
+        '<button class="ac-delete" data-trigger="' + escapeHtml(trigger) + '" title="Remove"><i class="fa fa-times"></i></button>' +
+        (isDefault ? '<span class="ac-badge">default</span>' : '') +
+        '</div>';
+    }
+    list.innerHTML = html;
+
+    // Wire delete buttons
+    var delBtns = list.querySelectorAll('.ac-delete');
+    for (var d = 0; d < delBtns.length; d++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          var trig = btn.getAttribute('data-trigger');
+          delete autocorrectRules[trig];
+          saveAutoCorrections();
+          renderAutocorrectRules();
+          showToast('Rule removed');
+        });
+      })(delBtns[d]);
+    }
+
+    // Wire inline edit (trigger change)
+    var triggerInputs = list.querySelectorAll('.ac-trigger');
+    for (var t = 0; t < triggerInputs.length; t++) {
+      (function(inp) {
+        inp.addEventListener('change', function() {
+          var original = inp.getAttribute('data-original');
+          var newVal = inp.value.trim().toLowerCase();
+          if (!newVal || newVal === original) return;
+          var replacement = autocorrectRules[original];
+          delete autocorrectRules[original];
+          autocorrectRules[newVal] = replacement;
+          saveAutoCorrections();
+          renderAutocorrectRules();
+        });
+      })(triggerInputs[t]);
+    }
+
+    // Wire inline edit (replacement change)
+    var replacementInputs = list.querySelectorAll('.ac-replacement');
+    for (var r = 0; r < replacementInputs.length; r++) {
+      (function(inp) {
+        inp.addEventListener('change', function() {
+          var trig = inp.getAttribute('data-trigger');
+          autocorrectRules[trig] = inp.value;
+          saveAutoCorrections();
+        });
+      })(replacementInputs[r]);
+    }
+  }
+
+  function addAutocorrectRule() {
+    var triggerInput = document.getElementById('ac-new-trigger');
+    var replacementInput = document.getElementById('ac-new-replacement');
+    if (!triggerInput || !replacementInput) return;
+    var trigger = triggerInput.value.trim().toLowerCase();
+    var replacement = replacementInput.value.trim();
+    if (!trigger) { showToast('Enter a trigger word'); return; }
+    if (!replacement) { showToast('Enter a replacement'); return; }
+    autocorrectRules[trigger] = replacement;
+    saveAutoCorrections();
+    triggerInput.value = '';
+    replacementInput.value = '';
+    renderAutocorrectRules();
+    showToast('Rule added');
+  }
+
+  function resetAutocorrectRules() {
+    autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT);
+    saveAutoCorrections();
+    renderAutocorrectRules();
+    showToast('Rules reset to defaults');
   }
 
   // ===== SMART TYPOGRAPHY =====
@@ -1892,6 +2002,18 @@
     bindClick('btn-close-settings', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
     bindClick('btn-close-settings-footer', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
     bindClick('btn-save-settings', function() { saveSettings(); var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
+	    // Autocorrect rule management
+    bindClick('btn-add-autocorrect', addAutocorrectRule);
+    bindClick('btn-reset-autocorrect', resetAutocorrectRules);
+    var acNewTrigger = document.getElementById('ac-new-trigger');
+    var acNewReplacement = document.getElementById('ac-new-replacement');
+    if (acNewTrigger && acNewReplacement) {
+      var acAddOnEnter = function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); addAutocorrectRule(); }
+      };
+      acNewTrigger.addEventListener('keydown', acAddOnEnter);
+      acNewReplacement.addEventListener('keydown', acAddOnEnter);
+    }
 
     // Settings tab switching
     var tabBtns = document.querySelectorAll('.settings-nav .tab-btn');
@@ -2059,6 +2181,88 @@
     if (tabsModule.getAll().length === 0) tabsModule.create({ content: '<p><br></p>', metadata: {} });
     else { var active = tabsModule.getActive(); if (active && richEditor) { richEditor.innerHTML = active.content || '<p><br></p>'; updateStats(); } }
   }
+  
+    // ===== ALT+RIGHT-CLICK QUICK FORMAT MENU =====
+  var quickFormatMenu = null;
+
+  function createQuickFormatMenu() {
+    if (quickFormatMenu) quickFormatMenu.remove();
+    quickFormatMenu = document.createElement('div');
+    quickFormatMenu.className = 'quick-format-menu';
+    quickFormatMenu.innerHTML =
+      '<div class="qfm-group">' +
+        '<button class="qfm-btn" data-cmd="bold" title="Bold"><i class="fa fa-bold"></i></button>' +
+        '<button class="qfm-btn" data-cmd="italic" title="Italic"><i class="fa fa-italic"></i></button>' +
+        '<button class="qfm-btn" data-cmd="underline" title="Underline"><i class="fa fa-underline"></i></button>' +
+        '<button class="qfm-btn" data-cmd="strikeThrough" title="Strikethrough"><i class="fa fa-strikethrough"></i></button>' +
+      '</div>' +
+      '<div class="qfm-divider"></div>' +
+      '<div class="qfm-group">' +
+        '<button class="qfm-btn" data-cmd="formatBlock" data-val="h1" title="Heading 1"><b>H1</b></button>' +
+        '<button class="qfm-btn" data-cmd="formatBlock" data-val="h2" title="Heading 2"><b>H2</b></button>' +
+        '<button class="qfm-btn" data-cmd="formatBlock" data-val="h3" title="Heading 3"><b>H3</b></button>' +
+        '<button class="qfm-btn" data-cmd="formatBlock" data-val="p" title="Normal">¶</button>' +
+        '<button class="qfm-btn" data-cmd="formatBlock" data-val="blockquote" title="Quote"><i class="fa fa-quote-left"></i></button>' +
+      '</div>' +
+      '<div class="qfm-divider"></div>' +
+      '<div class="qfm-group">' +
+        '<button class="qfm-btn" data-cmd="justifyLeft" title="Align Left"><i class="fa fa-align-left"></i></button>' +
+        '<button class="qfm-btn" data-cmd="justifyCenter" title="Align Center"><i class="fa fa-align-center"></i></button>' +
+        '<button class="qfm-btn" data-cmd="justifyRight" title="Align Right"><i class="fa fa-align-right"></i></button>' +
+      '</div>' +
+      '<div class="qfm-divider"></div>' +
+      '<div class="qfm-group">' +
+        '<button class="qfm-btn qfm-action" data-action="link" title="Insert Link"><i class="fa fa-link"></i></button>' +
+        '<button class="qfm-btn qfm-action" data-action="image" title="Insert Image"><i class="fa fa-picture-o"></i></button>' +
+        '<button class="qfm-btn qfm-action" data-action="table" title="Insert Table"><i class="fa fa-table"></i></button>' +
+      '</div>';
+    document.body.appendChild(quickFormatMenu);
+
+    var btns = quickFormatMenu.querySelectorAll('.qfm-btn');
+    for (var i = 0; i < btns.length; i++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          var cmd = btn.getAttribute('data-cmd');
+          var val = btn.getAttribute('data-val');
+          var action = btn.getAttribute('data-action');
+          if (cmd) {
+            if (val) document.execCommand(cmd, false, val);
+            else document.execCommand(cmd);
+            saveCurrentTabContent();
+            setTimeout(updateToolbarStates, 10);
+          } else if (action === 'link') {
+            toggleLinkDialog();
+          } else if (action === 'image') {
+            toggleImageDialog();
+          } else if (action === 'table') {
+            toggleTableDialog();
+          }
+          hideQuickFormatMenu();
+        });
+      })(btns[i]);
+    }
+  }
+
+  function showQuickFormatMenu(x, y) {
+    createQuickFormatMenu();
+    quickFormatMenu.style.display = 'flex';
+    // Clamp to viewport
+    var rect = quickFormatMenu.getBoundingClientRect();
+    var maxX = window.innerWidth - rect.width - 10;
+    var maxY = window.innerHeight - rect.height - 10;
+    quickFormatMenu.style.left = Math.min(x, maxX) + 'px';
+    quickFormatMenu.style.top = Math.min(y, maxY) + 'px';
+    setTimeout(function() { quickFormatMenu.classList.add('visible'); }, 10);
+  }
+
+  function hideQuickFormatMenu() {
+    if (quickFormatMenu) {
+      quickFormatMenu.classList.remove('visible');
+      setTimeout(function() {
+        if (quickFormatMenu) { quickFormatMenu.remove(); quickFormatMenu = null; }
+      }, 200);
+    }
+  }
 
        // ===== INITIALIZATION =====
   function init() {
@@ -2130,6 +2334,24 @@
     setupPanelToggles();
     setupDialogHandlers();
     setupSettingsHandlers();
+	    // Alt+Right-Click quick format menu
+    if (richEditor) {
+      richEditor.addEventListener('contextmenu', function(e) {
+        if (e.altKey) {
+          e.preventDefault();
+          showQuickFormatMenu(e.clientX, e.clientY);
+        }
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (quickFormatMenu && !e.target.closest('.quick-format-menu')) hideQuickFormatMenu();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && quickFormatMenu) hideQuickFormatMenu();
+    });
+
+    // Render autocorrect rules if settings modal exists
+    renderAutocorrectRules();
     loadSettingsValues();
     clampToViewport();
     setInterval(autoSaveCheck, AUTO_SAVE_INTERVAL_MS);

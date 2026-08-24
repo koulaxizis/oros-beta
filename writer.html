@@ -731,22 +731,24 @@
             </div>
           </div>
         </div>
-        <div class="tab-panel" id="advanced-settings" style="display:none;">
+                <div class="tab-panel" id="advanced-settings" style="display:none;">
           <div class="toggles-container">
             <h4 data-i18n="autocorrect_title">Auto-Correction Rules</h4>
-            <div id="autocorrect-rules-container"></div>
-            <div class="autocorrect-add-row">
-              <input type="text" id="ac-pattern" placeholder="(tm)" style="width:120px;" />
-              <span>→</span>
-              <input type="text" id="ac-replacement" placeholder="™" style="width:120px;" />
-              <button class="mini-btn" id="btn-add-autocorrect-rule"><i class="fa fa-plus"></i></button>
+            <p class="settings-desc" style="font-size:0.8rem;color:var(--text-muted,#888);margin-bottom:12px;" data-i18n="autocorrect_desc">Common typos are auto-corrected as you type. Modify, remove, or add your own.</p>
+            <div class="autocorrect-rules-container">
+              <div class="autocorrect-rules-list" id="autocorrect-rules-list"></div>
+              <div class="autocorrect-add-row">
+                <input type="text" id="ac-new-trigger" placeholder="Trigger word…" data-i18n-placeholder="ac_trigger_ph" style="width:140px;" />
+                <span style="color:var(--text-muted,#888);">→</span>
+                <input type="text" id="ac-new-replacement" placeholder="Replacement…" data-i18n-placeholder="ac_replacement_ph" style="width:140px;" />
+                <button class="mini-btn" id="btn-add-autocorrect" title="Add rule"><i class="fa fa-plus"></i></button>
+              </div>
+              <div class="autocorrect-actions" style="margin-top:8px;">
+                <button class="btn btn-secondary" id="btn-reset-autocorrect" data-i18n="btn_reset_defaults" style="font-size:0.8rem;padding:6px 12px;">Reset to Defaults</button>
+              </div>
             </div>
-            <div class="settings-divider"></div>
-            <h4 data-i18n="shortcuts_custom_title">Keyboard Shortcuts</h4>
-            <div id="shortcuts-custom-container"></div>
           </div>
         </div>
-      </div>
       <div class="dialog-actions">
         <button class="btn-cancel" id="btn-close-settings-footer" data-i18n="btn_cancel">Cancel</button>
         <button class="btn-primary" id="btn-save-settings" data-i18n="btn_save">Save</button>
