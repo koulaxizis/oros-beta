@@ -2363,7 +2363,7 @@
     currentLang = getCurrentLang();
     applyLanguage(currentLang);
 
-    // Re-apply translations when they finish loading
+        // Re-apply translations when they finish loading
     window.addEventListener('oros-language-changed', function(e) {
       if (e.detail && e.detail.lang) applyLanguage(e.detail.lang);
     });
@@ -2372,7 +2372,7 @@
     var pollCount = 0;
     var pollTrans = setInterval(function() {
       pollCount++;
-            if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
+      if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
         clearInterval(pollTrans);
         activeTranslations = window.OROS_TRANSLATIONS;
         applyLanguage(getCurrentLang());
@@ -2386,6 +2386,9 @@
           setTimeout(function() { wToast.remove(); }, 400);
         }, 3000);
       } else if (pollCount > 60) {
+        clearInterval(pollTrans);
+      }
+    }, 50);
 
     setTimeout(function() { document.body.classList.add('loaded'); }, 100);
 
