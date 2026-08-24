@@ -1263,3 +1263,20 @@ body[data-zen="true"] .side-panel {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Centered welcome toast */
+.zentool-toast.welcome-toast {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(0.9);
+  font-size: 1.25rem;
+  padding: 22px 40px;
+  border-radius: 12px;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.zentool-toast.welcome-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}

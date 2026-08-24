@@ -460,12 +460,12 @@
     });
   }
 
-  function updateReadingProgress() {
+    function updateReadingProgress() {
     if (!readingProgressEnabled || !richEditor) return;
     var container = document.querySelector('.reading-progress-bar');
     if (!container) return;
     var totalHeight = richEditor.scrollHeight - richEditor.clientHeight;
-    if (totalHeight <= 0) { container.style.width = '100%'; return; }
+    if (totalHeight <= 0) { container.style.width = '0%'; return; }
     var scrollTop = richEditor.scrollTop;
     var pct = Math.min(100, (scrollTop / totalHeight) * 100);
     container.style.width = pct + '%';
@@ -2150,15 +2150,20 @@
     var pollCount = 0;
     var pollTrans = setInterval(function() {
       pollCount++;
-      if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
+            if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
         clearInterval(pollTrans);
         activeTranslations = window.OROS_TRANSLATIONS;
         applyLanguage(getCurrentLang());
-        showToast(getTrans('text_welcome') !== 'text_welcome' ? getTrans('text_welcome') : 'Welcome to orOS Writer!');
+        var wToast = document.createElement('div');
+        wToast.className = 'zentool-toast welcome-toast';
+        wToast.textContent = getTrans('text_welcome') !== 'text_welcome' ? getTrans('text_welcome') : 'Welcome to orOS Writer!';
+        document.body.appendChild(wToast);
+        requestAnimationFrame(function() { wToast.classList.add('visible'); });
+        setTimeout(function() {
+          wToast.classList.remove('visible');
+          setTimeout(function() { wToast.remove(); }, 400);
+        }, 3000);
       } else if (pollCount > 60) {
-        clearInterval(pollTrans);
-      }
-    }, 50);
 
     setTimeout(function() { document.body.classList.add('loaded'); }, 100);
 
