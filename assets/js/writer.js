@@ -2060,7 +2060,7 @@
     else { var active = tabsModule.getActive(); if (active && richEditor) { richEditor.innerHTML = active.content || '<p><br></p>'; updateStats(); } }
   }
 
-     // ===== INITIALIZATION =====
+       // ===== INITIALIZATION =====
   function init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
@@ -2069,40 +2069,11 @@
     if (initialized) return;
     initialized = true;
 
-    // ===== WAIT FOR TRANSLATIONS (polling) =====
-    if (!loadTranslations()) {
-      console.info('Writer: waiting for translations...');
-      var pollCount = 0;
-      var pollTrans = setInterval(function() {
-        pollCount++;
-        if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
-          clearInterval(pollTrans);
-          activeTranslations = window.OROS_TRANSLATIONS;
-          continueInit(getCurrentLang());
-        } else if (pollCount > 60) {
-          clearInterval(pollTrans);
-          console.warn('Writer: translations timeout after 3s, starting with fallback');
-          continueInit(getCurrentLang());
-        }
-      }, 50);
-      return;
-    }
-
-    continueInit(getCurrentLang());
-  }
-
-  function continueInit(initialLang) {
-    // Load settings
+    // Don't wait for translations — start immediately
     loadAutoCorrections();
     initTypewriterSound();
     loadSettings();
     applyTheme();
-
-    // Apply language
-    if (initialLang) currentLang = initialLang;
-    applyLanguage(currentLang);
-
-    // Apply page-specific settings
     applyPageSettings();
 
     // Initialize DOM element references
@@ -2148,52 +2119,48 @@
     exportDropdown = document.getElementById('export-dropdown');
     toastContainer = document.getElementById('zentool-toast') || document.querySelector('.zentool-toast');
 
-    // Verify critical elements exist
-    if (!richEditor) {
-      console.error('Writer: #rich-editor not found!');
-      return;
-    }
-    if (!tabBar) {
-      console.error('Writer: #tab-bar not found!');
-      return;
-    }
+    if (!richEditor) { console.error('Writer: #rich-editor not found!'); return; }
+    if (!tabBar) { console.error('Writer: #tab-bar not found!'); return; }
 
-    // Setup editor input & keyboard shortcuts
     setupEditorInput();
     setupKeyboardShortcuts();
     setupStatsToggle();
-
-    // Setup tabs
     setupTabsUI();
-
-    // Setup UI handlers
     setupFormatButtons();
     setupPanelToggles();
     setupDialogHandlers();
     setupSettingsHandlers();
-
-    // Apply saved settings values to DOM toggles
     loadSettingsValues();
-
-    // Clamp editor to viewport
     clampToViewport();
-
-    // Start auto-save interval
     setInterval(autoSaveCheck, AUTO_SAVE_INTERVAL_MS);
-
-    // Initial stats update
     updateStats();
     updateSaveIndicator('saved');
 
-    // Listen for language change events from main.js
+    // Apply language (translations may not be ready yet — that's OK,
+    // getTrans falls back to keys, and we re-apply when they arrive)
+    currentLang = getCurrentLang();
+    applyLanguage(currentLang);
+
+    // Re-apply translations when they finish loading
     window.addEventListener('oros-language-changed', function(e) {
       if (e.detail && e.detail.lang) applyLanguage(e.detail.lang);
     });
 
-    // Mark page as loaded
-    setTimeout(function() {
-      document.body.classList.add('loaded');
-    }, 100);
+    // Also poll briefly as fallback
+    var pollCount = 0;
+    var pollTrans = setInterval(function() {
+      pollCount++;
+      if (window.OROS_TRANSLATIONS && typeof window.OROS_TRANSLATIONS === 'object') {
+        clearInterval(pollTrans);
+        activeTranslations = window.OROS_TRANSLATIONS;
+        applyLanguage(getCurrentLang());
+        showToast(getTrans('text_welcome') !== 'text_welcome' ? getTrans('text_welcome') : 'Welcome to orOS Writer!');
+      } else if (pollCount > 60) {
+        clearInterval(pollTrans);
+      }
+    }, 50);
+
+    setTimeout(function() { document.body.classList.add('loaded'); }, 100);
 
     // Expose public API
     window.orOSWriter = {
@@ -2251,8 +2218,6 @@
       applyLanguage: applyLanguage,
       getTrans: getTrans
     };
-
-    showToast(getTrans('text_welcome') !== 'text_welcome' ? getTrans('text_welcome') : 'Welcome to orOS Writer!');
   }
 
   // ===== AUTO-INIT =====
