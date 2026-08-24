@@ -1253,6 +1253,74 @@ body[data-zen="true"] .side-panel {
   }
 }
 
+/* ===== LARGE SCREEN OPTIMIZATION ===== */
+@media (min-width: 1920px) {
+  /* Tighter toolbar layout for single-row fit */
+  .main-toolbar {
+    padding: 4px 16px;
+    gap: 2px;
+    flex-wrap: nowrap;
+  }
+
+  .toolbar-group,
+  .toolbar-left,
+  .toolbar-center,
+  .toolbar-right {
+    gap: 2px;
+    padding: 0 2px;
+  }
+
+  .action-btn,
+  .fmt-text-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .tb-separator {
+    width: 1px;
+    height: 20px;
+    margin: 0 2px;
+  }
+
+  /* Tighter style dropdown */
+  .styles-dropdown {
+    padding: 0 6px;
+    font-size: 12px;
+    max-width: 120px;
+  }
+
+  /* Compact secondary bars */
+  .goal-bar,
+  .session-bar,
+  .find-replace-bar,
+  .track-changes-bar {
+    padding: 4px 16px;
+    gap: 6px;
+  }
+
+  .goal-bar input[type="number"],
+  .goal-bar select,
+  .session-bar input[type="number"],
+  .find-replace-bar input[type="text"] {
+    height: 28px;
+    font-size: 12px;
+    padding: 0 6px;
+  }
+
+  .goal-bar input[type="number"] {
+    width: 70px;
+  }
+
+  .mini-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+    padding: 0 3px;
+  }
+}
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1419,4 +1487,14 @@ body[data-zen="true"] .side-panel {
 }
 .qfm-btn.qfm-action {
   color: var(--accent, #6d4aff);
+}
+
+@media (min-width: 1920px) {
+  .fmt-text-btn i.fa {
+    font-size: 12px;
+  }
+  
+  .action-btn i.fa {
+    font-size: 12px;
+  }
 }
