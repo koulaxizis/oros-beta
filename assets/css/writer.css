@@ -121,10 +121,10 @@
 #editor-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 112px);
+  height: calc(100vh - 112px);
   margin-top: 56px;
   background: var(--bg-dark);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .reading-progress-container {
@@ -1643,13 +1643,14 @@ body[data-zen="true"] .side-panel {
 
 /* ===== LAYOUT — Same pattern as Prompter ===== */
 body.writer-page {
-  height: auto !important;
   min-height: 100vh;
-  overflow-y: auto !important;
+  overflow: hidden;
 }
 
 #oros-footer {
-  position: relative;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
-  flex-shrink: 0;
 }
