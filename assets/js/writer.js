@@ -681,10 +681,19 @@
     applyPageSize(meta.pageSize || 'a4');
   }
 
-  function clampToViewport() {
+    function clampToViewport() {
     if (!richEditor) return;
-    if (window.innerWidth <= 768) richEditor.style.minHeight = (window.innerHeight - 180) + 'px';
-    else richEditor.style.minHeight = (window.innerHeight - 140) + 'px';
+    var headerH = 0;
+    var footerH = 0;
+    var headerEl = document.getElementById('oros-header');
+    var footerEl = document.getElementById('oros-footer');
+    if (headerEl) headerH = headerEl.offsetHeight || 56;
+    if (footerEl) footerH = footerEl.offsetHeight || 48;
+    var toolbarH = 40 + 36; /* tab-bar + main-toolbar approximate */
+    var availHeight = window.innerHeight - headerH - footerH - toolbarH - 40;
+    if (window.innerWidth <= 768) availHeight -= 20;
+    if (availHeight < 200) availHeight = 200;
+    richEditor.style.minHeight = availHeight + 'px';
   }
 
   function autoSaveCheck() { if (!richEditor) return; saveCurrentTabContent(); }

@@ -1628,3 +1628,26 @@ body[data-zen="true"] .side-panel {
   background: var(--bg-hover, #3a3a4a);
   border-color: var(--accent, #6d4aff);
 }
+
+/* ===== FOOTER VISIBILITY FIX ===== */
+#oros-footer {
+  position: relative;
+  z-index: 10;
+  clear: both;
+  flex-shrink: 0;
+}
+
+body.writer-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#oros-header {
+  flex-shrink: 0;
+}
+
+#editor-wrapper {
+  flex: 1 0 auto;
+  min-height: 0;
+}
