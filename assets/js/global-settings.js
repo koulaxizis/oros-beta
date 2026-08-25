@@ -88,26 +88,43 @@
   function init() {
     loadAllSettings();
     setupLocalStorageListener();
+    setupLiveVisibilityListeners();
     
     if (window.orosAppElements) {
       applyVisibility();
     }
   }
+
+  // ========== LIVE VISIBILITY LISTENERS ==========
+  // Listen for Writer/Converter settings changes in same tab
   
-    // Listen for custom events from Writer/other apps
-  window.addEventListener('oros-setting-changed', function(e) {
-    var key = e.detail.key;
-    var value = e.detail.value;
-    
-    if (KEY_MAP[key]) {
-      var settingProp = KEY_MAP[key];
-      SETTINGS[settingProp] = value;
-    }
-    
-    if (window.orosAppElements) {
-      applyVisibility();
-    }
-  });
+  function setupLiveVisibilityListeners() {
+    var VIS_EVENTS = [
+      'oros-reading-progress-changed',
+      'oros-smart-typography-changed',
+      'oros-focus-mode-changed',
+      'oros-hide-stats-changed',
+      'oros-hide-save-indicator-changed',
+      'oros-hide-goal-btn-changed',
+      'oros-hide-outline-btn-changed',
+      'oros-hide-metadata-btn-changed',
+      'oros-hide-find-btn-changed',
+      'oros-hide-wordfreq-btn-changed',
+      'oros-hide-lorem-btn-changed',
+      'oros-typewriter-sound-changed',
+      'oros-zen-mode-changed'
+      // Note: quick_tbar changed event will be handled separately in Phase 4
+    ];
+
+    VIS_EVENTS.forEach(function(eventName) {
+      window.addEventListener(eventName, function() {
+        loadAllSettings();
+        if (window.orosAppElements) {
+          applyVisibility();
+        }
+      });
+    });
+  }
 
   // ========== LOAD SETTINGS ==========
 
@@ -181,7 +198,6 @@
     var btnFind = document.getElementById('btn-find');
     var btnWordFreq = document.getElementById('btn-wordfreq');
     var btnLorem = document.getElementById('btn-lorem');
-    var toolbarCenter = document.querySelector('.toolbar-center');
     var progressBar = document.getElementById('reading-progress-bar');
     var statsOverlay = document.getElementById('stats-overlay');
     var saveIndicator = document.getElementById('save-indicator');
@@ -192,7 +208,8 @@
     if (btnFind) btnFind.style.display = SETTINGS.hideFindBtn ? 'none' : '';
     if (btnWordFreq) btnWordFreq.style.display = SETTINGS.hideWordFreqBtn ? 'none' : '';
     if (btnLorem) btnLorem.style.display = SETTINGS.hideLoremBtn ? 'none' : '';
-    if (toolbarCenter) toolbarCenter.style.display = SETTINGS.quickTbarShow ? 'flex' : 'none';
+    // NOTE: .toolbar-center is ALWAYS visible — removed quickTbarShow logic
+    // The toggle-quick-tbar will control Quick Format Menu (Alt+Right-click) in Phase 4
     if (progressBar) progressBar.style.display = SETTINGS.readingProgressEnabled ? '' : 'none';
     if (statsOverlay) statsOverlay.style.display = SETTINGS.hideStatsOverlay ? 'none' : '';
     if (saveIndicator) saveIndicator.style.visibility = SETTINGS.hideSaveIndicator ? 'hidden' : 'visible';
