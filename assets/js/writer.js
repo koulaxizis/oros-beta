@@ -2040,33 +2040,51 @@
     reader.readAsText(file);
   }
 
-  // ===== OPEN DOCX / ODT VIA JSZIP =====
+    // ===== OPEN DOCX / ODT =====
   function openDocxOdt(file, ext) {
+    // DOCX — use Mammoth.js (already loaded)
+    if (ext === 'docx' && typeof mammoth !== 'undefined') {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        mammoth.convertToHtml({ arrayBuffer: e.target.result })
+          .then(function(result) {
+            richEditor.innerHTML = result.value || '<p><br></p>';
+            saveCurrentTabContent();
+            updateStats();
+            showToast(getTrans('text_file_opened') !== 'text_file_opened' ? getTrans('text_file_opened') : 'DOCX file opened');
+          })
+          .catch(function(err) {
+            console.error('Mammoth DOCX import failed:', err);
+            showToast('DOCX import failed: ' + (err.message || 'unknown error'));
+          });
+      };
+      reader.readAsArrayBuffer(file);
+      return;
+    }
+
+    // ODT — use JSZip
     if (typeof JSZip === 'undefined') {
       showToast(ext.toUpperCase() + ' import requires JSZip library');
       return;
     }
 
-    var reader = new FileReader();
-    reader.onload = function(e) {
+    var reader2 = new FileReader();
+    reader2.onload = function(e) {
       JSZip.loadAsync(e.target.result).then(function(zip) {
-        // DOCX: word/document.xml
-        // ODT: content.xml
-        var xmlPath = (ext === 'docx') ? 'word/document.xml' : 'content.xml';
-
+        var xmlPath = 'content.xml';
         return zip.file(xmlPath).async('string');
       }).then(function(xmlText) {
-        var html = (ext === 'docx') ? docxXmlToHtml(xmlText) : odtXmlToHtml(xmlText);
+        var html = odtXmlToHtml(xmlText);
         richEditor.innerHTML = html;
         saveCurrentTabContent();
         updateStats();
-        showToast(ext.toUpperCase() + ' file opened');
+        showToast(getTrans('text_file_opened') !== 'text_file_opened' ? getTrans('text_file_opened') : 'ODT file opened');
       }).catch(function(err) {
-        console.error(ext.toUpperCase() + ' import failed:', err);
-        showToast(ext.toUpperCase() + ' import failed: ' + (err.message || 'unknown error'));
+        console.error('ODT import failed:', err);
+        showToast('ODT import failed: ' + (err.message || 'unknown error'));
       });
     };
-    reader.readAsArrayBuffer(file);
+    reader2.readAsArrayBuffer(file);
   }
 
   // ===== DOCX XML TO HTML =====
@@ -2737,22 +2755,24 @@
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
     bindClick('btn-track-changes', toggleTrackChanges);
 
-        // FIX #13: Export dropdown — proper event binding with stopPropagation
+        // FIX #13: Export dropdown — direct style manipulation (CSS-independent)
     var exportBtn = document.getElementById('btn-export');
     var exportDd = document.getElementById('export-dropdown');
     if (exportBtn && exportDd) {
+      exportDd.style.display = 'none';
+
       exportBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        exportDd.classList.toggle('visible');
+        exportDd.style.display = (exportDd.style.display === 'block') ? 'none' : 'block';
       });
 
-      var exportBtns = exportDd.querySelectorAll('[data-format]');
-      for (var eb = 0; eb < exportBtns.length; eb++) {
-        exportBtns[eb].addEventListener('click', function(ev) {
+      var exportItems = exportDd.querySelectorAll('[data-format]');
+      for (var eb = 0; eb < exportItems.length; eb++) {
+        exportItems[eb].addEventListener('click', function(ev) {
           ev.preventDefault();
           var format = this.getAttribute('data-format');
-          exportDd.classList.remove('visible');
+          exportDd.style.display = 'none';
           handleExport(format);
         });
       }
@@ -2761,13 +2781,13 @@
         if (!e.target.closest('#export-dropdown') &&
             !e.target.closest('#export-dropdown-container') &&
             !e.target.closest('#btn-export')) {
-          exportDd.classList.remove('visible');
+          exportDd.style.display = 'none';
         }
       });
 
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && exportDd.classList.contains('visible')) {
-          exportDd.classList.remove('visible');
+        if (e.key === 'Escape' && exportDd.style.display === 'block') {
+          exportDd.style.display = 'none';
         }
       });
     }
