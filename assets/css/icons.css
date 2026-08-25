@@ -186,3 +186,9 @@
 .fa-play:before               { content: '\f04b'; } /* ADDED */
 .fa-stop:before               { content: '\f04d'; } /* ADDED */
 .fa-pause:before              { content: '\f04c'; } /* ADDED */
+
+/* ===== PHASE 3 — MISSING ICONS ===== */
+.fa-bookmark:before       { content: '\f02e'; }
+.fa-bookmark-o:before     { content: '\f097'; }
+.fa-camera:before          { content: '\f030'; }
+.fa-paragraph:before       { content: '\f1dd'; }

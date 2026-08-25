@@ -1621,17 +1621,72 @@
     });
   }
 
-  // ===== KEYBOARD SHORTCUTS =====
+    // ===== KEYBOARD SHORTCUTS =====
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'z') { e.preventDefault(); execCmd('undo'); }
-        else if (e.key === 'y') { e.preventDefault(); execCmd('redo'); }
+        // Ctrl+Z — Undo
+        if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); execCmd('undo'); }
+        // Ctrl+Y or Ctrl+Shift+Z — Redo
+        else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); execCmd('redo'); }
+        // Ctrl+B — Bold
         else if (e.key === 'b') { e.preventDefault(); execCmd('bold'); }
+        // Ctrl+I — Italic
         else if (e.key === 'i') { e.preventDefault(); execCmd('italic'); }
+        // Ctrl+U — Underline
         else if (e.key === 'u') { e.preventDefault(); execCmd('underline'); }
+        // Ctrl+S — Save
         else if (e.key === 's') { e.preventDefault(); e.stopPropagation(); saveCurrentTabContent(); showToast(getTrans('autosave') || 'Saved'); }
-        else if (e.key === 'f') { e.preventDefault(); if (findBar) findBar.classList.toggle('active'); }
+        // Ctrl+F — Find
+        else if (e.key === 'f' && !e.shiftKey) { e.preventDefault(); if (findBar) findBar.classList.toggle('active'); }
+        // Ctrl+Shift+F — Insert footnote
+        else if (e.key === 'f' && e.shiftKey) { e.preventDefault(); insertFootnote(); }
+        // Ctrl+K — Insert link
+        else if (e.key === 'k') { e.preventDefault(); var btn = document.getElementById('btn-link'); if (btn) btn.click(); }
+        // Ctrl+, — Subscript
+        else if (e.key === ',') { e.preventDefault(); execCmd('subscript'); }
+        // Ctrl+. — Superscript
+        else if (e.key === '.') { e.preventDefault(); execCmd('superscript'); }
+        // Ctrl+Enter — Page break
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          var pb = document.createElement('div');
+          pb.className = 'page-break';
+          pb.style.pageBreakAfter = 'always';
+          pb.innerHTML = '<hr style="border:none;border-top:1px dashed #ccc;margin:1em 0;">';
+          richEditor.focus();
+          document.execCommand('insertHTML', false, pb.outerHTML + '<p><br></p>');
+        }
+        // Ctrl+O — Open file
+        else if (e.key === 'o') {
+          e.preventDefault();
+          var fileInput = document.getElementById('file-input-hidden');
+          if (fileInput) fileInput.click();
+        }
+        // Ctrl+Shift+C — Add comment
+        else if (e.key === 'c' && e.shiftKey) {
+          e.preventDefault();
+          if (commentsPanel) {
+            if (!commentsPanel.classList.contains('active')) {
+              commentsPanel.classList.add('active');
+              var btn = document.getElementById('btn-comments');
+              if (btn) btn.classList.add('active');
+            }
+            refreshCommentsList();
+            var addArea = document.getElementById('comment-add-area');
+            if (addArea) addArea.style.display = '';
+            var input = document.getElementById('comment-input');
+            if (input) input.focus();
+          }
+        }
+        // Ctrl+G — Goal toggle
+        else if (e.key === 'g') { e.preventDefault(); toggleGoalSettings(); }
+        // Ctrl+N — New tab
+        else if (e.key === 'n') {
+          e.preventDefault();
+          tabsModule.create({ content: '<p><br></p>', metadata: {} });
+          setTimeout(function() { if (richEditor) richEditor.focus(); }, 50);
+        }
       }
     });
 
@@ -1641,10 +1696,10 @@
         var zen = document.body.hasAttribute('data-zen');
         if (zen) { document.body.removeAttribute('data-zen'); localStorage.setItem('oros_zen_mode', 'false'); }
         else {
-          var panels = ['comments-panel', 'versions-panel', 'word-freq-panel', 'metadata-panel', 'outline-panel', 'toc-panel', 'find-bar'];
+          var panels = ['comments-panel', 'versions-panel', 'wordfreq-panel', 'metadata-panel', 'outline-panel', 'toc-panel', 'find-replace-bar'];
           for (var i = 0; i < panels.length; i++) {
             var p = document.getElementById(panels[i]);
-            if (p && p.classList.contains('active')) { p.classList.remove('active'); return; }
+            if (p && p.style.display !== 'none') { p.style.display = 'none'; return; }
           }
           var exp = document.getElementById('export-dropdown');
           if (exp && exp.classList.contains('active')) { exp.classList.remove('active'); return; }
