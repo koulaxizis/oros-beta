@@ -1794,13 +1794,14 @@
       }
     });
 
-    // F9 — Toggle Zen Mode (works without Ctrl)
+        // F9 — Toggle Zen Mode (works without Ctrl)
     document.addEventListener('keydown', function(e) {
       if (e.key === 'F9') {
         e.preventDefault();
+        e.stopPropagation();
         toggleZenMode();
       }
-    });
+    }, true);
 
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
