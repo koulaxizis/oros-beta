@@ -1,6 +1,7 @@
 /* ============================================
-   orOS Case Converter — Style Overrides
-   v2.2 — Fixed stats panel layout completely
+   orOS Case Converter — Complete Stylesheet
+   v2.3 — Fixed: dropdown visibility,
+   ID mismatches, all styles transferred
    ============================================ */
 
 #converter-wrapper {
@@ -138,7 +139,162 @@
   position: relative;
 }
 
-/* ===== STATS PANEL — COMPLETE REWRITE ===== */
+/* ===== STATS PANEL ===== */
+.stats-panel {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  z-index: 10;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-panel .stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  gap: 12px;
+}
+
+.stats-panel .stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: auto;
+}
+
+.stats-panel .stat-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-grow: 0;
+  margin-left: auto;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.action-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: var(--transition);
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.action-btn:hover {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-dim);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tb-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+/* ===== DROPDOWN ===== */
+.options-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-toggle {
+  position: relative;
+}
+
+.dropdown-arrow-icon {
+  margin-left: 2px;
+  font-size: 12px;
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 240px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  z-index: 100;
+  display: none;
+  margin-top: 4px;
+}
+
+.dropdown-content.visible {
+  display: block;
+}
+
+.dropdown-option {
+  padding: 6px 16px;
+}
+
+.dropdown-option:first-child {
+  padding-top: 12px;
+}
+
+.dropdown-option:last-child {
+  padding-bottom: 12px;
+}
+
+.option-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.option-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-gold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.option-label span {
+  user-select: none;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+/* ===== STATS PANEL ===== */
 .stats-panel {
   position: absolute;
   bottom: 12px;
@@ -214,57 +370,6 @@
   color: var(--text-primary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-
-/* ===== DROPDOWN ===== */
-.options-dropdown {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.dropdown-content {
-  min-width: 240px;
-}
-
-.dropdown-option {
-  padding: 6px 16px;
-}
-
-.dropdown-option:first-child {
-  padding-top: 12px;
-}
-
-.dropdown-option:last-child {
-  padding-bottom: 12px;
-}
-
-.option-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.option-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent-gold);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.option-label span {
-  user-select: none;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 4px 0;
 }
 
 /* ===== RESPONSIVE ===== */

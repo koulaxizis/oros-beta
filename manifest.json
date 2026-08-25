@@ -75,7 +75,7 @@
       "name": "Writer",
       "short_name": "Writer",
       "description": "Rich text editor with autosave",
-      "url": "./editor.html",
+      "url": "./writer.html",
       "icons": [{ "src": "icons/shortcut-writer.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
@@ -99,13 +99,13 @@
       "url": "./notes.html",
       "icons": [{ "src": "icons/shortcut-notes.png", "sizes": "96x96", "type": "image/png" }]
     },
-	{
-  "name": "Prompter",
-  "short_name": "Prompter",
-  "description": "Writing prompts & inspiration",
-  "url": "./prompter.html",
-  "icons": [{ "src": "icons/shortcut-prompter.png", "sizes": "96x96", "type": "image/png" }]
-}
+    {
+      "name": "Prompter",
+      "short_name": "Prompter",
+      "description": "Writing prompts & inspiration",
+      "url": "./prompter.html",
+      "icons": [{ "src": "icons/shortcut-prompter.png", "sizes": "96x96", "type": "image/png" }]
+    }
   ],
   "prefer_related_applications": false
 }

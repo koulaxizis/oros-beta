@@ -1,7 +1,7 @@
 // ============================================
 // orOS Case Converter — Full Implementation
-// v2 — Added: strip accents, strip formatting,
-// fixed restore original, fixed stats i18n
+// v2.2 — FIXED: sentencePreserve, wordPreserve, 
+// clearAll i18n, visibility toggles IDs
 // ============================================
 
 (function() {
@@ -310,22 +310,29 @@
 
   function lowercase(text) {
     var processed = preProcess(text);
+    
+    // FIRST convert everything to lowercase
+    var result = processed.toLowerCase();
+    
+    // THEN preserve sentence starts if enabled
     if (options.sentencePreserve) {
-      // Keep first letter of each sentence capitalized
-      return processed.replace(/(^[a-zA-Z\u0370-\u03FF])|([.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g,
-        function(m, first, sep, after) {
-          if (first) return first;
-          return sep + after;
-        }
-      );
-    }
-    if (options.wordPreserve) {
-      // Keep first letter of each word capitalized
-      return processed.replace(/\b([a-zA-Z\u0370-\u03FF])/g, function(m, c) {
-        return c;
+      // Capitalize first letter of each sentence
+      result = result.replace(/(^[a-zA-Z\u0370-\u03FF])/g, function(match, char) {
+        return isGreekLetter(char) ? toGreekUpper(char) : char.toUpperCase();
+      });
+      result = result.replace(/([.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g, function(m, sep, char) {
+        return sep + (isGreekLetter(char) ? toGreekUpper(char) : char.toUpperCase());
       });
     }
-    return processed.toLowerCase();
+    
+    // Preserve word starts if enabled
+    if (options.wordPreserve) {
+      result = result.replace(/\b([a-zA-Z\u0370-\u03FF])/g, function(m, c) {
+        return isGreekLetter(c) ? toGreekUpper(c) : c.toUpperCase();
+      });
+    }
+    
+    return result;
   }
 
   function titleCase(text) {
@@ -344,8 +351,10 @@
 
   function sentenceCase(text) {
     var processed = preProcess(text);
+    // First make everything lowercase
+    var lower = processed.toLowerCase();
     // Capitalize first letter and first letter after sentence endings
-    return processed.replace(/(^|[.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g,
+    return lower.replace(/(^|[.!?…]\s+)([a-zA-Z\u0370-\u03FF])/g,
       function(m, prefix, letter) {
         return prefix + (isGreekLetter(letter) ? toGreekUpper(letter) : letter.toUpperCase());
       }
@@ -534,14 +543,12 @@
       navigator.clipboard.writeText(text).then(function() {
         showToast(getTrans('toast_copied'));
       }).catch(function() {
-        // Fallback to execCommand if Clipboard API fails
         outputArea.select();
         document.execCommand('copy');
         window.getSelection().removeAllRanges();
         showToast(getTrans('toast_copied'));
       });
     } else {
-      // Fallback for older browsers
       outputArea.select();
       document.execCommand('copy');
       window.getSelection().removeAllRanges();
@@ -552,8 +559,8 @@
   function clearAll() {
     var lang = getCurrentLang();
     var msg = lang === 'el'
-      ? 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
-      : 'Are you sure? All content will be lost.';
+      ? getTrans('confirm_clear_el') || 'Σίγουρα; Όλο το περιεχόμενο θα χαθεί.'
+      : getTrans('confirm_clear') || 'Are you sure? All content will be lost.';
     if (confirm(msg)) {
       inputArea.value = '';
       outputArea.value = '';

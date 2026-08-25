@@ -20,14 +20,6 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:site_name" content="orOS">
   
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://koulaxizis.github.io/oros-beta/converter.html">
-  <meta name="twitter:title" content="orOS Case Converter — Privacy-First Text Transformation">
-  <meta name="twitter:description" content="Convert text to 10 different cases. Greek accent stripping. Markdown formatting removal. Works offline. No tracking.">
-  <meta name="twitter:image" content="https://koulaxizis.github.io/oros-beta/twitter-card.png">
-  <meta name="twitter:creator" content="@koulaxizis">
-  
   <!-- Additional SEO -->
   <meta name="keywords" content="case converter, text transformation, uppercase, lowercase, title case, camelCase, snake_case, kebab-case, Greek accents, Markdown, privacy, offline">
   
@@ -37,16 +29,12 @@
   
   <!-- hreflang -->
   <link rel="alternate" hreflang="en" href="https://koulaxizis.github.io/oros-beta/converter.html">
-  <link rel="alternate" hreflang="el" href="https://koulaxis.github.io/oros-beta/converter.html?lang=el">
-  <link rel="alternate" hreflang="es" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=es">
-  <link rel="alternate" hreflang="it" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=it">
-  <link rel="alternate" hreflang="fr" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=de">
+  <link rel="alternate" hreflang="el" href="https://koulaxizis.github.io/oros-beta/converter.html?lang=el">
   <link rel="alternate" hreflang="x-default" href="https://koulaxizis.github.io/oros-beta/converter.html">
   
   <title>orOS Case Converter</title>
   <script src="config.js"></script>
-    <script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register(
@@ -72,7 +60,7 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/converter.css">
 
-  <!-- Global settings manager (SHARED with Editor) -->
+  <!-- Global settings manager (SHARED with Writer) -->
   <script src="assets/js/global-settings.js" defer></script>
   <script src="assets/js/seo.js" defer></script>
   
@@ -81,7 +69,7 @@
   <script src="assets/js/converter.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 </head>
-<body class="noscript">
+<body class="noscript converter-page">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
 
   <noscript>
@@ -267,7 +255,7 @@
               <p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>
               <div class="beta-links">
                 <a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>
-                <a href="https://koulaxizis.github.io/oros-beta/editor.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
+                <a href="https://koulaxizis.github.io/oros-beta/writer.html" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>
               </div>
             </div>
           </div>
@@ -331,8 +319,8 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
-                <tr><td>Zen Mode</td><td><kbd>F9</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+                <tr><td data-i18n="help_feature_zen">Zen Mode</td><td><kbd>F9</kbd></td></tr>
+                <tr><td data-i18n="help_shortcut_esc">Close panels/dialogs</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>
           </div>
@@ -380,14 +368,14 @@
             <table class="shortcut-table">
               <thead><tr><th data-i18n="shortcut_action">Action</th><th data-i18n="shortcut_key">Shortcut</th></tr></thead>
               <tbody>
-                <tr><td>Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
-                <tr><td>Save</td><td><kbd>Ctrl+S</kbd></td></tr>
-                <tr><td>Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
-                <tr><td>Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
-                <tr><td>UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
-                <tr><td>lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
-                <tr><td>Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
-                <tr><td>Close Panels</td><td><kbd>Esc</kbd></td></tr>
+                <tr><td data-i18n="tooltip_copy">Copy</td><td><kbd>Ctrl+C</kbd></td></tr>
+                <tr><td data-i18n="tooltip_save">Save</td><td><kbd>Ctrl+S</kbd></td></tr>
+                <tr><td data-i18n="tooltip_undo">Undo</td><td><kbd>Ctrl+Z</kbd></td></tr>
+                <tr><td data-i18n="tooltip_redo">Redo</td><td><kbd>Ctrl+Y</kbd></td></tr>
+                <tr><td data-i18n="mode_uppercase">UPPERCASE</td><td><kbd>Ctrl+Shift+U</kbd></td></tr>
+                <tr><td data-i18n="mode_lowercase">lowercase</td><td><kbd>Ctrl+Shift+L</kbd></td></tr>
+                <tr><td data-i18n="mode_title">Title Case</td><td><kbd>Ctrl+Shift+T</kbd></td></tr>
+                <tr><td data-i18n="help_shortcut_esc">Close panels</td><td><kbd>Esc</kbd></td></tr>
               </tbody>
             </table>
           </div>
@@ -397,16 +385,6 @@
   </div>
 
   <div id="oros-footer"></div>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
-          console.warn('SW registration failed:', err);
-        });
-      });
-    }
-  </script>
 
 </body>
 </html>
