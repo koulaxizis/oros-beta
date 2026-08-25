@@ -1066,8 +1066,8 @@
     // ===== TRACK CHANGES =====
   function setupTrackChanges() {
     bindClick('btn-track-changes', toggleTrackChanges);
-    bindClick('btn-accept-all', acceptAllChanges);
-    bindClick('btn-reject-all', rejectAllChanges);
+    bindClick('btn-accept-all-changes', acceptAllChanges);
+bindClick('btn-reject-all-changes', rejectAllChanges);
   }
 
   function toggleTrackChanges() {
@@ -1215,8 +1215,8 @@
     list.innerHTML = html;
   }
 
-  function addCommentFromPanel() {
-    var textarea = document.getElementById('comment-text-input');
+    function addCommentFromPanel() {
+    var textarea = document.getElementById('comment-input');  // FIXED
     if (!textarea || !textarea.value.trim()) { showToast('Enter comment text'); return; }
     var selectedText = window.getSelection().toString().trim();
     if (!selectedText) { showToast('Select text to comment'); return; }
@@ -1247,11 +1247,11 @@
 
     var tab = tabsModule.getActive();
     if (!tab) return;
-    var comments = tab.metadata.comments || [];
+    var meta = tabsModule.getMetadata();                       // FIXED order
+    var comments = meta.comments || [];                        // FIXED order
     comments.push({ id: id, author: author, text: commentText, timestamp: timestamp });
-    var meta = tabsModule.getMetadata();
     meta.comments = comments;
-    tabsModule.setMetadata(meta);
+    tabsModule.setMetadata(meta);                              // FIXED order
   }
 
   // ===== FOOTNOTES =====
@@ -1911,6 +1911,154 @@
     document.execCommand('insertText', false, lorem);
     updateStats();
   }
+  
+    // ===== QUICK FORMAT MENU (Alt + Right-click) =====
+  var qfmEnabled = localStorage.getItem('oros_quick_tbar_show') !== 'false';
+  var qfmMenu = null;
+
+  function setupQuickFormatMenu() {
+    // Create menu element
+    qfmMenu = document.createElement('div');
+    qfmMenu.className = 'quick-format-menu';
+    qfmMenu.style.cssText = 
+      'position:fixed;display:none;z-index:10000;' +
+      'background:var(--bg-panel,#1e1e2e);' +
+      'border:1px solid var(--border-color,#333);' +
+      'border-radius:6px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.4);' +
+      'font-size:0.85rem;min-width:160px;';
+    document.body.appendChild(qfmMenu);
+
+    var items = [
+      { label: 'Bold',          icon: 'fa-bold',          cmd: 'bold' },
+      { label: 'Italic',        icon: 'fa-italic',        cmd: 'italic' },
+      { label: 'Underline',     icon: 'fa-underline',     cmd: 'underline' },
+      { label: 'Strikethrough', icon: 'fa-strikethrough', cmd: 'strikethrough' },
+      { sep: true },
+      { label: 'Subscript',     icon: 'fa-subscript',     cmd: 'subscript' },
+      { label: 'Superscript',   icon: 'fa-superscript',   cmd: 'superscript' },
+      { sep: true },
+      { label: 'Heading 1',     icon: 'fa-header',        cmd: 'h1' },
+      { label: 'Heading 2',     icon: 'fa-header',        cmd: 'h2' },
+      { label: 'Normal',        icon: 'fa-font',          cmd: 'normal' },
+      { sep: true },
+      { label: 'Bullet List',   icon: 'fa-list-ul',       cmd: 'insertUnorderedList' },
+      { label: 'Numbered List', icon: 'fa-list-ol',       cmd: 'insertOrderedList' },
+      { sep: true },
+      { label: 'Insert Link',   icon: 'fa-link',          action: 'link' },
+      { label: 'Insert Comment', icon: 'fa-comment-o',    action: 'comment' }
+    ];
+
+    items.forEach(function(item) {
+      if (item.sep) {
+        var sep = document.createElement('div');
+        sep.style.cssText = 'height:1px;background:var(--border-color,#333);margin:4px 0;';
+        qfmMenu.appendChild(sep);
+        return;
+      }
+      var btn = document.createElement('button');
+      btn.style.cssText = 
+        'display:flex;align-items:center;gap:8px;width:100%;' +
+        'padding:6px 14px;background:none;border:none;' +
+        'color:var(--text-primary,#e0e0e0);cursor:pointer;text-align:left;' +
+        'font-size:inherit;font-family:inherit;';
+      btn.innerHTML = '<i class="fa ' + item.icon + '" style="width:16px;"></i> ' + item.label;
+
+      btn.addEventListener('mouseenter', function() {
+        btn.style.background = 'var(--bg-hover,#2a2a3e)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.background = 'none';
+      });
+
+      btn.addEventListener('click', function() {
+        qfmMenu.style.display = 'none';
+        richEditor.focus();
+        if (item.cmd) {
+          if (item.cmd === 'h1' || item.cmd === 'h2' || item.cmd === 'normal') {
+            restoreSelection();
+            document.execCommand('formatBlock', false, 
+              item.cmd === 'normal' ? 'p' : item.cmd.toUpperCase());
+          } else {
+            restoreSelection();
+            document.execCommand(item.cmd, false, null);
+          }
+        } else if (item.action === 'link') {
+          var linkBtn = document.getElementById('btn-link');
+          if (linkBtn) linkBtn.click();
+        } else if (item.action === 'comment') {
+          var cmtBtn = document.getElementById('btn-comments');
+          if (cmtBtn) cmtBtn.click();
+        }
+      });
+
+      qfmMenu.appendChild(btn);
+    });
+
+    // Alt + Right-click triggers menu
+    if (richEditor) {
+      richEditor.addEventListener('contextmenu', function(e) {
+        if (!qfmEnabled) return;
+        if (e.altKey) {
+          e.preventDefault();
+          saveSelection();
+
+          var x = e.clientX;
+          var y = e.clientY;
+          qfmMenu.style.left = x + 'px';
+          qfmMenu.style.top = y + 'px';
+          qfmMenu.style.display = 'block';
+
+          // Clamp to viewport
+          setTimeout(function() {
+            var rect = qfmMenu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+              qfmMenu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+              qfmMenu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+            }
+          }, 0);
+        }
+      });
+    }
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+      if (qfmMenu && qfmMenu.style.display !== 'none') {
+        if (!qfmMenu.contains(e.target)) {
+          qfmMenu.style.display = 'none';
+        }
+      }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && qfmMenu) {
+        qfmMenu.style.display = 'none';
+      }
+    });
+  }
+
+  // Selection save/restore for QFM
+  var savedRange = null;
+  function saveSelection() {
+    var sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      savedRange = sel.getRangeAt(0);
+    }
+  }
+  function restoreSelection() {
+    if (savedRange) {
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+  }
+
+  // Listen for quick_tbar toggle changes
+  window.addEventListener('oros-quick-tbar-changed', function() {
+    qfmEnabled = localStorage.getItem('oros_quick_tbar_show') !== 'false';
+  });
 
   // ===== INITIALIZATION =====
   function waitForTranslations(callback) {
@@ -1960,6 +2108,7 @@
       setupTableOfContents();
       setupTrackChanges();
       setupLoremIpsum();
+	  setupQuickFormatMenu();
       applyPageSettings();
       clampToViewport();
 
@@ -1991,7 +2140,7 @@ showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg)
     });
   }
 
-  function initializeElements() {
+    function initializeElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-editor-wrapper');
     tabBar = document.querySelector('#tab-bar');
@@ -2005,20 +2154,20 @@ showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg)
     goalBarFill = document.querySelector('.goal-bar-fill');
     sessionBar = document.querySelector('.session-bar');
     sessionDisplay = document.getElementById('session-display');
-    findBar = document.getElementById('find-bar');
+    findBar = document.getElementById('find-replace-bar');                    // FIXED
     trackChangesBar = document.getElementById('track-changes-bar');
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');
     metadataPanel = document.getElementById('metadata-panel');
     outlinePanel = document.getElementById('outline-panel');
     outlineList = document.getElementById('outline-list');
-    wordFreqPanel = document.getElementById('word-freq-panel');
-    wordFreqList = document.getElementById('word-freq-list');
-    wordFreqSummary = document.getElementById('word-freq-summary');
+    wordFreqPanel = document.getElementById('wordfreq-panel');               // FIXED
+    wordFreqList = document.getElementById('wordfreq-list');                 // FIXED
+    wordFreqSummary = document.getElementById('wordfreq-summary');           // FIXED
     commentsPanel = document.getElementById('comments-panel');
     tocPanel = document.getElementById('toc-panel');
     tocList = document.getElementById('toc-list');
-    versionPanel = document.getElementById('versions-panel');
+    versionPanel = document.getElementById('version-history-panel');        // FIXED
     versionList = document.getElementById('version-list');
     metaTitle = document.getElementById('meta-title');
     metaAuthor = document.getElementById('meta-author');
