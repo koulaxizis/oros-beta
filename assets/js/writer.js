@@ -1931,7 +1931,8 @@
         else document.body.removeAttribute('data-zen');
       });
 
-      showToast(getTrans('app_welcome') || 'Welcome to orOS Writer!');
+      var welcomeMsg = getTrans('app_welcome');
+showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg);
     });
   }
 
