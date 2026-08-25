@@ -1012,6 +1012,608 @@
     }
   }
   
+    // ===== KEYBOARD SHORTCUTS =====
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+      var ctrl = e.ctrlKey || e.metaKey;
+
+      if (ctrl && e.key === 'b' && !e.shiftKey) { e.preventDefault(); document.execCommand('bold'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
+      if (ctrl && e.key === 'i' && !e.shiftKey) { e.preventDefault(); document.execCommand('italic'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
+      if (ctrl && e.key === 'u' && !e.shiftKey) { e.preventDefault(); document.execCommand('underline'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
+      if (ctrl && e.key === 's') { e.preventDefault(); saveCurrentTabContent(); showToast(getTrans('text_saved') !== 'text_saved' ? getTrans('text_saved') : 'Saved'); return; }
+      if (ctrl && e.key === 'f') { e.preventDefault(); toggleFindBar(); return; }
+      if (ctrl && e.key === 'g') { e.preventDefault(); toggleGoalBar(); return; }
+      if (ctrl && e.key === 'n' && !e.shiftKey) { e.preventDefault(); tabsModule.create({ content: '<p><br></p>', metadata: {} }); return; }
+      if (ctrl && e.key === 'w') { e.preventDefault(); var aid = tabsModule.getActiveId(); if (aid) tabsModule.close(aid); return; }
+      if (ctrl && e.shiftKey && (e.key === 'N' || e.key === 'n')) { e.preventDefault(); toggleZenMode(); return; }
+
+      if (e.key === 'F9') { e.preventDefault(); toggleZenMode(); return; }
+      if (e.key === 'F11') { e.preventDefault(); toggleFocusMode(); return; }
+
+      if (e.key === 'Escape') {
+        e.isHandledByWriter = true;
+        document.querySelectorAll('.side-panel').forEach(function(p) { if (p.style.display === 'flex') p.style.display = 'none'; });
+        document.querySelectorAll('.dialog-overlay').forEach(function(d) { if (d.style.display === 'flex') d.style.display = 'none'; });
+        var sm = document.querySelector('.settings-modal.visible');
+        if (sm) sm.classList.remove('visible');
+        if (document.body.classList.contains('reading-mode')) { toggleReadingMode(); }
+      }
+    });
+  }
+
+  // ===== TOOLBAR STATES =====
+  function updateToolbarStates() {
+    if (!richEditor) return;
+    var cmds = ['bold', 'italic', 'underline', 'strikeThrough'];
+    for (var i = 0; i < cmds.length; i++) {
+      try {
+        var isActive = document.queryCommandState(cmds[i]);
+        var btn = document.getElementById('btn-' + cmds[i].toLowerCase());
+        if (btn) { if (isActive) btn.classList.add('active'); else btn.classList.remove('active'); }
+      } catch(e) {}
+    }
+    if (stylesSelect) {
+      try {
+        var block = document.queryCommandValue('formatBlock');
+        if (block) {
+          var map = { 'h1': 'h1', 'h2': 'h2', 'h3': 'h3', 'p': 'normal', 'blockquote': 'quote', 'pre': 'code' };
+          stylesSelect.value = map[block.toLowerCase()] || 'normal';
+        }
+      } catch(e) {}
+    }
+  }
+
+  // ===== NAMED STYLE =====
+  function applyNamedStyle(style) {
+    if (!richEditor) return;
+    switch(style) {
+      case 'h1': document.execCommand('formatBlock', false, 'h1'); break;
+      case 'h2': document.execCommand('formatBlock', false, 'h2'); break;
+      case 'h3': document.execCommand('formatBlock', false, 'h3'); break;
+      case 'h4': document.execCommand('formatBlock', false, 'h4'); break;
+      case 'quote': document.execCommand('formatBlock', false, 'blockquote'); break;
+      case 'code': document.execCommand('formatBlock', false, 'pre'); break;
+      case 'normal': document.execCommand('formatBlock', false, 'p'); break;
+      default: break;
+    }
+    saveCurrentTabContent();
+    setTimeout(updateToolbarStates, 10);
+  }
+
+  // ===== GOAL BAR =====
+  function toggleGoalBar() {
+    if (!goalBar) goalBar = document.getElementById('goal-bar');
+    if (!goalBar) return;
+    goalBar.style.display = (goalBar.style.display === 'flex') ? 'none' : 'flex';
+    if (goalBar.style.display === 'flex') {
+      goalTargetInput = document.getElementById('goal-target-input');
+      goalUnitSelect = document.getElementById('goal-unit-select');
+      if (goalTargetInput) {
+        var existing = localStorage.getItem('oros_writer_goal') || '';
+        goalTargetInput.value = existing;
+        goalTargetInput.focus();
+      }
+    }
+  }
+
+  function setGoal() {
+    goalTargetInput = document.getElementById('goal-target-input');
+    goalUnitSelect = document.getElementById('goal-unit-select');
+    if (!goalTargetInput) return;
+    var goal = parseInt(goalTargetInput.value, 10);
+    var unit = goalUnitSelect ? goalUnitSelect.value : 'words';
+    if (goal > 0) {
+      localStorage.setItem('oros_writer_goal', String(goal));
+      localStorage.setItem('oros_writer_goal_unit', unit);
+      showToast(getTrans('text_goal_set') !== 'text_goal_set' ? getTrans('text_goal_set') : 'Goal set: ' + goal + ' ' + unit);
+      updateStats();
+      if (goalBar) goalBar.style.display = 'none';
+    }
+  }
+
+  function clearGoal() {
+    localStorage.removeItem('oros_writer_goal');
+    localStorage.removeItem('oros_writer_goal_unit');
+    if (statsGoalEl) statsGoalEl.textContent = '';
+    showToast(getTrans('text_goal_cleared') !== 'text_goal_cleared' ? getTrans('text_goal_cleared') : 'Goal cleared');
+    if (goalBar) goalBar.style.display = 'none';
+  }
+
+  function updateGoalBar() {
+    if (!goalBar || goalBar.style.display !== 'flex') return;
+    var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
+    if (goal <= 0) return;
+    var text = richEditor ? richEditor.innerText : '';
+    var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    var chars = text.length;
+    var current = (unit === 'chars') ? chars : words;
+    var pct = Math.min(100, Math.round((current / goal) * 100));
+    if (!goalBarFill) goalBarFill = document.getElementById('goal-bar-fill');
+    if (goalBarFill) goalBarFill.style.width = pct + '%';
+  }
+
+  // ===== FIND & REPLACE =====
+  function toggleFindBar() {
+    if (!findBar) findBar = document.getElementById('find-replace-bar');
+    if (!findBar) return;
+    findBar.style.display = (findBar.style.display === 'flex') ? 'none' : 'flex';
+    if (findBar.style.display === 'flex') {
+      findInput = document.getElementById('find-input');
+      replaceInput = document.getElementById('replace-input');
+      frResults = document.getElementById('fr-results');
+      findFormatFilter = document.getElementById('find-format-filter');
+      if (findInput) { findInput.focus(); findInput.select(); }
+    } else { clearHighlights(); }
+  }
+
+  var findMatches = [];
+  var currentMatchIdx = -1;
+
+  function performFind() {
+    if (!findInput || !richEditor) return;
+    var query = findInput.value.trim();
+    clearHighlights();
+    if (!query) { if (frResults) frResults.textContent = ''; return; }
+    var flags = 'gi';
+    var pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (findFormatFilter && findFormatFilter.value === 'whole-word') pattern = '\\b' + pattern + '\\b';
+    var regex;
+    try { regex = new RegExp(pattern, flags); } catch(e) { if (frResults) frResults.textContent = 'Invalid pattern'; return; }
+    findMatches = [];
+    var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = []; var node;
+    while ((node = walker.nextNode())) nodes.push(node);
+    for (var i = 0; i < nodes.length; i++) {
+      var textNode = nodes[i];
+      var text = textNode.textContent;
+      regex.lastIndex = 0;
+      var match;
+      while ((match = regex.exec(text)) !== null) {
+        if (match[0].length === 0) { regex.lastIndex++; continue; }
+        findMatches.push({ node: textNode, start: match.index, end: match.index + match[0].length, text: match[0] });
+      }
+    }
+    for (var j = findMatches.length - 1; j >= 0; j--) {
+      var m = findMatches[j];
+      var range = document.createRange();
+      range.setStart(m.node, m.start); range.setEnd(m.node, m.end);
+      var mark = document.createElement('mark');
+      mark.className = 'find-match';
+      range.surroundContents(mark);
+    }
+    currentMatchIdx = -1;
+    if (findMatches.length > 0) navigateMatch(1);
+    if (frResults) frResults.textContent = findMatches.length + ' match' + (findMatches.length !== 1 ? 'es' : '');
+  }
+
+  function navigateMatch(direction) {
+    if (findMatches.length === 0) return;
+    var currentMarks = richEditor.querySelectorAll('mark.find-match.current');
+    for (var i = 0; i < currentMarks.length; i++) currentMarks[i].classList.remove('current');
+    currentMatchIdx += direction;
+    if (currentMatchIdx >= findMatches.length) currentMatchIdx = 0;
+    if (currentMatchIdx < 0) currentMatchIdx = findMatches.length - 1;
+    var marks = richEditor.querySelectorAll('mark.find-match');
+    if (marks[currentMatchIdx]) {
+      marks[currentMatchIdx].classList.add('current');
+      marks[currentMatchIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (frResults) frResults.textContent = (currentMatchIdx + 1) + '/' + findMatches.length;
+  }
+
+  function doReplace(replaceAll) {
+    if (!replaceInput || findMatches.length === 0) return;
+    var replaceText = replaceInput.value;
+    if (replaceAll) {
+      var marks = richEditor.querySelectorAll('mark.find-match');
+      for (var i = marks.length - 1; i >= 0; i--) {
+        var txt = document.createTextNode(replaceText);
+        var parent = marks[i].parentNode;
+        parent.replaceChild(txt, marks[i]);
+        parent.normalize();
+      }
+      clearHighlights(); performFind();
+      showToast(getTrans('text_replaced_all') !== 'text_replaced_all' ? getTrans('text_replaced_all') : 'Replaced all');
+    } else {
+      if (currentMatchIdx >= 0 && currentMatchIdx < findMatches.length) {
+        var marks2 = richEditor.querySelectorAll('mark.find-match');
+        if (marks2[currentMatchIdx]) {
+          var txt2 = document.createTextNode(replaceText);
+          var parent2 = marks2[currentMatchIdx].parentNode;
+          parent2.replaceChild(txt2, marks2[currentMatchIdx]);
+          parent2.normalize();
+        }
+      }
+      clearHighlights(); performFind();
+    }
+    saveCurrentTabContent();
+  }
+
+  function clearHighlights() {
+    if (!richEditor) return;
+    var marks = richEditor.querySelectorAll('mark.find-match');
+    for (var i = marks.length - 1; i >= 0; i--) {
+      var parent = marks[i].parentNode;
+      var txt = document.createTextNode(marks[i].textContent);
+      parent.replaceChild(txt, marks[i]);
+      parent.normalize();
+    }
+    findMatches = []; currentMatchIdx = -1;
+  }
+
+  // ===== SESSION TIMER =====
+  function toggleSessionBar() {
+    if (!sessionBar) sessionBar = document.getElementById('session-bar');
+    if (!sessionBar) return;
+    sessionBar.style.display = (sessionBar.style.display === 'flex') ? 'none' : 'flex';
+    if (sessionBar.style.display === 'flex') sessionDisplay = document.getElementById('session-display');
+  }
+
+  function startSession() {
+    sessionStartTime = Date.now(); sessionSeconds = 0;
+    if (sessionInterval) clearInterval(sessionInterval);
+    sessionInterval = setInterval(function() {
+      sessionSeconds++;
+      if (sessionDisplay) {
+        var mins = Math.floor(sessionSeconds / 60);
+        var secs = sessionSeconds % 60;
+        sessionDisplay.textContent = mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+      }
+    }, 1000);
+    var stopBtn = document.getElementById('btn-stop-session');
+    var startBtn = document.getElementById('btn-start-session');
+    if (stopBtn) stopBtn.style.display = '';
+    if (startBtn) startBtn.style.display = 'none';
+  }
+
+  function stopSession() {
+    if (sessionInterval) { clearInterval(sessionInterval); sessionInterval = null; }
+    var mins = Math.floor(sessionSeconds / 60);
+    var targetMin = parseInt(localStorage.getItem('oros_writer_session_target') || '0', 10);
+    if (sessionDisplay) {
+      sessionDisplay.classList.remove('complete', 'warning');
+      if (targetMin > 0 && mins >= targetMin) sessionDisplay.classList.add('complete');
+      else if (targetMin > 0 && mins >= targetMin * 0.8) sessionDisplay.classList.add('warning');
+    }
+    var stopBtn = document.getElementById('btn-stop-session');
+    var startBtn = document.getElementById('btn-start-session');
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (startBtn) startBtn.style.display = '';
+  }
+
+  // ===== TRACK CHANGES =====
+  function toggleTrackChanges() {
+    trackingChanges = !trackingChanges;
+    var tcBtn = document.getElementById('btn-track-changes');
+    if (trackChangesBar) trackChangesBar = document.getElementById('track-changes-bar');
+    if (trackChangesBar) trackChangesBar.style.display = trackingChanges ? 'flex' : 'none';
+    if (tcBtn) {
+      if (trackingChanges) tcBtn.classList.add('active');
+      else tcBtn.classList.remove('active');
+    }
+
+    if (trackingChanges) {
+      if (!trackChangesObserver) {
+        trackChangesObserver = new MutationObserver(function(mutations) {
+          if (!trackingChanges) return;
+          for (var i = 0; i < mutations.length; i++) {
+            var mut = mutations[i];
+            if (mut.type === 'childList') {
+              for (var j = 0; j < mut.addedNodes.length; j++) {
+                var node = mut.addedNodes[j];
+                if (node.nodeType === Node.TEXT_NODE &&
+                    node.textContent.length > 0 &&
+                    !(node.parentElement && node.parentElement.classList.contains('tracker-insert'))) {
+                  var span = document.createElement('span');
+                  span.className = 'tracker-insert';
+                  node.parentNode.insertBefore(span, node);
+                  span.appendChild(node);
+                }
+              }
+            }
+          }
+        });
+        trackChangesObserver.observe(richEditor, { childList: true, characterData: true, subtree: true });
+      }
+      richEditor.addEventListener('keydown', trackChangesKeyHandler);
+    } else {
+      if (trackChangesObserver) { trackChangesObserver.disconnect(); }
+      richEditor.removeEventListener('keydown', trackChangesKeyHandler);
+    }
+
+    showToast(trackingChanges ? (getTrans('text_track_on') !== 'text_track_on' ? getTrans('text_track_on') : 'Track changes ON') : (getTrans('text_track_off') !== 'text_track_off' ? getTrans('text_track_off') : 'Track changes OFF'));
+  }
+
+  function trackChangesKeyHandler(e) {
+    if (!trackingChanges) return;
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      var range = sel.getRangeAt(0);
+      if (range.collapsed) {
+        e.preventDefault();
+        var node = range.startContainer;
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.length > 0) {
+          var offset = range.startOffset;
+          if (e.key === 'Backspace' && offset > 0) {
+            var deletedChar = node.textContent[offset - 1];
+            var delSpan = document.createElement('span');
+            delSpan.className = 'tracker-delete';
+            delSpan.textContent = deletedChar;
+            node.textContent = node.textContent.slice(0, offset - 1) + node.textContent.slice(offset);
+            range.setStart(node, offset - 1);
+            range.insertNode(delSpan);
+            range.setStart(node, offset);
+            range.collapse(true);
+            sel.removeAllRanges(); sel.addRange(range);
+          } else if (e.key === 'Delete' && offset < node.textContent.length) {
+            var deletedChar2 = node.textContent[offset];
+            var delSpan2 = document.createElement('span');
+            delSpan2.className = 'tracker-delete';
+            delSpan2.textContent = deletedChar2;
+            node.textContent = node.textContent.slice(0, offset) + node.textContent.slice(offset + 1);
+            range.insertNode(delSpan2);
+            range.setStart(node, offset);
+            range.collapse(true);
+            sel.removeAllRanges(); sel.addRange(range);
+          }
+        }
+      } else {
+        e.preventDefault();
+        var fragment = range.extractContents();
+        var delSpan3 = document.createElement('span');
+        delSpan3.className = 'tracker-delete';
+        delSpan3.appendChild(fragment);
+        range.insertNode(delSpan3);
+        sel.removeAllRanges();
+      }
+      saveCurrentTabContent();
+    }
+  }
+
+  function acceptAllChanges() {
+    if (!richEditor) return;
+    var inserts = richEditor.querySelectorAll('.tracker-insert');
+    for (var i = 0; i < inserts.length; i++) {
+      var parent = inserts[i].parentNode;
+      while (inserts[i].firstChild) parent.insertBefore(inserts[i].firstChild, inserts[i]);
+      parent.removeChild(inserts[i]);
+      parent.normalize();
+    }
+    var deletes = richEditor.querySelectorAll('.tracker-delete');
+    for (var j = deletes.length - 1; j >= 0; j--) deletes[j].remove();
+    saveCurrentTabContent();
+    showToast(getTrans('text_changes_accepted') !== 'text_changes_accepted' ? getTrans('text_changes_accepted') : 'All changes accepted');
+  }
+
+  function rejectAllChanges() {
+    if (!richEditor) return;
+    var inserts = richEditor.querySelectorAll('.tracker-insert');
+    for (var i = inserts.length - 1; i >= 0; i--) inserts[i].remove();
+    var deletes = richEditor.querySelectorAll('.tracker-delete');
+    for (var j = 0; j < deletes.length; j++) {
+      var parent = deletes[j].parentNode;
+      while (deletes[j].firstChild) parent.insertBefore(deletes[j].firstChild, deletes[j]);
+      parent.removeChild(deletes[j]);
+      parent.normalize();
+    }
+    saveCurrentTabContent();
+    showToast(getTrans('text_changes_rejected') !== 'text_changes_rejected' ? getTrans('text_changes_rejected') : 'All changes rejected');
+  }
+
+  // ===== ZEN MODE =====
+  function toggleZenMode() {
+    var isZen = document.body.dataset.zen === 'true';
+    document.body.dataset.zen = isZen ? 'false' : 'true';
+    document.body.classList.toggle('zen-mode');
+    if (!isZen && richEditor) richEditor.focus();
+    showToast(!isZen ? (getTrans('text_zen_on') !== 'text_zen_on' ? getTrans('text_zen_on') : 'Zen mode ON') : (getTrans('text_zen_off') !== 'text_zen_off' ? getTrans('text_zen_off') : 'Zen mode OFF'));
+  }
+
+  // ===== FOCUS MODE =====
+  function toggleFocusMode() {
+    focusModeEnabled = !focusModeEnabled;
+    document.body.classList.toggle('focus-mode', focusModeEnabled);
+    if (focusModeEnabled && richEditor) {
+      updateFocusedParagraph();
+      var handler = updateFocusedParagraph;
+      richEditor._focusHandler = handler;
+      richEditor.addEventListener('keyup', handler);
+      richEditor.addEventListener('click', handler);
+    } else {
+      if (richEditor) {
+        var focused = richEditor.querySelectorAll('.is-focused');
+        for (var i = 0; i < focused.length; i++) focused[i].classList.remove('is-focused');
+        if (richEditor._focusHandler) {
+          richEditor.removeEventListener('keyup', richEditor._focusHandler);
+          richEditor.removeEventListener('click', richEditor._focusHandler);
+        }
+      }
+    }
+    showToast(focusModeEnabled ? (getTrans('text_focus_on') !== 'text_focus_on' ? getTrans('text_focus_on') : 'Focus mode ON') : (getTrans('text_focus_off') !== 'text_focus_off' ? getTrans('text_focus_off') : 'Focus mode OFF'));
+  }
+
+  function updateFocusedParagraph() {
+    if (!richEditor) return;
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var node = sel.anchorNode;
+    if (!node) return;
+    var block = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+    var blockTags = 'P H1 H2 H3 H4 H5 H6 BLOCKQUOTE PRE UL OL DIV'.split(' ');
+    while (block && block !== richEditor && blockTags.indexOf(block.tagName) === -1) block = block.parentElement;
+    if (!block || block === richEditor) return;
+    var all = richEditor.querySelectorAll('.is-focused');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('is-focused');
+    block.classList.add('is-focused');
+  }
+
+  // ===== READING MODE =====
+  function toggleReadingMode() {
+    document.body.classList.toggle('reading-mode');
+    var isReading = document.body.classList.contains('reading-mode');
+    var exitBtn = document.getElementById('btn-exit-reading-mode');
+    if (exitBtn) exitBtn.style.display = isReading ? 'inline-flex' : 'none';
+    if (isReading && richEditor) richEditor.setAttribute('contenteditable', 'false');
+    else if (richEditor) { richEditor.setAttribute('contenteditable', 'true'); richEditor.focus(); }
+    showToast(isReading ? (getTrans('text_reading_on') !== 'text_reading_on' ? getTrans('text_reading_on') : 'Reading mode ON') : (getTrans('text_reading_off') !== 'text_reading_off' ? getTrans('text_reading_off') : 'Reading mode OFF'));
+  }
+
+  // ===== WORD FREQUENCY =====
+  function toggleWordFreqPanel() {
+    if (!wordFreqPanel) wordFreqPanel = document.getElementById('wordfreq-panel');
+    if (!wordFreqPanel) return;
+    wordFreqPanel.style.display = (wordFreqPanel.style.display === 'flex') ? 'none' : 'flex';
+    if (wordFreqPanel.style.display === 'flex') {
+      wordFreqList = document.getElementById('wordfreq-list');
+      wordFreqSummary = document.getElementById('wordfreq-summary');
+      updateWordFrequency();
+    }
+  }
+
+  function updateWordFrequency() {
+    if (!wordFreqList || !richEditor) return;
+    var text = richEditor.innerText.toLowerCase();
+    var stopWords = { 'the':1,'a':1,'an':1,'and':1,'or':1,'but':1,'in':1,'on':1,'at':1,'to':1,'for':1,'of':1,'with':1,'by':1,'from':1,'is':1,'was':1,'are':1,'were':1,'be':1,'been':1,'being':1,'have':1,'has':1,'had':1,'do':1,'does':1,'did':1,'will':1,'would':1,'could':1,'should':1,'may':1,'might':1,'must':1,'can':1,'this':1,'that':1,'these':1,'those':1,'i':1,'you':1,'he':1,'she':1,'it':1,'we':1,'they':1,'what':1,'which':1,'who':1,'when':1,'where':1,'why':1,'how':1,'all':1,'each':1,'every':1,'both':1,'few':1,'more':1,'most':1,'other':1,'some':1,'such':1,'no':1,'nor':1,'not':1,'only':1,'own':1,'same':1,'so':1,'than':1,'too':1,'very':1,'just':1,'as':1,'if':1,'then':1,'else':1,'about':1,'into':1,'through':1,'during':1,'before':1,'after':1,'above':1,'below':1,'up':1,'down':1,'out':1,'off':1,'over':1,'under':1,'again':1,'further':1,'once':1,'here':1,'there':1 };
+    var words = text.match(/\b[a-zA-Z\u03B1-\u03C9\u03AC-\u03CE\u0388-\u03CE]+(?:'[a-z]{1,2})?\b/g) || [];
+    var freq = {};
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i].toLowerCase();
+      if (stopWords[w] || w.length < 3) continue;
+      freq[w] = (freq[w] || 0) + 1;
+    }
+    var sorted = Object.keys(freq).sort(function(a, b) { return freq[b] - freq[a]; });
+    var top = sorted.slice(0, 25);
+    if (top.length === 0) { wordFreqList.innerHTML = '<div class="wordfreq-empty">' + (getTrans('text_no_words') !== 'text_no_words' ? getTrans('text_no_words') : 'No words found') + '</div>'; return; }
+    var maxCount = freq[top[0]];
+    var totalUnique = sorted.length;
+    var totalWords = words.length;
+    if (wordFreqSummary) {
+      wordFreqSummary.innerHTML = '<div class="stat-row"><span>' + (getTrans('text_total_words') !== 'text_total_words' ? getTrans('text_total_words') : 'Total words:') + '</span><span>' + totalWords + '</span></div><div class="stat-row"><span>' + (getTrans('text_unique_words') !== 'text_unique_words' ? getTrans('text_unique_words') : 'Unique words:') + '</span><span>' + totalUnique + '</span></div>';
+    }
+    var html = '';
+    for (var j = 0; j < top.length; j++) {
+      var word = top[j];
+      var count = freq[word];
+      var pct = Math.round((count / maxCount) * 100);
+      var cls = count > 5 ? ' overused' : '';
+      html += '<div class="wordfreq-item' + cls + '">' +
+        '<span class="wf-word">' + escapeHtml(word) + '</span>' +
+        '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="wordfreq-count">' + count + '</span></div>';
+    }
+    wordFreqList.innerHTML = html;
+  }
+
+  // ===== OUTLINE PANEL =====
+  function toggleOutline() {
+    if (!outlinePanel) outlinePanel = document.getElementById('outline-panel');
+    if (!outlinePanel) return;
+    outlinePanel.style.display = (outlinePanel.style.display === 'flex') ? 'none' : 'flex';
+    if (outlinePanel.style.display === 'flex') { outlineList = document.getElementById('outline-list'); updateOutline(); }
+  }
+
+  // ===== METADATA PANEL =====
+  function toggleMetadataPanel() {
+    if (!metadataPanel) metadataPanel = document.getElementById('metadata-panel');
+    if (!metadataPanel) return;
+    metadataPanel.style.display = (metadataPanel.style.display === 'flex') ? 'none' : 'flex';
+    if (metadataPanel.style.display === 'flex') { loadMetadataFields(); loadPageSettingsFields(); }
+  }
+
+  function loadMetadataFields() {
+    var meta = tabsModule.getMetadata();
+    if (metaTitle) metaTitle.value = meta.title || '';
+    if (metaAuthor) metaAuthor.value = meta.author || '';
+    if (metaTags) metaTags.value = meta.tags || '';
+    if (metaCategory) metaCategory.value = meta.category || '';
+    if (metaCreated) metaCreated.textContent = meta.created || '\u2014';
+    if (metaModified) metaModified.textContent = meta.modified || '\u2014';
+  }
+
+  function saveMetadataFromFields() {
+    var meta = tabsModule.getMetadata();
+    if (metaTitle) meta.title = metaTitle.value;
+    if (metaAuthor) meta.author = metaAuthor.value;
+    if (metaTags) meta.tags = metaTags.value;
+    if (metaCategory) meta.category = metaCategory.value;
+    meta.modified = new Date().toISOString();
+    tabsModule.setMetadata(meta);
+    if (metaModified) metaModified.textContent = meta.modified;
+  }
+
+  // ===== COMMENTS =====
+  function toggleCommentsPanel() {
+    if (!commentsPanel) commentsPanel = document.getElementById('comments-panel');
+    if (!commentsPanel) return;
+    commentsPanel.style.display = (commentsPanel.style.display === 'flex') ? 'none' : 'flex';
+  }
+
+  function addComment() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) {
+      showToast(getTrans('text_select_first') !== 'text_select_first' ? getTrans('text_select_first') : 'Select text first');
+      return;
+    }
+    var range = sel.getRangeAt(0);
+    savedCommentRange = range.cloneRange();
+
+    var highlight = document.createElement('span');
+    highlight.className = 'comment-highlight';
+    try { range.surroundContents(highlight); }
+    catch(e) {
+      showToast('Cannot comment across multiple elements');
+      return;
+    }
+
+    var list = document.getElementById('comments-list');
+    if (!list) return;
+    var quoted = highlight.textContent.substring(0, 80);
+    var item = document.createElement('div');
+    item.className = 'comment-item';
+    item.innerHTML =
+      '<div class="comment-header"><span class="comment-author">You</span>' +
+      '<span class="comment-timestamp">' + new Date().toLocaleTimeString() + '</span></div>' +
+      '<div class="comment-text"><textarea placeholder="' +
+      (getTrans('text_comment_ph') !== 'text_comment_ph' ? getTrans('text_comment_ph') : 'Write a comment...') +
+      '"></textarea></div>' +
+      '<div class="comment-quoted">' + escapeHtml(quoted) + '</div>' +
+      '<div class="comment-actions">' +
+      '<button class="btn-resolve">' + (getTrans('text_resolve') !== 'text_resolve' ? getTrans('text_resolve') : 'Resolve') + '</button>' +
+      '<button class="btn-delete">' + (getTrans('text_delete') !== 'text_delete' ? getTrans('text_delete') : 'Delete') + '</button>' +
+      '</div>';
+    list.appendChild(item);
+
+    var ta = item.querySelector('textarea');
+    if (ta) ta.focus();
+
+    var commentIdx = list.querySelectorAll('.comment-item').length - 1;
+    highlight.setAttribute('data-comment-idx', commentIdx);
+    highlight.addEventListener('mouseenter', function() {
+      item.classList.add('highlighted');
+    });
+    highlight.addEventListener('mouseleave', function() {
+      item.classList.remove('highlighted');
+    });
+
+    item.querySelector('.btn-resolve').addEventListener('click', function() {
+      item.classList.add('comment-resolved');
+      highlight.classList.add('resolved');
+    });
+
+    item.querySelector('.btn-delete').addEventListener('click', function() {
+      item.remove();
+      if (highlight.parentNode) {
+        var txt = document.createTextNode(highlight.textContent);
+        highlight.parentNode.replaceChild(txt, highlight);
+        highlight.parentNode.normalize();
+      }
+    });
+
+    saveCurrentTabContent();
+  }
+  
     // ===== TABLE OF CONTENTS =====
   function toggleToCPanel() {
     if (!tocPanel) tocPanel = document.getElementById('toc-panel');
