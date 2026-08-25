@@ -72,7 +72,6 @@
   var goalBarContent = null;
   var goalBarFill = null;
   var windowResizeDebounce = null;
-  var hideStats = false;
   var AUTO_SAVE_INTERVAL_MS = 300000;
   var sessionInterval = null;
   var sessionStartTime = null;
@@ -402,12 +401,8 @@
     }
   }
 
-  function updateSaveIndicator(state) {
+    function updateSaveIndicator(state) {
     if (!saveIndicator) return;
-    if (hideStats || localStorage.getItem('oros_hide_save_indicator') === 'true') {
-      saveIndicator.style.visibility = 'hidden';
-      return;
-    }
     var now = new Date();
     var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     if (state === 'saving') saveIndicator.textContent = 'Saving...';
@@ -415,7 +410,7 @@
     else if (state === 'unsaved') saveIndicator.textContent = 'Unsaved changes';
     saveIndicator.style.visibility = 'visible';
   }
-
+  
   function updateStats() {
     if (!richEditor) return;
     var text = richEditor.innerText || '';
@@ -521,7 +516,6 @@
       smartTypographyEnabled = s.smartTypography !== false;
       typewriterSoundEnabled = s.typewriterSound === true;
       readingProgressEnabled = s.readingProgress !== false;
-      hideStats = s.hideStats === true;
       return s;
     } catch(e) { return {}; }
   }
@@ -531,25 +525,20 @@
       smartTypography: smartTypographyEnabled,
       typewriterSound: typewriterSoundEnabled,
       readingProgress: readingProgressEnabled,
-      hideStats: hideStats
     };
     var set = function(id, prop) { var el = document.getElementById(id); if (el) s[prop] = el.checked; };
     set('toggle-smart-typography', 'smartTypography');
     set('toggle-typewriter-sound', 'typewriterSound');
     set('toggle-reading-progress', 'readingProgress');
-    set('toggle-hide-stats', 'hideStats');
     try { localStorage.setItem(CONFIG.STORAGE_PREFIX + 'settings', JSON.stringify(s)); } catch(e) {}
     smartTypographyEnabled = s.smartTypography !== false;
     typewriterSoundEnabled = s.typewriterSound === true;
     readingProgressEnabled = s.readingProgress !== false;
-    hideStats = s.hideStats === true;
     showToast(getTrans('btn_save') !== 'btn_save' ? getTrans('btn_save') : 'Settings saved');
   }
 
   function loadSettingsValues() {
     var set = function(id, val) { var el = document.getElementById(id); if (el) el.checked = val; };
-    set('toggle-hide-save-indicator', localStorage.getItem('oros_hide_save_indicator') === 'true');
-    set('toggle-hide-stats', hideStats);
     set('toggle-reading-progress', readingProgressEnabled);
     set('toggle-smart-typography', smartTypographyEnabled);
     set('toggle-typewriter-sound', typewriterSoundEnabled);
