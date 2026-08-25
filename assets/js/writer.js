@@ -1421,6 +1421,16 @@
   function setupZenMode() {
     bindClick('btn-zen', toggleZenMode);
 
+    // Capture-phase override — fires BEFORE main.js handler
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest ? e.target.closest('#btn-zen') : null;
+      if (target) {
+        e.stopPropagation();
+        e.preventDefault();
+        toggleZenMode();
+      }
+    }, true);
+
     var zenToggle = document.getElementById('toggle-zen-mode');
     if (zenToggle) {
       zenToggle.addEventListener('change', function() {
