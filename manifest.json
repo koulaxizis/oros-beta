@@ -76,35 +76,35 @@
       "short_name": "Writer",
       "description": "Rich text editor with autosave",
       "url": "./writer.html",
-      "icons": [{ "src": "icons/shortcut-writer.png", "sizes": "96x96", "type": "image/png" }]
+      "icons": [{"src": "icons/shortcut-writer.png", "sizes": "96x96", "type": "image/png"}]
     },
     {
       "name": "Case Converter",
       "short_name": "Converter",
       "description": "Transform text case",
       "url": "./converter.html",
-      "icons": [{ "src": "icons/shortcut-converter.png", "sizes": "96x96", "type": "image/png" }]
+      "icons": [{"src": "icons/shortcut-converter.png", "sizes": "96x96", "type": "image/png"}]
     },
     {
       "name": "Kanban",
       "short_name": "Kanban",
       "description": "Drag & drop kanban board",
       "url": "./kanban.html",
-      "icons": [{ "src": "icons/shortcut-kanban.png", "sizes": "96x96", "type": "image/png" }]
+      "icons": [{"src": "icons/shortcut-kanban.png", "sizes": "96x96", "type": "image/png"}]
     },
     {
       "name": "Notes",
       "short_name": "Notes",
       "description": "Wiki-style notes with wikilinks",
       "url": "./notes.html",
-      "icons": [{ "src": "icons/shortcut-notes.png", "sizes": "96x96", "type": "image/png" }]
+      "icons": [{"src": "icons/shortcut-notes.png", "sizes": "96x96", "type": "image/png"}]
     },
     {
       "name": "Prompter",
       "short_name": "Prompter",
       "description": "Writing prompts & inspiration",
       "url": "./prompter.html",
-      "icons": [{ "src": "icons/shortcut-prompter.png", "sizes": "96x96", "type": "image/png" }]
+      "icons": [{"src": "icons/shortcut-prompter.png", "sizes": "96x96", "type": "image/png"}]
     }
   ],
   "prefer_related_applications": false
