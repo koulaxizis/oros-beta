@@ -1,5 +1,5 @@
 /* ============================================
-   orOS Writer — Complete Application v2.3
+   orOS Writer — Complete Application v2.3.1
    Bug Fixes: 50+ systematic corrections
    New: Page sizes, custom templates, DB export,
    track changes, comments fix, stats arrow,
@@ -14,7 +14,7 @@
   // ===== CONFIGURATION =====
   var CONFIG = {
     APP_NAME: 'orOS Writer',
-    VERSION: '2.3.0',
+    VERSION: '2.3.1',
     CHANNEL: 'STABLE',
     STORAGE_PREFIX: 'oros_writer_',
     MAX_HISTORY: 50,
@@ -103,13 +103,20 @@
 
   // ===== SPECIAL CHARACTER DATA =====
   var SPECIAL_CHARS = {
-    greek: 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰ'.split(''),
-    math: '±×÷≠≈≤≥∞∫∑√∂∇∏∴∵∝∈∉∪∩⊂⊃⊆⊇⊕⊗⊙≪≫¬∧∨∀∃'.split(''),
-    arrows: '←↑→↓↔↕⇐⇑⇒⇓⇔⇕↗↘↙↖↰↱↲↳'.split(''),
-    currency: '€$£¥₽¢₹₩₪₫₴₸₺₱฿₡₨₮'.split(''),
-    punctuation: '«»‹›„""\'\'‚\'‟¡¿·•◦§¶‰†‡'.split(''),
-    symbols: '©®™°№♪♫♬♯♭♮☑☒☐✓✗★☆☞☜☝☞☟⚐⚑⚓⚔⚖⚗⚙⚠».split('')
+    greek: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
+    math: '+-*/=<>~'.split(''),
+    arrows: '-><-^v'.split(''),
+    currency: '$EUR GBP JPY RUB INR'.split(' '),
+    punctuation: '"""\'\'!?.:;,()[]{}'.split(''),
+    symbols: '©®™°#*@'.split('')
   };
+  // Override with proper Unicode characters after safe parse
+  SPECIAL_CHARS.greek = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰ'.split('');
+  SPECIAL_CHARS.math = ['\u00B1','\u00D7','\u00F7','\u2260','\u2248','\u2264','\u2265','\u221E','\u222B','\u2211','\u221A','\u2202','\u2207','\u220F','\u2234','\u2235','\u221D','\u2208','\u2209','\u222A','\u2229','\u2282','\u2283','\u2286','\u2287','\u2295','\u2297','\u2299','\u226A','\u226B','\u00AC','\u2227','\u2228','\u2200','\u2203'];
+  SPECIAL_CHARS.arrows = ['\u2190','\u2191','\u2192','\u2193','\u2194','\u2195','\u21D0','\u21D1','\u21D2','\u21D3','\u21D4','\u21D5','\u2197','\u2198','\u2199','\u2196','\u21B0','\u21B1','\u21B2','\u21B3'];
+  SPECIAL_CHARS.currency = ['\u20AC','$','\u00A3','\u00A5','\u20BD','\u00A2','\u20B9','\u20A9','\u20AA','\u20AB','\u20B4','\u20B8','\u20BA','\u20B1','\u0E3F','\u20A1','\u20A8','\u20AE'];
+  SPECIAL_CHARS.punctuation = ['\u00AB','\u00BB','\u2039','\u203A','\u201E','\u201C','\u201D','\u2018','\u2019','\u201A','\u201B','\u201F','\u00A1','\u00BF','\u00B7','\u2022','\u25E6','\u00A7','\u00B6','\u2030','\u2020','\u2021'];
+  SPECIAL_CHARS.symbols = ['\u00A9','\u00AE','\u2122','\u00B0','\u2116','\u266A','\u266B','\u266C','\u266F','\u266D','\u266E','\u2611','\u2612','\u2610','\u2713','\u2717','\u2605','\u2606','\u261E','\u261C','\u261D','\u261F','\u2690','\u2691','\u2693','\u2694','\u2696','\u2697','\u2699','\u26A0'];
 
   // ===== TABS MODULE =====
   var tabsModule = {
@@ -405,7 +412,6 @@
     saveIndicator.style.visibility = 'visible';
   }
 
-  // FIX #2: Stats with up arrow indicator
   function updateStats() {
     if (!richEditor) return;
     var text = richEditor.innerText || '';
@@ -418,7 +424,7 @@
     var speakingTime = words > 0 ? Math.max(1, Math.ceil(words / 130)) : 0;
 
     if (statsDefaultEl) {
-      statsDefaultEl.innerHTML = words + ' words · ' + readingTime + ' min <span class="stats-up-arrow">▲</span>';
+      statsDefaultEl.innerHTML = words + ' words · ' + readingTime + ' min <span class="stats-up-arrow">\u25B2</span>';
       statsDefaultEl.style.cursor = 'pointer';
     }
 
@@ -441,7 +447,7 @@
       if (goal > 0) {
         var current = (unit === 'chars') ? chars : words;
         var pct = Math.round((current / goal) * 100);
-        if (pct >= 100) { statsGoalEl.textContent = '🎉 ' + pct + '%'; statsGoalEl.style.color = 'var(--success)'; }
+        if (pct >= 100) { statsGoalEl.textContent = '\uD83C\uDF89 ' + pct + '%'; statsGoalEl.style.color = 'var(--success)'; }
         else { statsGoalEl.textContent = pct + '%'; statsGoalEl.style.color = ''; }
         statsGoalEl.style.display = '';
       } else { statsGoalEl.style.display = 'none'; }
@@ -615,7 +621,7 @@
     if (tabsModule && tabsModule.initialized) tabsModule.render();
   }
 
-  // ===== PAGE SETTINGS (FIX #1: apply page size to editor) =====
+  // ===== PAGE SETTINGS =====
   function applyPageSize(size) {
     if (!richEditor) return;
     var validSizes = ['a4', 'letter', 'legal', 'a3', 'a5', 'b5', 'full-width'];
@@ -632,7 +638,6 @@
     if (richEditor) richEditor.style.lineHeight = lineHeight;
     var maxWidth = localStorage.getItem('oros_writer_max_width') || '900';
     if (richEditor) richEditor.style.maxWidth = maxWidth + 'px';
-    // FIX #1: Apply page size from metadata
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
     applyPageSize(meta.pageSize || 'a4');
   }
@@ -673,7 +678,6 @@
     setVal('footer-text', meta.footerText, '');
     var fpn = document.getElementById('footer-page-num');
     if (fpn) fpn.checked = meta.footerPageNum !== false;
-    // FIX #1: Apply the page size visually
     applyPageSize(meta.pageSize || 'a4');
   }
 
@@ -711,8 +715,7 @@
     'definately': 'definitely', 'occured': 'occurred', 'untill': 'until',
     'thier': 'their', 'freind': 'friend', 'wich': 'which',
     'alot': 'a lot',
-    'δενειναι': 'δεν είναι', 'μισο': 'μισό', 'δυο': 'δύο',
-    'ηταν': 'était'
+    'den einai': '\u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9', 'miso': '\u03BC\u03B9\u03C3\u03CC', 'duo': '\u03B4\u03CD\u03BF', 'itan': '\u03B7\u03C4\u03B1\u03BD'
   };
   var autocorrectRules = {};
 
@@ -750,7 +753,7 @@
       var isDefault = DEFAULT_AUTOCORRECT.hasOwnProperty(trigger);
       html += '<div class="autocorrect-rule-row">' +
         '<input type="text" class="ac-trigger" value="' + escapeHtml(trigger) + '" data-original="' + escapeHtml(trigger) + '">' +
-        '<span class="ac-arrow">→</span>' +
+        '<span class="ac-arrow">\u2192</span>' +
         '<input type="text" class="ac-replacement" value="' + escapeHtml(replacement) + '" data-trigger="' + escapeHtml(trigger) + '">' +
         '<button class="ac-delete" data-trigger="' + escapeHtml(trigger) + '" title="Remove"><i class="fa fa-times"></i></button>' +
         (isDefault ? '<span class="ac-badge">default</span>' : '') +
@@ -802,7 +805,7 @@
   function addAutocorrectRule() {
     var triggerInput = document.getElementById('ac-new-trigger');
     var replacementInput = document.getElementById('ac-new-replacement');
-        if (!triggerInput || !replacementInput) return;
+    if (!triggerInput || !replacementInput) return;
     var trigger = triggerInput.value.trim().toLowerCase();
     var replacement = replacementInput.value.trim();
     if (!trigger) { showToast('Enter a trigger word'); return; }
@@ -822,7 +825,7 @@
     showToast('Rules reset to defaults');
   }
 
-  // ===== CUSTOM TEMPLATES (FIX #4) =====
+  // ===== CUSTOM TEMPLATES =====
   function loadCustomTemplates() {
     try {
       var raw = localStorage.getItem(CONFIG.CUSTOM_TEMPLATES_KEY);
@@ -898,7 +901,7 @@
     reader.readAsText(file);
   }
 
-  // ===== FULL DATABASE EXPORT (FIX #5) =====
+  // ===== FULL DATABASE EXPORT =====
   function exportFullDatabase() {
     var db = {
       app: 'orOS Writer',
@@ -938,9 +941,12 @@
     showToast('Full database exported');
   }
 
-  // ===== SMART TYPOGRAPHY =====
+  // ===== SMART TYPOGRAPHY (FIX #6: add (c), (r), (tm)) =====
   function applySmartTypography(text) {
     if (!smartTypographyEnabled || !text) return text;
+    text = text.replace(/\(c\)/gi, '\u00A9');
+    text = text.replace(/\(r\)/gi, '\u00AE');
+    text = text.replace(/\(tm\)/gi, '\u2122');
     text = text.replace(/(^|[\s(])"/g, '$1\u201C');
     text = text.replace(/"/g, '\u201D');
     text = text.replace(/(^|[\s(])'/g, '$1\u2018');
@@ -1005,628 +1011,6 @@
       });
     }
   }
-
-  // ===== KEYBOARD SHORTCUTS =====
-  function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
-      var ctrl = e.ctrlKey || e.metaKey;
-
-      if (ctrl && e.key === 'b' && !e.shiftKey) { e.preventDefault(); document.execCommand('bold'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
-      if (ctrl && e.key === 'i' && !e.shiftKey) { e.preventDefault(); document.execCommand('italic'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
-      if (ctrl && e.key === 'u' && !e.shiftKey) { e.preventDefault(); document.execCommand('underline'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); return; }
-      if (ctrl && e.key === 's') { e.preventDefault(); saveCurrentTabContent(); showToast(getTrans('text_saved') !== 'text_saved' ? getTrans('text_saved') : 'Saved'); return; }
-      if (ctrl && e.key === 'f') { e.preventDefault(); toggleFindBar(); return; }
-      if (ctrl && e.key === 'g') { e.preventDefault(); toggleGoalBar(); return; }
-      if (ctrl && e.key === 'n' && !e.shiftKey) { e.preventDefault(); tabsModule.create({ content: '<p><br></p>', metadata: {} }); return; }
-      if (ctrl && e.key === 'w') { e.preventDefault(); var aid = tabsModule.getActiveId(); if (aid) tabsModule.close(aid); return; }
-      if (ctrl && e.shiftKey && (e.key === 'N' || e.key === 'n')) { e.preventDefault(); toggleZenMode(); return; }
-
-      if (e.key === 'F9') { e.preventDefault(); toggleZenMode(); return; }
-      if (e.key === 'F11') { e.preventDefault(); toggleFocusMode(); return; }
-
-      if (e.key === 'Escape') {
-        e.isHandledByWriter = true;
-        document.querySelectorAll('.side-panel').forEach(function(p) { if (p.style.display === 'flex') p.style.display = 'none'; });
-        document.querySelectorAll('.dialog-overlay').forEach(function(d) { if (d.style.display === 'flex') d.style.display = 'none'; });
-        var sm = document.querySelector('.settings-modal.visible');
-        if (sm) sm.classList.remove('visible');
-        if (document.body.classList.contains('reading-mode')) { toggleReadingMode(); }
-      }
-    });
-  }
-
-  // ===== TOOLBAR STATES =====
-  function updateToolbarStates() {
-    if (!richEditor) return;
-    var cmds = ['bold', 'italic', 'underline', 'strikeThrough'];
-    for (var i = 0; i < cmds.length; i++) {
-      try {
-        var isActive = document.queryCommandState(cmds[i]);
-        var btn = document.getElementById('btn-' + cmds[i].toLowerCase());
-        if (btn) { if (isActive) btn.classList.add('active'); else btn.classList.remove('active'); }
-      } catch(e) {}
-    }
-    if (stylesSelect) {
-      try {
-        var block = document.queryCommandValue('formatBlock');
-        if (block) {
-          var map = { 'h1': 'h1', 'h2': 'h2', 'h3': 'h3', 'p': 'normal', 'blockquote': 'quote', 'pre': 'code' };
-          stylesSelect.value = map[block.toLowerCase()] || 'normal';
-        }
-      } catch(e) {}
-    }
-  }
-
-  // ===== NAMED STYLE =====
-  function applyNamedStyle(style) {
-    if (!richEditor) return;
-    switch(style) {
-      case 'h1': document.execCommand('formatBlock', false, 'h1'); break;
-      case 'h2': document.execCommand('formatBlock', false, 'h2'); break;
-      case 'h3': document.execCommand('formatBlock', false, 'h3'); break;
-      case 'h4': document.execCommand('formatBlock', false, 'h4'); break;
-      case 'quote': document.execCommand('formatBlock', false, 'blockquote'); break;
-      case 'code': document.execCommand('formatBlock', false, 'pre'); break;
-      case 'normal': document.execCommand('formatBlock', false, 'p'); break;
-      default: break;
-    }
-    saveCurrentTabContent();
-    setTimeout(updateToolbarStates, 10);
-  }
-
-  // ===== GOAL BAR =====
-  function toggleGoalBar() {
-    if (!goalBar) goalBar = document.getElementById('goal-bar');
-    if (!goalBar) return;
-    goalBar.style.display = (goalBar.style.display === 'flex') ? 'none' : 'flex';
-    if (goalBar.style.display === 'flex') {
-      goalTargetInput = document.getElementById('goal-target-input');
-      goalUnitSelect = document.getElementById('goal-unit-select');
-      if (goalTargetInput) {
-        var existing = localStorage.getItem('oros_writer_goal') || '';
-        goalTargetInput.value = existing;
-        goalTargetInput.focus();
-      }
-    }
-  }
-
-  function setGoal() {
-    goalTargetInput = document.getElementById('goal-target-input');
-    goalUnitSelect = document.getElementById('goal-unit-select');
-    if (!goalTargetInput) return;
-    var goal = parseInt(goalTargetInput.value, 10);
-    var unit = goalUnitSelect ? goalUnitSelect.value : 'words';
-    if (goal > 0) {
-      localStorage.setItem('oros_writer_goal', String(goal));
-      localStorage.setItem('oros_writer_goal_unit', unit);
-      showToast(getTrans('text_goal_set') !== 'text_goal_set' ? getTrans('text_goal_set') : 'Goal set: ' + goal + ' ' + unit);
-      updateStats();
-      if (goalBar) goalBar.style.display = 'none';
-    }
-  }
-
-  function clearGoal() {
-    localStorage.removeItem('oros_writer_goal');
-    localStorage.removeItem('oros_writer_goal_unit');
-    if (statsGoalEl) statsGoalEl.textContent = '';
-    showToast(getTrans('text_goal_cleared') !== 'text_goal_cleared' ? getTrans('text_goal_cleared') : 'Goal cleared');
-    if (goalBar) goalBar.style.display = 'none';
-  }
-
-  function updateGoalBar() {
-    if (!goalBar || goalBar.style.display !== 'flex') return;
-    var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
-    if (goal <= 0) return;
-    var text = richEditor ? richEditor.innerText : '';
-    var words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    var chars = text.length;
-    var current = (unit === 'chars') ? chars : words;
-    var pct = Math.min(100, Math.round((current / goal) * 100));
-    if (!goalBarFill) goalBarFill = document.getElementById('goal-bar-fill');
-    if (goalBarFill) goalBarFill.style.width = pct + '%';
-  }
-
-  // ===== FIND & REPLACE =====
-  function toggleFindBar() {
-    if (!findBar) findBar = document.getElementById('find-replace-bar');
-    if (!findBar) return;
-    findBar.style.display = (findBar.style.display === 'flex') ? 'none' : 'flex';
-    if (findBar.style.display === 'flex') {
-      findInput = document.getElementById('find-input');
-      replaceInput = document.getElementById('replace-input');
-      frResults = document.getElementById('fr-results');
-      findFormatFilter = document.getElementById('find-format-filter');
-      if (findInput) { findInput.focus(); findInput.select(); }
-    } else { clearHighlights(); }
-  }
-
-  var findMatches = [];
-  var currentMatchIdx = -1;
-
-  function performFind() {
-    if (!findInput || !richEditor) return;
-    var query = findInput.value.trim();
-    clearHighlights();
-    if (!query) { if (frResults) frResults.textContent = ''; return; }
-    var flags = 'gi';
-    var pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (findFormatFilter && findFormatFilter.value === 'whole-word') pattern = '\\b' + pattern + '\\b';
-    var regex;
-    try { regex = new RegExp(pattern, flags); } catch(e) { if (frResults) frResults.textContent = 'Invalid pattern'; return; }
-    findMatches = [];
-    var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null, false);
-    var nodes = []; var node;
-    while ((node = walker.nextNode())) nodes.push(node);
-    for (var i = 0; i < nodes.length; i++) {
-      var textNode = nodes[i];
-      var text = textNode.textContent;
-      regex.lastIndex = 0;
-      var match;
-      while ((match = regex.exec(text)) !== null) {
-        if (match[0].length === 0) { regex.lastIndex++; continue; }
-        findMatches.push({ node: textNode, start: match.index, end: match.index + match[0].length, text: match[0] });
-      }
-    }
-    for (var j = findMatches.length - 1; j >= 0; j--) {
-      var m = findMatches[j];
-      var range = document.createRange();
-      range.setStart(m.node, m.start); range.setEnd(m.node, m.end);
-      var mark = document.createElement('mark');
-      mark.className = 'find-match';
-      range.surroundContents(mark);
-    }
-    currentMatchIdx = -1;
-    if (findMatches.length > 0) navigateMatch(1);
-    if (frResults) frResults.textContent = findMatches.length + ' match' + (findMatches.length !== 1 ? 'es' : '');
-  }
-
-  function navigateMatch(direction) {
-    if (findMatches.length === 0) return;
-    var currentMarks = richEditor.querySelectorAll('mark.find-match.current');
-    for (var i = 0; i < currentMarks.length; i++) currentMarks[i].classList.remove('current');
-    currentMatchIdx += direction;
-    if (currentMatchIdx >= findMatches.length) currentMatchIdx = 0;
-    if (currentMatchIdx < 0) currentMatchIdx = findMatches.length - 1;
-    var marks = richEditor.querySelectorAll('mark.find-match');
-    if (marks[currentMatchIdx]) {
-      marks[currentMatchIdx].classList.add('current');
-      marks[currentMatchIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    if (frResults) frResults.textContent = (currentMatchIdx + 1) + '/' + findMatches.length;
-  }
-
-  function doReplace(replaceAll) {
-    if (!replaceInput || findMatches.length === 0) return;
-    var replaceText = replaceInput.value;
-    if (replaceAll) {
-      var marks = richEditor.querySelectorAll('mark.find-match');
-      for (var i = marks.length - 1; i >= 0; i--) {
-        var txt = document.createTextNode(replaceText);
-        var parent = marks[i].parentNode;
-        parent.replaceChild(txt, marks[i]);
-        parent.normalize();
-      }
-      clearHighlights(); performFind();
-      showToast(getTrans('text_replaced_all') !== 'text_replaced_all' ? getTrans('text_replaced_all') : 'Replaced all');
-    } else {
-      if (currentMatchIdx >= 0 && currentMatchIdx < findMatches.length) {
-        var marks2 = richEditor.querySelectorAll('mark.find-match');
-        if (marks2[currentMatchIdx]) {
-          var txt2 = document.createTextNode(replaceText);
-          var parent2 = marks2[currentMatchIdx].parentNode;
-          parent2.replaceChild(txt2, marks2[currentMatchIdx]);
-          parent2.normalize();
-        }
-      }
-      clearHighlights(); performFind();
-    }
-    saveCurrentTabContent();
-  }
-
-  function clearHighlights() {
-    if (!richEditor) return;
-    var marks = richEditor.querySelectorAll('mark.find-match');
-    for (var i = marks.length - 1; i >= 0; i--) {
-      var parent = marks[i].parentNode;
-      var txt = document.createTextNode(marks[i].textContent);
-      parent.replaceChild(txt, marks[i]);
-      parent.normalize();
-    }
-    findMatches = []; currentMatchIdx = -1;
-  }
-
-  // ===== SESSION TIMER =====
-  function toggleSessionBar() {
-    if (!sessionBar) sessionBar = document.getElementById('session-bar');
-    if (!sessionBar) return;
-    sessionBar.style.display = (sessionBar.style.display === 'flex') ? 'none' : 'flex';
-    if (sessionBar.style.display === 'flex') sessionDisplay = document.getElementById('session-display');
-  }
-
-  function startSession() {
-    sessionStartTime = Date.now(); sessionSeconds = 0;
-    if (sessionInterval) clearInterval(sessionInterval);
-    sessionInterval = setInterval(function() {
-      sessionSeconds++;
-      if (sessionDisplay) {
-        var mins = Math.floor(sessionSeconds / 60);
-        var secs = sessionSeconds % 60;
-        sessionDisplay.textContent = mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
-      }
-    }, 1000);
-    var stopBtn = document.getElementById('btn-stop-session');
-    var startBtn = document.getElementById('btn-start-session');
-    if (stopBtn) stopBtn.style.display = '';
-    if (startBtn) startBtn.style.display = 'none';
-  }
-
-  function stopSession() {
-    if (sessionInterval) { clearInterval(sessionInterval); sessionInterval = null; }
-    var mins = Math.floor(sessionSeconds / 60);
-    var targetMin = parseInt(localStorage.getItem('oros_writer_session_target') || '0', 10);
-    if (sessionDisplay) {
-      sessionDisplay.classList.remove('complete', 'warning');
-      if (targetMin > 0 && mins >= targetMin) sessionDisplay.classList.add('complete');
-      else if (targetMin > 0 && mins >= targetMin * 0.8) sessionDisplay.classList.add('warning');
-    }
-    var stopBtn = document.getElementById('btn-stop-session');
-    var startBtn = document.getElementById('btn-start-session');
-    if (stopBtn) stopBtn.style.display = 'none';
-    if (startBtn) startBtn.style.display = '';
-  }
-
-  // ===== TRACK CHANGES (FIX #8: proper implementation) =====
-  function toggleTrackChanges() {
-    trackingChanges = !trackingChanges;
-    var tcBtn = document.getElementById('btn-track-changes');
-    if (trackChangesBar) trackChangesBar = document.getElementById('track-changes-bar');
-    if (trackChangesBar) trackChangesBar.style.display = trackingChanges ? 'flex' : 'none';
-    if (tcBtn) {
-      if (trackingChanges) tcBtn.classList.add('active');
-      else tcBtn.classList.remove('active');
-    }
-
-    if (trackingChanges) {
-      // Intercept input events to mark changes
-      if (!trackChangesObserver) {
-        trackChangesObserver = new MutationObserver(function(mutations) {
-          if (!trackingChanges) return;
-          for (var i = 0; i < mutations.length; i++) {
-            var mut = mutations[i];
-            if (mut.type === 'characterData' && mut.target.parentNode) {
-              var parent = mut.target.parentNode;
-              if (!parent.classList.contains('tracker-insert') &&
-                  !parent.classList.contains('tracker-delete') &&
-                  !parent.closest('.tracker-insert, .tracker-delete')) {
-                // Skip if already marked
-              }
-            }
-            if (mut.type === 'childList') {
-              for (var j = 0; j < mut.addedNodes.length; j++) {
-                var node = mut.addedNodes[j];
-                if (node.nodeType === Node.TEXT_NODE && node.textContent.length > 0 &&
-                    !node.parentElement) continue;
-                if (node.nodeType === Node.TEXT_NODE &&
-                    node.textContent.length > 0 &&
-                    !node.parentElement?.classList?.contains('tracker-insert')) {
-                  var span = document.createElement('span');
-                  span.className = 'tracker-insert';
-                  node.parentNode.insertBefore(span, node);
-                  span.appendChild(node);
-                }
-              }
-              for (var k = 0; k < mut.removedNodes.length; k++) {
-                // Already handled by delete key interception
-              }
-            }
-          }
-        });
-        trackChangesObserver.observe(richEditor, { childList: true, characterData: true, subtree: true });
-      }
-      // Intercept Delete/Backspace
-      richEditor.addEventListener('keydown', trackChangesKeyHandler);
-    } else {
-      if (trackChangesObserver) { trackChangesObserver.disconnect(); }
-      richEditor.removeEventListener('keydown', trackChangesKeyHandler);
-    }
-
-    showToast(trackingChanges ? (getTrans('text_track_on') !== 'text_track_on' ? getTrans('text_track_on') : 'Track changes ON') : (getTrans('text_track_off') !== 'text_track_off' ? getTrans('text_track_off') : 'Track changes OFF'));
-  }
-
-  function trackChangesKeyHandler(e) {
-    if (!trackingChanges) return;
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      var sel = window.getSelection();
-      if (!sel || !sel.rangeCount) return;
-      var range = sel.getRangeAt(0);
-      if (range.collapsed) {
-        // Single character delete
-        e.preventDefault();
-        var node = range.startContainer;
-        if (node.nodeType === Node.TEXT_NODE && node.textContent.length > 0) {
-          var offset = range.startOffset;
-          if (e.key === 'Backspace' && offset > 0) {
-            var deletedChar = node.textContent[offset - 1];
-            var delSpan = document.createElement('span');
-            delSpan.className = 'tracker-delete';
-            delSpan.textContent = deletedChar;
-            node.textContent = node.textContent.slice(0, offset - 1) + node.textContent.slice(offset);
-            range.setStart(node, offset - 1);
-            range.insertNode(delSpan);
-            range.setStart(node, offset);
-            range.collapse(true);
-            sel.removeAllRanges(); sel.addRange(range);
-          } else if (e.key === 'Delete' && offset < node.textContent.length) {
-            var deletedChar2 = node.textContent[offset];
-            var delSpan2 = document.createElement('span');
-            delSpan2.className = 'tracker-delete';
-            delSpan2.textContent = deletedChar2;
-            node.textContent = node.textContent.slice(0, offset) + node.textContent.slice(offset + 1);
-            range.insertNode(delSpan2);
-            range.setStart(node, offset);
-            range.collapse(true);
-            sel.removeAllRanges(); sel.addRange(range);
-          }
-        }
-      } else {
-        // Selection delete — wrap in tracker-delete
-        e.preventDefault();
-        var fragment = range.extractContents();
-        var delSpan3 = document.createElement('span');
-        delSpan3.className = 'tracker-delete';
-        delSpan3.appendChild(fragment);
-        range.insertNode(delSpan3);
-        sel.removeAllRanges();
-      }
-      saveCurrentTabContent();
-    }
-  }
-
-  function acceptAllChanges() {
-    if (!richEditor) return;
-    var inserts = richEditor.querySelectorAll('.tracker-insert');
-    for (var i = 0; i < inserts.length; i++) {
-      var parent = inserts[i].parentNode;
-      while (inserts[i].firstChild) parent.insertBefore(inserts[i].firstChild, inserts[i]);
-      parent.removeChild(inserts[i]);
-      parent.normalize();
-    }
-    var deletes = richEditor.querySelectorAll('.tracker-delete');
-    for (var j = deletes.length - 1; j >= 0; j--) deletes[j].remove();
-    saveCurrentTabContent();
-    showToast(getTrans('text_changes_accepted') !== 'text_changes_accepted' ? getTrans('text_changes_accepted') : 'All changes accepted');
-  }
-
-  function rejectAllChanges() {
-    if (!richEditor) return;
-    var inserts = richEditor.querySelectorAll('.tracker-insert');
-    for (var i = inserts.length - 1; i >= 0; i--) inserts[i].remove();
-    var deletes = richEditor.querySelectorAll('.tracker-delete');
-    for (var j = 0; j < deletes.length; j++) {
-      var parent = deletes[j].parentNode;
-      while (deletes[j].firstChild) parent.insertBefore(deletes[j].firstChild, deletes[j]);
-      parent.removeChild(deletes[j]);
-      parent.normalize();
-    }
-    saveCurrentTabContent();
-    showToast(getTrans('text_changes_rejected') !== 'text_changes_rejected' ? getTrans('text_changes_rejected') : 'All changes rejected');
-  }
-
-  // ===== ZEN MODE =====
-  function toggleZenMode() {
-    var isZen = document.body.dataset.zen === 'true';
-    document.body.dataset.zen = isZen ? 'false' : 'true';
-    document.body.classList.toggle('zen-mode');
-    if (!isZen && richEditor) richEditor.focus();
-    showToast(!isZen ? (getTrans('text_zen_on') !== 'text_zen_on' ? getTrans('text_zen_on') : 'Zen mode ON') : (getTrans('text_zen_off') !== 'text_zen_off' ? getTrans('text_zen_off') : 'Zen mode OFF'));
-  }
-
-  // ===== FOCUS MODE =====
-  function toggleFocusMode() {
-    focusModeEnabled = !focusModeEnabled;
-    document.body.classList.toggle('focus-mode', focusModeEnabled);
-    if (focusModeEnabled && richEditor) {
-      updateFocusedParagraph();
-      var handler = updateFocusedParagraph;
-      richEditor._focusHandler = handler;
-      richEditor.addEventListener('keyup', handler);
-      richEditor.addEventListener('click', handler);
-    } else {
-      if (richEditor) {
-        var focused = richEditor.querySelectorAll('.is-focused');
-        for (var i = 0; i < focused.length; i++) focused[i].classList.remove('is-focused');
-        if (richEditor._focusHandler) {
-          richEditor.removeEventListener('keyup', richEditor._focusHandler);
-          richEditor.removeEventListener('click', richEditor._focusHandler);
-        }
-      }
-    }
-    showToast(focusModeEnabled ? (getTrans('text_focus_on') !== 'text_focus_on' ? getTrans('text_focus_on') : 'Focus mode ON') : (getTrans('text_focus_off') !== 'text_focus_off' ? getTrans('text_focus_off') : 'Focus mode OFF'));
-  }
-
-  function updateFocusedParagraph() {
-    if (!richEditor) return;
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var node = sel.anchorNode;
-    if (!node) return;
-    var block = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
-    var blockTags = 'P H1 H2 H3 H4 H5 H6 BLOCKQUOTE PRE UL OL DIV'.split(' ');
-    while (block && block !== richEditor && blockTags.indexOf(block.tagName) === -1) block = block.parentElement;
-    if (!block || block === richEditor) return;
-    var all = richEditor.querySelectorAll('.is-focused');
-    for (var i = 0; i < all.length; i++) all[i].classList.remove('is-focused');
-    block.classList.add('is-focused');
-  }
-
-  // ===== READING MODE =====
-  function toggleReadingMode() {
-    document.body.classList.toggle('reading-mode');
-    var isReading = document.body.classList.contains('reading-mode');
-    var exitBtn = document.getElementById('btn-exit-reading-mode');
-    if (exitBtn) exitBtn.style.display = isReading ? 'inline-flex' : 'none';
-    if (isReading && richEditor) richEditor.setAttribute('contenteditable', 'false');
-    else if (richEditor) { richEditor.setAttribute('contenteditable', 'true'); richEditor.focus(); }
-    showToast(isReading ? (getTrans('text_reading_on') !== 'text_reading_on' ? getTrans('text_reading_on') : 'Reading mode ON') : (getTrans('text_reading_off') !== 'text_reading_off' ? getTrans('text_reading_off') : 'Reading mode OFF'));
-  }
-
-  // ===== WORD FREQUENCY =====
-  function toggleWordFreqPanel() {
-    if (!wordFreqPanel) wordFreqPanel = document.getElementById('wordfreq-panel');
-    if (!wordFreqPanel) return;
-    wordFreqPanel.style.display = (wordFreqPanel.style.display === 'flex') ? 'none' : 'flex';
-    if (wordFreqPanel.style.display === 'flex') {
-      wordFreqList = document.getElementById('wordfreq-list');
-      wordFreqSummary = document.getElementById('wordfreq-summary');
-      updateWordFrequency();
-    }
-  }
-
-  function updateWordFrequency() {
-    if (!wordFreqList || !richEditor) return;
-    var text = richEditor.innerText.toLowerCase();
-    var stopWords = { 'the':1,'a':1,'an':1,'and':1,'or':1,'but':1,'in':1,'on':1,'at':1,'to':1,'for':1,'of':1,'with':1,'by':1,'from':1,'is':1,'was':1,'are':1,'were':1,'be':1,'been':1,'being':1,'have':1,'has':1,'had':1,'do':1,'does':1,'did':1,'will':1,'would':1,'could':1,'should':1,'may':1,'might':1,'must':1,'can':1,'this':1,'that':1,'these':1,'those':1,'i':1,'you':1,'he':1,'she':1,'it':1,'we':1,'they':1,'what':1,'which':1,'who':1,'when':1,'where':1,'why':1,'how':1,'all':1,'each':1,'every':1,'both':1,'few':1,'more':1,'most':1,'other':1,'some':1,'such':1,'no':1,'nor':1,'not':1,'only':1,'own':1,'same':1,'so':1,'than':1,'too':1,'very':1,'just':1,'as':1,'if':1,'then':1,'else':1,'about':1,'into':1,'through':1,'during':1,'before':1,'after':1,'above':1,'below':1,'up':1,'down':1,'out':1,'off':1,'over':1,'under':1,'again':1,'further':1,'once':1,'here':1,'there':1,'και':1,'το':1,'η':1,'ο':1,'τα':1,'οι':1,'των':1,'σε':1,'με':1,'για':1,'από':1,'που':1,'να':1,'ειναι':1,'εχει':1,'αυτο':1,'αυτη':1,'αυτα':1,'αυτος':1,'αυτην':1,'ηταν':1,'οχι':1,'δεν':1,'γιατι':1,'πως':1,'καποιο':1,'μηνα':1 };
-    var words = text.match(/\b[a-zA-Zα-ωά-ύϊϋΐΰ]+(?:'[a-z]{1,2})?\b/g) || [];
-    var freq = {};
-    for (var i = 0; i < words.length; i++) {
-      var w = words[i].toLowerCase();
-      if (stopWords[w] || w.length < 3) continue;
-      freq[w] = (freq[w] || 0) + 1;
-    }
-    var sorted = Object.keys(freq).sort(function(a, b) { return freq[b] - freq[a]; });
-    var top = sorted.slice(0, 25);
-    if (top.length === 0) { wordFreqList.innerHTML = '<div class="wordfreq-empty">' + (getTrans('text_no_words') !== 'text_no_words' ? getTrans('text_no_words') : 'No words found') + '</div>'; return; }
-    var maxCount = freq[top[0]];
-    var totalUnique = sorted.length;
-    var totalWords = words.length;
-    if (wordFreqSummary) {
-      wordFreqSummary.innerHTML = '<div class="stat-row"><span>' + (getTrans('text_total_words') !== 'text_total_words' ? getTrans('text_total_words') : 'Total words:') + '</span><span>' + totalWords + '</span></div><div class="stat-row"><span>' + (getTrans('text_unique_words') !== 'text_unique_words' ? getTrans('text_unique_words') : 'Unique words:') + '</span><span>' + totalUnique + '</span></div>';
-    }
-    var html = '';
-    for (var j = 0; j < top.length; j++) {
-      var word = top[j];
-      var count = freq[word];
-      var pct = Math.round((count / maxCount) * 100);
-      var cls = count > 5 ? ' overused' : '';
-      html += '<div class="wordfreq-item' + cls + '">' +
-        '<span class="wf-word">' + escapeHtml(word) + '</span>' +
-        '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%"></div></div>' +
-        '<span class="wordfreq-count">' + count + '</span></div>';
-    }
-    wordFreqList.innerHTML = html;
-  }
-
-  // ===== OUTLINE PANEL =====
-  function toggleOutline() {
-    if (!outlinePanel) outlinePanel = document.getElementById('outline-panel');
-    if (!outlinePanel) return;
-    outlinePanel.style.display = (outlinePanel.style.display === 'flex') ? 'none' : 'flex';
-    if (outlinePanel.style.display === 'flex') { outlineList = document.getElementById('outline-list'); updateOutline(); }
-  }
-
-  // ===== METADATA PANEL =====
-  function toggleMetadataPanel() {
-    if (!metadataPanel) metadataPanel = document.getElementById('metadata-panel');
-    if (!metadataPanel) return;
-    metadataPanel.style.display = (metadataPanel.style.display === 'flex') ? 'none' : 'flex';
-    if (metadataPanel.style.display === 'flex') { loadMetadataFields(); loadPageSettingsFields(); }
-  }
-
-  function loadMetadataFields() {
-    var meta = tabsModule.getMetadata();
-    if (metaTitle) metaTitle.value = meta.title || '';
-    if (metaAuthor) metaAuthor.value = meta.author || '';
-    if (metaTags) metaTags.value = meta.tags || '';
-    if (metaCategory) metaCategory.value = meta.category || '';
-    if (metaCreated) metaCreated.textContent = meta.created || '—';
-    if (metaModified) metaModified.textContent = meta.modified || '—';
-  }
-
-  function saveMetadataFromFields() {
-    var meta = tabsModule.getMetadata();
-    if (metaTitle) meta.title = metaTitle.value;
-    if (metaAuthor) meta.author = metaAuthor.value;
-    if (metaTags) meta.tags = metaTags.value;
-    if (metaCategory) meta.category = metaCategory.value;
-    meta.modified = new Date().toISOString();
-    tabsModule.setMetadata(meta);
-    if (metaModified) metaModified.textContent = meta.modified;
-  }
-
-  // ===== COMMENTS (FIX #9: proper implementation) =====
-  function toggleCommentsPanel() {
-    if (!commentsPanel) commentsPanel = document.getElementById('comments-panel');
-    if (!commentsPanel) return;
-    commentsPanel.style.display = (commentsPanel.style.display === 'flex') ? 'none' : 'flex';
-  }
-
-  function addComment() {
-    var sel = window.getSelection();
-    if (!sel || !sel.rangeCount || sel.isCollapsed) {
-      showToast(getTrans('text_select_first') !== 'text_select_first' ? getTrans('text_select_first') : 'Select text first');
-      return;
-    }
-    var range = sel.getRangeAt(0);
-    // Save the range for later reference
-    savedCommentRange = range.cloneRange();
-
-    var highlight = document.createElement('span');
-    highlight.className = 'comment-highlight';
-    try { range.surroundContents(highlight); }
-    catch(e) {
-      // Fallback for cross-element selections
-      showToast('Cannot comment across multiple elements');
-      return;
-    }
-
-    var list = document.getElementById('comments-list');
-    if (!list) return;
-    var quoted = highlight.textContent.substring(0, 80);
-    var item = document.createElement('div');
-    item.className = 'comment-item';
-    item.innerHTML =
-      '<div class="comment-header"><span class="comment-author">You</span>' +
-      '<span class="comment-timestamp">' + new Date().toLocaleTimeString() + '</span></div>' +
-      '<div class="comment-text"><textarea placeholder="' +
-      (getTrans('text_comment_ph') !== 'text_comment_ph' ? getTrans('text_comment_ph') : 'Write a comment...') +
-      '"></textarea></div>' +
-      '<div class="comment-quoted">' + escapeHtml(quoted) + '</div>' +
-      '<div class="comment-actions">' +
-      '<button class="btn-resolve">' + (getTrans('text_resolve') !== 'text_resolve' ? getTrans('text_resolve') : 'Resolve') + '</button>' +
-      '<button class="btn-delete">' + (getTrans('text_delete') !== 'text_delete' ? getTrans('text_delete') : 'Delete') + '</button>' +
-      '</div>';
-    list.appendChild(item);
-
-    var ta = item.querySelector('textarea');
-    if (ta) ta.focus();
-
-    // Highlight the comment item when hovering over the highlighted text
-    var commentIdx = list.querySelectorAll('.comment-item').length - 1;
-    highlight.setAttribute('data-comment-idx', commentIdx);
-    highlight.addEventListener('mouseenter', function() {
-      item.classList.add('highlighted');
-    });
-    highlight.addEventListener('mouseleave', function() {
-      item.classList.remove('highlighted');
-    });
-
-    item.querySelector('.btn-resolve').addEventListener('click', function() {
-      item.classList.add('comment-resolved');
-      highlight.classList.add('resolved');
-    });
-
-    item.querySelector('.btn-delete').addEventListener('click', function() {
-      item.remove();
-      if (highlight.parentNode) {
-        var txt = document.createTextNode(highlight.textContent);
-        highlight.parentNode.replaceChild(txt, highlight);
-        highlight.parentNode.normalize();
-      }
-    });
-
-    saveCurrentTabContent();
-  }
   
     // ===== TABLE OF CONTENTS =====
   function toggleToCPanel() {
@@ -1679,7 +1063,7 @@
     showToast(getTrans('text_toc_inserted') !== 'text_toc_inserted' ? getTrans('text_toc_inserted') : 'Table of Contents inserted');
   }
 
-  // ===== VERSION HISTORY (FIX #10: immediate feedback) =====
+  // ===== VERSION HISTORY =====
   function toggleVersionPanel() {
     if (!versionPanel) versionPanel = document.getElementById('version-history-panel');
     if (!versionPanel) return;
@@ -1692,7 +1076,6 @@
     var tab = tabsModule.getActive(); if (!tab) return;
     if (!tab.versions) tab.versions = [];
 
-    // FIX #10: Show immediate toast feedback
     showToast(getTrans('text_snapshot_saved') !== 'text_snapshot_saved' ? getTrans('text_snapshot_saved') : 'Snapshot saved');
 
     var snapshot = {
@@ -1705,7 +1088,6 @@
     if (tab.versions.length > 20) tab.versions.length = 20;
     tabsModule.persist();
 
-    // Update the list immediately if visible
     setTimeout(function() {
       if (versionPanel && versionPanel.style.display === 'flex') renderVersions();
     }, 0);
@@ -1898,7 +1280,7 @@
     }
   }
 
-  // ===== TEMPLATES DIALOG (FIX #4: includes custom templates) =====
+  // ===== TEMPLATES DIALOG =====
   function toggleTemplatesDialog() {
     var dlg = document.getElementById('templates-dialog-overlay');
     if (!dlg) return;
@@ -1933,7 +1315,6 @@
     for (var j = 0; j < cards.length; j++) {
       (function(card) {
         var tplId = card.getAttribute('data-template-id');
-        // Don't trigger apply if clicking delete
         card.addEventListener('click', function(e) {
           if (e.target.closest('.btn-delete-template')) return;
           var allTpls = getAllTemplates();
@@ -2078,7 +1459,6 @@
             '<w:r><w:rPr><w:sz w:val="' + sz + '"/></w:rPr><w:t xml:space="preserve">' + escapeHtml(blockText) + '</w:t></w:r></w:p>';
         }
       }
-      // FIX #6: Include document metadata in docx
       if (meta.title || meta.author || meta.tags) {
         docXml = docXml.replace('<w:body>',
           '<w:body>' +
@@ -2256,19 +1636,16 @@
 
   // ===== DIALOG HANDLERS =====
   function setupDialogHandlers() {
-    // Link dialog
     bindClick('btn-close-link-dialog', function() { var d = document.getElementById('link-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-ok-link', insertOrUpdateLink);
     bindClick('btn-cancel-link', function() { var d = document.getElementById('link-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-link', toggleLinkDialog);
 
-    // Table dialog
     bindClick('btn-close-table-dialog', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-create-table', createTable);
     bindClick('btn-cancel-table', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-table', toggleTableDialog);
 
-    // Image dialog
     bindClick('btn-close-image-dialog', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-image-confirm', function() {
       var sourceType = document.getElementById('image-source-type');
@@ -2278,7 +1655,6 @@
     bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-image', toggleImageDialog);
 
-    // Image source toggle
     var imgSrcSelect = document.getElementById('image-source-type');
     if (imgSrcSelect) {
       imgSrcSelect.addEventListener('change', function() {
@@ -2294,12 +1670,10 @@
       });
     }
 
-    // Templates dialog
     bindClick('btn-close-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-templates', toggleTemplatesDialog);
 
-    // FIX #4: Custom template actions
     bindClick('btn-save-as-template', saveCurrentAsTemplate);
     bindClick('btn-export-templates', exportTemplatesJson);
     var importInput = document.getElementById('templates-import-input');
@@ -2315,42 +1689,35 @@
       });
     }
 
-    // Special chars dialog
     bindClick('btn-close-special-chars', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-close-special-chars-ok', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-special-chars', toggleSpecialCharsDialog);
 
-    // Footnote dialog
     bindClick('btn-close-footnote-dialog', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-insert-footnote', insertFootnote);
     bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-footnote', toggleFootnoteDialog);
 
-    // Help dialog
     bindClick('btn-close-help', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-close-help-ok', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
     bindClick('btn-help', toggleHelpDialog);
 
-    // Close footnotes area
     bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
 
-    // Dialog overlay click-to-close
     var overlays = document.querySelectorAll('.dialog-overlay');
     for (var i = 0; i < overlays.length; i++) {
       overlays[i].addEventListener('click', function(e) { if (e.target === this) this.style.display = 'none'; });
     }
 
-    // Exit Reading Mode button
     bindClick('btn-exit-reading-mode', toggleReadingMode);
   }
 
-  // ===== SETTINGS HANDLERS =====
+    // ===== SETTINGS HANDLERS =====
   function setupSettingsHandlers() {
     bindClick('btn-close-settings', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
     bindClick('btn-close-settings-footer', function() { var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
     bindClick('btn-save-settings', function() { saveSettings(); var m = document.getElementById('settings-modal'); if (m) m.classList.remove('visible'); });
 
-    // Autocorrect rule management
     bindClick('btn-add-autocorrect', addAutocorrectRule);
     bindClick('btn-reset-autocorrect', resetAutocorrectRules);
     var acNewTrigger = document.getElementById('ac-new-trigger');
@@ -2361,10 +1728,8 @@
       acNewReplacement.addEventListener('keydown', acAddOnEnter);
     }
 
-    // FIX #5: Full database export
     bindClick('btn-export-database', exportFullDatabase);
 
-    // Settings tab switching
     var tabBtns = document.querySelectorAll('.settings-nav .tab-btn');
     for (var i = 0; i < tabBtns.length; i++) {
       tabBtns[i].addEventListener('click', function() {
@@ -2378,7 +1743,6 @@
       });
     }
 
-    // Install PWA
     var installBtn = document.getElementById('btn-install');
     if (installBtn) {
       installBtn.onclick = function() {
@@ -2392,19 +1756,16 @@
       };
     }
 
-    // Goal buttons
     bindClick('btn-set-goal', setGoal);
     bindClick('btn-clear-goal', clearGoal);
     bindClick('btn-close-goal', function() { if (goalBar) goalBar.style.display = 'none'; });
     bindClick('btn-goal', toggleGoalBar);
 
-    // Session buttons
     bindClick('btn-start-session', startSession);
     bindClick('btn-stop-session', stopSession);
     bindClick('btn-close-session', function() { if (sessionBar) sessionBar.style.display = 'none'; });
     bindClick('btn-session', toggleSessionBar);
 
-    // Find buttons
     bindClick('btn-find-prev', function() { navigateMatch(-1); });
     bindClick('btn-find-next', function() { navigateMatch(1); });
     bindClick('btn-replace', function() { doReplace(false); });
@@ -2412,13 +1773,12 @@
     bindClick('btn-close-find', function() { if (findBar) findBar.style.display = 'none'; clearHighlights(); });
     bindClick('btn-find', toggleFindBar);
 
-    // Track changes buttons
     bindClick('btn-accept-all-changes', acceptAllChanges);
     bindClick('btn-reject-all-changes', rejectAllChanges);
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
     bindClick('btn-track-changes', toggleTrackChanges);
 
-    // Export dropdown — FIX #13: proper event binding with stopPropagation
+    // FIX #13: Export dropdown — proper event binding with stopPropagation
     var exportBtn = document.getElementById('btn-export');
     var exportDd = document.getElementById('export-dropdown');
     if (exportBtn && exportDd) {
@@ -2435,26 +1795,21 @@
           exportDd.classList.remove('visible');
         });
       }
-      // Close dropdown when clicking outside
       document.addEventListener('click', function(e) {
-        if (!e.target.closest('#export-dropdown-container')) {
+        if (!e.target.closest('#export-dropdown-container') && !e.target.closest('#btn-export')) {
           exportDd.classList.remove('visible');
         }
       });
     }
 
-    // Style select
     if (stylesSelect) { stylesSelect.addEventListener('change', function() { applyNamedStyle(this.value); }); }
 
-    // File open
     bindClick('btn-open', function() { var fi = document.getElementById('file-input-hidden'); if (fi) fi.click(); });
     var fileInput = document.getElementById('file-input-hidden');
     if (fileInput) { fileInput.addEventListener('change', function(e) { if (e.target.files && e.target.files[0]) openFile(e.target.files[0]); }); }
 
-    // Clear content
     bindClick('btn-clear', clearContent);
 
-    // Formatting buttons
     bindClick('btn-bold', function() { document.execCommand('bold'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); });
     bindClick('btn-italic', function() { document.execCommand('italic'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); });
     bindClick('btn-underline', function() { document.execCommand('underline'); saveCurrentTabContent(); setTimeout(updateToolbarStates, 10); });
@@ -2478,30 +1833,30 @@
     bindClick('btn-toc-insert', insertToCIntoDocument);
     bindClick('btn-add-version', addVersionSnapshot);
 
-    // Find input live search
     if (findInput) {
       findInput.addEventListener('input', function() { clearTimeout(typingTimer); typingTimer = setTimeout(performFind, 300); });
       findInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); navigateMatch(e.shiftKey ? -1 : 1); } });
     }
 
-    // Replace input
     if (replaceInput) {
       replaceInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doReplace(e.shiftKey); } });
     }
 
-    // Window resize
     window.addEventListener('resize', function() {
       clearTimeout(windowResizeDebounce);
       windowResizeDebounce = setTimeout(function() { clampToViewport(); updateReadingProgress(); }, 150);
     });
 
-    // PWA install prompt
-    window.addEventListener('beforeinstallprompt', function(e) { e.preventDefault(); beforeInstallPrompt = e; var btn = document.getElementById('btn-install'); if (btn) { btn.disabled = false; btn.style.display = ''; } });
+    // FIX: PWA — preventDefault then store event for later prompt()
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      beforeInstallPrompt = e;
+      var btn = document.getElementById('btn-install');
+      if (btn) { btn.disabled = false; btn.style.display = ''; }
+    });
 
-    // Window close warning
     window.addEventListener('beforeunload', function(e) { if (isTyping) { e.preventDefault(); e.returnValue = ''; } });
 
-    // Special chars tab switching
     var scTabs = document.querySelectorAll('.sc-tab');
     for (var i2 = 0; i2 < scTabs.length; i2++) {
       (function(tab) { tab.addEventListener('click', function() { renderSpecialChars(this.getAttribute('data-cat')); }); })(scTabs[i2]);
@@ -2537,7 +1892,7 @@
   function setupTabsUI() {
     tabsModule.init('#tab-bar');
     if (!tabsModule.tabBar) { console.warn('setupTabsUI: #tab-bar not found'); return; }
-    if (tabsModule && typeof tabsModule.on === 'function') {
+    if (typeof tabsModule.on === 'function') {
       tabsModule.on('switch', function(tab) {
         if (!richEditor || !tab) return;
         richEditor.innerHTML = tab.content || '<p><br></p>';
@@ -2555,8 +1910,8 @@
       }
     }
   }
-  
-    // ===== QUICK FORMAT MENU (Alt + Right-Click) =====
+
+  // ===== QUICK FORMAT MENU (Alt + Right-Click) =====
   var quickFormatMenu = null;
 
   function createQuickFormatMenu(x, y) {
@@ -2601,7 +1956,7 @@
         menu.appendChild(div);
       } else {
         var b = document.createElement('button');
-        b.className = 'qfm-btn' + (btn.action ? '' : ' qfm-action');
+        b.className = 'qfm-btn';
         b.innerHTML = '<i class="fa ' + btn.icon + '"></i>';
         b.title = btn.label;
         (function(action) {
@@ -2619,7 +1974,6 @@
     document.body.appendChild(menu);
     quickFormatMenu = menu;
 
-    // Clamp to viewport
     var rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) {
       menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
@@ -2628,7 +1982,6 @@
       menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
     }
 
-    // Dismiss on outside click
     setTimeout(function() {
       document.addEventListener('mousedown', dismissQuickFormatMenu, true);
     }, 0);
@@ -2669,7 +2022,6 @@
     var mediaQueryList = window.matchMedia('print');
     var handlePrint = function(mql) {
       if (mql.matches) {
-        // Pre-print: clone content into print container
         var printContainer = document.getElementById('print-area');
         if (printContainer && richEditor) {
           printContainer.innerHTML = richEditor.innerHTML;
@@ -2678,7 +2030,6 @@
           printContainer.setAttribute('data-page-size', pageSize);
         }
       } else {
-        // Post-print: cleanup
         var pc = document.getElementById('print-area');
         if (pc) pc.innerHTML = '';
       }
@@ -2716,11 +2067,10 @@
     });
   }
 
-  // ===== INITIALIZATION (FIX: async translation polling) =====
+  // ===== INITIALIZATION =====
   function init() {
     if (initialized) return;
 
-    // Get DOM elements
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.getElementById('rich-wrapper');
     tabBar = document.getElementById('tab-bar');
@@ -2767,9 +2117,8 @@
       return;
     }
 
-    // Wait for translations to load (polling mechanism)
     var attempts = 0;
-    var maxAttempts = 50; // 5 seconds max wait
+    var maxAttempts = 50;
 
     function waitForTranslations() {
       attempts++;
@@ -2784,7 +2133,6 @@
     }
 
     function startApp() {
-      // Load settings and apply
       loadSettings();
       loadAutoCorrections();
       loadCustomTemplates();
@@ -2793,152 +2141,97 @@
       applyPageSettings();
       loadSettingsValues();
 
-      // Initialize tabs
       setupTabsUI();
-
-      // Setup editor
       setupEditorInput();
       setupKeyboardShortcuts();
       setupQuickFormatMenu();
-
-      // Setup UI components
       setupPanelToggles();
       setupDialogHandlers();
       setupSettingsHandlers();
       setupFormatButtons();
-
-      // Print support
       setupPrint();
       setupCloseWarning();
       setupPWAInstall();
-
-      // Stats and indicators
       setupStatsToggle();
       clampToViewport();
 
-      // Load active tab content
       var active = tabsModule.getActive();
       if (active && richEditor) {
         richEditor.innerHTML = active.content || '<p><br></p>';
         loadPageSettingsFields();
       }
 
-      // Render autocorrect rules if settings modal exists
       renderAutocorrectRules();
-
-      // Initial stat update
       updateStats();
       updateSaveIndicator('saved');
 
-      // Auto-save interval
       setInterval(autoSaveCheck, AUTO_SAVE_INTERVAL_MS);
 
-      // Focus editor
       setTimeout(function() { if (richEditor) richEditor.focus(); }, 100);
 
       initialized = true;
 
-      // Welcome toast
       setTimeout(function() {
         showToast(getTrans('text_welcome') !== 'text_welcome' ? getTrans('text_welcome') : 'Welcome to orOS Writer');
       }, 500);
 
-      console.log('%corOS Writer v' + CONFIG.VERSION + ' initialized ✓', 'color:#6d4aff;font-weight:bold;');
+      console.log('%corOS Writer v' + CONFIG.VERSION + ' initialized \u2713', 'color:#6d4aff;font-weight:bold;');
     }
 
     waitForTranslations();
   }
-  
-  // Add this AFTER init() completes
-setTimeout(function() {
-  if (typeof tabsModule !== 'undefined' && tabsModule.init) {
-    tabsModule.init('#tab-bar');
-    if (!tabsModule.tabBar) {
-      console.error('TAB BAR NOT FOUND');
-    } else {
-      console.log('Tabs initialized:', tabsModule.getAll().length);
-    }
-  }
-}, 200);
 
   // ===== PUBLIC API =====
   window.orOSWriter = {
-    // Core
     init: init,
     getEditor: function() { return richEditor; },
     getConfig: function() { return CONFIG; },
-
-    // Tabs
     tabs: function() { return getTabsApi(); },
-
-    // Content
     getContent: function() { return richEditor ? richEditor.innerHTML : ''; },
     setContent: function(html) { if (richEditor) { richEditor.innerHTML = html; saveCurrentTabContent(); updateStats(); } },
     getText: function() { return richEditor ? richEditor.innerText : ''; },
     clearContent: clearContent,
-
-    // Stats
     getStats: function() {
       if (!richEditor) return null;
       var text = richEditor.innerText || '';
       var words = text.trim() ? text.trim().split(/\s+/).length : 0;
       var chars = text.length;
       var charNoSpaces = text.replace(/\s/g, '').length;
-      var sentences = (text.match(/[.!?…]+/g) || []).length;
+      var sentences = (text.match(/[.!?\u2026]+/g) || []).length;
       var paragraphs = richEditor.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li').length;
       var readingTime = words > 0 ? Math.max(1, Math.ceil(words / 200)) : 0;
       var speakingTime = words > 0 ? Math.max(1, Math.ceil(words / 130)) : 0;
       return { words: words, chars: chars, charNoSpaces: charNoSpaces, sentences: sentences, paragraphs: paragraphs, readingTime: readingTime, speakingTime: speakingTime };
     },
     updateStats: updateStats,
-
-    // Settings
     getSettings: function() { return loadSettings(); },
     saveSettings: saveSettings,
-
-    // Language
     getLanguage: function() { return getCurrentLang(); },
     setLanguage: function(lang) { applyLanguage(lang); },
     translate: getTrans,
-
-    // Theme
     applyTheme: applyTheme,
-
-    // Export
     exportFormat: handleExport,
     exportFullDatabase: exportFullDatabase,
-
-    // Templates
     getTemplates: getAllTemplates,
     getCustomTemplates: function() { return customTemplates; },
     saveCurrentAsTemplate: saveCurrentAsTemplate,
     deleteCustomTemplate: deleteCustomTemplate,
     exportTemplates: exportTemplatesJson,
     importTemplates: importTemplatesJson,
-
-    // Autocorrect
     getAutocorrectRules: function() { return autocorrectRules; },
     addAutocorrectRule: function(trigger, replacement) { autocorrectRules[trigger.toLowerCase()] = replacement; saveAutoCorrections(); },
     removeAutocorrectRule: function(trigger) { delete autocorrectRules[trigger.toLowerCase()]; saveAutoCorrections(); },
     resetAutocorrectRules: resetAutocorrectRules,
-
-    // Version History
     addSnapshot: addVersionSnapshot,
     getVersions: function() { var t = tabsModule.getActive(); return t ? (t.versions || []) : []; },
     restoreVersion: restoreVersion,
-
-    // Track Changes
     toggleTrackChanges: toggleTrackChanges,
     acceptAllChanges: acceptAllChanges,
     rejectAllChanges: rejectAllChanges,
     isTrackingChanges: function() { return trackingChanges; },
-
-    // Modes
     toggleZenMode: toggleZenMode,
     toggleFocusMode: toggleFocusMode,
     toggleReadingMode: toggleReadingMode,
-
-    // Panels
     toggleOutline: toggleOutline,
     toggleMetadata: toggleMetadataPanel,
     toggleComments: toggleCommentsPanel,
@@ -2949,21 +2242,11 @@ setTimeout(function() {
     toggleFind: toggleFindBar,
     toggleGoalBar: toggleGoalBar,
     toggleSessionBar: toggleSessionBar,
-
-    // Templates dialog
     toggleTemplatesDialog: toggleTemplatesDialog,
-
-    // Toast
     showToast: showToast,
-
-    // Quick format menu
     showQuickFormatMenu: createQuickFormatMenu,
-
-    // Page settings
     applyPageSize: applyPageSize,
     applyPageSettings: applyPageSettings,
-
-    // Utility
     saveContent: saveCurrentTabContent,
     isInitialized: function() { return initialized; }
   };
