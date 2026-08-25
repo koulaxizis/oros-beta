@@ -1575,6 +1575,10 @@
     URL.revokeObjectURL(url);
   }
 
+    function importTxt() {
+    showImportOptions();
+  }
+
   function setupFileImport() {
     var fileInput = document.getElementById('file-import-input');
     if (!fileInput) return;
@@ -1878,7 +1882,7 @@
       loadGoal();
       loadSessionTarget();
 
-      tabsModule.init('.tabs-bar');
+      tabsModule.init('#tab-bar');
       setupStatsToggle();
       setupFindReplace();
       setupWordFrequency();
@@ -1934,7 +1938,7 @@
   function initializeElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-editor-wrapper');
-    tabBar = document.querySelector('.tabs-bar');
+    tabBar = document.querySelector('#tab-bar');
     saveIndicator = document.getElementById('save-indicator');
     statsOverlay = document.querySelector('.stats-overlay');
     statsDefaultEl = document.querySelector('.stats-default');
