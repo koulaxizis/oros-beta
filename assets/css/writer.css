@@ -1589,14 +1589,6 @@ body[data-zen="true"] .side-panel {
   gap: 8px;
 }
 
-/* Force footer visibility */
-.site-footer, footer, .footer-container {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  position: relative !important;
-}
-
 .btn-reset-autocorrect,
 #btn-reset-autocorrect {
   background: var(--bg-hover, #f5f5f5);
