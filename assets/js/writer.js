@@ -2006,11 +2006,19 @@
   }
 
   // ===== OPEN FILE =====
-    // ===== OPEN FILE =====
+      // ===== OPEN FILE =====
   function openFile(file) {
     if (!file) return;
-    var reader = new FileReader();
     var ext = file.name.split('.').pop().toLowerCase();
+
+    // Binary ZIP-based formats — use JSZip
+    if (ext === 'docx' || ext === 'odt') {
+      openDocxOdt(file, ext);
+      return;
+    }
+
+    // Text-based formats
+    var reader = new FileReader();
     reader.onload = function(e) {
       var content = e.target.result;
       if (ext === 'html') {
@@ -2032,268 +2040,333 @@
     reader.readAsText(file);
   }
 
-  // ===== RTF TO HTML CONVERTER =====
-  function rtfToHtml(rtf) {
-    if (!rtf || typeof rtf !== 'string') return '<p><br></p>';
-
-    // Try external library if available
-    if (window.rtfToHtml && typeof window.rtfToHtml === 'function') {
-      try { var result = window.rtfToHtml(rtf); if (result) return result; } catch(e) {}
+  // ===== OPEN DOCX / ODT VIA JSZIP =====
+  function openDocxOdt(file, ext) {
+    if (typeof JSZip === 'undefined') {
+      showToast(ext.toUpperCase() + ' import requires JSZip library');
+      return;
     }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        // DOCX: word/document.xml
+        // ODT: content.xml
+        var xmlPath = (ext === 'docx') ? 'word/document.xml' : 'content.xml';
+
+        return zip.file(xmlPath).async('string');
+      }).then(function(xmlText) {
+        var html = (ext === 'docx') ? docxXmlToHtml(xmlText) : odtXmlToHtml(xmlText);
+        richEditor.innerHTML = html;
+        saveCurrentTabContent();
+        updateStats();
+        showToast(ext.toUpperCase() + ' file opened');
+      }).catch(function(err) {
+        console.error(ext.toUpperCase() + ' import failed:', err);
+        showToast(ext.toUpperCase() + ' import failed: ' + (err.message || 'unknown error'));
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ===== DOCX XML TO HTML =====
+  function docxXmlToHtml(xml) {
+    if (!xml) return '<p><br></p>';
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(xml, 'text/xml');
+    var body = doc.getElementsByTagName('w:body')[0] || doc.getElementsByTagName('body')[0];
+    if (!body) return '<p><br></p>';
 
     var html = '';
-    var i = 0;
-    var len = rtf.length;
-    var bold = false, italic = false, underline = false;
-    var skipGroup = 0;
-    var pendingPar = false;
+    var paragraphs = body.getElementsByTagName('w:p');
 
-    function closeCurrentFormatting() {
-      if (underline) { html += '</u>'; }
-      if (italic) { html += '</i>'; }
-      if (bold) { html += '</b>'; }
+    for (var i = 0; i < paragraphs.length; i++) {
+      var p = paragraphs[i];
+      if (isDirectChild(p, body)) {
+        html += docxParagraphToHtml(p);
+      }
     }
 
-    function openCurrentFormatting() {
-      if (bold) { html += '<b>'; }
-      if (italic) { html += '<i>'; }
-      if (underline) { html += '<u>'; }
-    }
-
-    html += '<p>';
-
-    while (i < len) {
-      var ch = rtf[i];
-
-      // Group start
-      if (ch === '{') {
-        i++;
-        continue;
-      }
-
-      // Group end
-      if (ch === '}') {
-        i++;
-        continue;
-      }
-
-      // Control word or control symbol
-      if (ch === '\\') {
-        i++;
-
-        // Unicode escape \uNNNN
-        if (rtf[i] === 'u') {
-          i++;
-          var uNum = '';
-          var neg = false;
-          if (rtf[i] === '-') { neg = true; i++; }
-          while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { uNum += rtf[i]; i++; }
-          // Skip optional delimiter (space or other)
-          if (rtf[i] === ' ') i++;
-          var code = parseInt(uNum, 10);
-          if (neg) code = -code;
-          // Handle negative values (RTF uses signed 16-bit)
-          if (code < 0) code += 65536;
-          html += String.fromCharCode(code);
-          continue;
-        }
-
-        // Read control word
-        var cw = '';
-        while (i < len && /[a-zA-Z]/.test(rtf[i])) { cw += rtf[i]; i++; }
-
-        // Read optional numeric parameter
-        var param = '';
-        var negParam = false;
-        if (rtf[i] === '-') { negParam = true; i++; }
-        while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { param += rtf[i]; i++; }
-        var numParam = param ? parseInt(param, 10) : null;
-        if (negParam && numParam !== null) numParam = -numParam;
-
-        // Skip optional space delimiter
-        if (rtf[i] === ' ') i++;
-
-        // Process control words
-        switch (cw) {
-          case 'rtf':
-          case 'ansi':
-          case 'deff':
-          case 'f':
-          case 'fs':
-          case 'cf':
-          case 'cb':
-          case 'expnd':
-          case 'expndtw':
-          case 'fcharset':
-          case 'cpg':
-          case 'lang':
-          case 'paperw':
-          case 'paperh':
-          case 'margl':
-          case 'margr':
-          case 'margt':
-          case 'margb':
-            // Ignore these formatting/control words
-            break;
-
-          case 'fonttbl':
-          case 'colortbl':
-          case 'stylesheet':
-          case 'info':
-          case 'pict':
-          case 'header':
-          case 'footer':
-          case 'nonshppict':
-            // Skip until matching group close
-            skipGroup++;
-            var depth = 1;
-            while (i < len && depth > 0) {
-              if (rtf[i] === '{') depth++;
-              else if (rtf[i] === '}') depth--;
-              i++;
-            }
-            break;
-
-          case 'b':
-            if (numParam === 0) {
-              if (bold) { html += '</b>'; bold = false; }
-            } else {
-              if (!bold) { html += '<b>'; bold = true; }
-            }
-            break;
-
-          case 'i':
-            if (numParam === 0) {
-              if (italic) { html += '</i>'; italic = false; }
-            } else {
-              if (!italic) { html += '<i>'; italic = true; }
-            }
-            break;
-
-          case 'ul':
-          case 'ulw':
-          case 'uld':
-          case 'uldb':
-          case 'ulth':
-          case 'ulwave':
-            if (!underline) { html += '<u>'; underline = true; }
-            break;
-
-          case 'ulnone':
-            if (underline) { html += '</u>'; underline = false; }
-            break;
-
-          case 'par':
-            closeCurrentFormatting();
-            html += '</p><p>';
-            openCurrentFormatting();
-            break;
-
-          case 'line':
-            html += '<br>';
-            break;
-
-          case 'tab':
-            html += '&nbsp;&nbsp;&nbsp;&nbsp;';
-            break;
-
-          case 'page':
-            html += '<div class="page-break-marker" contenteditable="false"></div>';
-            break;
-
-          case 'sect':
-          case 'pard':
-          case 'plain':
-            closeCurrentFormatting();
-            bold = false; italic = false; underline = false;
-            break;
-
-          case 'qc':
-            html = html.replace(/<p>$/, '<p style="text-align:center;">');
-            break;
-
-          case 'qr':
-            html = html.replace(/<p>$/, '<p style="text-align:right;">');
-            break;
-
-          case 'ql':
-            html = html.replace(/<p>$/, '<p style="text-align:left;">');
-            break;
-
-          case 'qj':
-            html = html.replace(/<p>$/, '<p style="text-align:justify;">');
-            break;
-
-          case 'emdash':
-            html += '\u2014';
-            break;
-          case 'endash':
-            html += '\u2013';
-            break;
-          case 'emspace':
-            html += '\u2003';
-            break;
-          case 'enspace':
-            html += '\u2002';
-            break;
-          case 'lquote':
-          case 'ldblquote':
-            html += '\u201C';
-            break;
-          case 'rquote':
-          case 'rdblquote':
-            html += '\u201D';
-            break;
-          case 'bullet':
-            html += '\u2022';
-            break;
-          case 'cell':
-            // Basic table cell support — treat as separator
-            html += ' | ';
-            break;
-          case 'row':
-            html += '<br>';
-            break;
-
-          case 'intbl':
-            // Inside table — just continue
-            break;
-
-          case '':
-            // Lone backslash (escaped)
-            if (rtf[i] === '\\' || rtf[i] === '{' || rtf[i] === '}') {
-              html += rtf[i];
-              i++;
-            } else if (rtf[i] === '*' || rtf[i] === '~') {
-              // \* means optional destination, skip
-              i++;
-            }
-            break;
-
-          default:
-            // Unknown control word — ignore
-            break;
-        }
-        continue;
-      }
-
-      // Regular character
-      if (ch === '\r' || ch === '\n') {
-        i++;
-        continue;
-      }
-
-      html += escapeHtml(ch);
-      i++;
-    }
-
-    // Close any remaining formatting
-    closeCurrentFormatting();
-    html += '</p>';
-
-    // Clean up empty paragraphs at the end
-    html = html.replace(/(<p>(\s|<br>|&nbsp;)*<\/p>)+$/, '');
     if (!html.trim()) html = '<p><br></p>';
+    return html;
+  }
+
+  function isDirectChild(node, parent) {
+    var p = node.parentNode;
+    while (p) {
+      if (p === parent) return true;
+      if (p.tagName && (p.tagName.toLowerCase().indexOf('w:') === 0 || p.tagName.toLowerCase().indexOf('p:') === 0)) {
+        // Still within the namespace, keep checking
+      }
+      p = p.parentNode;
+    }
+    return false;
+  }
+
+  function docxParagraphToHtml(pNode) {
+    var html = '';
+    var styleAttr = '';
+
+    // Check paragraph alignment
+    var pPr = pNode.getElementsByTagName('w:pPr')[0];
+    if (pPr) {
+      var jc = pPr.getElementsByTagName('w:jc')[0];
+      if (jc) {
+        var align = jc.getAttribute('w:val');
+        if (align === 'center') styleAttr = ' style="text-align:center;"';
+        else if (align === 'right') styleAttr = ' style="text-align:right;"';
+        else if (align === 'both') styleAttr = ' style="text-align:justify;"';
+      }
+
+      // Check for heading style
+      var pStyle = pPr.getElementsByTagName('w:pStyle')[0];
+      if (pStyle) {
+        var styleVal = pStyle.getAttribute('w:val') || '';
+        if (/^[Hh]eading|^[Tt]itle|^Title/i.test(styleVal)) {
+          var match = styleVal.match(/\d/);
+          var level = match ? parseInt(match[0], 10) : 1;
+          level = Math.min(Math.max(level, 1), 6);
+          var runs = docxRunsToHtml(pNode);
+          return '<h' + level + styleAttr + '>' + runs + '</h' + level + '>';
+        }
+      }
+    }
+
+    var runs = docxRunsToHtml(pNode);
+    return '<p' + styleAttr + '>' + runs + '</p>';
+  }
+
+  function docxRunsToHtml(pNode) {
+    var html = '';
+    var runs = pNode.getElementsByTagName('w:r');
+
+    for (var r = 0; r < runs.length; r++) {
+      if (!isDirectChild(runs[r], pNode)) continue;
+
+      var run = runs[r];
+      var rPr = run.getElementsByTagName('w:rPr')[0];
+      var isBold = false, isItalic = false, isUnderline = false, isStrike = false;
+      var isSuper = false, isSub = false;
+
+      if (rPr) {
+        if (rPr.getElementsByTagName('w:b').length > 0) {
+          var bEl = rPr.getElementsByTagName('w:b')[0];
+          if (bEl.getAttribute('w:val') !== '0' && bEl.getAttribute('w:val') !== 'false') isBold = true;
+        }
+        if (rPr.getElementsByTagName('w:i').length > 0) {
+          var iEl = rPr.getElementsByTagName('w:i')[0];
+          if (iEl.getAttribute('w:val') !== '0' && iEl.getAttribute('w:val') !== 'false') isItalic = true;
+        }
+        if (rPr.getElementsByTagName('w:u').length > 0) isUnderline = true;
+        if (rPr.getElementsByTagName('w:strike').length > 0) isStrike = true;
+        if (rPr.getElementsByTagName('w:vertAlign').length > 0) {
+          var va = rPr.getElementsByTagName('w:vertAlign')[0];
+          var vaVal = va.getAttribute('w:val');
+          if (vaVal === 'superscript') isSuper = true;
+          else if (vaVal === 'subscript') isSub = true;
+        }
+      }
+
+      // Collect text from w:t elements
+      var textEls = run.getElementsByTagName('w:t');
+      var text = '';
+      for (var t = 0; t < textEls.length; t++) {
+        if (isDirectChild(textEls[t], run)) text += textEls[t].textContent;
+      }
+
+      // Check for breaks
+      var breaks = run.getElementsByTagName('w:br');
+      var hasBreak = breaks.length > 0;
+
+      // Also check for tabs
+      var tabs = run.getElementsByTagName('w:tab');
+      if (tabs.length > 0) text = '\u00A0\u00A0\u00A0\u00A0' + text;
+
+      if (!text && !hasBreak) continue;
+
+      var prefix = '';
+      var suffix = '';
+      if (isBold) { prefix += '<b>'; suffix = '</b>' + suffix; }
+      if (isItalic) { prefix += '<i>'; suffix = '</i>' + suffix; }
+      if (isUnderline) { prefix += '<u>'; suffix = '</u>' + suffix; }
+      if (isStrike) { prefix += '<s>'; suffix = '</s>' + suffix; }
+      if (isSuper) { prefix += '<sup>'; suffix = '</sup>' + suffix; }
+      if (isSub) { prefix += '<sub>'; suffix = '</sub>' + suffix; }
+
+      html += prefix + escapeHtml(text) + suffix;
+
+      if (hasBreak) html += '<br>';
+    }
+
+    // Check for hyperlinks
+    var hyperlinks = pNode.getElementsByTagName('w:hyperlink');
+    for (var h = 0; h < hyperlinks.length; h++) {
+      if (!isDirectChild(hyperlinks[h], pNode)) continue;
+      var anchor = hyperlinks[h].getAttribute('w:anchor') || '';
+      var rid = hyperlinks[h].getAttribute('r:id') || '';
+      var linkText = '';
+      var hlRuns = hyperlinks[h].getElementsByTagName('w:r');
+      for (var hr = 0; hr < hlRuns.length; hr++) {
+        var htEls = hlRuns[hr].getElementsByTagName('w:t');
+        for (var ht = 0; ht < htEls.length; ht++) linkText += htEls[ht].textContent;
+      }
+      if (linkText) {
+        if (anchor) html += '<a href="#' + escapeHtml(anchor) + '">' + escapeHtml(linkText) + '</a>';
+        else html += '<a href="#" rel="noopener">' + escapeHtml(linkText) + '</a>';
+      }
+    }
+
+    return html || '';
+  }
+
+  // ===== ODT XML TO HTML =====
+  function odtXmlToHtml(xml) {
+    if (!xml) return '<p><br></p>';
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(xml, 'text/xml');
+
+    // ODT uses office:text as the body container
+    var body = doc.getElementsByTagName('office:text')[0];
+    if (!body) {
+      // Fallback: try without namespace
+      body = doc.getElementsByTagName('text')[0];
+    }
+    if (!body) return '<p><br></p>';
+
+    var html = '';
+    var children = body.childNodes;
+
+    for (var i = 0; i < children.length; i++) {
+      var node = children[i];
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+      var tag = node.tagName.toLowerCase();
+      // Remove namespace prefix if present
+      var localName = tag.split(':').pop();
+
+      switch (localName) {
+        case 'p':
+          html += odtParagraphToHtml(node, 'p');
+          break;
+        case 'h':
+          var level = node.getAttribute('text:outline-level') || '1';
+          level = Math.min(Math.max(parseInt(level, 10) || 1, 1), 6);
+          html += odtParagraphToHtml(node, 'h' + level);
+          break;
+        case 'list':
+        case 'unordered-list':
+          html += odtListToHtml(node, 'ul');
+          break;
+        case 'ordered-list':
+          html += odtListToHtml(node, 'ol');
+          break;
+        case 'list-item':
+          // Standalone list-item — wrap in ul
+          html += '<ul><li>' + odtNodeTextToHtml(node) + '</li></ul>';
+          break;
+        case 'soft-page-break':
+        case 'page-break':
+          html += '<div class="page-break-marker" contenteditable="false"></div>';
+          break;
+        case 'section':
+          html += odtNodeTextToHtml(node);
+          break;
+        default:
+          // Try to extract text content
+          var text = node.textContent;
+          if (text && text.trim()) html += '<p>' + escapeHtml(text.trim()) + '</p>';
+          break;
+      }
+    }
+
+    if (!html.trim()) html = '<p><br></p>';
+    return html;
+  }
+
+  function odtParagraphToHtml(node, tag) {
+    var styleAttr = '';
+    var styleName = node.getAttribute('text:style-name') || '';
+
+    if (/center/i.test(styleName)) styleAttr = ' style="text-align:center;"';
+    else if (/right/i.test(styleName)) styleAttr = ' style="text-align:right;"';
+    else if (/justif/i.test(styleName)) styleAttr = ' style="text-align:justify;"';
+
+    var content = odtNodeTextToHtml(node);
+    return '<' + tag + styleAttr + '>' + content + '</' + tag + '>';
+  }
+
+  function odtListToHtml(listNode, listTag) {
+    var html = '<' + listTag + '>';
+    var items = listNode.childNodes;
+    for (var i = 0; i < items.length; i++) {
+      var node = items[i];
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      var localName = node.tagName.toLowerCase().split(':').pop();
+      if (localName === 'list-item' || localName === 'list-header') {
+        // Get content — could be paragraphs or nested lists
+        var itemContent = '';
+        var itemChildren = node.childNodes;
+        for (var j = 0; j < itemChildren.length; j++) {
+          var child = itemChildren[j];
+          if (child.nodeType !== Node.ELEMENT_NODE) continue;
+          var childName = child.tagName.toLowerCase().split(':').pop();
+          if (childName === 'p') {
+            itemContent += odtNodeTextToHtml(child);
+          } else if (childName === 'list' || childName === 'unordered-list') {
+            itemContent += odtListToHtml(child, 'ul');
+          } else if (childName === 'ordered-list') {
+            itemContent += odtListToHtml(child, 'ol');
+          }
+        }
+        if (!itemContent) itemContent = '&nbsp;';
+        html += '<li>' + itemContent + '</li>';
+      }
+    }
+    html += '</' + listTag + '>';
+    return html;
+  }
+
+  function odtNodeTextToHtml(node) {
+    var html = '';
+    var children = node.childNodes;
+
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      if (child.nodeType === Node.TEXT_NODE) {
+        html += escapeHtml(child.textContent);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        var localName = child.tagName.toLowerCase().split(':').pop();
+        switch (localName) {
+          case 'span':
+            // Check for formatting from style
+            var spanText = odtNodeTextToHtml(child);
+            var styleName = child.getAttribute('text:style-name') || '';
+            if (/bold/i.test(styleName)) spanText = '<b>' + spanText + '</b>';
+            if (/italic/i.test(styleName)) spanText = '<i>' + spanText + '</i>';
+            if (/under/i.test(styleName)) spanText = '<u>' + spanText + '</u>';
+            html += spanText;
+            break;
+          case 'tab':
+            html += '\u00A0\u00A0\u00A0\u00A0';
+            break;
+          case 'line-break':
+            html += '<br>';
+            break;
+          case 's':
+            // Spaces
+            var count = parseInt(child.getAttribute('text:c') || '1', 10);
+            for (var s = 0; s < count; s++) html += '&nbsp;';
+            break;
+          case 'a':
+            var href = child.getAttribute('xlink:href') || '#';
+            html += '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + odtNodeTextToHtml(child) + '</a>';
+            break;
+          default:
+            html += odtNodeTextToHtml(child);
+            break;
+        }
+      }
+    }
 
     return html;
   }
