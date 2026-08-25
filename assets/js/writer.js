@@ -2005,7 +2005,132 @@
     if (modal.classList.contains('visible')) loadSettingsValues();
   }
 
-  // ===== OPEN FILE =====
+   // ===== RTF TO HTML CONVERTER =====
+  function parseRtfToHtml(rtf) {
+    if (!rtf || typeof rtf !== 'string') return '<p><br></p>';
+    var html = '';
+    var i = 0;
+    var len = rtf.length;
+    var bold = false, italic = false, underline = false;
+
+    function closeFmt() {
+      if (underline) html += '</u>';
+      if (italic) html += '</i>';
+      if (bold) html += '</b>';
+    }
+    function openFmt() {
+      if (bold) html += '<b>';
+      if (italic) html += '<i>';
+      if (underline) html += '<u>';
+    }
+
+    html += '<p>';
+
+    while (i < len) {
+      var ch = rtf[i];
+
+      if (ch === '{' || ch === '}') { i++; continue; }
+
+      if (ch === '\\') {
+        i++;
+
+        // Unicode escape \uNNNN
+        if (rtf[i] === 'u') {
+          i++;
+          var uNum = '';
+          var neg = false;
+          if (rtf[i] === '-') { neg = true; i++; }
+          while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { uNum += rtf[i]; i++; }
+          if (rtf[i] === ' ') i++;
+          var code = parseInt(uNum, 10);
+          if (neg) code += 65536;
+          html += String.fromCharCode(code);
+          continue;
+        }
+
+        // Read control word
+        var cw = '';
+        while (i < len && /[a-zA-Z]/.test(rtf[i])) { cw += rtf[i]; i++; }
+
+        // Read optional numeric parameter
+        var param = '';
+        var negParam = false;
+        if (rtf[i] === '-') { negParam = true; i++; }
+        while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { param += rtf[i]; i++; }
+        var numParam = param ? parseInt(param, 10) : null;
+        if (negParam && numParam !== null) numParam = -numParam;
+        if (rtf[i] === ' ') i++;
+
+        switch (cw) {
+          case 'fonttbl': case 'colortbl': case 'stylesheet': case 'info': case 'pict':
+          case 'header': case 'footer': case 'nonshppict':
+            var depth = 1;
+            while (i < len && depth > 0) {
+              if (rtf[i] === '{') depth++;
+              else if (rtf[i] === '}') depth--;
+              i++;
+            }
+            break;
+          case 'b':
+            if (numParam === 0) { if (bold) { html += '</b>'; bold = false; } }
+            else { if (!bold) { html += '<b>'; bold = true; } }
+            break;
+          case 'i':
+            if (numParam === 0) { if (italic) { html += '</i>'; italic = false; } }
+            else { if (!italic) { html += '<i>'; italic = true; } }
+            break;
+          case 'ul': case 'ulw': case 'uld': case 'uldb': case 'ulth': case 'ulwave':
+            if (!underline) { html += '<u>'; underline = true; }
+            break;
+          case 'ulnone':
+            if (underline) { html += '</u>'; underline = false; }
+            break;
+          case 'par':
+            closeFmt(); html += '</p><p>'; openFmt();
+            break;
+          case 'line': html += '<br>'; break;
+          case 'tab': html += '&nbsp;&nbsp;&nbsp;&nbsp;'; break;
+          case 'page': html += '<div class="page-break-marker" contenteditable="false"></div>'; break;
+          case 'pard': case 'plain':
+            closeFmt(); bold = false; italic = false; underline = false;
+            break;
+          case 'qc': html += '<div style="text-align:center;">'; break;
+          case 'qr': html += '<div style="text-align:right;">'; break;
+          case 'ql': html += '<div style="text-align:left;">'; break;
+          case 'emdash': html += '\u2014'; break;
+          case 'endash': html += '\u2013'; break;
+          case 'lquote': case 'ldblquote': html += '\u201C'; break;
+          case 'rquote': case 'rdblquote': html += '\u201D'; break;
+          case 'bullet': html += '\u2022'; break;
+          case 'cell': html += ' | '; break;
+          case 'row': html += '<br>'; break;
+          case 'rtf': case 'ansi': case 'deff': case 'f': case 'fs': case 'cf':
+          case 'cb': case 'fcharset': case 'cpg': case 'lang': case 'paperw':
+          case 'paperh': case 'margl': case 'margr': case 'margt': case 'margb':
+          case 'expnd': case 'expndtw': case 'intbl': case 'sect':
+            break;
+          case '':
+            if (rtf[i] === '\\' || rtf[i] === '{' || rtf[i] === '}') {
+              html += rtf[i]; i++;
+            } else if (rtf[i] === '*' || rtf[i] === '~') { i++; }
+            break;
+          default: break;
+        }
+        continue;
+      }
+
+      if (ch === '\r' || ch === '\n') { i++; continue; }
+      html += escapeHtml(ch);
+      i++;
+    }
+
+    closeFmt();
+    html += '</p>';
+    html = html.replace(/(<p>(\s|<br>|&nbsp;)*<\/p>)+$/, '');
+    if (!html.trim()) html = '<p><br></p>';
+    return html;
+  }
+ 
       // ===== OPEN FILE =====
   function openFile(file) {
     if (!file) return;
@@ -2023,8 +2148,8 @@
       var content = e.target.result;
       if (ext === 'html') {
         richEditor.innerHTML = content;
-      } else if (ext === 'rtf') {
-        richEditor.innerHTML = rtfToHtml(content);
+            } else if (ext === 'rtf') {
+        richEditor.innerHTML = parseRtfToHtml(content);
       } else if (ext === 'md' || ext === 'txt') {
         var html = content.split(/\n\n+/).map(function(p) {
           return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
@@ -2755,24 +2880,58 @@
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
     bindClick('btn-track-changes', toggleTrackChanges);
 
-        // FIX #13: Export dropdown — direct style manipulation (CSS-independent)
+        // ===== EXPORT DROPDOWN — CSS-proof with !important =====
     var exportBtn = document.getElementById('btn-export');
     var exportDd = document.getElementById('export-dropdown');
     if (exportBtn && exportDd) {
-      exportDd.style.display = 'none';
+      // Force styles with !important to override any CSS
+      exportDd.style.setProperty('display', 'none', 'important');
+      exportDd.style.setProperty('position', 'absolute', 'important');
+      exportDd.style.setProperty('z-index', '10001', 'important');
+      exportDd.style.setProperty('top', '100%', 'important');
+      exportDd.style.setProperty('right', '0', 'important');
+      exportDd.style.setProperty('min-width', '200px', 'important');
+      exportDd.style.setProperty('background', '#1e1e2e', 'important');
+      exportDd.style.setProperty('border', '1px solid #c8a96e', 'important');
+      exportDd.style.setProperty('border-radius', '6px', 'important');
+      exportDd.style.setProperty('box-shadow', '0 8px 24px rgba(0,0,0,0.4)', 'important');
+      exportDd.style.setProperty('padding', '4px 0', 'important');
+      exportDd.style.setProperty('margin-top', '4px', 'important');
 
       exportBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        exportDd.style.display = (exportDd.style.display === 'block') ? 'none' : 'block';
+        var isShown = exportDd.style.getPropertyValue('display') === 'block';
+        exportDd.style.setProperty('display', isShown ? 'none' : 'block', 'important');
       });
 
       var exportItems = exportDd.querySelectorAll('[data-format]');
       for (var eb = 0; eb < exportItems.length; eb++) {
+        exportItems[eb].style.setProperty('display', 'block', 'important');
+        exportItems[eb].style.setProperty('width', '100%', 'important');
+        exportItems[eb].style.setProperty('padding', '8px 16px', 'important');
+        exportItems[eb].style.setProperty('text-align', 'left', 'important');
+        exportItems[eb].style.setProperty('background', 'none', 'important');
+        exportItems[eb].style.setProperty('border', 'none', 'important');
+        exportItems[eb].style.setProperty('color', '#e0e0e0', 'important');
+        exportItems[eb].style.setProperty('cursor', 'pointer', 'important');
+        exportItems[eb].style.setProperty('font-size', '13px', 'important');
+        exportItems[eb].style.setProperty('font-family', 'inherit', 'important');
+
+        (function(item) {
+          item.addEventListener('mouseenter', function() {
+            item.style.setProperty('background', 'rgba(109,74,255,0.15)', 'important');
+          });
+          item.addEventListener('mouseleave', function() {
+            item.style.setProperty('background', 'none', 'important');
+          });
+        })(exportItems[eb]);
+
         exportItems[eb].addEventListener('click', function(ev) {
           ev.preventDefault();
+          ev.stopPropagation();
           var format = this.getAttribute('data-format');
-          exportDd.style.display = 'none';
+          exportDd.style.setProperty('display', 'none', 'important');
           handleExport(format);
         });
       }
@@ -2781,13 +2940,13 @@
         if (!e.target.closest('#export-dropdown') &&
             !e.target.closest('#export-dropdown-container') &&
             !e.target.closest('#btn-export')) {
-          exportDd.style.display = 'none';
+          exportDd.style.setProperty('display', 'none', 'important');
         }
       });
 
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && exportDd.style.display === 'block') {
-          exportDd.style.display = 'none';
+        if (e.key === 'Escape' && exportDd.style.getPropertyValue('display') === 'block') {
+          exportDd.style.setProperty('display', 'none', 'important');
         }
       });
     }
