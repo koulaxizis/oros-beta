@@ -80,6 +80,7 @@
   var trackingChanges = false;
   var trackChangesObserver = null;
   var customTemplates = [];
+  var clickHandlers = {};
 
   // ===== TEMPLATE DATA =====
   var TEMPLATES = [
@@ -333,10 +334,21 @@
   };
   
   // ===== HELPER FUNCTIONS =====
-  function bindClick(id, fn) {
-    var el = document.getElementById(id);
-    if (el) { var clone = el.cloneNode(true); el.parentNode.replaceChild(clone, el); clone.addEventListener('click', fn); }
+    function bindClick(id, fn) {
+    clickHandlers[id] = fn;
   }
+
+  // Delegated click handler — works even if DOM elements are re-rendered
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    while (el && el !== document) {
+      if (el.id && clickHandlers[el.id]) {
+        clickHandlers[el.id].call(el, e);
+        return;
+      }
+      el = el.parentNode;
+    }
+  });
 
   function getCurrentLang() {
     var saved = localStorage.getItem('oros-language');
