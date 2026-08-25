@@ -1607,8 +1607,10 @@ body[data-zen="true"] .side-panel {
   cursor: pointer;
   font-size: 0.85rem;
   margin-top: 8px;
-  
-  /* ===== AUTOCORRECT BUTTON STYLING FIX ===== */
+  transition: all 0.15s;
+}
+
+/* ===== AUTOCORRECT BUTTON STYLING FIX ===== */
 #btn-reset-autocorrect,
 #btn-add-autocorrect,
 .autocorrect-actions button {
@@ -1622,6 +1624,7 @@ body[data-zen="true"] .side-panel {
   margin: 4px 0;
   transition: all 0.15s;
 }
+
 #btn-reset-autocorrect:hover,
 #btn-add-autocorrect:hover,
 .autocorrect-actions button:hover {
@@ -1650,4 +1653,5 @@ body.writer-page {
 #editor-wrapper {
   flex: 1 0 auto;
   min-height: 0;
+  height: auto !important;
 }
