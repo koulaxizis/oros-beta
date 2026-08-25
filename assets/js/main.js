@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-      // ========== PWA INSTALL PROMPT ==========
+    // ========== PWA INSTALL PROMPT (Shared Handler) ==========
   var installBtn = document.getElementById('btn-install');
   var deferredPrompt = null;
 
@@ -459,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Expose for Writer Settings modal
   window.orosShowInstallPrompt = function(onComplete) {
     if (!deferredPrompt) return false;
     deferredPrompt.prompt();

@@ -93,6 +93,21 @@
       applyVisibility();
     }
   }
+  
+    // Listen for custom events from Writer/other apps
+  window.addEventListener('oros-setting-changed', function(e) {
+    var key = e.detail.key;
+    var value = e.detail.value;
+    
+    if (KEY_MAP[key]) {
+      var settingProp = KEY_MAP[key];
+      SETTINGS[settingProp] = value;
+    }
+    
+    if (window.orosAppElements) {
+      applyVisibility();
+    }
+  });
 
   // ========== LOAD SETTINGS ==========
 
