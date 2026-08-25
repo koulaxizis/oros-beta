@@ -1,7 +1,6 @@
 /* ============================================
-   orOS Writer — Complete Application v2.3.2
-   Phase 1+2: Dead code cleanup, duplicate removal,
-              bug fixes, PWA delegation
+   orOS Writer — Complete Application v2.3.3
+   All bugs fixed, ES5 compatible, full functionality
    Author: Christos Koulaxizis | orOS Ecosystem
    ============================================ */
 
@@ -11,7 +10,7 @@
   // ===== CONFIGURATION =====
   var CONFIG = {
     APP_NAME: 'orOS Writer',
-    VERSION: '2.3.2',
+    VERSION: '2.3.3',
     CHANNEL: 'STABLE',
     STORAGE_PREFIX: 'oros_writer_',
     MAX_HISTORY: 50,
@@ -333,7 +332,7 @@
     }
   };
   
-    // ===== HELPER FUNCTIONS =====
+  // ===== HELPER FUNCTIONS =====
   function bindClick(id, fn) {
     var el = document.getElementById(id);
     if (el) { var clone = el.cloneNode(true); el.parentNode.replaceChild(clone, el); clone.addEventListener('click', fn); }
@@ -400,6 +399,16 @@
     else if (state === 'saved') saveIndicator.textContent = 'Saved ' + timeStr;
     else if (state === 'unsaved') saveIndicator.textContent = 'Unsaved changes';
     saveIndicator.style.visibility = 'visible';
+  }
+
+  // Clone object helper (ES5 compatible)
+  function cloneObject(obj) {
+    var clone = {};
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      clone[keys[i]] = obj[keys[i]];
+    }
+    return clone;
   }
 
   function updateStats() {
@@ -681,8 +690,8 @@
       osc.start(); osc.stop(typewriterAudioCtx.currentTime + 0.05);
     } catch(e) {}
   }
-  
-    // ===== AUTOCORRECT =====
+
+  // ===== AUTOCORRECT =====
   var DEFAULT_AUTOCORRECT = {
     'dont': "don't", 'cant': "can't", 'wont': "won't", 'isnt': "isn't",
     'wasnt': "wasn't", 'havent': "haven't", 'didnt': "didn't",
@@ -700,8 +709,8 @@
     try {
       var raw = localStorage.getItem(CONFIG.STORAGE_PREFIX + 'autocorrect');
       if (raw) { autocorrectRules = JSON.parse(raw); }
-      else { autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT); saveAutoCorrections(); }
-    } catch(e) { autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT); }
+      else { autocorrectRules = cloneObject(DEFAULT_AUTOCORRECT); saveAutoCorrections(); }
+    } catch(e) { autocorrectRules = cloneObject(DEFAULT_AUTOCORRECT); }
   }
 
   function saveAutoCorrections() {
@@ -796,7 +805,7 @@
   }
 
   function resetAutocorrectRules() {
-    autocorrectRules = Object.assign({}, DEFAULT_AUTOCORRECT);
+    autocorrectRules = cloneObject(DEFAULT_AUTOCORRECT);
     saveAutoCorrections();
     renderAutocorrectRules();
     showToast('Rules reset to defaults');
@@ -852,7 +861,8 @@
       (function(btn) {
         btn.addEventListener('click', function() {
           var id = btn.getAttribute('data-id');
-          var t = customTemplates.find(function(ct) { return ct.id === id; });
+          var t = null;
+          for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === id) { t = customTemplates[j]; break; } }
           if (!t) return;
           openTemplateEditor(t);
         });
@@ -905,7 +915,8 @@
       var id = existing ? existing.id : 'tpl_' + Date.now();
       var tpl = { id: id, title: title, desc: desc, content: content };
       if (existing) {
-        var idx = customTemplates.findIndex(function(ct) { return ct.id === existing.id; });
+        var idx = -1;
+        for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === existing.id) { idx = j; break; } }
         if (idx >= 0) customTemplates[idx] = tpl;
       } else {
         customTemplates.push(tpl);
@@ -1049,7 +1060,9 @@
       var w = words[i];
       freq[w] = (freq[w] || 0) + 1;
     }
-    var arr = Object.keys(freq).map(function(k) { return { word: k, count: freq[k] }; });
+    var arr = [];
+    var keys = Object.keys(freq);
+    for (var k = 0; k < keys.length; k++) { arr.push({ word: keys[k], count: freq[keys[k]] }); }
     arr.sort(function(a, b) { return b.count - a.count; });
     arr = arr.slice(0, 50);
     var html = '';
@@ -1062,12 +1075,12 @@
       wordFreqSummary.textContent = unique + ' unique words · Top "' + arr[0].word + '" ' + topPct + '%';
     }
   }
-  
-    // ===== TRACK CHANGES =====
+
+  // ===== TRACK CHANGES =====
   function setupTrackChanges() {
     bindClick('btn-track-changes', toggleTrackChanges);
     bindClick('btn-accept-all-changes', acceptAllChanges);
-bindClick('btn-reject-all-changes', rejectAllChanges);
+    bindClick('btn-reject-all-changes', rejectAllChanges);
   }
 
   function toggleTrackChanges() {
@@ -1215,8 +1228,8 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
     list.innerHTML = html;
   }
 
-    function addCommentFromPanel() {
-    var textarea = document.getElementById('comment-input');  // FIXED
+  function addCommentFromPanel() {
+    var textarea = document.getElementById('comment-input');
     if (!textarea || !textarea.value.trim()) { showToast('Enter comment text'); return; }
     var selectedText = window.getSelection().toString().trim();
     if (!selectedText) { showToast('Select text to comment'); return; }
@@ -1247,11 +1260,11 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
 
     var tab = tabsModule.getActive();
     if (!tab) return;
-    var meta = tabsModule.getMetadata();                       // FIXED order
-    var comments = meta.comments || [];                        // FIXED order
+    var meta = tabsModule.getMetadata();
+    var comments = meta.comments || [];
     comments.push({ id: id, author: author, text: commentText, timestamp: timestamp });
     meta.comments = comments;
-    tabsModule.setMetadata(meta);                              // FIXED order
+    tabsModule.setMetadata(meta);
   }
 
   // ===== FOOTNOTES =====
@@ -1286,9 +1299,9 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
 
     var tab = tabsModule.getActive();
     if (tab) {
-      var footnotes = tab.metadata.footnotes || [];
-      footnotes.push({ refId: refId, fnId: fnId, number: footnoteCounter, text: selectedText || 'Footnote text' });
       var meta = tabsModule.getMetadata();
+      var footnotes = meta.footnotes || [];
+      footnotes.push({ refId: refId, fnId: fnId, number: footnoteCounter, text: selectedText || 'Footnote text' });
       meta.footnotes = footnotes;
       tabsModule.setMetadata(meta);
     }
@@ -1311,8 +1324,8 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
       footnoteCounter = Math.max(footnoteCounter, f.number);
     }
   }
-  
-    // ===== VERSION HISTORY =====
+
+  // ===== VERSION HISTORY =====
   var versionHistoryInterval = null;
 
   function setupVersionHistory() {
@@ -1575,7 +1588,7 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
     URL.revokeObjectURL(url);
   }
 
-    function importTxt() {
+  function importTxt() {
     showImportOptions();
   }
 
@@ -1621,7 +1634,7 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
     });
   }
 
-    // ===== KEYBOARD SHORTCUTS =====
+  // ===== KEYBOARD SHORTCUTS =====
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
       if (e.ctrlKey || e.metaKey) {
@@ -1911,8 +1924,8 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
     document.execCommand('insertText', false, lorem);
     updateStats();
   }
-  
-    // ===== QUICK FORMAT MENU (Alt + Right-click) =====
+
+  // ===== QUICK FORMAT MENU (Alt + Right-click) =====
   var qfmEnabled = localStorage.getItem('oros_quick_tbar_show') !== 'false';
   var qfmMenu = null;
 
@@ -2108,7 +2121,7 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
       setupTableOfContents();
       setupTrackChanges();
       setupLoremIpsum();
-	  setupQuickFormatMenu();
+      setupQuickFormatMenu();
       applyPageSettings();
       clampToViewport();
 
@@ -2136,11 +2149,11 @@ bindClick('btn-reject-all-changes', rejectAllChanges);
       });
 
       var welcomeMsg = getTrans('app_welcome');
-showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg);
+      showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg);
     });
   }
 
-    function initializeElements() {
+  function initializeElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-editor-wrapper');
     tabBar = document.querySelector('#tab-bar');
@@ -2154,20 +2167,20 @@ showToast(welcomeMsg === 'app_welcome' ? 'Welcome to orOS Writer!' : welcomeMsg)
     goalBarFill = document.querySelector('.goal-bar-fill');
     sessionBar = document.querySelector('.session-bar');
     sessionDisplay = document.getElementById('session-display');
-    findBar = document.getElementById('find-replace-bar');                    // FIXED
+    findBar = document.getElementById('find-replace-bar');
     trackChangesBar = document.getElementById('track-changes-bar');
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');
     metadataPanel = document.getElementById('metadata-panel');
     outlinePanel = document.getElementById('outline-panel');
     outlineList = document.getElementById('outline-list');
-    wordFreqPanel = document.getElementById('wordfreq-panel');               // FIXED
-    wordFreqList = document.getElementById('wordfreq-list');                 // FIXED
-    wordFreqSummary = document.getElementById('wordfreq-summary');           // FIXED
+    wordFreqPanel = document.getElementById('wordfreq-panel');
+    wordFreqList = document.getElementById('wordfreq-list');
+    wordFreqSummary = document.getElementById('wordfreq-summary');
     commentsPanel = document.getElementById('comments-panel');
     tocPanel = document.getElementById('toc-panel');
     tocList = document.getElementById('toc-list');
-    versionPanel = document.getElementById('version-history-panel');        // FIXED
+    versionPanel = document.getElementById('version-history-panel');
     versionList = document.getElementById('version-list');
     metaTitle = document.getElementById('meta-title');
     metaAuthor = document.getElementById('meta-author');
