@@ -2006,21 +2006,296 @@
   }
 
   // ===== OPEN FILE =====
+    // ===== OPEN FILE =====
   function openFile(file) {
     if (!file) return;
     var reader = new FileReader();
     var ext = file.name.split('.').pop().toLowerCase();
     reader.onload = function(e) {
       var content = e.target.result;
-      if (ext === 'html') richEditor.innerHTML = content;
-      else if (ext === 'md' || ext === 'txt') {
-        var html = content.split(/\n\n+/).map(function(p) { return '<p>' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
+      if (ext === 'html') {
+        richEditor.innerHTML = content;
+      } else if (ext === 'rtf') {
+        richEditor.innerHTML = rtfToHtml(content);
+      } else if (ext === 'md' || ext === 'txt') {
+        var html = content.split(/\n\n+/).map(function(p) {
+          return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+        }).join('');
         richEditor.innerHTML = html;
-      } else { richEditor.innerHTML = '<pre>' + escapeHtml(content) + '</pre>'; }
-      saveCurrentTabContent(); updateStats();
+      } else {
+        richEditor.innerHTML = '<pre>' + escapeHtml(content) + '</pre>';
+      }
+      saveCurrentTabContent();
+      updateStats();
       showToast(getTrans('text_file_opened') !== 'text_file_opened' ? getTrans('text_file_opened') : 'File opened');
     };
     reader.readAsText(file);
+  }
+
+  // ===== RTF TO HTML CONVERTER =====
+  function rtfToHtml(rtf) {
+    if (!rtf || typeof rtf !== 'string') return '<p><br></p>';
+
+    // Try external library if available
+    if (window.rtfToHtml && typeof window.rtfToHtml === 'function') {
+      try { var result = window.rtfToHtml(rtf); if (result) return result; } catch(e) {}
+    }
+
+    var html = '';
+    var i = 0;
+    var len = rtf.length;
+    var bold = false, italic = false, underline = false;
+    var skipGroup = 0;
+    var pendingPar = false;
+
+    function closeCurrentFormatting() {
+      if (underline) { html += '</u>'; }
+      if (italic) { html += '</i>'; }
+      if (bold) { html += '</b>'; }
+    }
+
+    function openCurrentFormatting() {
+      if (bold) { html += '<b>'; }
+      if (italic) { html += '<i>'; }
+      if (underline) { html += '<u>'; }
+    }
+
+    html += '<p>';
+
+    while (i < len) {
+      var ch = rtf[i];
+
+      // Group start
+      if (ch === '{') {
+        i++;
+        continue;
+      }
+
+      // Group end
+      if (ch === '}') {
+        i++;
+        continue;
+      }
+
+      // Control word or control symbol
+      if (ch === '\\') {
+        i++;
+
+        // Unicode escape \uNNNN
+        if (rtf[i] === 'u') {
+          i++;
+          var uNum = '';
+          var neg = false;
+          if (rtf[i] === '-') { neg = true; i++; }
+          while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { uNum += rtf[i]; i++; }
+          // Skip optional delimiter (space or other)
+          if (rtf[i] === ' ') i++;
+          var code = parseInt(uNum, 10);
+          if (neg) code = -code;
+          // Handle negative values (RTF uses signed 16-bit)
+          if (code < 0) code += 65536;
+          html += String.fromCharCode(code);
+          continue;
+        }
+
+        // Read control word
+        var cw = '';
+        while (i < len && /[a-zA-Z]/.test(rtf[i])) { cw += rtf[i]; i++; }
+
+        // Read optional numeric parameter
+        var param = '';
+        var negParam = false;
+        if (rtf[i] === '-') { negParam = true; i++; }
+        while (i < len && rtf[i] >= '0' && rtf[i] <= '9') { param += rtf[i]; i++; }
+        var numParam = param ? parseInt(param, 10) : null;
+        if (negParam && numParam !== null) numParam = -numParam;
+
+        // Skip optional space delimiter
+        if (rtf[i] === ' ') i++;
+
+        // Process control words
+        switch (cw) {
+          case 'rtf':
+          case 'ansi':
+          case 'deff':
+          case 'f':
+          case 'fs':
+          case 'cf':
+          case 'cb':
+          case 'expnd':
+          case 'expndtw':
+          case 'fcharset':
+          case 'cpg':
+          case 'lang':
+          case 'paperw':
+          case 'paperh':
+          case 'margl':
+          case 'margr':
+          case 'margt':
+          case 'margb':
+            // Ignore these formatting/control words
+            break;
+
+          case 'fonttbl':
+          case 'colortbl':
+          case 'stylesheet':
+          case 'info':
+          case 'pict':
+          case 'header':
+          case 'footer':
+          case 'nonshppict':
+            // Skip until matching group close
+            skipGroup++;
+            var depth = 1;
+            while (i < len && depth > 0) {
+              if (rtf[i] === '{') depth++;
+              else if (rtf[i] === '}') depth--;
+              i++;
+            }
+            break;
+
+          case 'b':
+            if (numParam === 0) {
+              if (bold) { html += '</b>'; bold = false; }
+            } else {
+              if (!bold) { html += '<b>'; bold = true; }
+            }
+            break;
+
+          case 'i':
+            if (numParam === 0) {
+              if (italic) { html += '</i>'; italic = false; }
+            } else {
+              if (!italic) { html += '<i>'; italic = true; }
+            }
+            break;
+
+          case 'ul':
+          case 'ulw':
+          case 'uld':
+          case 'uldb':
+          case 'ulth':
+          case 'ulwave':
+            if (!underline) { html += '<u>'; underline = true; }
+            break;
+
+          case 'ulnone':
+            if (underline) { html += '</u>'; underline = false; }
+            break;
+
+          case 'par':
+            closeCurrentFormatting();
+            html += '</p><p>';
+            openCurrentFormatting();
+            break;
+
+          case 'line':
+            html += '<br>';
+            break;
+
+          case 'tab':
+            html += '&nbsp;&nbsp;&nbsp;&nbsp;';
+            break;
+
+          case 'page':
+            html += '<div class="page-break-marker" contenteditable="false"></div>';
+            break;
+
+          case 'sect':
+          case 'pard':
+          case 'plain':
+            closeCurrentFormatting();
+            bold = false; italic = false; underline = false;
+            break;
+
+          case 'qc':
+            html = html.replace(/<p>$/, '<p style="text-align:center;">');
+            break;
+
+          case 'qr':
+            html = html.replace(/<p>$/, '<p style="text-align:right;">');
+            break;
+
+          case 'ql':
+            html = html.replace(/<p>$/, '<p style="text-align:left;">');
+            break;
+
+          case 'qj':
+            html = html.replace(/<p>$/, '<p style="text-align:justify;">');
+            break;
+
+          case 'emdash':
+            html += '\u2014';
+            break;
+          case 'endash':
+            html += '\u2013';
+            break;
+          case 'emspace':
+            html += '\u2003';
+            break;
+          case 'enspace':
+            html += '\u2002';
+            break;
+          case 'lquote':
+          case 'ldblquote':
+            html += '\u201C';
+            break;
+          case 'rquote':
+          case 'rdblquote':
+            html += '\u201D';
+            break;
+          case 'bullet':
+            html += '\u2022';
+            break;
+          case 'cell':
+            // Basic table cell support — treat as separator
+            html += ' | ';
+            break;
+          case 'row':
+            html += '<br>';
+            break;
+
+          case 'intbl':
+            // Inside table — just continue
+            break;
+
+          case '':
+            // Lone backslash (escaped)
+            if (rtf[i] === '\\' || rtf[i] === '{' || rtf[i] === '}') {
+              html += rtf[i];
+              i++;
+            } else if (rtf[i] === '*' || rtf[i] === '~') {
+              // \* means optional destination, skip
+              i++;
+            }
+            break;
+
+          default:
+            // Unknown control word — ignore
+            break;
+        }
+        continue;
+      }
+
+      // Regular character
+      if (ch === '\r' || ch === '\n') {
+        i++;
+        continue;
+      }
+
+      html += escapeHtml(ch);
+      i++;
+    }
+
+    // Close any remaining formatting
+    closeCurrentFormatting();
+    html += '</p>';
+
+    // Clean up empty paragraphs at the end
+    html = html.replace(/(<p>(\s|<br>|&nbsp;)*<\/p>)+$/, '');
+    if (!html.trim()) html = '<p><br></p>';
+
+    return html;
   }
 
   // ===== EXPORT FUNCTIONS =====
@@ -2389,7 +2664,7 @@
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
     bindClick('btn-track-changes', toggleTrackChanges);
 
-    // FIX #13: Export dropdown — proper event binding with stopPropagation
+        // FIX #13: Export dropdown — proper event binding with stopPropagation
     var exportBtn = document.getElementById('btn-export');
     var exportDd = document.getElementById('export-dropdown');
     if (exportBtn && exportDd) {
@@ -2398,16 +2673,27 @@
         e.stopPropagation();
         exportDd.classList.toggle('visible');
       });
-      var exportBtns = exportDd.querySelectorAll('button');
+
+      var exportBtns = exportDd.querySelectorAll('[data-format]');
       for (var eb = 0; eb < exportBtns.length; eb++) {
-        exportBtns[eb].addEventListener('click', function() {
+        exportBtns[eb].addEventListener('click', function(ev) {
+          ev.preventDefault();
           var format = this.getAttribute('data-format');
-          handleExport(format);
           exportDd.classList.remove('visible');
+          handleExport(format);
         });
       }
+
       document.addEventListener('click', function(e) {
-        if (!e.target.closest('#export-dropdown-container') && !e.target.closest('#btn-export')) {
+        if (!e.target.closest('#export-dropdown') &&
+            !e.target.closest('#export-dropdown-container') &&
+            !e.target.closest('#btn-export')) {
+          exportDd.classList.remove('visible');
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && exportDd.classList.contains('visible')) {
           exportDd.classList.remove('visible');
         }
       });
