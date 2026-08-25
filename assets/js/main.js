@@ -434,19 +434,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-    // ========== PWA INSTALL PROMPT ==========
+      // ========== PWA INSTALL PROMPT ==========
   var installBtn = document.getElementById('btn-install');
   var deferredPrompt = null;
 
   window.addEventListener('beforeinstallprompt', function(e) {
-    // Only intercept the prompt if we have an install button to show
+    e.preventDefault();
+    deferredPrompt = e;
     if (installBtn) {
-      e.preventDefault();
-      deferredPrompt = e;
       installBtn.disabled = false;
       installBtn.style.display = '';
     }
-    // If no install button exists, let the browser show its default prompt
   });
 
   if (installBtn) {
@@ -460,6 +458,16 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
+
+  window.orosShowInstallPrompt = function(onComplete) {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      if (typeof onComplete === 'function') onComplete();
+    });
+    return true;
+  };
 
   // ========== APPLY ZEN MODE ON LOAD ==========
   if (localStorage.getItem('oros_zen_mode') === 'true') {
