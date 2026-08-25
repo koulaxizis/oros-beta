@@ -1417,20 +1417,36 @@
     }
   }
 
-  // ===== ZEN MODE =====
+    // ===== ZEN MODE =====
   function setupZenMode() {
-    var zenBtn = document.getElementById('btn-zen');
-    if (zenBtn) {
-      zenBtn.addEventListener('click', function() {
-        var body = document.body;
-        var isZen = body.hasAttribute('data-zen');
-        if (isZen) body.removeAttribute('data-zen');
-        else body.setAttribute('data-zen', 'true');
-        localStorage.setItem('oros_zen_mode', !isZen ? 'true' : 'false');
-        window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', { detail: { enabled: !isZen } }));
-        showToast(!isZen ? (getTrans('zen_mode_on') || 'Zen Mode ON') : (getTrans('zen_mode_off') || 'Zen Mode OFF'));
+    bindClick('btn-zen', toggleZenMode);
+
+    var zenToggle = document.getElementById('toggle-zen-mode');
+    if (zenToggle) {
+      zenToggle.addEventListener('change', function() {
+        setZenMode(this.checked);
       });
     }
+  }
+
+  function toggleZenMode() {
+    var isZen = document.body.hasAttribute('data-zen');
+    setZenMode(!isZen);
+  }
+
+  function setZenMode(enabled) {
+    if (enabled) {
+      document.body.setAttribute('data-zen', 'true');
+      localStorage.setItem('oros_zen_mode', 'true');
+    } else {
+      document.body.removeAttribute('data-zen');
+      localStorage.setItem('oros_zen_mode', 'false');
+    }
+    var zenToggle = document.getElementById('toggle-zen-mode');
+    if (zenToggle) zenToggle.checked = enabled;
+    window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', { detail: { enabled: enabled } }));
+    showToast(enabled ? (getTrans('zen_mode_on') || 'Zen Mode ON') : (getTrans('zen_mode_off') || 'Zen Mode OFF'));
+    clampToViewport();
   }
 
   // ===== GOAL BAR =====
@@ -1699,7 +1715,7 @@
     });
   }
 
-  // ===== KEYBOARD SHORTCUTS =====
+    // ===== KEYBOARD SHORTCUTS =====
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
       if (e.ctrlKey || e.metaKey) {
@@ -1768,6 +1784,14 @@
       }
     });
 
+    // F9 — Toggle Zen Mode (works without Ctrl)
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F9') {
+        e.preventDefault();
+        toggleZenMode();
+      }
+    });
+
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         // Close QFM first
@@ -1792,8 +1816,8 @@
         var exp = document.getElementById('export-dropdown');
         if (exp && exp.classList.contains('active')) { exp.classList.remove('active'); return; }
         // Zen mode
-        var zen = document.body.hasAttribute('data-zen');
-        if (zen) { document.body.removeAttribute('data-zen'); localStorage.setItem('oros_zen_mode', 'false'); }
+        var isZen = document.body.hasAttribute('data-zen');
+        if (isZen) { document.body.removeAttribute('data-zen'); localStorage.setItem('oros_zen_mode', 'false'); }
       }
     });
   }
@@ -2220,6 +2244,12 @@
 
   function startApp() {
     applyTheme();
+	    // Restore Zen mode state
+    if (localStorage.getItem('oros_zen_mode') === 'true') {
+      document.body.setAttribute('data-zen', 'true');
+    }
+    var zenToggle = document.getElementById('toggle-zen-mode');
+    if (zenToggle) zenToggle.checked = localStorage.getItem('oros_zen_mode') === 'true';
     waitForTranslations(function() {
       currentLang = getCurrentLang();
       applyLanguage(currentLang);
@@ -2293,9 +2323,7 @@
       bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-close-footnote-dialog', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
-      bindClick('btn-close-settings', function() { var m = document.getElementById('settings-modal'); if (m) m.style.display = 'none'; });
-      bindClick('btn-close-settings-footer', function() { var m = document.getElementById('settings-modal'); if (m) m.style.display = 'none'; });
-      bindClick('btn-save-settings', saveSettings);
+      // Save/Cancel removed — settings auto-save on toggle change via global-settings.js
 
       bindClick('btn-set-goal', saveGoal);
       bindClick('btn-clear-goal', function() {
