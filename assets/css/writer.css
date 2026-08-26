@@ -1741,9 +1741,8 @@ body.writer-page {
 .template-delete-btn i,
 .template-edit-btn i {
   font-size: 14px;
-  line-height: 24px;
-  width: 24px;
-  text-align: center;
+  line-height: 1;
+  display: block;
 }
 .template-card:hover .template-delete-btn,
 .template-card:hover .template-edit-btn {
