@@ -2462,9 +2462,7 @@
       loadSettingsValues();
       setupSettingToggles();
       loadAutoCorrections();
-	  renderAutocorrectRules();
       loadCustomTemplates();
-      renderTemplatesGrid();
       loadGoal();
       loadSessionTarget();
 
@@ -2618,6 +2616,12 @@
         var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         downloadBlob(blob, 'oros-writer-database.json');
       });
+	  
+	        // Re-render after DOM is fully settled (fixes elements not yet available)
+      setTimeout(function() {
+        renderAutocorrectRules();
+        renderTemplatesGrid();
+      }, 200);
 
       initialized = true;
 
@@ -2692,4 +2696,4 @@
     init: startApp
   };
 
-})(); 
+})();
