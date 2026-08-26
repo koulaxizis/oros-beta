@@ -1516,16 +1516,16 @@
     clampToViewport();
   }
   
-    // Override for help button — capture before main.js
-  document.addEventListener('click', function(e) {
-    var target = e.target.closest ? e.target.closest('#btn-help') : null;
-    if (target && !e.defaultPrevented) {
-      e.stopPropagation();
-      e.preventDefault();
-      var dlg = document.getElementById('help-dialog-overlay');
-      if (dlg) dlg.style.display = '';
-    }
-  }, true);
+        // Help button — capture-phase override
+      document.addEventListener('click', function(e) {
+        var target = e.target.closest ? e.target.closest('#btn-help') : null;
+        if (target) {
+          e.stopPropagation();
+          e.preventDefault();
+          var dlg = document.getElementById('help-dialog-overlay');
+          if (dlg) dlg.style.display = '';
+        }
+      }, true);
 
   // ===== GOAL BAR =====
   function setupGoalBar() {
