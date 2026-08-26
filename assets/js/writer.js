@@ -87,7 +87,7 @@
     { id: 'essay', title: 'Essay', icon: 'fa-file-text-o', desc: 'Academic essay structure', content: '<h1>Essay Title</h1><p><br></p><h2>Introduction</h2><p><br></p><h2>Body</h2><p><br></p><h2>Conclusion</h2><p><br></p>' },
     { id: 'letter', title: 'Formal Letter', icon: 'fa-envelope', desc: 'Business letter format', content: '<p>Your Name<br>Your Address<br>Date</p><p><br></p><p>Recipient Name<br>Recipient Address</p><p><br></p><p>Dear [Name],</p><p><br></p><p>[Body text]</p><p><br></p><p>Sincerely,<br>Your Name</p>' },
     { id: 'novel', title: 'Novel Chapter', icon: 'fa-book', desc: 'Chapter structure', content: '<h1>Chapter 1</h1><p><br></p>' },
-    { id: 'screenplay', title: 'Screenplay', icon: 'fa-film', desc: 'Film script format', content: '<h1>Scene Heading</h1><p><br></p><p style="text-transform:uppercase;text-align:center;"><strong>CHARACTER NAME</strong></p><p style="margin-left:25%;">Dialogue goes here...</p>' },
+    { id: 'screenplay', title: 'Screenplay', icon: 'fa-video-camera', desc: 'Film script format', content: '<h1>Scene Heading</h1><p><br></p><p style="text-transform:uppercase;text-align:center;"><strong>CHARACTER NAME</strong></p><p style="margin-left:25%;">Dialogue goes here...</p>' },
     { id: 'poem', title: 'Poem', icon: 'fa-music', desc: 'Centered verse format', content: '<h1>Poem Title</h1><p style="text-align:center;"><br>Line one<br>Line two<br>Line three<br></p>' },
     { id: 'meeting', title: 'Meeting Notes', icon: 'fa-users', desc: 'Agenda and notes', content: '<h1>Meeting Notes</h1><p><strong>Date:</strong> [Date]<br><strong>Attendees:</strong> [Names]</p><p><br></p><h2>Agenda</h2><ol><li>Topic 1</li><li>Topic 2</li></ol><p><br></p><h2>Notes</h2><p><br></p><h2>Action Items</h2><ul><li>Item 1 — Owner</li></ul>' }
   ];
@@ -918,7 +918,7 @@
     }
   }
 
-    function renderTemplatesGrid() {
+      function renderTemplatesGrid() {
     var grid = document.getElementById('templates-grid');
     if (!grid) return;
     var html = '';
@@ -937,6 +937,7 @@
           '<i class="fa fa-file-o template-icon"></i>' +
           '<div class="template-info"><strong>' + escapeHtml(ct.title) + '</strong>' +
           '<small>' + escapeHtml(ct.desc || '') + '</small></div>' +
+          '<button class="template-edit-btn" data-edit-id="' + ct.id + '" title="Edit" style="position:absolute;top:6px;right:28px;background:none;border:none;color:var(--text-muted,#888);cursor:pointer;font-size:12px;padding:4px;opacity:0;transition:opacity 0.2s;"><i class="fa fa-pencil"></i></button>' +
           '<button class="template-delete-btn" data-delete-id="' + ct.id + '" title="Delete"><i class="fa fa-trash"></i></button></div>';
       }
     }
@@ -945,8 +946,17 @@
     var cards = grid.querySelectorAll('.template-card');
     for (var k = 0; k < cards.length; k++) {
       (function(card) {
+        card.addEventListener('mouseenter', function() {
+          var eb = card.querySelector('.template-edit-btn');
+          if (eb) eb.style.opacity = '1';
+        });
+        card.addEventListener('mouseleave', function() {
+          var eb = card.querySelector('.template-edit-btn');
+          if (eb) eb.style.opacity = '0';
+        });
         card.addEventListener('click', function(e) {
           if (e.target.closest('.template-delete-btn')) return;
+          if (e.target.closest('.template-edit-btn')) return;
           var tplId = card.getAttribute('data-template-id');
           var customId = card.getAttribute('data-custom-id');
           var content = '';
@@ -980,6 +990,28 @@
           showToast('Template deleted');
         });
       })(delBtns[d]);
+    }
+
+    var editBtns = grid.querySelectorAll('.template-edit-btn');
+    for (var e = 0; e < editBtns.length; e++) {
+      (function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var id = btn.getAttribute('data-edit-id');
+          var tpl = null;
+          for (var i = 0; i < customTemplates.length; i++) { if (customTemplates[i].id === id) { tpl = customTemplates[i]; break; } }
+          if (!tpl) return;
+          var newTitle = prompt('Template title:', tpl.title);
+          if (newTitle === null) return;
+          var newDesc = prompt('Description:', tpl.desc || '');
+          if (newDesc === null) return;
+          tpl.title = newTitle.trim() || 'Untitled';
+          tpl.desc = newDesc.trim();
+          saveCustomTemplates();
+          renderTemplatesGrid();
+          showToast('Template updated');
+        });
+      })(editBtns[e]);
     }
   }
 
