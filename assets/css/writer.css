@@ -788,7 +788,7 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .template-card { background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; text-align: center; }
 .template-card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
-.template-card i { font-size: 28px; color: var(--accent-gold); margin-bottom: 8px; }
+.template-card > i { font-size: 28px; color: var(--accent-gold); margin-bottom: 8px; }
 .template-card h4 { margin: 4px 0; font-size: 14px; color: var(--text-primary); }
 .template-card p { margin: 0; font-size: 11px; color: var(--text-muted); }
 
@@ -1719,7 +1719,8 @@ body.writer-page {
 .template-delete-btn,
 .template-edit-btn {
   position: absolute;
-  top: 6px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 24px;
   height: 24px;
   display: inline-flex;
@@ -1732,6 +1733,7 @@ body.writer-page {
   cursor: pointer;
   font-size: 11px;
   padding: 0;
+  margin: 0;
   opacity: 0;
   transition: opacity 0.2s, color 0.2s, border-color 0.2s;
   z-index: 3;
@@ -1742,7 +1744,9 @@ body.writer-page {
 .template-edit-btn i {
   font-size: 14px;
   line-height: 1;
-  display: block;
+  display: inline-block;
+  margin: 0;
+  vertical-align: middle;
 }
 .template-card:hover .template-delete-btn,
 .template-card:hover .template-edit-btn {
