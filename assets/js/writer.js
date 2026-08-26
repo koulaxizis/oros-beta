@@ -2462,6 +2462,7 @@
       loadSettingsValues();
       setupSettingToggles();
       loadAutoCorrections();
+	  renderAutocorrectRules();
       loadCustomTemplates();
       renderTemplatesGrid();
       loadGoal();
