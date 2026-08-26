@@ -121,11 +121,16 @@
       </div>
 
       <div class="tools-grid">
-        <a href="writer.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
-          <div class="tool-icon"><i class="fa fa-pencil"></i></div>
-          <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
-          <p class="tool-desc" data-i18n="editor_desc">Write with autosave &amp; stats</p>
-        </a>
+                <div class="tool-card-wrapper">
+          <a href="writer.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
+            <div class="tool-icon"><i class="fa fa-pencil"></i></div>
+            <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
+            <p class="tool-desc" data-i18n="editor_desc">Write with autosave &amp; stats</p>
+          </a>
+          <button class="tool-info-btn" id="writer-info-btn" aria-label="Writer features" title="Writer features">
+            <i class="fa fa-question-circle"></i>
+          </button>
+        </div>
         <a href="converter.html" class="tool-card" aria-label="Open Case Converter — text transformation tool">
           <div class="tool-icon"><i class="fa fa-text-width"></i></div>
           <h2 class="tool-name" data-i18n="converter_name">Case Converter</h2>
@@ -160,6 +165,45 @@
     </div>
   </section>
 
+  <!-- Writer Features Modal -->
+  <div class="dialog-overlay" id="writer-features-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <div class="dialog-header">
+        <h3>Writer — Features</h3>
+        <button class="dialog-close" id="btn-close-writer-features"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="dialog-body">
+        <ul class="help-list" style="columns:2;column-gap:32px;line-height:2;">
+          <li>Multiple document tabs</li>
+          <li>Auto-save on every keystroke</li>
+          <li>Writing goals with lock option</li>
+          <li>Document outline navigation</li>
+          <li>Word frequency analysis</li>
+          <li>Comments and annotations</li>
+          <li>Footnotes and endnotes</li>
+          <li>Auto-generated table of contents</li>
+          <li>Track changes with accept/reject</li>
+          <li>Document templates</li>
+          <li>Version history with restore</li>
+          <li>Special characters picker</li>
+          <li>Writing session timer (Pomodoro)</li>
+          <li>Distraction-free reading mode</li>
+          <li>Page size and margins</li>
+          <li>Headers and footers</li>
+          <li>Smart typography (auto-convert quotes, symbols)</li>
+          <li>Custom auto-correction rules</li>
+          <li>Quick format menu (Alt + Right-click)</li>
+          <li>Typewriter sound effect</li>
+          <li>Import .txt, .md, .rtf, .docx</li>
+          <li>Export to .md, .txt, .rtf, .docx, .pdf</li>
+        </ul>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-primary" id="btn-close-writer-features-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div class="settings-modal">
     <div class="settings-modal-overlay"></div>
     <div class="settings-modal-content">
@@ -184,6 +228,37 @@
 
   <div id="oros-footer"></div>
   
+    <script>
+    (function() {
+      function openModal() {
+        var d = document.getElementById('writer-features-overlay');
+        if (d) d.style.display = 'flex';
+      }
+      function closeModal() {
+        var d = document.getElementById('writer-features-overlay');
+        if (d) d.style.display = 'none';
+      }
+      document.addEventListener('click', function(e) {
+        var infoBtn = e.target.closest ? e.target.closest('#writer-info-btn') : null;
+        if (infoBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          openModal();
+          return;
+        }
+        var closeBtn = e.target.closest ? e.target.closest('#btn-close-writer-features, #btn-close-writer-features-ok') : null;
+        if (closeBtn) {
+          closeModal();
+          return;
+        }
+        var overlay = e.target.closest ? e.target.closest('#writer-features-overlay') : null;
+        if (overlay && e.target.classList.contains('dialog-overlay')) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
+  
   <!-- ===== BETA WARNING POPUP ===== -->
   <div class="beta-popup-overlay" id="beta-popup-overlay">
     <div class="beta-popup">
@@ -192,7 +267,7 @@
       </div>
       <h2 class="beta-popup-title" data-i18n="beta_popup_title">Beta Channel Warning</h2>
       <div class="beta-popup-body">
-        <p data-i18n="beta_popup_p1">You are using a BETA version of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
+        <p data-i18n="beta_popup_p1">You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
         <p data-i18n="beta_popup_p2">Data loss may occur. You use this software at your own risk.</p>
         <p data-i18n="beta_popup_p3" class="beta-popup-emphasis">We strongly encourage you to save your work frequently to a local file.</p>
       </div>

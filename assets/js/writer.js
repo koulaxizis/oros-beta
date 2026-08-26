@@ -918,70 +918,69 @@
     }
   }
 
-  function renderTemplateSelect() {
-    var select = document.getElementById('template-select');
-    if (!select) return;
-    var lang = getCurrentLang();
-    select.innerHTML = '<option value="" disabled selected>' + (getTrans('select_template') !== 'select_template' ? getTrans('select_template') : 'Select a template') + '</option><optgroup label="' + (getTrans('built_in') !== 'built_in' ? getTrans('built_in') : 'Built-in') + '"></optgroup>';
-    var builtinGroup = select.querySelector('optgroup:first-child');
+    function renderTemplatesGrid() {
+    var grid = document.getElementById('templates-grid');
+    if (!grid) return;
+    var html = '';
     for (var i = 0; i < TEMPLATES.length; i++) {
       var t = TEMPLATES[i];
-      builtinGroup.innerHTML += '<option value="' + t.id + '">' + escapeHtml(t.title) + '</option>';
+      html += '<div class="template-card" data-template-id="' + t.id + '">' +
+        '<i class="fa ' + t.icon + ' template-icon"></i>' +
+        '<div class="template-info"><strong>' + escapeHtml(t.title) + '</strong>' +
+        '<small>' + escapeHtml(t.desc) + '</small></div></div>';
     }
     if (customTemplates.length > 0) {
-      var customGroup = document.createElement('optgroup');
-      customGroup.label = lang === 'el' ? 'Προσαρμοσμένα' : 'Custom';
+      html += '<div class="template-section-divider"><span>Custom Templates</span></div>';
       for (var j = 0; j < customTemplates.length; j++) {
         var ct = customTemplates[j];
-        customGroup.innerHTML += '<option value="custom_' + ct.id + '">' + escapeHtml(ct.title) + '</option>';
+        html += '<div class="template-card" data-custom-id="' + ct.id + '">' +
+          '<i class="fa fa-file-o template-icon"></i>' +
+          '<div class="template-info"><strong>' + escapeHtml(ct.title) + '</strong>' +
+          '<small>' + escapeHtml(ct.desc || '') + '</small></div>' +
+          '<button class="template-delete-btn" data-delete-id="' + ct.id + '" title="Delete"><i class="fa fa-trash"></i></button></div>';
       }
-      select.appendChild(customGroup);
     }
-  }
+    grid.innerHTML = html;
 
-  function openTemplateEditor(existing) {
-    var modal = document.querySelector('#template-editor-modal');
-    if (!modal) return;
-    var titleInp = document.getElementById('template-title-input');
-    var descInp = document.getElementById('template-desc-input');
-    var contentInp = document.getElementById('template-content-input');
-    if (existing) {
-      titleInp.value = existing.title;
-      descInp.value = existing.desc || '';
-      contentInp.value = existing.content || '';
-    } else {
-      titleInp.value = '';
-      descInp.value = '';
-      contentInp.value = '';
+    var cards = grid.querySelectorAll('.template-card');
+    for (var k = 0; k < cards.length; k++) {
+      (function(card) {
+        card.addEventListener('click', function(e) {
+          if (e.target.closest('.template-delete-btn')) return;
+          var tplId = card.getAttribute('data-template-id');
+          var customId = card.getAttribute('data-custom-id');
+          var content = '';
+          if (tplId) {
+            for (var i = 0; i < TEMPLATES.length; i++) { if (TEMPLATES[i].id === tplId) { content = TEMPLATES[i].content; break; } }
+          } else if (customId) {
+            for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === customId) { content = customTemplates[j].content; break; } }
+          }
+          if (!content) return;
+          if (richEditor) {
+            richEditor.innerHTML = content;
+            saveCurrentTabContent();
+            updateStats();
+          }
+          var dlg = document.getElementById('templates-dialog-overlay');
+          if (dlg) dlg.style.display = 'none';
+          showToast('Template applied');
+        });
+      })(cards[k]);
     }
-    modal.classList.add('visible');
 
-    var saveHandler = function() {
-      var title = titleInp.value.trim() || 'Untitled';
-      var desc = descInp.value.trim();
-      var content = contentInp.value;
-      var id = existing ? existing.id : 'tpl_' + Date.now();
-      var tpl = { id: id, title: title, desc: desc, content: content };
-      if (existing) {
-        var idx = -1;
-        for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === existing.id) { idx = j; break; } }
-        if (idx >= 0) customTemplates[idx] = tpl;
-      } else {
-        customTemplates.push(tpl);
-      }
-      saveCustomTemplates();
-      renderCustomTemplates();
-      renderTemplateSelect();
-      modal.classList.remove('visible');
-      showToast(existing ? 'Template updated' : 'Template created');
-    };
-
-    var cancelHandler = function() { modal.classList.remove('visible'); };
-
-    var saveBtn = modal.querySelector('.template-editor-save');
-    var cancelBtn = modal.querySelector('.template-editor-cancel');
-    if (saveBtn) saveBtn.onclick = saveHandler;
-    if (cancelBtn) cancelBtn.onclick = cancelHandler;
+    var delBtns = grid.querySelectorAll('.template-delete-btn');
+    for (var d = 0; d < delBtns.length; d++) {
+      (function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var id = btn.getAttribute('data-delete-id');
+          customTemplates = customTemplates.filter(function(ct) { return ct.id !== id; });
+          saveCustomTemplates();
+          renderTemplatesGrid();
+          showToast('Template deleted');
+        });
+      })(delBtns[d]);
+    }
   }
 
   // ===== FIND & REPLACE =====
@@ -2500,9 +2499,35 @@
         updateStats();
       }
 
-      renderTemplateSelect();
-      renderCustomTemplates();
+            renderTemplatesGrid();
       renderAutocorrectRules();
+	  
+	        var tplImportInput = document.getElementById('templates-import-input');
+      if (tplImportInput) {
+        tplImportInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            try {
+              var imported = JSON.parse(ev.target.result);
+              if (Array.isArray(imported)) {
+                for (var i = 0; i < imported.length; i++) {
+                  if (imported[i].title && imported[i].content) {
+                    imported[i].id = 'tpl_' + Date.now() + '_' + i;
+                    customTemplates.push(imported[i]);
+                  }
+                }
+                saveCustomTemplates();
+                renderTemplatesGrid();
+                showToast('Templates imported');
+              } else { showToast('Invalid template file'); }
+            } catch(err) { showToast('Import failed'); }
+          };
+          reader.readAsText(file);
+          tplImportInput.value = '';
+        });
+      }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-metadata', function() { if (metadataPanel) metadataPanel.style.display = 'none'; });

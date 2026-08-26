@@ -1129,3 +1129,26 @@ body:not(.js-enabled) .noscript-message {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Tool card info button */
+.tool-card-wrapper {
+  position: relative;
+}
+.tool-info-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+  z-index: 2;
+}
+.tool-info-btn:hover {
+  color: var(--accent-gold, #c8a96e);
+  background: rgba(200, 169, 110, 0.1);
+}
