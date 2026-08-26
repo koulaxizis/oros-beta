@@ -35,6 +35,7 @@
 .fa-save:before          { content: '\f0c7'; }
 .fa-folder-open:before   { content: '\f07c'; }
 .fa-trash-o:before       { content: '\f014'; }
+.fa-trash:before         { content: '\f1f8'; }
 .fa-download:before      { content: '\f019'; }
 .fa-pencil:before        { content: '\f040'; }
 .fa-copy:before          { content: '\f0c5'; }
