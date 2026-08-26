@@ -1,4 +1,4 @@
-/* ============================================
+γ/* ============================================
    orOS Writer — Complete Stylesheet v1.3
    Fixes: Single-row toolbar, page sizes, 
    word count arrow, session centering, 
@@ -1719,26 +1719,38 @@ body.writer-page {
 .template-delete-btn,
 .template-edit-btn {
   position: absolute;
-  top: 8px;
+  top: 6px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-panel, #1e1e2e);
   border: 1px solid var(--border-color, #333);
   border-radius: 4px;
   color: var(--text-muted, #888);
   cursor: pointer;
-  font-size: 12px;
-  padding: 4px 6px;
+  font-size: 11px;
+  padding: 0;
   opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
+  transition: opacity 0.2s, color 0.2s, border-color 0.2s;
   z-index: 3;
 }
 .template-delete-btn { right: 8px; }
 .template-edit-btn { right: 38px; }
+.template-delete-btn i,
+.template-edit-btn i {
+  font-size: 11px;
+  line-height: 1;
+}
 .template-card:hover .template-delete-btn,
 .template-card:hover .template-edit-btn {
   opacity: 1;
 }
-.template-delete-btn:hover { color: #e74c3c; border-color: #e74c3c; }
-.template-edit-btn:hover { color: var(--accent-gold, #c8a96e); border-color: var(--accent-gold, #c8a96e); }
+.template-delete-btn:hover { color: #e74c3c; border-color: #e74c3c; opacity: 1; }
+.template-delete-btn:hover i { color: #e74c3c; }
+.template-edit-btn:hover { color: var(--accent-gold, #c8a96e); border-color: var(--accent-gold, #c8a96e); opacity: 1; }
+.template-edit-btn:hover i { color: var(--accent-gold, #c8a96e); }
 
 /* Section divider — clear separation */
 .template-section-divider {

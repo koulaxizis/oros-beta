@@ -939,7 +939,7 @@
           '<i class="fa fa-file-o template-icon"></i>' +
           '<div class="template-info"><strong>' + escapeHtml(ct.title) + '</strong>' +
           '<small>' + escapeHtml(ct.desc || '') + '</small></div>' +
-          '<button class="template-edit-btn" data-edit-id="' + ct.id + '" title="Edit" style="position:absolute;top:6px;right:28px;background:none;border:none;color:var(--text-muted,#888);cursor:pointer;font-size:12px;padding:4px;opacity:0;transition:opacity 0.2s;"><i class="fa fa-pencil"></i></button>' +
+          '<button class="template-edit-btn" data-edit-id="' + ct.id + '" title="Edit"><i class="fa fa-pencil"></i></button>' +
           '<button class="template-delete-btn" data-delete-id="' + ct.id + '" title="Delete"><i class="fa fa-trash"></i></button></div>';
       }
     }
