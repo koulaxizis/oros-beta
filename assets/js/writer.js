@@ -1516,22 +1516,13 @@
   }
 
     // ===== FOOTNOTES =====
-  var footnoteCounter = 0;
-
-  function setupFootnotes() {
-    bindClick('btn-footnote', insertFootnote);
-    bindClick('btn-insert-footnote', insertFootnoteFromDialog);
-    bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
-  }
-
   function insertFootnote() {
     var dlg = document.getElementById('footnote-dialog-overlay');
     if (dlg) {
       dlg.style.display = 'flex';
       var txtInput = document.getElementById('footnote-text-input');
-      var selectedText = window.getSelection().toString().trim();
       if (txtInput) {
-        txtInput.value = selectedText || '';
+        txtInput.value = '';
         setTimeout(function() { txtInput.focus(); }, 50);
       }
     }
@@ -1541,23 +1532,29 @@
     var txtInput = document.getElementById('footnote-text-input');
     var text = txtInput ? txtInput.value.trim() : '';
     if (!text) { showToast('Enter footnote text'); return; }
-
+    
+    // Απενεργοποίηση του dialog
+    var dlg = document.getElementById('footnote-dialog-overlay');
+    if (dlg) dlg.style.display = 'none';
+    
+    // Δημιουργία superscript reference
     footnoteCounter++;
     var refId = 'fn_ref_' + footnoteCounter;
     var fnId = 'fn_' + footnoteCounter;
     var sup = document.createElement('sup');
     sup.innerHTML = '<a href="#' + fnId + '" id="' + refId + '" class="footnote-ref">[' + footnoteCounter + ']</a>';
-
+    
+    // Εισαγωγή στο τρέχον cursor
     var sel = window.getSelection();
-    if (sel.rangeCount > 0) {
-      var range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(sup);
-    }
-
+    if (sel.rangeCount === 0) { showToast('Select where to insert footnote'); return; }
+    var range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(sup);
+    
+    // Προσθήκη στο footnote-area
     var fnArea = document.getElementById('footnote-area');
     if (fnArea) {
-      fnArea.style.display = '';
+      fnArea.style.display = 'flex';
       var fnEntry = document.createElement('div');
       fnEntry.id = fnId;
       fnEntry.className = 'footnote-entry';
@@ -1565,7 +1562,8 @@
       fnArea.appendChild(fnEntry);
       fnArea.scrollIntoView({ behavior: 'smooth' });
     }
-
+    
+    // Αποθήκευση metadata
     var tab = tabsModule.getActive();
     if (tab) {
       var meta = tabsModule.getMetadata();
@@ -1574,28 +1572,9 @@
       meta.footnotes = footnotes;
       tabsModule.setMetadata(meta);
     }
-
-    var dlg = document.getElementById('footnote-dialog-overlay');
-    if (dlg) dlg.style.display = 'none';
+    
     if (txtInput) txtInput.value = '';
-  }
-
-  function restoreFootnotes() {
-    var tab = tabsModule.getActive();
-    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
-    var fnArea = document.getElementById('footnote-area');
-    if (!fnArea) return;
-    var footnotes = tab.metadata.footnotes;
-    footnoteCounter = 0;
-    for (var i = 0; i < footnotes.length; i++) {
-      var f = footnotes[i];
-      var entry = document.createElement('div');
-      entry.id = f.fnId;
-      entry.className = 'footnote-entry';
-      entry.innerHTML = '<a href="#' + f.refId + '" class="footnote-back">\u2191</a> <span class="footnote-text">' + escapeHtml(f.text) + '</span>';
-      fnArea.appendChild(entry);
-      footnoteCounter = Math.max(footnoteCounter, f.number);
-    }
+    showToast('Footnote added');
   }
 
   // ===== VERSION HISTORY =====
