@@ -1999,9 +1999,9 @@
       var fi = document.getElementById('file-input-hidden');
       if (fi) fi.click();
     });
-    bindClick('btn-templates', function() {
+        bindClick('btn-templates', function() {
       var dlg = document.getElementById('templates-dialog-overlay');
-      if (dlg) dlg.style.display = '';
+      if (dlg) { dlg.style.display = 'flex'; renderTemplatesGrid(); }
     });
     bindClick('btn-special-chars', function() {
       var dlg = document.getElementById('special-chars-dialog-overlay');
