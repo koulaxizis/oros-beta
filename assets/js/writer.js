@@ -1516,14 +1516,14 @@
     clampToViewport();
   }
   
-        // Help button — capture-phase override
+          // Help button — capture-phase override (bypasses header.js interception)
       document.addEventListener('click', function(e) {
         var target = e.target.closest ? e.target.closest('#btn-help') : null;
         if (target) {
           e.stopPropagation();
           e.preventDefault();
           var dlg = document.getElementById('help-dialog-overlay');
-          if (dlg) dlg.style.display = '';
+          if (dlg) dlg.style.display = 'flex';
         }
       }, true);
 
@@ -2514,19 +2514,54 @@
       bindClick('btn-close-goal', function() { if (goalBar) goalBar.style.display = 'none'; });
       bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
 
+            bindClick('btn-templates', function() {
+        var dlg = document.getElementById('templates-dialog-overlay');
+        if (dlg) dlg.style.display = 'flex';
+      });
       bindClick('btn-close-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
+      bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
+            bindClick('btn-special-chars', function() {
+        var dlg = document.getElementById('special-chars-dialog-overlay');
+        if (dlg) dlg.style.display = 'flex';
+      });
       bindClick('btn-close-special-chars', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-close-special-chars-ok', function() { var d = document.getElementById('special-chars-dialog-overlay'); if (d) d.style.display = 'none'; });
-      bindClick('btn-close-help', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
+            bindClick('btn-close-help', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-close-help-ok', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = 'none'; });
 	  bindClick('btn-help', function() { var d = document.getElementById('help-dialog-overlay'); if (d) d.style.display = ''; });
+            bindClick('btn-link', function() {
+        var dlg = document.getElementById('link-dialog-overlay');
+        if (dlg) { dlg.style.display = 'flex'; var urlInput = document.getElementById('link-url-input'); if (urlInput) { urlInput.value = ''; setTimeout(function() { urlInput.focus(); }, 50); } }
+      });
       bindClick('btn-close-link-dialog', function() { var d = document.getElementById('link-dialog-overlay'); if (d) d.style.display = 'none'; });
+            bindClick('btn-table', function() {
+        var dlg = document.getElementById('table-dialog-overlay');
+        if (dlg) dlg.style.display = 'flex';
+      });
       bindClick('btn-close-table-dialog', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-table', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
+      bindClick('btn-cancel-table', function() { var d = document.getElementById('table-dialog-overlay'); if (d) d.style.display = 'none'; });
+            bindClick('btn-image', function() {
+        var dlg = document.getElementById('image-dialog-overlay');
+        if (dlg) dlg.style.display = 'flex';
+      });
       bindClick('btn-close-image-dialog', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
+      bindClick('btn-cancel-image', function() { var d = document.getElementById('image-dialog-overlay'); if (d) d.style.display = 'none'; });
+            bindClick('btn-footnote', function() {
+        var dlg = document.getElementById('footnote-dialog-overlay');
+        if (dlg) {
+          dlg.style.display = 'flex';
+          var txtInput = document.getElementById('footnote-text-input');
+          if (txtInput) {
+            txtInput.value = '';
+            setTimeout(function() { txtInput.focus(); }, 50);
+          }
+        }
+      });
       bindClick('btn-close-footnote-dialog', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
+      bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
       // Save/Cancel removed — settings auto-save on toggle change via global-settings.js
 
