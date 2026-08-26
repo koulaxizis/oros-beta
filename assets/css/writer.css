@@ -1719,8 +1719,7 @@ body.writer-page {
 .template-delete-btn,
 .template-edit-btn {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 6px;
   width: 24px;
   height: 24px;
   display: inline-flex;
@@ -1734,7 +1733,7 @@ body.writer-page {
   font-size: 11px;
   padding: 0;
   opacity: 0;
-  transition: opacity 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+  transition: opacity 0.2s, color 0.2s, border-color 0.2s;
   z-index: 3;
 }
 .template-delete-btn { right: 8px; }
