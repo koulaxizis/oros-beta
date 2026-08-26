@@ -82,14 +82,169 @@
   var clickHandlers = {};
 
   // ===== TEMPLATE DATA =====
-  var TEMPLATES = [
+    var TEMPLATES = [
     { id: 'blank', title: 'Blank', icon: 'fa-file-o', desc: 'Empty document', content: '<p><br></p>' },
-    { id: 'essay', title: 'Essay', icon: 'fa-file-text-o', desc: 'Academic essay structure', content: '<h1>Essay Title</h1><p><br></p><h2>Introduction</h2><p><br></p><h2>Body</h2><p><br></p><h2>Conclusion</h2><p><br></p>' },
-    { id: 'letter', title: 'Formal Letter', icon: 'fa-envelope', desc: 'Business letter format', content: '<p>Your Name<br>Your Address<br>Date</p><p><br></p><p>Recipient Name<br>Recipient Address</p><p><br></p><p>Dear [Name],</p><p><br></p><p>[Body text]</p><p><br></p><p>Sincerely,<br>Your Name</p>' },
-    { id: 'novel', title: 'Novel Chapter', icon: 'fa-book', desc: 'Chapter structure', content: '<h1>Chapter 1</h1><p><br></p>' },
-    { id: 'screenplay', title: 'Screenplay', icon: 'fa-video-camera', desc: 'Film script format', content: '<h1>Scene Heading</h1><p><br></p><p style="text-transform:uppercase;text-align:center;"><strong>CHARACTER NAME</strong></p><p style="margin-left:25%;">Dialogue goes here...</p>' },
-    { id: 'poem', title: 'Poem', icon: 'fa-music', desc: 'Centered verse format', content: '<h1>Poem Title</h1><p style="text-align:center;"><br>Line one<br>Line two<br>Line three<br></p>' },
-    { id: 'meeting', title: 'Meeting Notes', icon: 'fa-users', desc: 'Agenda and notes', content: '<h1>Meeting Notes</h1><p><strong>Date:</strong> [Date]<br><strong>Attendees:</strong> [Names]</p><p><br></p><h2>Agenda</h2><ol><li>Topic 1</li><li>Topic 2</li></ol><p><br></p><h2>Notes</h2><p><br></p><h2>Action Items</h2><ul><li>Item 1 — Owner</li></ul>' }
+    {
+      id: 'essay',
+      title: 'Essay',
+      icon: 'fa-file-text-o',
+      desc: 'Academic essay structure',
+      content: '<h1 style="text-align:center;">[Essay Title]</h1>' +
+        '<p style="text-align:center;color:var(--text-muted,#888);font-size:0.9em;">[Author Name] · [Course / Institution] · [Date]</p>' +
+        '<p><br></p>' +
+        '<h2>Abstract</h2>' +
+        '<p>[A brief summary of the essay\'s main argument, key points, and conclusion. Aim for 150–250 words.]</p>' +
+        '<p><br></p>' +
+        '<h2>1. Introduction</h2>' +
+        '<p>[Introduce the topic, provide background context, and state the thesis clearly. Outline the structure of the essay for the reader.]</p>' +
+        '<p><br></p>' +
+        '<h2>2. Background</h2>' +
+        '<p>[Review relevant literature, establish the theoretical framework, and define key terms.]</p>' +
+        '<p><br></p>' +
+        '<h2>3. Main Argument</h2>' +
+        '<p>[Present the primary argument with supporting evidence. Address counterarguments where appropriate.]</p>' +
+        '<p><br></p>' +
+        '<h3>3.1 [Sub-argument One]</h3>' +
+        '<p>[Supporting point with evidence or analysis.]</p>' +
+        '<p><br></p>' +
+        '<h3>3.2 [Sub-argument Two]</h3>' +
+        '<p>[Supporting point with evidence or analysis.]</p>' +
+        '<p><br></p>' +
+        '<h2>4. Discussion</h2>' +
+        '<p>[Interpret the findings, discuss implications, and connect back to the thesis statement.]</p>' +
+        '<p><br></p>' +
+        '<h2>5. Conclusion</h2>' +
+        '<p>[Restate the thesis in light of the evidence presented. Summarize key findings and suggest directions for further research.]</p>' +
+        '<p><br></p>' +
+        '<p style="color:var(--text-muted,#888);font-size:0.85em;"><strong>Keywords:</strong> [keyword one, keyword two, keyword three]</p>'
+    },
+    {
+      id: 'letter',
+      title: 'Formal Letter',
+      icon: 'fa-envelope',
+      desc: 'Business letter format',
+      content: '<p style="text-align:right;">[Your Name]<br>[Street Address]<br>[City, Postal Code]<br>[Email] · [Phone]</p>' +
+        '<p><br></p>' +
+        '<p style="text-align:right;">[Date]</p>' +
+        '<p><br></p>' +
+        '<p>[Recipient Name]<br>[Recipient Title]<br>[Company / Organization]<br>[Street Address]<br>[City, Postal Code]</p>' +
+        '<p><br></p>' +
+        '<p><strong>Subject: [Brief description of the letter\'s purpose]</strong></p>' +
+        '<p><br></p>' +
+        '<p>Dear [Mr./Ms./Dr. Last Name],</p>' +
+        '<p><br></p>' +
+        '<p>[Opening paragraph — State the purpose of the letter clearly and concisely.]</p>' +
+        '<p><br></p>' +
+        '<p>[Body paragraph(s) — Provide supporting details, context, or arguments. Keep each paragraph focused on a single point.]</p>' +
+        '<p><br></p>' +
+        '<p>[Closing paragraph — Summarize the key message, state any expected action or response, and thank the recipient for their time.]</p>' +
+        '<p><br></p>' +
+        '<p>Sincerely,</p>' +
+        '<p><br></p>' +
+        '<p><br></p>' +
+        '<p>[Your Name]<br>[Your Title, if applicable]</p>'
+    },
+    {
+      id: 'novel',
+      title: 'Novel Chapter',
+      icon: 'fa-book',
+      desc: 'Chapter structure with scene breaks',
+      content: '<h1 style="text-align:center;">Chapter [One]</h1>' +
+        '<p style="text-align:center;color:var(--text-muted,#888);font-style:italic;">[Optional chapter epigraph or quotation]</p>' +
+        '<p><br></p>' +
+        '<p>[Opening paragraph — Set the scene: time, place, atmosphere. Engage the reader with sensory detail or an inciting moment.]</p>' +
+        '<p><br></p>' +
+        '<p>[Continue the narrative. Develop character voice, advance the plot, and maintain tension or emotional engagement.]</p>' +
+        '<p><br></p>' +
+        '<p>[Build toward a turning point or revelation within the scene.]</p>' +
+        '<p><br></p>' +
+        '<p style="text-align:center;color:var(--text-muted,#888);">✦ ✦ ✦</p>' +
+        '<p><br></p>' +
+        '<p>[New scene — Shift in time, location, or perspective. Continue developing the narrative arc.]</p>' +
+        '<p><br></p>' +
+        '<p>[Close the chapter with a hook, emotional beat, or cliffhanger that compels the reader forward.]</p>'
+    },
+    {
+      id: 'screenplay',
+      title: 'Screenplay',
+      icon: 'fa-video-camera',
+      desc: 'Film script format',
+      content: '<h1>[SCRIPT TITLE]</h1>' +
+        '<p style="text-align:center;color:var(--text-muted,#888);">Written by [Author Name]</p>' +
+        '<p><br></p>' +
+        '<p style="text-transform:uppercase;font-weight:bold;">INT. [LOCATION] — [TIME OF DAY]</p>' +
+        '<p><br></p>' +
+        '<p>[Action description — Describe what the camera sees. Keep it present tense, visual, and concise. Only describe what can be seen or heard on screen.]</p>' +
+        '<p><br></p>' +
+        '<p style="text-transform:uppercase;text-align:center;font-weight:bold;">[CHARACTER NAME]</p>' +
+        '<p style="margin-left:25%;">[Dialogue — What the character says. Parentheticals like (quietly) go on their own line above the dialogue.]</p>' +
+        '<p><br></p>' +
+        '<p style="text-transform:uppercase;text-align:center;font-weight:bold;">[SECOND CHARACTER]</p>' +
+        '<p style="margin-left:25%;">[Response dialogue.]</p>' +
+        '<p><br></p>' +
+        '<p>[More action or transition. Use CUT TO: or FADE OUT. to end scenes.]</p>' +
+        '<p><br></p>' +
+        '<p style="text-transform:uppercase;text-align:right;">CUT TO:</p>' +
+        '<p><br></p>' +
+        '<p style="text-transform:uppercase;font-weight:bold;">EXT. [NEW LOCATION] — [TIME OF DAY]</p>' +
+        '<p><br></p>' +
+        '<p>[Continue the scene...]</p>'
+    },
+    {
+      id: 'poem',
+      title: 'Poem',
+      icon: 'fa-music',
+      desc: 'Centered verse with stanzas',
+      content: '<h1 style="text-align:center;">[Poem Title]</h1>' +
+        '<p style="text-align:center;color:var(--text-muted,#888);font-style:italic;">[for someone, or inspired by something]</p>' +
+        '<p><br></p>' +
+        '<p style="text-align:center;">[First line of the opening stanza]<br>[Second line]<br>[Third line]<br>[Fourth line]</p>' +
+        '<p><br></p>' +
+        '<p style="text-align:center;">[First line of the second stanza]<br>[Second line]<br>[Third line]<br>[Fourth line]</p>' +
+        '<p><br></p>' +
+        '<p style="text-align:center;">[First line of the closing stanza]<br>[Second line]<br>[Third line]<br>[Fourth line — the line that lingers]</p>'
+    },
+    {
+      id: 'meeting',
+      title: 'Meeting Notes',
+      icon: 'fa-users',
+      desc: 'Agenda, notes, and action items',
+      content: '<h1>Meeting Notes</h1>' +
+        '<p><strong>Date:</strong> [YYYY-MM-DD] · <strong>Time:</strong> [HH:MM]<br>' +
+        '<strong>Location:</strong> [Room / Virtual link]<br>' +
+        '<strong>F facilitator:</strong> [Name] · <strong>Note-taker:</strong> [Name]</p>' +
+        '<p><br></p>' +
+        '<h2>Attendees</h2>' +
+        '<ul><li>[Name — Role]</li><li>[Name — Role]</li><li>[Name — Role]</li></ul>' +
+        '<p><br></p>' +
+        '<h2>Agenda</h2>' +
+        '<ol>' +
+        '<li>[Topic one — presenter, estimated time]</li>' +
+        '<li>[Topic two — presenter, estimated time]</li>' +
+        '<li>[Topic three — presenter, estimated time]</li>' +
+        '<li>Any other business (AOB)</li>' +
+        '</ol>' +
+        '<p><br></p>' +
+        '<h2>Discussion Notes</h2>' +
+        '<h3>1. [Topic One]</h3>' +
+        '<p>[Key points discussed, decisions made, concerns raised.]</p>' +
+        '<p><br></p>' +
+        '<h3>2. [Topic Two]</h3>' +
+        '<p>[Key points discussed, decisions made, concerns raised.]</p>' +
+        '<p><br></p>' +
+        '<h3>3. [Topic Three]</h3>' +
+        '<p>[Key points discussed, decisions made, concerns raised.]</p>' +
+        '<p><br></p>' +
+        '<h2>Action Items</h2>' +
+        '<table class="custom-table"><thead><tr><th>Task</th><th>Owner</th><th>Due Date</th></tr></thead><tbody>' +
+        '<tr><td>[Specific task description]</td><td>[Name]</td><td>[YYYY-MM-DD]</td></tr>' +
+        '<tr><td>[Specific task description]</td><td>[Name]</td><td>[YYYY-MM-DD]</td></tr>' +
+        '<tr><td>[Specific task description]</td><td>[Name]</td><td>[YYYY-MM-DD]</td></tr>' +
+        '</tbody></table>' +
+        '<p><br></p>' +
+        '<h2>Next Meeting</h2>' +
+        '<p><strong>Date:</strong> [YYYY-MM-DD] · <strong>Time:</strong> [HH:MM] · <strong>Location:</strong> [Room / Virtual link]</p>'
+    }
   ];
 
   // ===== SPECIAL CHARACTER DATA =====
