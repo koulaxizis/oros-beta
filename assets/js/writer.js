@@ -540,6 +540,34 @@
     set('toggle-smart-typography', smartTypographyEnabled);
     set('toggle-typewriter-sound', typewriterSoundEnabled);
   }
+  
+    function setupSettingToggles() {
+    var stToggle = document.getElementById('toggle-smart-typography');
+    if (stToggle) {
+      stToggle.checked = smartTypographyEnabled;
+      stToggle.addEventListener('change', function() {
+        smartTypographyEnabled = this.checked;
+        var s = {};
+        try { s = JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + 'settings') || '{}'); } catch(e) {}
+        s.smartTypography = smartTypographyEnabled;
+        try { localStorage.setItem(CONFIG.STORAGE_PREFIX + 'settings', JSON.stringify(s)); } catch(e) {}
+        showToast(this.checked ? 'Smart Typography ON' : 'Smart Typography OFF');
+      });
+    }
+
+    var twToggle = document.getElementById('toggle-typewriter-sound');
+    if (twToggle) {
+      twToggle.checked = typewriterSoundEnabled;
+      twToggle.addEventListener('change', function() {
+        typewriterSoundEnabled = this.checked;
+        var s = {};
+        try { s = JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + 'settings') || '{}'); } catch(e) {}
+        s.typewriterSound = typewriterSoundEnabled;
+        try { localStorage.setItem(CONFIG.STORAGE_PREFIX + 'settings', JSON.stringify(s)); } catch(e) {}
+        showToast(this.checked ? 'Typewriter Sound ON' : 'Typewriter Sound OFF');
+      });
+    }
+  }
 
   // ===== THEME =====
   function applyTheme() {
@@ -1923,87 +1951,120 @@
     });
   }
   
-    // ===== SMART TYPOGRAPHY =====
+      // ===== SMART TYPOGRAPHY =====
+  var smartTypoPatterns = [
+    { re: /\(c\)$/i,    rep: '\u00A9' },      // (c) → ©
+    { re: /\(tm\)$/i,   rep: '\u2122' },      // (tm) → ™
+    { re: /\(r\)$/i,    rep: '\u00AE' },      // (r) → ®
+    { re: /\+\/-$/i,   rep: '\u00B1' },      // +/- → ±
+    { re: /->$/,        rep: '\u2192' },      // -> → →
+    { re: /<-$/,        rep: '\u2190' },      // <- → ←
+    { re: /=>$/,        rep: '\u21D2' },      // => → ⇒
+    { re: /1\/2$/,      rep: '\u00BD' },      // 1/2 → ½
+    { re: /1\/4$/,      rep: '\u00BC' },      // 1/4 → ¼
+    { re: /3\/4$/,      rep: '\u00BE' },      // 3/4 → ¾
+    { re: /\.\.\.$/,    rep: '\u2026' },      // ... → …
+    { re: /---$/,       rep: '\u2014' },      // --- → —
+    { re: /--$/,        rep: '\u2013' },      // -- → –
+    { re: /=\/=$/,      rep: '\u2261' }       // === → ≡
+  ];
+
   function applySmartTypography() {
     if (!smartTypographyEnabled) return;
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var range = sel.getRangeAt(0);
-    var node = range.startContainer;
-    if (node.nodeType !== Node.TEXT_NODE) return;
-    var offset = range.startOffset;
-    var text = node.textContent;
-    if (offset < 1) return;
+    try {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      var range = sel.getRangeAt(0);
+      var node = range.startContainer;
+      if (!node || node.nodeType !== Node.TEXT_NODE) return;
+      var offset = range.startOffset;
+      if (offset < 1) return;
+      var text = node.textContent;
+      var before = text.substring(0, offset);
+      var after = text.substring(offset);
 
-    var lastChar = text[offset - 1];
-    var replaced = null;
-    var removeExtra = 0;
+      // Curly quotes
+      if (before.charAt(offset - 1) === '"') {
+        var openQ = (before.substring(0, offset - 1).match(/\u201C/g) || []).length;
+        var closeQ = (before.substring(0, offset - 1).match(/\u201D/g) || []).length;
+        var rq = openQ > closeQ ? '\u201D' : '\u201C';
+        node.textContent = before.substring(0, offset - 1) + rq + after;
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return;
+      }
 
-    if (lastChar === '"') {
-      var openQ = (text.substring(0, offset - 1).match(/\u201C/g) || []).length;
-      var closeQ = (text.substring(0, offset - 1).match(/\u201D/g) || []).length;
-      replaced = openQ > closeQ ? '\u201D' : '\u201C';
-    }
-    else if (lastChar === "'") {
-      replaced = (offset >= 2 && /\w/.test(text[offset - 2])) ? '\u2019' : '\u2018';
-    }
-    else if (lastChar === '-' && offset >= 2 && text[offset - 2] === '-') {
-      replaced = '\u2014';
-      removeExtra = 1;
-    }
-    else if (lastChar === '.' && offset >= 3 && text[offset - 2] === '.' && text[offset - 3] === '.') {
-      replaced = '\u2026';
-      removeExtra = 2;
-    }
+      if (before.charAt(offset - 1) === "'") {
+        var prev = before.charAt(offset - 2);
+        var rs = (prev && /\w/.test(prev)) ? '\u2019' : '\u2018';
+        node.textContent = before.substring(0, offset - 1) + rs + after;
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return;
+      }
 
-    if (replaced) {
-      node.textContent = text.substring(0, offset - 1 - removeExtra) + replaced + text.substring(offset);
-      var newOffset = offset - removeExtra;
-      range.setStart(node, newOffset);
-      range.setEnd(node, newOffset);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
+      // Symbol patterns
+      for (var i = 0; i < smartTypoPatterns.length; i++) {
+        var p = smartTypoPatterns[i];
+        var m = before.match(p.re);
+        if (m) {
+          var matchedLen = m[0].length;
+          var newBefore = before.substring(0, before.length - matchedLen) + p.rep;
+          node.textContent = newBefore + after;
+          var newOffset = newBefore.length;
+          range.setStart(node, newOffset);
+          range.setEnd(node, newOffset);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          return;
+        }
+      }
+    } catch(e) {}
   }
 
   // ===== AUTO-CORRECT =====
   function applyAutoCorrect() {
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var range = sel.getRangeAt(0);
-    var node = range.startContainer;
-    if (node.nodeType !== Node.TEXT_NODE) return;
-    var offset = range.startOffset;
-    if (offset < 2) return;
-    var text = node.textContent;
-    if (text[offset - 1] !== ' ') return;
+    try {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      var range = sel.getRangeAt(0);
+      var node = range.startContainer;
+      if (!node || node.nodeType !== Node.TEXT_NODE) return;
+      var offset = range.startOffset;
+      if (offset < 3) return;
+      var text = node.textContent;
+      var lastChar = text.charAt(offset - 1);
+      if (lastChar !== ' ' && lastChar !== '\u00A0' && lastChar !== '\t') return;
 
-    var beforeSpace = text.substring(0, offset - 1);
-    var match = beforeSpace.match(/(\S+)$/);
-    if (!match) return;
+      var beforeSpace = text.substring(0, offset - 1);
+      var match = beforeSpace.match(/(\S+)$/);
+      if (!match) return;
+      var word = match[1];
+      var lower = word.toLowerCase();
 
-    var word = match[1];
-    var lower = word.toLowerCase();
-
-    if (autocorrectRules[lower]) {
-      var replacement = autocorrectRules[lower];
-      var wordStart = offset - 1 - word.length;
-      node.textContent = text.substring(0, wordStart) + replacement + text.substring(offset - 1);
-      var newOffset = wordStart + replacement.length + 1;
-      range.setStart(node, newOffset);
-      range.setEnd(node, newOffset);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
+      if (autocorrectRules[lower]) {
+        var replacement = autocorrectRules[lower];
+        var wordStart = offset - 1 - word.length;
+        node.textContent = text.substring(0, wordStart) + replacement + text.substring(offset - 1);
+        var newOffset = wordStart + replacement.length + 1;
+        range.setStart(node, newOffset);
+        range.setEnd(node, newOffset);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch(e) {}
   }
-
   // ===== EDITOR INPUT =====
   function setupEditorInput() {
     if (!richEditor) return;
 
         richEditor.addEventListener('input', function() {
       playTypewriterSound();
-      applyAutoCorrect();
+            applyAutoCorrect();
       applySmartTypography();
       isTyping = true;
       clearTimeout(typingTimer);
@@ -2344,6 +2405,7 @@
       initializeElements();
       loadSettings();
       loadSettingsValues();
+	        setupSettingToggles();
       loadAutoCorrections();
       loadCustomTemplates();
       loadGoal();
