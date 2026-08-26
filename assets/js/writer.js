@@ -692,17 +692,60 @@
 
   var typewriterAudioCtx = null;
   function initTypewriterSound() {}
-  function playTypewriterSound() {
+    function playTypewriterSound() {
     if (!typewriterSoundEnabled) return;
     try {
       if (!typewriterAudioCtx) typewriterAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      var osc = typewriterAudioCtx.createOscillator();
-      var gain = typewriterAudioCtx.createGain();
-      osc.connect(gain); gain.connect(typewriterAudioCtx.destination);
-      osc.frequency.value = 1200 + Math.random() * 400; osc.type = 'square';
-      gain.gain.setValueAtTime(0.08, typewriterAudioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, typewriterAudioCtx.currentTime + 0.05);
-      osc.start(); osc.stop(typewriterAudioCtx.currentTime + 0.05);
+      var ctx = typewriterAudioCtx;
+      var now = ctx.currentTime;
+
+      // 1. Mechanical clack — filtered noise burst
+      var noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+      var data = noiseBuf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2.5);
+      var noise = ctx.createBufferSource();
+      noise.buffer = noiseBuf;
+
+      var noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = 1800 + Math.random() * 400;
+      noiseFilter.Q.value = 1.2;
+
+      var noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.35, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+      noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.04);
+
+      // 2. Key strike — short tonal body
+      var osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280 + Math.random() * 60, now);
+      osc.frequency.exponentialRampToValueAtTime(120, now + 0.03);
+
+      var oscGain = ctx.createGain();
+      oscGain.gain.setValueAtTime(0.22, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+      osc.connect(oscGain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.035);
+
+      // 3. Subtle carriage plink — delayed faint high tick
+      var osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = 900 + Math.random() * 200;
+
+      var osc2Gain = ctx.createGain();
+      osc2Gain.gain.setValueAtTime(0, now + 0.018);
+      osc2Gain.gain.linearRampToValueAtTime(0.06, now + 0.02);
+      osc2Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      osc2.connect(osc2Gain).connect(ctx.destination);
+      osc2.start(now + 0.018);
+      osc2.stop(now + 0.045);
     } catch(e) {}
   }
 
