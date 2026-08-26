@@ -2531,37 +2531,96 @@
         updateStats();
       }
 
-            renderTemplatesGrid();
-      renderAutocorrectRules();
-	  
-	        var tplImportInput = document.getElementById('templates-import-input');
-      if (tplImportInput) {
-        tplImportInput.addEventListener('change', function(e) {
-          var file = e.target.files[0];
-          if (!file) return;
-          var reader = new FileReader();
-          reader.onload = function(ev) {
-            try {
-              var imported = JSON.parse(ev.target.result);
-              if (Array.isArray(imported)) {
-                for (var i = 0; i < imported.length; i++) {
-                  if (imported[i].title && imported[i].content) {
-                    imported[i].id = 'tpl_' + Date.now() + '_' + i;
-                    customTemplates.push(imported[i]);
-                  }
-                }
-                saveCustomTemplates();
-                renderTemplatesGrid();
-                showToast('Templates imported');
-              } else { showToast('Invalid template file'); }
-            } catch(err) { showToast('Import failed'); }
-          };
-          reader.readAsText(file);
-          tplImportInput.value = '';
-        });
+       function renderTemplatesGrid() {
+    var grid = document.getElementById('templates-grid');
+    if (!grid) return;
+    var html = '';
+    for (var i = 0; i < TEMPLATES.length; i++) {
+      var t = TEMPLATES[i];
+      html += '<div class="template-card" data-template-id="' + t.id + '">' +
+        '<i class="fa ' + t.icon + ' template-icon"></i>' +
+        '<div class="template-info"><strong>' + escapeHtml(t.title) + '</strong>' +
+        '<small>' + escapeHtml(t.desc) + '</small></div></div>';
+    }
+    if (customTemplates.length > 0) {
+      html += '<div class="template-section-divider"><span>Custom Templates</span></div>';
+      for (var j = 0; j < customTemplates.length; j++) {
+        var ct = customTemplates[j];
+        html += '<div class="template-card" data-custom-id="' + ct.id + '">' +
+          '<i class="fa fa-file-o template-icon"></i>' +
+          '<div class="template-info"><strong>' + escapeHtml(ct.title) + '</strong>' +
+          '<small>' + escapeHtml(ct.desc || '') + '</small></div>' +
+          '<button class="template-edit-btn" data-edit-id="' + ct.id + '" title="Edit"><i class="fa fa-pencil"></i></button>' +
+          '<button class="template-delete-btn" data-delete-id="' + ct.id + '" title="Delete"><i class="fa fa-trash"></i></button></div>';
       }
-	  
-	  
+    }
+    grid.innerHTML = html;
+
+    var cards = grid.querySelectorAll('.template-card');
+    for (var k = 0; k < cards.length; k++) {
+      (function(card) {
+        card.addEventListener('click', function(e) {
+          if (e.target.closest('.template-delete-btn')) return;
+          if (e.target.closest('.template-edit-btn')) return;
+          var tplId = card.getAttribute('data-template-id');
+          var customId = card.getAttribute('data-custom-id');
+          var content = '';
+          if (tplId) {
+            for (var i = 0; i < TEMPLATES.length; i++) { if (TEMPLATES[i].id === tplId) { content = TEMPLATES[i].content; break; } }
+          } else if (customId) {
+            for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === customId) { content = customTemplates[j].content; break; } }
+          }
+          if (!content) return;
+          if (richEditor) {
+            richEditor.innerHTML = content;
+            saveCurrentTabContent();
+            updateStats();
+          }
+          var dlg = document.getElementById('templates-dialog-overlay');
+          if (dlg) dlg.style.display = 'none';
+          showToast('Template applied');
+        });
+      })(cards[k]);
+    }
+
+    var delBtns = grid.querySelectorAll('.template-delete-btn');
+    for (var d = 0; d < delBtns.length; d++) {
+      (function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var id = btn.getAttribute('data-delete-id');
+          customTemplates = customTemplates.filter(function(ct) { return ct.id !== id; });
+          saveCustomTemplates();
+          renderTemplatesGrid();
+          showToast('Template deleted');
+        });
+      })(delBtns[d]);
+    }
+
+    var editBtns = grid.querySelectorAll('.template-edit-btn');
+    for (var e = 0; e < editBtns.length; e++) {
+      (function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var id = btn.getAttribute('data-edit-id');
+          var tpl = null;
+          for (var i = 0; i < customTemplates.length; i++) { if (customTemplates[i].id === id) { tpl = customTemplates[i]; break; } }
+          if (!tpl) return;
+          var newTitle = prompt('Template title:', tpl.title);
+          if (newTitle === null) return;
+          var newDesc = prompt('Description:', tpl.desc || '');
+          if (newDesc === null) return;
+          tpl.title = newTitle.trim() || 'Untitled';
+          tpl.desc = newDesc.trim();
+          saveCustomTemplates();
+          renderTemplatesGrid();
+          showToast('Template updated');
+        });
+      })(editBtns[e]);
+    }
+  }	  
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-metadata', function() { if (metadataPanel) metadataPanel.style.display = 'none'; });
