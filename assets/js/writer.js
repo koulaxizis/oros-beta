@@ -1965,8 +1965,27 @@
       if (!style) return;
       var tag = (style === 'normal') ? 'p' : (style === 'quote') ? 'blockquote' : (style === 'code') ? 'pre' : style;
       execCmd('formatBlock', tag);
-      this.value = '';
     });
+    if (richEditor) {
+      richEditor.addEventListener('keyup', updateStyleSelector);
+      richEditor.addEventListener('click', updateStyleSelector);
+    }
+  }
+
+  function updateStyleSelector() {
+    if (!stylesSelect || !richEditor) return;
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var node = sel.getRangeAt(0).startContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+    while (node && node !== richEditor && node.nodeType === Node.ELEMENT_NODE) {
+      var tag = node.tagName.toLowerCase();
+      if (tag === 'p') { stylesSelect.value = 'normal'; return; }
+      if (tag === 'blockquote') { stylesSelect.value = 'quote'; return; }
+      if (tag === 'pre') { stylesSelect.value = 'code'; return; }
+      if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') { stylesSelect.value = tag; return; }
+      node = node.parentElement;
+    }
   }
 
   // ===== KEYBOARD SHORTCUTS =====
@@ -2083,7 +2102,32 @@
     bindClick('btn-align-justify', function() { execCmd('justifyFull'); });
     bindClick('btn-numbers', function() { execCmd('insertOrderedList'); });
     bindClick('btn-bullets', function() { execCmd('insertUnorderedList'); });
-    bindClick('btn-indent', function() { execCmd('indent'); });
+        bindClick('btn-indent', function() {
+      if (!richEditor) return;
+      richEditor.focus();
+      document.execCommand('indent', false, null);
+      setTimeout(function() {
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          var node = sel.getRangeAt(0).startContainer;
+          while (node && node !== richEditor && node.nodeType === Node.ELEMENT_NODE) {
+            if (/^(BLOCKQUOTE|OL|UL)$/.test(node.tagName)) {
+              node.style.paddingLeft = '2em';
+              node.style.borderLeft = 'none';
+              node.style.fontStyle = 'normal';
+              node.style.color = 'inherit';
+              break;
+            }
+            node = node.parentElement;
+          }
+        }
+      }, 50);
+    });
+    bindClick('btn-outdent', function() {
+      if (!richEditor) return;
+      richEditor.focus();
+      document.execCommand('outdent', false, null);
+    });
     bindClick('btn-outdent', function() { execCmd('outdent'); });
     bindClick('btn-link', function() {
       var dlg = document.getElementById('link-dialog-overlay');
