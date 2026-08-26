@@ -66,7 +66,7 @@
   var smartTypographyEnabled = true;
   var typewriterSoundEnabled = false;
   var focusModeEnabled = false;
-  var readingProgressEnabled = true;
+    var readingProgressEnabled = true; // Always on — toggle removed
   var currentLang = 'en';
   var toastContainer = null;
   var goalBarContent = null;
@@ -515,7 +515,7 @@
       var s = JSON.parse(raw);
       smartTypographyEnabled = s.smartTypography !== false;
       typewriterSoundEnabled = s.typewriterSound === true;
-      readingProgressEnabled = s.readingProgress !== false;
+            readingProgressEnabled = true;
       return s;
     } catch(e) { return {}; }
   }
@@ -524,12 +524,10 @@
     var s = {
       smartTypography: smartTypographyEnabled,
       typewriterSound: typewriterSoundEnabled,
-      readingProgress: readingProgressEnabled,
     };
     var set = function(id, prop) { var el = document.getElementById(id); if (el) s[prop] = el.checked; };
     set('toggle-smart-typography', 'smartTypography');
     set('toggle-typewriter-sound', 'typewriterSound');
-    set('toggle-reading-progress', 'readingProgress');
     try { localStorage.setItem(CONFIG.STORAGE_PREFIX + 'settings', JSON.stringify(s)); } catch(e) {}
     smartTypographyEnabled = s.smartTypography !== false;
     typewriterSoundEnabled = s.typewriterSound === true;
@@ -539,7 +537,6 @@
 
   function loadSettingsValues() {
     var set = function(id, val) { var el = document.getElementById(id); if (el) el.checked = val; };
-    set('toggle-reading-progress', readingProgressEnabled);
     set('toggle-smart-typography', smartTypographyEnabled);
     set('toggle-typewriter-sound', typewriterSoundEnabled);
   }
@@ -1444,7 +1441,7 @@
     var zenToggle = document.getElementById('toggle-zen-mode');
     if (zenToggle) zenToggle.checked = enabled;
     window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', { detail: { enabled: enabled } }));
-    showToast(enabled ? (getTrans('zen_mode_on') || 'Zen Mode ON') : (getTrans('zen_mode_off') || 'Zen Mode OFF'));
+    showToast(enabled ? 'Zen Mode ON' : 'Zen Mode OFF');
     clampToViewport();
   }
 
@@ -1925,13 +1922,89 @@
       }
     });
   }
+  
+    // ===== SMART TYPOGRAPHY =====
+  function applySmartTypography() {
+    if (!smartTypographyEnabled) return;
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    var offset = range.startOffset;
+    var text = node.textContent;
+    if (offset < 1) return;
+
+    var lastChar = text[offset - 1];
+    var replaced = null;
+    var removeExtra = 0;
+
+    if (lastChar === '"') {
+      var openQ = (text.substring(0, offset - 1).match(/\u201C/g) || []).length;
+      var closeQ = (text.substring(0, offset - 1).match(/\u201D/g) || []).length;
+      replaced = openQ > closeQ ? '\u201D' : '\u201C';
+    }
+    else if (lastChar === "'") {
+      replaced = (offset >= 2 && /\w/.test(text[offset - 2])) ? '\u2019' : '\u2018';
+    }
+    else if (lastChar === '-' && offset >= 2 && text[offset - 2] === '-') {
+      replaced = '\u2014';
+      removeExtra = 1;
+    }
+    else if (lastChar === '.' && offset >= 3 && text[offset - 2] === '.' && text[offset - 3] === '.') {
+      replaced = '\u2026';
+      removeExtra = 2;
+    }
+
+    if (replaced) {
+      node.textContent = text.substring(0, offset - 1 - removeExtra) + replaced + text.substring(offset);
+      var newOffset = offset - removeExtra;
+      range.setStart(node, newOffset);
+      range.setEnd(node, newOffset);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
+
+  // ===== AUTO-CORRECT =====
+  function applyAutoCorrect() {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    var offset = range.startOffset;
+    if (offset < 2) return;
+    var text = node.textContent;
+    if (text[offset - 1] !== ' ') return;
+
+    var beforeSpace = text.substring(0, offset - 1);
+    var match = beforeSpace.match(/(\S+)$/);
+    if (!match) return;
+
+    var word = match[1];
+    var lower = word.toLowerCase();
+
+    if (autocorrectRules[lower]) {
+      var replacement = autocorrectRules[lower];
+      var wordStart = offset - 1 - word.length;
+      node.textContent = text.substring(0, wordStart) + replacement + text.substring(offset - 1);
+      var newOffset = wordStart + replacement.length + 1;
+      range.setStart(node, newOffset);
+      range.setEnd(node, newOffset);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
 
   // ===== EDITOR INPUT =====
   function setupEditorInput() {
     if (!richEditor) return;
 
-    richEditor.addEventListener('input', function() {
+        richEditor.addEventListener('input', function() {
       playTypewriterSound();
+      applyAutoCorrect();
+      applySmartTypography();
       isTyping = true;
       clearTimeout(typingTimer);
       typingTimer = setTimeout(function() {
@@ -1993,16 +2066,31 @@
   }
 
   // ===== PWA INSTALL BUTTON (Settings Modal) =====
-  function setupPWAInstallButton() {
+    function setupPWAInstallButton() {
     var btn = document.getElementById('btn-install');
     if (!btn) return;
     btn.disabled = true;
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      btn.disabled = false;
+      btn.style.display = '';
+    });
+
     btn.addEventListener('click', function() {
-      if (typeof window.orosShowInstallPrompt === 'function') {
-        window.orosShowInstallPrompt(function() {
+      if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(function(choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            showToast('App installed');
+          }
+          window.deferredPrompt = null;
           btn.disabled = true;
           btn.style.display = 'none';
-        });
+        }).catch(function() {});
+      } else {
+        showToast('Install not available in this browser');
       }
     });
   }
@@ -2090,7 +2178,7 @@
   }
 
   // ===== QUICK FORMAT MENU (Alt + Right-click) =====
-  var qfmEnabled = localStorage.getItem('oros_quick_tbar_show') !== 'false';
+    var qfmEnabled = true; // Always on — toggle removed
   var qfmMenu = null;
   var savedRange = null;
 

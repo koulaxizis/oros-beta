@@ -689,21 +689,17 @@
         <div class="tab-panel" id="writer-settings" style="display:none;">
           <div class="toggles-container">
             <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_reading_progress">Reading Progress Bar</span>
-              <label class="switch"><input type="checkbox" id="toggle-reading-progress"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
               <span class="toggle-label" data-i18n="toggle_smart_typography">Smart Typography</span>
               <label class="switch"><input type="checkbox" id="toggle-smart-typography"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label" data-i18n="toggle_quick_toolbar">Quick Format Toolbar</span>
-              <label class="switch"><input type="checkbox" id="toggle-quick-tbar"><span class="slider"></span></label>
             </div>
             <div class="toggle-row">
               <span class="toggle-label" data-i18n="setting_typewriter_sound">Typewriter Sound</span>
               <label class="switch"><input type="checkbox" id="toggle-typewriter-sound"><span class="slider"></span></label>
             </div>
+			            <div class="settings-divider"></div>
+            <h4 style="font-size:14px;color:var(--accent-gold);margin:0 0 8px;">Database Management</h4>
+            <p class="settings-desc" style="font-size:0.8rem;color:var(--text-muted,#888);margin-bottom:12px;">Export all Writer data: settings, tabs, templates, autocorrect rules, and version history.</p>
+            <button class="db-export-btn" id="btn-export-database"><i class="fa fa-database"></i> Export Full Database (.json)</button>
             </div>
         </div>
                 <div class="tab-panel" id="advanced-settings" style="display:none;">
@@ -722,10 +718,6 @@
                 <button class="btn btn-secondary" id="btn-reset-autocorrect" data-i18n="btn_reset_defaults" style="font-size:0.8rem;padding:6px 12px;">Reset to Defaults</button>
               </div>
             </div>
-            <div class="settings-divider"></div>
-            <h4>Database Management</h4>
-            <p class="settings-desc" style="font-size:0.8rem;color:var(--text-muted,#888);margin-bottom:12px;">Export all Writer data: settings, tabs, templates, autocorrect rules, and version history.</p>
-            <button class="db-export-btn" id="btn-export-database"><i class="fa fa-database"></i> Export Full Database (.json)</button>
           </div>
                </div>
       </div>
