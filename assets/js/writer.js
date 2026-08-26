@@ -85,7 +85,7 @@
   var TEMPLATES = [
     { id: 'blank', title: 'Blank', icon: 'fa-file-o', desc: 'Empty document', content: '<p><br></p>' },
     { id: 'essay', title: 'Essay', icon: 'fa-file-text-o', desc: 'Academic essay structure', content: '<h1>Essay Title</h1><p><br></p><h2>Introduction</h2><p><br></p><h2>Body</h2><p><br></p><h2>Conclusion</h2><p><br></p>' },
-    { id: 'letter', title: 'Formal Letter', icon: 'fa-envelope-o', desc: 'Business letter format', content: '<p>Your Name<br>Your Address<br>Date</p><p><br></p><p>Recipient Name<br>Recipient Address</p><p><br></p><p>Dear [Name],</p><p><br></p><p>[Body text]</p><p><br></p><p>Sincerely,<br>Your Name</p>' },
+    { id: 'letter', title: 'Formal Letter', icon: 'fa-envelope', desc: 'Business letter format', content: '<p>Your Name<br>Your Address<br>Date</p><p><br></p><p>Recipient Name<br>Recipient Address</p><p><br></p><p>Dear [Name],</p><p><br></p><p>[Body text]</p><p><br></p><p>Sincerely,<br>Your Name</p>' },
     { id: 'novel', title: 'Novel Chapter', icon: 'fa-book', desc: 'Chapter structure', content: '<h1>Chapter 1</h1><p><br></p>' },
     { id: 'screenplay', title: 'Screenplay', icon: 'fa-film', desc: 'Film script format', content: '<h1>Scene Heading</h1><p><br></p><p style="text-transform:uppercase;text-align:center;"><strong>CHARACTER NAME</strong></p><p style="margin-left:25%;">Dialogue goes here...</p>' },
     { id: 'poem', title: 'Poem', icon: 'fa-music', desc: 'Centered verse format', content: '<h1>Poem Title</h1><p style="text-align:center;"><br>Line one<br>Line two<br>Line three<br></p>' },
@@ -2528,6 +2528,8 @@
           tplImportInput.value = '';
         });
       }
+	  
+	  
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-metadata', function() { if (metadataPanel) metadataPanel.style.display = 'none'; });
@@ -2546,6 +2548,53 @@
       bindClick('btn-close-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
       bindClick('btn-cancel-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
+	        bindClick('btn-save-as-template', function() {
+        var title = getTabTitle() || 'Custom Template';
+        var content = richEditor ? richEditor.innerHTML : '<p><br></p>';
+        var tpl = { id: 'tpl_' + Date.now(), title: title, desc: 'User template', content: content };
+        customTemplates.push(tpl);
+        saveCustomTemplates();
+        renderTemplatesGrid();
+        showToast('Template saved');
+      });
+
+      bindClick('btn-import-templates', function() {
+        var input = document.getElementById('templates-import-input');
+        if (input) input.click();
+      });
+
+      bindClick('btn-export-templates', function() {
+        if (customTemplates.length === 0) { showToast('No custom templates to export'); return; }
+        var blob = new Blob([JSON.stringify(customTemplates, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, 'oros-writer-templates.json');
+        showToast('Templates exported');
+      });
+	        var tplImportInput = document.getElementById('templates-import-input');
+      if (tplImportInput) {
+        tplImportInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            try {
+              var imported = JSON.parse(ev.target.result);
+              if (Array.isArray(imported)) {
+                for (var i = 0; i < imported.length; i++) {
+                  if (imported[i].title && imported[i].content) {
+                    imported[i].id = 'tpl_' + Date.now() + '_' + i;
+                    customTemplates.push(imported[i]);
+                  }
+                }
+                saveCustomTemplates();
+                renderTemplatesGrid();
+                showToast('Templates imported');
+              } else { showToast('Invalid template file'); }
+            } catch(err) { showToast('Import failed'); }
+          };
+          reader.readAsText(file);
+          tplImportInput.value = '';
+        });
+      }
             bindClick('btn-special-chars', function() {
         var dlg = document.getElementById('special-chars-dialog-overlay');
         if (dlg) dlg.style.display = 'flex';
