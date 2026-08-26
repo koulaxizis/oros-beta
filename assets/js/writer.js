@@ -1527,7 +1527,7 @@
   function insertFootnote() {
     var dlg = document.getElementById('footnote-dialog-overlay');
     if (dlg) {
-      dlg.style.display = '';
+      dlg.style.display = 'flex';
       var txtInput = document.getElementById('footnote-text-input');
       var selectedText = window.getSelection().toString().trim();
       if (txtInput) {
