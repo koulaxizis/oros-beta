@@ -2868,22 +2868,6 @@
     }
   }, true);
 
-  // ===== LINK CLICK HANDLER (Ctrl+Click opens in new tab) =====
-  function setupLinkClickHandler() {
-    if (!richEditor) return;
-    richEditor.addEventListener('click', function(e) {
-      var link = e.target.closest ? e.target.closest('a') : null;
-      if (!link && e.target.tagName === 'A') link = e.target;
-      if (link && link.getAttribute('href')) {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.open(link.href, '_blank');
-        }
-      }
-    });
-  }
-
   // ===== INITIALIZATION =====
   function waitForTranslations(callback) {
     var attempts = 0;
@@ -3331,7 +3315,6 @@ function removeFootnotesByIds(fnIds) {
   }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
-      bindClick('btn-close-metadata', function() { if (metadataPanel) metadataPanel.style.display = 'none'; });
       bindClick('btn-close-outline', function() { if (outlinePanel) outlinePanel.style.display = 'none'; });
       bindClick('btn-close-wordfreq', function() { if (wordFreqPanel) wordFreqPanel.style.display = 'none'; });
       bindClick('btn-close-comments', function() { if (commentsPanel) commentsPanel.style.display = 'none'; });

@@ -1769,14 +1769,12 @@ body[data-zen="true"] .side-panel {
 
 /* ===== FOOTNOTE ENTRY HIGHLIGHT ===== */
 .footnote-entry.flash-highlight {
-  background: var(--accent-gold-dim);
-  border-radius: 4px;
-  animation: footnoteFlash 1.5s ease;
+  animation: footnote-flash 1.5s ease-out;
 }
 
-@keyframes footnoteFlash {
-  0%, 100% { background: transparent; }
-  20%, 80% { background: var(--accent-gold-dim); }
+@keyframes footnote-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(109, 76, 255, 0.2); }
 }
 
 .footnote-back {
