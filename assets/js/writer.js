@@ -1543,13 +1543,13 @@
     tabsModule.setMetadata(meta);
   }
   
-    // ===== FOOTNOTES =====
+      // ===== FOOTNOTES =====
   var footnoteCounter = 0;
-  var savedFootnoteRange = null;
+    var savedFootnoteRange = null;
   var savedCommentRange = null;
-  var savedLinkRange = null;
-  var savedImageRange = null;
-  var savedTableRange = null;
+  var savedLinkRange = null;      
+  var savedImageRange = null;    
+  var savedTableRange = null;     
 
   function setupFootnotes() {
     bindClick('btn-footnote', insertFootnote);
