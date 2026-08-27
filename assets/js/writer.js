@@ -1405,13 +1405,13 @@
     showToast('All changes rejected');
   }
 
-      // ===== COMMENTS =====
+    // ===== COMMENTS =====
   function setupComments() {
     bindClick('btn-comments', toggleCommentsPanel);
     bindClick('btn-add-comment', addCommentFromPanel);
     loadAndRestoreComments();
 
-    // selectionchange listener — keeps savedCommentRange updated
+    // selectionchange listener
     document.addEventListener('selectionchange', function() {
       if (!commentsPanel || commentsPanel.style.display === 'none') return;
       var sel = window.getSelection();
@@ -1427,7 +1427,7 @@
       }
     });
 
-    // Click on commented text → highlight comment card (independent listener)
+    // Click on commented text → highlight card (independent listener)
     if (richEditor) {
       richEditor.addEventListener('click', function(e) {
         var highlight = e.target.closest ? e.target.closest('.comment-highlight') : null;
