@@ -1766,3 +1766,20 @@ body[data-zen="true"] .side-panel {
   position: relative;
   top: -10px;
 }
+
+/* ===== FOOTNOTE ENTRY HIGHLIGHT ===== */
+.footnote-entry.flash-highlight {
+  background: var(--accent-gold-dim);
+  border-radius: 4px;
+  animation: footnoteFlash 1.5s ease;
+}
+
+@keyframes footnoteFlash {
+  0%, 100% { background: transparent; }
+  20%, 80% { background: var(--accent-gold-dim); }
+}
+
+.footnote-back {
+  min-width: 28px;
+  text-align: center;
+}

@@ -1689,7 +1689,7 @@
       var fnEntry = document.createElement('div');
       fnEntry.id = fnId;
       fnEntry.className = 'footnote-entry';
-      fnEntry.innerHTML = '<a href="#' + refId + '" class="footnote-back" data-ref-id="' + refId + '">\u2191</a> <span class="footnote-text">' + escapeHtml(text) + '</span>';
+      fnEntry.innerHTML = '<a href="#' + refId + '" class="footnote-back" data-ref-id="' + refId + '">[' + footnoteCounter + ']</a> <span class="footnote-text">' + escapeHtml(text) + '</span>';
       fnArea.appendChild(fnEntry);
       setupFootnoteLinkHandler(fnEntry.querySelector('.footnote-back'));
       fnArea.scrollIntoView({ behavior: 'smooth' });
@@ -1709,7 +1709,7 @@
     showToast('Footnote added');
   }
 
-  function setupFootnoteLinkHandler(link) {
+    function setupFootnoteLinkHandler(link) {
     if (!link) return;
     link.addEventListener('click', function(e) {
       e.preventDefault();
@@ -1717,19 +1717,20 @@
       var refEl = document.getElementById(refId);
       if (refEl) {
         refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        refEl.classList.remove('outline-flash');
+        void refEl.offsetWidth;
         refEl.classList.add('outline-flash');
         setTimeout(function() { refEl.classList.remove('outline-flash'); }, 1200);
       }
     });
   }
 
-  function bindForwardRefClicks() {
+    function bindForwardRefClicks() {
     if (!richEditor || footnoteClickHandlersBound) return;
     footnoteClickHandlersBound = true;
     richEditor.addEventListener('click', function(e) {
       var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
       if (!link) {
-        // Fallback for older browsers
         if (e.target.classList && e.target.classList.contains('footnote-ref')) link = e.target;
         else if (e.target.parentElement && e.target.parentElement.classList.contains('footnote-ref')) link = e.target.parentElement;
       }
@@ -1739,8 +1740,10 @@
         var fnEl = document.getElementById(fnId);
         if (fnEl) {
           fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          fnEl.classList.add('outline-flash');
-          setTimeout(function() { fnEl.classList.remove('outline-flash'); }, 1200);
+          fnEl.classList.remove('flash-highlight');
+          void fnEl.offsetWidth;
+          fnEl.classList.add('flash-highlight');
+          setTimeout(function() { fnEl.classList.remove('flash-highlight'); }, 1500);
         }
       }
     });
@@ -1766,7 +1769,7 @@
       var entry = document.createElement('div');
       entry.id = f.fnId;
       entry.className = 'footnote-entry';
-      entry.innerHTML = '<a href="#' + f.refId + '" class="footnote-back" data-ref-id="' + f.refId + '">\u2191</a> <span class="footnote-text">' + escapeHtml(f.text) + '</span>';
+      entry.innerHTML = '<a href="#' + f.refId + '" class="footnote-back" data-ref-id="' + f.refId + '">[' + f.number + ']</a> <span class="footnote-text">' + escapeHtml(f.text) + '</span>';
       fnArea.appendChild(entry);
       setupFootnoteLinkHandler(entry.querySelector('.footnote-back'));
       footnoteCounter = Math.max(footnoteCounter, f.number);
