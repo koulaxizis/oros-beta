@@ -1410,6 +1410,21 @@
     bindClick('btn-comments', toggleCommentsPanel);
     bindClick('btn-add-comment', addCommentFromPanel);
     loadAndRestoreComments();
+	
+	    document.addEventListener('selectionchange', function() {
+      if (!commentsPanel || commentsPanel.style.display === 'none') return;
+      var sel = window.getSelection();
+      if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+        var range = sel.getRangeAt(0);
+        if (!range.collapsed) {
+          savedCommentRange = range.cloneRange();
+          var addArea = document.getElementById('comment-add-area');
+          if (addArea) addArea.style.display = '';
+          var ci = document.getElementById('comment-input');
+          if (ci) ci.placeholder = '"' + range.toString().substring(0, 40) + (range.toString().length > 40 ? '…' : '') + '"';
+        }
+      }
+    });
   }
 
     function toggleCommentsPanel() {
@@ -1429,7 +1444,7 @@
       var addArea = document.getElementById('comment-add-area');
       if (addArea) addArea.style.display = '';
       var ci = document.getElementById('comment-input');
-      if (ci) { ci.value = ''; setTimeout(function() { ci.focus(); }, 100); }
+            if (ci) { ci.value = ''; }
       
       commentsPanel.style.display = '';
       if (btn) btn.classList.add('active');
