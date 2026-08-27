@@ -2320,11 +2320,11 @@
     });
     bindClick('btn-link', function() {
       var dlg = document.getElementById('link-dialog-overlay');
-      if (dlg) { dlg.style.display = ''; var urlInput = document.getElementById('link-url-input'); if (urlInput) { urlInput.value = ''; setTimeout(function() { urlInput.focus(); }, 50); } }
+      if (dlg) { dlg.style.display = 'flex'; var urlInput = document.getElementById('link-url-input'); if (urlInput) { urlInput.value = ''; setTimeout(function() { urlInput.focus(); }, 50); } }
     });
     bindClick('btn-image', function() {
       var dlg = document.getElementById('image-dialog-overlay');
-      if (dlg) { dlg.style.display = ''; }
+      if (dlg) dlg.style.display = 'flex';
     });
     bindClick('btn-code', function() { execCmd('formatBlock', 'pre'); });
     bindClick('btn-quote', function() { execCmd('formatBlock', 'blockquote'); });
@@ -2359,13 +2359,13 @@
       var dlg = document.getElementById('templates-dialog-overlay');
       if (dlg) { dlg.style.display = 'flex'; renderTemplatesGrid(); }
     });
-    bindClick('btn-special-chars', function() {
+     bindClick('btn-special-chars', function() {
       var dlg = document.getElementById('special-chars-dialog-overlay');
-      if (dlg) dlg.style.display = '';
+      if (dlg) dlg.style.display = 'flex';
     });
-    bindClick('btn-table', function() {
+     bindClick('btn-table', function() {
       var dlg = document.getElementById('table-dialog-overlay');
-      if (dlg) dlg.style.display = '';
+      if (dlg) dlg.style.display = 'flex';
     });
     bindClick('btn-reading-mode', function() {
       var ed = document.getElementById('editor-wrapper');
@@ -2391,6 +2391,8 @@
       }
     });
   }
+  
+  
 
   // ===== SMART TYPOGRAPHY =====
   var smartTypoPatterns = [
@@ -2895,6 +2897,304 @@ function removeFootnotesByIds(fnIds) {
   updateSaveIndicator('saved');
 }
 
+  // ===== DIALOG INSERT HANDLERS =====
+  var savedLinkRange = null;
+  var savedImageRange = null;
+  var savedTableRange = null;
+
+  function setupDialogInsertHandlers() {
+    // --- LINK ---
+    bindClick('btn-insert-link', function() {
+      var urlInput = document.getElementById('link-url-input');
+      var textInput = document.getElementById('link-text-input');
+      var url = urlInput ? urlInput.value.trim() : '';
+      var text = textInput ? textInput.value.trim() : '';
+      if (!url) { showToast('Enter a URL'); return; }
+      if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) url = 'https://' + url;
+
+      var dlg = document.getElementById('link-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      if (richEditor) {
+        richEditor.focus();
+        var sel = window.getSelection();
+        var range;
+        if (savedLinkRange) {
+          range = savedLinkRange;
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else if (sel.rangeCount > 0) {
+          range = sel.getRangeAt(0);
+        } else {
+          range = document.createRange();
+          range.selectNodeContents(richEditor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+
+        var link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = text || url;
+
+        range.deleteContents();
+        range.insertNode(link);
+
+        var newRange = document.createRange();
+        newRange.setStartAfter(link);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+
+      if (urlInput) urlInput.value = '';
+      if (textInput) textInput.value = '';
+      savedLinkRange = null;
+      saveCurrentTabContent();
+      showToast('Link inserted');
+    });
+
+    bindClick('btn-cancel-link', function() {
+      var dlg = document.getElementById('link-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+    });
+
+    // Save selection before link dialog opens
+    var btnLink = document.getElementById('btn-link');
+    if (btnLink) {
+      btnLink.addEventListener('mousedown', function() {
+        var sel = window.getSelection();
+        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+          savedLinkRange = sel.getRangeAt(0).cloneRange();
+        }
+      });
+    }
+
+    // --- TABLE ---
+    bindClick('btn-create-table', function() {
+      var rowsInput = document.getElementById('table-rows-select');
+      var colsInput = document.getElementById('table-cols-select');
+      var rows = parseInt(rowsInput ? rowsInput.value : '3', 10) || 3;
+      var cols = parseInt(colsInput ? colsInput.value : '3', 10) || 3;
+      if (rows < 1) rows = 1; if (rows > 20) rows = 20;
+      if (cols < 1) cols = 1; if (cols > 10) cols = 10;
+
+      var dlg = document.getElementById('table-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      if (!richEditor) return;
+      richEditor.focus();
+
+      var sel = window.getSelection();
+      var range;
+      if (sel.rangeCount > 0 && richEditor.contains(sel.anchorNode)) {
+        range = sel.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(richEditor);
+        range.collapse(false);
+      }
+
+      var tableHtml = '<table class="custom-table"><thead><tr>';
+      for (var c = 0; c < cols; c++) {
+        tableHtml += '<th>Header ' + (c + 1) + '</th>';
+      }
+      tableHtml += '</tr></thead><tbody>';
+      for (var r = 0; r < rows; r++) {
+        tableHtml += '<tr>';
+        for (var c2 = 0; c2 < cols; c2++) {
+          tableHtml += '<td>&nbsp;</td>';
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table><p><br></p>';
+
+      var tempDiv = document.createElement('div');
+      tempDiv.innerHTML = tableHtml;
+      var table = tempDiv.firstChild;
+
+      range.deleteContents();
+      range.insertNode(table);
+
+      // Place cursor in first cell
+      var firstCell = table.querySelector('td');
+      if (firstCell) {
+        var cellRange = document.createRange();
+        cellRange.selectNodeContents(firstCell);
+        cellRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(cellRange);
+      }
+
+      saveCurrentTabContent();
+      updateStats();
+      showToast('Table inserted');
+    });
+
+    // --- IMAGE ---
+    var sourceType = document.getElementById('image-source-type');
+    var uploadField = document.getElementById('image-upload-field');
+    var urlField = document.getElementById('image-url-field');
+
+    if (sourceType) {
+      sourceType.addEventListener('change', function() {
+        if (this.value === 'upload') {
+          if (uploadField) uploadField.style.display = '';
+          if (urlField) urlField.style.display = 'none';
+        } else {
+          if (uploadField) uploadField.style.display = 'none';
+          if (urlField) urlField.style.display = '';
+        }
+      });
+    }
+
+    // Save selection before image dialog opens
+    var btnImg = document.getElementById('btn-image');
+    if (btnImg) {
+      btnImg.addEventListener('mousedown', function() {
+        var sel = window.getSelection();
+        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+          savedImageRange = sel.getRangeAt(0).cloneRange();
+        }
+      });
+    }
+
+    bindClick('btn-image-confirm', function() {
+      var srcType = sourceType ? sourceType.value : 'url';
+      var urlInput = document.getElementById('image-url-input');
+      var fileInput = document.getElementById('image-file-input');
+      var captionInput = document.getElementById('image-caption-input');
+      var caption = captionInput ? captionInput.value.trim() : '';
+
+      var dlg = document.getElementById('image-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      function insertImage(src) {
+        if (!richEditor) return;
+        richEditor.focus();
+
+        var sel = window.getSelection();
+        var range;
+        if (savedImageRange) {
+          range = savedImageRange;
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else if (sel.rangeCount > 0) {
+          range = sel.getRangeAt(0);
+        } else {
+          range = document.createRange();
+          range.selectNodeContents(richEditor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+
+        var img = document.createElement('img');
+        img.src = src;
+        img.className = 'editor-image';
+        if (caption) img.alt = caption;
+
+        range.deleteContents();
+        range.insertNode(img);
+
+        if (caption) {
+          var captionEl = document.createElement('p');
+          captionEl.style.cssText = 'text-align:center;color:var(--text-muted,#888);font-size:0.85em;font-style:italic;';
+          captionEl.textContent = caption;
+          range.insertNode(captionEl);
+        }
+
+        var newRange = document.createRange();
+        newRange.setStartAfter(caption ? img.nextSibling : img);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+
+        savedImageRange = null;
+        saveCurrentTabContent();
+        updateStats();
+        showToast('Image inserted');
+      }
+
+      if (srcType === 'upload' && fileInput && fileInput.files && fileInput.files[0]) {
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onload = function(ev) { insertImage(ev.target.result); };
+        reader.readAsDataURL(file);
+      } else if (srcType === 'url' && urlInput && urlInput.value.trim()) {
+        insertImage(urlInput.value.trim());
+      } else {
+        showToast('Select an image first');
+        if (dlg) dlg.style.display = 'flex';
+        return;
+      }
+
+      // Reset fields
+      if (urlInput) urlInput.value = '';
+      if (fileInput) fileInput.value = '';
+      if (captionInput) captionInput.value = '';
+    });
+
+    // --- SPECIAL CHARACTERS ---
+    setupSpecialCharsGrid();
+
+    // Restore default source type on dialog open
+    var btnImage = document.getElementById('btn-image');
+    if (btnImage) {
+      btnImage.addEventListener('click', function() {
+        if (sourceType) sourceType.value = 'upload';
+        if (uploadField) uploadField.style.display = '';
+        if (urlField) urlField.style.display = 'none';
+      });
+    }
+  }
+
+  function setupSpecialCharsGrid() {
+    var grid = document.getElementById('special-chars-grid');
+    var tabsContainer = document.getElementById('special-chars-tabs');
+    if (!grid || !tabsContainer) return;
+
+    var currentCategory = 'greek';
+
+    function renderGrid(cat) {
+      currentCategory = cat;
+      var chars = SPECIAL_CHARS[cat] || [];
+      var html = '';
+      for (var i = 0; i < chars.length; i++) {
+        html += '<div class="sc-char" data-char="' + escapeHtml(chars[i]) + '">' + chars[i] + '</div>';
+      }
+      grid.innerHTML = html;
+
+      var charEls = grid.querySelectorAll('.sc-char');
+      for (var j = 0; j < charEls.length; j++) {
+        (function(el) {
+          el.addEventListener('click', function() {
+            var ch = el.getAttribute('data-char');
+            if (!richEditor || !ch) return;
+            richEditor.focus();
+            document.execCommand('insertText', false, ch);
+            updateStats();
+          });
+        })(charEls[j]);
+      }
+    }
+
+    var tabs = tabsContainer.querySelectorAll('.sc-tab');
+    for (var t = 0; t < tabs.length; t++) {
+      (function(tab) {
+        tab.addEventListener('click', function() {
+          for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove('active');
+          tab.classList.add('active');
+          renderGrid(tab.getAttribute('data-cat'));
+        });
+      })(tabs[t]);
+    }
+
+    renderGrid('greek');
+  }
+
   function startApp() {
     applyTheme();
 
@@ -2931,6 +3231,7 @@ function removeFootnotesByIds(fnIds) {
       setupStyleSelector();
       setupKeyboardShortcuts();
       setupToolbarBindings();
+	  setupDialogInsertHandlers();
       setupEditorInput();
       setupWindowResize();
       setupCloseWarning();
