@@ -1754,7 +1754,70 @@
   }
 
   // ===== FORWARD FOOTNOTE REFERENCE CLICK HANDLER =====
+    function _handleFootnoteRefClick(e) {
+    console.log('[FN] Click detected on:', e.target.tagName, e.target.className);
+
+    var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
+    if (!link) {
+      console.log('[FN] No .footnote-ref found in ancestors');
+      return;
+    }
+
+    console.log('[FN] Found link:', link.tagName, 'data-fn-id:', link.getAttribute('data-fn-id'));
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var fnId = link.getAttribute('data-fn-id');
+    if (!fnId) {
+      var href = link.getAttribute('href') || '';
+      fnId = href.replace('#', '');
+    }
+    if (!fnId) {
+      console.log('[FN] No fnId found');
+      return;
+    }
+
+    console.log('[FN] Looking for element with id:', fnId);
+    var fnEl = document.getElementById(fnId);
+    if (!fnEl) {
+      console.warn('[FN] NOT FOUND — element #' + fnId + ' does not exist in DOM');
+      return;
+    }
+
+    console.log('[FN] Found element:', fnEl.tagName, fnEl.id, fnEl.className);
+
+    fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    var all = document.querySelectorAll('.footnote-entry');
+    for (var i = 0; i < all.length; i++) {
+      all[i].classList.remove('flash-highlight');
+      all[i].style.backgroundColor = '';
+    }
+
+    void fnEl.offsetWidth;
+    fnEl.classList.add('flash-highlight');
+    fnEl.style.cssText += ';background-color: rgba(109,76,255,0.35) !important;transition: background-color 0.3s ease;';
+
+    console.log('[FN] Highlight applied. Class:', fnEl.className, 'Style:', fnEl.style.backgroundColor);
+
+    if (fnEl._flashTimeout) clearTimeout(fnEl._flashTimeout);
+    fnEl._flashTimeout = setTimeout(function() {
+      fnEl.classList.remove('flash-highlight');
+      fnEl.style.backgroundColor = '';
+      console.log('[FN] Highlight removed');
+    }, 1500);
+  }
+
   function bindForwardRefClicks() {
+    if (!richEditor) {
+      console.warn('[FN] richEditor is null in bindForwardRefClicks');
+      return;
+    }
+    console.log('[FN] Binding forward ref click handler');
+    richEditor.removeEventListener('click', _handleFootnoteRefClick);
+    richEditor.addEventListener('click', _handleFootnoteRefClick);
+  }
     if (!richEditor) return;
 
     // Always rebind — allow multiple restores after refresh / tab switch
