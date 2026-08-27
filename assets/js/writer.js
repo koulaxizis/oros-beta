@@ -1635,7 +1635,6 @@
   var footnoteCounter = 0;
   var savedFootnoteRange = null;       // ← πρέπει να υπάρχει αυτή η γραμμή
   var savedCommentRange = null;       // ← που προσθέσαμε
-  var footnoteClickHandlersBound = false;
 
   function setupFootnotes() {
     bindClick('btn-footnote', insertFootnote);
@@ -1754,28 +1753,53 @@
     });
   }
 
-    function bindForwardRefClicks() {
-    if (!richEditor || footnoteClickHandlersBound) return;
-    footnoteClickHandlersBound = true;
-    richEditor.addEventListener('click', function(e) {
-      var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
-      if (!link) {
-        if (e.target.classList && e.target.classList.contains('footnote-ref')) link = e.target;
-        else if (e.target.parentElement && e.target.parentElement.classList.contains('footnote-ref')) link = e.target.parentElement;
-      }
-      if (link) {
-        e.preventDefault();
-        var fnId = link.getAttribute('data-fn-id') || link.getAttribute('href').substring(1);
-        var fnEl = document.getElementById(fnId);
-        if (fnEl) {
-          fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          fnEl.classList.remove('flash-highlight');
-          void fnEl.offsetWidth;
-          fnEl.classList.add('flash-highlight');
-          setTimeout(function() { fnEl.classList.remove('flash-highlight'); }, 1500);
-        }
-      }
-    });
+  // ===== FORWARD FOOTNOTE REFERENCE CLICK HANDLER =====
+  function bindForwardRefClicks() {
+    if (!richEditor) return;
+
+    // Always rebind — allow multiple restores after refresh / tab switch
+    richEditor.removeEventListener('click', _handleFootnoteRefClick);
+    richEditor.addEventListener('click', _handleFootnoteRefClick);
+  }
+
+  function _handleFootnoteRefClick(e) {
+    // Find nearest footnote-ref ancestor (could be <sup> or <a>)
+    var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
+    if (!link) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var fnId = link.getAttribute('data-fn-id');
+    if (!fnId) return;
+
+    var fnEl = document.getElementById(fnId);
+    if (!fnEl) {
+      console.warn('Footnote entry not found:', fnId);
+      return;
+    }
+
+    // Scroll to footnote
+    fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Remove any existing highlights first
+    var allHighlights = document.querySelectorAll('.footnote-entry.flash-highlight');
+    for (var i = 0; i < allHighlights.length; i++) {
+      allHighlights[i].classList.remove('flash-highlight');
+    }
+
+    // Force reflow for animation restart
+    void fnEl.offsetWidth;
+
+    // Add highlight
+    fnEl.classList.add('flash-highlight');
+
+    // Schedule removal
+    if (fnEl._flashTimeout) clearTimeout(fnEl._flashTimeout);
+    fnEl._flashTimeout = setTimeout(function() {
+      fnEl.classList.remove('flash-highlight');
+      delete fnEl._flashTimeout;
+    }, 1500);
   }
 
   function restoreFootnotes() {
