@@ -1424,6 +1424,32 @@
           if (ci) ci.placeholder = '"' + range.toString().substring(0, 40) + (range.toString().length > 40 ? '…' : '') + '"';
         }
       }
+	  
+	      // Click on commented text → highlight comment card
+    if (richEditor) {
+      richEditor.addEventListener('click', function(e) {
+        var highlight = e.target.closest ? e.target.closest('.comment-highlight') : null;
+        if (!highlight && e.target.classList && e.target.classList.contains('comment-highlight')) {
+          highlight = e.target;
+        }
+        if (!highlight) return;
+
+        var cid = highlight.getAttribute('data-comment-id');
+        if (!cid || !commentsPanel) return;
+
+        var cards = commentsPanel.querySelectorAll('.comment-item.card-active');
+        for (var c = 0; c < cards.length; c++) cards[c].classList.remove('card-active');
+
+        var card = commentsPanel.querySelector('.comment-item[data-comment-id="' + cid + '"]');
+        if (card) {
+          card.classList.add('card-active');
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (card._cardTimeout) clearTimeout(card._cardTimeout);
+          card._cardTimeout = setTimeout(function() { card.classList.remove('card-active'); }, 2500);
+        }
+      });
+    }
+	
     });
   }
 
@@ -1534,19 +1560,30 @@
       })(deleteBtns[d]);
     }
     
-    var quotedEls = list.querySelectorAll('.comment-quoted');
-    for (var q = 0; q < quotedEls.length; q++) {
-      (function(el) {
-        el.addEventListener('mouseenter', function() {
-          highlightCommentInText(el.getAttribute('data-id'));
+        // Hover on comment card → highlight text in editor
+    var items = list.querySelectorAll('.comment-item');
+    for (var ci = 0; ci < items.length; ci++) {
+      (function(item) {
+        var cid = item.getAttribute('data-comment-id');
+        item.addEventListener('mouseenter', function() {
+          highlightCommentInTextPersistent(cid);
         });
-        el.addEventListener('mouseleave', function() {
+        item.addEventListener('mouseleave', function() {
           clearCommentHighlight();
         });
-      })(quotedEls[q]);
+      })(items[ci]);
+    }
+
+  function highlightCommentInTextPersistent(commentId) {
+    clearCommentHighlight();
+    if (!richEditor) return;
+    var highlights = richEditor.querySelectorAll('[data-comment-id="' + commentId + '"]');
+    for (var h = 0; h < highlights.length; h++) {
+      highlights[h].classList.add('comment-active');
+      highlights[h].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
-
+  
     function addCommentFromPanel() {
     var textarea = document.getElementById('comment-input');
     if (!textarea || !textarea.value.trim()) { showToast('Enter comment text'); return; }
@@ -1724,10 +1761,12 @@
     }, 1500);
   }
 
-  function clearCommentHighlight() {
-    var highlights = richEditor ? richEditor.querySelectorAll('.comment-flash') : [];
+    function clearCommentHighlight() {
+    if (!richEditor) return;
+    var highlights = richEditor.querySelectorAll('.comment-flash, .comment-active');
     for (var h = 0; h < highlights.length; h++) {
       highlights[h].classList.remove('comment-flash');
+      highlights[h].classList.remove('comment-active');
     }
   }
 

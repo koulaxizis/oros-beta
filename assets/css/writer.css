@@ -1866,3 +1866,15 @@ body[data-zen="true"] .side-panel {
   padding: 20px;
   font-size: 0.9rem;
 }
+
+.comment-active {
+  background-color: rgba(109, 76, 255, 0.35) !important;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.comment-item.card-active {
+  background-color: rgba(109, 76, 255, 0.15) !important;
+  border-left: 3px solid var(--primary, #6d4aff);
+  transition: background-color 0.2s ease;
+}
