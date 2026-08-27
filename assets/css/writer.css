@@ -1,12 +1,20 @@
 /* ============================================
-   orOS Writer — Complete Stylesheet v1.3
-   Fixes: Single-row toolbar, page sizes, 
+   orOS Writer — Complete Stylesheet v1.4
+   Fixes: Header/tabs layout, footnote area,
+   single-row toolbar, page sizes, 
    word count arrow, session centering, 
    exit reading position, track changes, comments
    Author: Christos Koulaxizis | orOS Ecosystem
    ============================================ */
 
-/* ===== TAB BAR ===== */
+/* ===== LAYOUT — Body padding for fixed header ===== */
+body.writer-page {
+  min-height: 100vh;
+  overflow: hidden;
+  padding-top: 56px;
+  box-sizing: border-box;
+}
+
 /* ===== TAB BAR ===== */
 .tab-bar {
   display: flex;
@@ -123,7 +131,7 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 112px);
-  margin-top: 56px;
+  margin-top: 0;
   background: var(--bg-dark);
   overflow: hidden;
 }
@@ -309,7 +317,6 @@
 
 .session-label { font-size: 13px; color: var(--text-secondary); }
 
-/* FIX #11: Session timer centered */
 .session-display {
   font-size: 14px;
   font-weight: 600;
@@ -417,23 +424,14 @@
   margin: 0 auto;
 }
 
-/* FIX #1: Page size variations */
 .rich-editor[data-page-size="full-width"] {
   max-width: none;
   padding: 48px 40px 120px;
 }
 
-.rich-editor[data-page-size="a5"] {
-  max-width: 600px;
-}
-
-.rich-editor[data-page-size="b5"] {
-  max-width: 760px;
-}
-
-.rich-editor[data-page-size="a3"] {
-  max-width: 1000px;
-}
+.rich-editor[data-page-size="a5"] { max-width: 600px; }
+.rich-editor[data-page-size="b5"] { max-width: 760px; }
+.rich-editor[data-page-size="a3"] { max-width: 1000px; }
 
 .rich-editor:empty::before {
   content: attr(data-placeholder);
@@ -529,9 +527,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   padding: 0 8px;
 }
 
-.footnote-ref { color: var(--accent-gold); cursor: pointer; font-weight: 600; text-decoration: none; }
-.footnote-ref:hover { text-decoration: underline; }
-
 /* ===== FOOTNOTE AREA ===== */
 .footnote-area {
   border-top: 2px solid var(--border-color);
@@ -540,48 +535,41 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   flex-shrink: 0;
   max-height: 200px;
   overflow-y: auto;
-  margin: 0; /* IMPORTANT: Don't affect outside flow */
+  margin: 0;
   position: relative;
   z-index: 1;
 }
 
-/* Ensure footnote area is inside rich-wrapper's flex flow */
-.rich-wrapper {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
-  background: var(--bg-dark);
-  display: flex;
-  flex-direction: column;
+/* ===== FOOTNOTE LINK STYLING ===== */
+.footnote-ref {
+  color: var(--accent-gold, #c8a96e);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footnote-ref:hover {
+  text-decoration: underline;
+  color: var(--accent-gold-light, #d4b876);
 }
 
-/* Move footnote-area INSIDE rich-editor context */
-#footnote-area {
-  order: 99;
-  width: 100%;
+.footnote-back {
+  color: var(--accent-gold, #c8a96e) !important;
+  font-weight: 600;
+  text-decoration: none;
+  margin-right: 8px;
+  transition: color 0.15s;
+}
+.footnote-back:hover {
+  text-decoration: none;
+  color: var(--accent-gold-light, #d4b876);
 }
 
-/* Or alternatively, force the editor wrapper to contain it properly */
-#editor-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 112px);
-  margin-top: 56px;
-  background: var(--bg-dark);
-  overflow: hidden;
+.footnote-entry a {
+  color: var(--accent-gold, #c8a96e) !important;
 }
-
-/* Footer fixed position - ensures nothing gets pushed */
-#oros-footer {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 9999 !important;
-  background: var(--bg-dark) !important;
-  border-top: 1px solid var(--border-color) !important;
-  height: 56px !important;
+.footnote-entry a:hover {
+  color: var(--accent-gold-light, #d4b876) !important;
 }
 
 /* ===== SAVE INDICATOR & STATS ===== */
@@ -614,7 +602,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   padding: 4px 8px;
 }
 
-/* FIX #2: Stats with up arrow indicator */
 .stats-default { 
   cursor: pointer; 
   opacity: 0.7; 
@@ -832,7 +819,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .template-card h4 { margin: 4px 0; font-size: 14px; color: var(--text-primary); }
 .template-card p { margin: 0; font-size: 11px; color: var(--text-muted); }
 
-/* FIX #4: Custom template card */
 .template-card.custom-template {
   border-color: var(--accent-gold);
   position: relative;
@@ -974,7 +960,6 @@ body.reading-mode .rich-wrapper {
   background: var(--bg-dark);
 }
 
-/* FIX #12: Exit reading button below header */
 #btn-exit-reading-mode {
   display: none;
   position: fixed;
@@ -1056,6 +1041,23 @@ body.focus-mode .rich-editor ol.is-focused {
 }
 
 .zentool-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Centered welcome toast */
+.zentool-toast.welcome-toast {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(0.9);
+  font-size: 1.25rem;
+  padding: 22px 40px;
+  border-radius: 12px;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.zentool-toast.welcome-toast.visible {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
@@ -1275,7 +1277,7 @@ body[data-zen="true"] .side-panel {
 @media (max-width: 768px) {
   #editor-wrapper {
     height: calc(100vh - 96px);
-    margin-top: 48px;
+    margin-top: 0;
   }
 
   .main-toolbar {
@@ -1376,23 +1378,6 @@ body[data-zen="true"] .side-panel {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Centered welcome toast */
-.zentool-toast.welcome-toast {
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) scale(0.9);
-  font-size: 1.25rem;
-  padding: 22px 40px;
-  border-radius: 12px;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.zentool-toast.welcome-toast.visible {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
 }
 
 /* ===== AUTO-CORRECT RULES UI ===== */
@@ -1590,7 +1575,7 @@ body[data-zen="true"] .side-panel {
     padding: 0 4px;
     font-size: 13px;
   }
-  .styles-dropdown {
+    .styles-dropdown {
     height: 28px;
     font-size: 12px;
     max-width: 110px;
@@ -1644,21 +1629,6 @@ body[data-zen="true"] .side-panel {
   transition: all 0.15s;
 }
 
-/* ===== AUTOCORRECT BUTTON STYLING FIX ===== */
-.btn-reset-autocorrect,
-#btn-reset-autocorrect {
-  background: var(--bg-hover, #f5f5f5);
-  color: var(--text-primary, #333);
-  border: 1px solid var(--border-color, #ddd);
-  border-radius: 4px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-top: 8px;
-  transition: all 0.15s;
-}
-
-/* ===== AUTOCORRECT BUTTON STYLING FIX ===== */
 #btn-reset-autocorrect,
 #btn-add-autocorrect,
 .autocorrect-actions button {
@@ -1680,40 +1650,23 @@ body[data-zen="true"] .side-panel {
   border-color: var(--accent, #6d4aff);
 }
 
-/* ===== FOOTER VISIBILITY — Εξαφανίζεται το παλιό forced rule ===== */
-/* ΔΙΑΓΡΑΦΗ του .site-footer, footer, .footer-container { position: relative !important } */
-
-/* ===== LAYOUT — Same pattern as Prompter ===== */
-body.writer-page {
-  min-height: 100vh;
-  overflow: hidden;
-}
-
+/* ===== FOOTER ===== */
 #oros-footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 10;
+  z-index: 9999;
+  background: var(--bg-dark);
+  border-top: 1px solid var(--border-color);
+  height: 56px;
 }
 
-/* ===== CRITICAL FOOTER FIX ===== */
-#oros-footer {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 9999 !important;
-  background: var(--bg-dark) !important;
-  border-top: 1px solid var(--border-color) !important;
-  height: 56px !important;
-}
-
-/* Ensure it stays above everything except modals */
 #oros-footer > * {
-  z-index: 9999 !important;
+  z-index: 9999;
 }
 
+/* ===== TEMPLATE CARDS (DETAILED) ===== */
 .template-card {
   display: flex;
   align-items: center;
@@ -1755,7 +1708,6 @@ body.writer-page {
   line-height: 1.2;
 }
 
-/* Delete & Edit buttons — always visible on custom cards */
 .template-delete-btn,
 .template-edit-btn {
   position: absolute;
@@ -1797,7 +1749,6 @@ body.writer-page {
 .template-edit-btn:hover { color: var(--accent-gold, #c8a96e); border-color: var(--accent-gold, #c8a96e); opacity: 1; }
 .template-edit-btn:hover i { color: var(--accent-gold, #c8a96e); }
 
-/* Section divider — clear separation */
 .template-section-divider {
   grid-column: 1 / -1;
   text-align: center;
@@ -1814,38 +1765,4 @@ body.writer-page {
   padding: 0 12px;
   position: relative;
   top: -10px;
-}
-
-/* ===== FOOTNOTE LINK STYLING ===== */
-.footnote-ref {
-  color: var(--accent-gold, #c8a96e);
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.15s;
-}
-.footnote-ref:hover {
-  text-decoration: underline;
-  color: var(--accent-gold-light, #d4b876);
-}
-
-.footnote-back {
-  color: var(--accent-gold, #c8a96e) !important;
-  font-weight: 600;
-  text-decoration: none;
-  margin-right: 8px;
-  transition: color 0.15s;
-}
-.footnote-back:hover {
-  text-decoration: none;
-  color: var(--accent-gold-light, #d4b876);
-}
-
-/* Ensure all footnote links use proper colors */
-.footnote-entry a {
-  color: var(--accent-gold, #c8a96e) !important;
-}
-
-.footnote-entry a:hover {
-  color: var(--accent-gold-light, #d4b876) !important;
 }
