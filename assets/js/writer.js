@@ -1573,6 +1573,7 @@
         });
       })(items[ci]);
     }
+  }
 
   function highlightCommentInTextPersistent(commentId) {
     clearCommentHighlight();
