@@ -1427,7 +1427,7 @@
       }
     });
 
-    // Click on commented text → highlight comment card
+    // Click on commented text → highlight comment card (SEPARATE listener)
     if (richEditor) {
       richEditor.addEventListener('click', function(e) {
         var highlight = e.target.closest ? e.target.closest('.comment-highlight') : null;
