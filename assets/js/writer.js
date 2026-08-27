@@ -1866,7 +1866,7 @@
     }
 
     if (txtInput) txtInput.value = '';
-    saveCurrentTabContent();
+    renumberFootnotes();
     showToast('Footnote added');
   }
 
@@ -1950,7 +1950,85 @@
     }
     fnArea.style.display = '';
 
+    // Renumber all footnotes sequentially after restore
+    renumberFootnotes();
+  }
+
+  function renumberFootnotes() {
+    if (!richEditor) return;
+
+    var refs = richEditor.querySelectorAll('.footnote-ref');
+    if (refs.length === 0) {
+      footnoteCounter = 0;
+      return;
+    }
+
+    var tab = tabsModule.getActive();
+    var footnotes = (tab && tab.metadata && tab.metadata.footnotes) || [];
+    var fnArea = document.getElementById('footnote-area');
+
+    // Build maps by current IDs (collected BEFORE any mutations)
+    var entryMap = {};
+    if (fnArea) {
+      var entries = fnArea.querySelectorAll('.footnote-entry');
+      for (var e = 0; e < entries.length; e++) {
+        entryMap[entries[e].id] = entries[e];
+      }
+    }
+
+    var metaMap = {};
+    for (var m = 0; m < footnotes.length; m++) {
+      metaMap[footnotes[m].fnId] = footnotes[m];
+    }
+
+    // Renumber sequentially based on DOM order of refs in the editor
+    for (var i = 0; i < refs.length; i++) {
+      var newNum = i + 1;
+      var newFnId = 'fn_' + newNum;
+      var newRefId = 'fn_ref_' + newNum;
+      var oldFnId = refs[i].getAttribute('data-fn-id');
+
+      // Update ref in editor
+      refs[i].href = '#' + newFnId;
+      refs[i].id = newRefId;
+      refs[i].setAttribute('data-fn-id', newFnId);
+      refs[i].innerHTML = '[' + newNum + ']';
+
+      // Update entry in footnote area
+      var entry = entryMap[oldFnId];
+      if (entry) {
+        entry.id = newFnId;
+        var backLink = entry.querySelector('.footnote-back');
+        if (backLink) {
+          // Clone to remove old event listeners cleanly
+          var newBackLink = backLink.cloneNode(true);
+          newBackLink.href = '#' + newRefId;
+          newBackLink.setAttribute('data-ref-id', newRefId);
+          newBackLink.innerHTML = '[' + newNum + ']';
+          backLink.parentNode.replaceChild(newBackLink, backLink);
+          setupFootnoteLinkHandler(newBackLink);
+        }
+      }
+
+      // Update metadata
+      var metaFn = metaMap[oldFnId];
+      if (metaFn) {
+        metaFn.refId = newRefId;
+        metaFn.fnId = newFnId;
+        metaFn.number = newNum;
+      }
+    }
+
+    // Sort footnotes in metadata by new number
+    footnotes.sort(function(a, b) { return a.number - b.number; });
+    if (tab) {
+      tab.metadata.footnotes = footnotes;
+      tabsModule.setMetadata(tab.metadata);
+    }
+
+    footnoteCounter = refs.length;
     bindForwardRefClicks();
+    saveCurrentTabContent();
   }
 
   /* ===== FOOTNOTE CLEANUP ON DELETE ===== */
