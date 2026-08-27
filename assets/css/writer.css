@@ -1785,3 +1785,84 @@ body[data-zen="true"] .side-panel {
 .rich-editor a {
   cursor: pointer;
 }
+
+/* ===== COMMENT STYLES ===== */
+.comment-highlight {
+  background-color: rgba(255, 235, 59, 0.4);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.comment-highlight:hover {
+  background-color: rgba(255, 235, 59, 0.6);
+}
+
+.comment-flash {
+  animation: flash-comment 1.5s ease-out;
+}
+
+@keyframes flash-comment {
+  0% { background-color: rgba(255, 235, 59, 0.8); }
+  50% { background-color: rgba(255, 235, 59, 0.4); }
+  100% { background-color: transparent; }
+}
+
+.comment-item {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+  margin-bottom: 4px;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+}
+
+.comment-delete {
+  background: none;
+  border: none;
+  color: var(--danger, #ff4444);
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.6;
+}
+
+.comment-delete:hover {
+  opacity: 1;
+}
+
+.comment-text {
+  font-size: 0.9rem;
+  color: var(--text-primary, #e0e0e0);
+  margin-bottom: 6px;
+}
+
+.comment-quoted {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-muted, #888);
+  background: rgba(109, 76, 255, 0.1);
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+  border-left: 3px solid var(--primary, #6d4aff);
+  cursor: pointer;
+}
+
+.comment-quoted:hover {
+  background: rgba(109, 76, 255, 0.2);
+}
+
+.comments-empty {
+  text-align: center;
+  color: var(--text-muted, #888);
+  padding: 20px;
+  font-size: 0.9rem;
+}
