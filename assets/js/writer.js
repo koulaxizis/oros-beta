@@ -1558,13 +1558,13 @@
     showToast('Comment added');
   }
 
-      function createComment(commentText, quotedText) {
+    function createComment(commentText, quotedText) {
     var id = 'comm_' + Date.now();
     var timestamp = new Date().toISOString();
     var highlight = document.createElement('span');
     highlight.className = 'comment-highlight';
     highlight.setAttribute('data-comment-id', id);
-    highlight.setAttribute('data-text', commentText);
+    highlight.setAttribute('data-text', commentText);      // ← ΠΡΟΣΘΕΣΕ ΑΥΤΗ ΤΗ ΓΡΑΜΜΗ
     highlight.setAttribute('data-quoted', quotedText);
     highlight.setAttribute('data-timestamp', timestamp);
     highlight.textContent = quotedText;
@@ -1826,7 +1826,7 @@
     });
   }
 
-  function _handleFootnoteRefClick(e) {
+    function _handleFootnoteRefClick(e) {
     var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
     if (!link) return;
 
@@ -1837,10 +1837,7 @@
     if (!fnId) return;
 
     var fnEl = document.getElementById(fnId);
-    if (!fnEl) {
-      console.warn('Footnote entry not found:', fnId);
-      return;
-    }
+    if (!fnEl) { console.warn('Footnote entry not found:', fnId); return; }
 
     fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
