@@ -1190,7 +1190,12 @@
     bindClick('btn-find-next', findNext);
     bindClick('btn-replace', replaceMatch);
     bindClick('btn-replace-all', replaceAll);
-    bindClick('btn-find-close', function() { if (findBar) findBar.style.display = 'none'; hideSearchHighlights(); });
+    bindClick('btn-close-find', function() {
+      if (findBar) findBar.style.display = 'none';
+      var fbtn = document.getElementById('btn-find');
+      if (fbtn) fbtn.classList.remove('active');
+      hideSearchHighlights();
+    });
   }
 
   function findInDocument() {
@@ -2154,13 +2159,20 @@
   function setupSessionTimer() {
     bindClick('btn-session', function() {
       if (sessionBar) {
-        sessionBar.style.display = sessionBar.style.display === 'none' ? '' : 'none';
+        var isVisible = sessionBar.style.display !== 'none';
+        sessionBar.style.display = isVisible ? 'none' : '';
+        var sbtn = document.getElementById('btn-session');
+        if (sbtn) sbtn.classList.toggle('active', !isVisible);
       }
     });
     bindClick('btn-start-session', startSession);
     bindClick('btn-stop-session', stopSession);
     bindClick('btn-reset-session', resetSession);
-    bindClick('btn-close-session', function() { if (sessionBar) sessionBar.style.display = 'none'; });
+    bindClick('btn-close-session', function() {
+      if (sessionBar) sessionBar.style.display = 'none';
+      var sbtn = document.getElementById('btn-session');
+      if (sbtn) sbtn.classList.remove('active');
+    });
     loadSessionTarget();
   }
 
@@ -2625,7 +2637,10 @@ for (var i = 0; i < panels.length; i++) {
     });
     bindClick('btn-session', function() {
       if (sessionBar) {
-        sessionBar.style.display = sessionBar.style.display === 'none' ? '' : 'none';
+        var isVisible = sessionBar.style.display !== 'none';
+        sessionBar.style.display = isVisible ? 'none' : '';
+        var sbtn = document.getElementById('btn-session');
+        if (sbtn) sbtn.classList.toggle('active', !isVisible);
       }
     });
   }
@@ -3193,6 +3208,55 @@ for (var i = 0; i < panels.length; i++) {
   // ===== TABLE OF CONTENTS =====
   function setupTableOfContents() {
     bindClick('btn-toc', toggleTocPanel);
+
+    bindClick('btn-toc-insert', function() {
+      if (!richEditor) return;
+      var heads = richEditor.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      if (heads.length === 0) { showToast('No headings found'); return; }
+
+      var html = '<h2>Table of Contents</h2><ul style="list-style:none;padding-left:0;">';
+      for (var i = 0; i < heads.length; i++) {
+        var tag = heads[i].tagName.toLowerCase();
+        var text = heads[i].textContent.trim() || '(empty)';
+        var indent = '';
+        if (tag === 'h2') indent = 'padding-left:1.5em;';
+        else if (tag === 'h3') indent = 'padding-left:3em;';
+        else if (tag === 'h4') indent = 'padding-left:4.5em;';
+        else if (tag === 'h5') indent = 'padding-left:6em;';
+        else if (tag === 'h6') indent = 'padding-left:7.5em;';
+        html += '<li style="' + indent + '"><a href="#toc-' + i + '" onclick="return false;">' + escapeHtml(text) + '</a></li>';
+        heads[i].id = 'toc-' + i;
+      }
+      html += '</ul><p><br></p>';
+
+      richEditor.focus();
+      var sel = window.getSelection();
+      var range;
+      if (sel.rangeCount > 0 && richEditor.contains(sel.anchorNode)) {
+        range = sel.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(richEditor);
+        range.collapse(true);
+      }
+      range.deleteContents();
+
+      var tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      var fragment = document.createDocumentFragment();
+      while (tempDiv.firstChild) fragment.appendChild(tempDiv.firstChild);
+      range.insertNode(fragment);
+
+      var newRange = document.createRange();
+      newRange.setStartAfter(fragment.lastChild || richEditor.firstChild);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+
+      saveCurrentTabContent();
+      updateStats();
+      showToast('Table of Contents inserted');
+    });
   }
 
   function toggleTocPanel() {
@@ -3437,20 +3501,41 @@ for (var i = 0; i < panels.length; i++) {
       }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
-      bindClick('btn-close-outline', function() { if (outlinePanel) outlinePanel.style.display = 'none'; });
-      bindClick('btn-close-wordfreq', function() { if (wordFreqPanel) wordFreqPanel.style.display = 'none'; });
+      bindClick('btn-close-outline', function() {
+        if (outlinePanel) outlinePanel.style.display = 'none';
+        var obtn = document.getElementById('btn-outline');
+        if (obtn) obtn.classList.remove('active');
+      });
+      bindClick('btn-close-wordfreq', function() {
+        if (wordFreqPanel) wordFreqPanel.style.display = 'none';
+        var wfbtn = document.getElementById('btn-wordfreq');
+        if (wfbtn) wfbtn.classList.remove('active');
+      });
       bindClick('btn-close-comments', function() {
-  if (commentsPanel) commentsPanel.style.display = 'none';
-  var cbtn = document.getElementById('btn-comments');
-  if (cbtn) cbtn.classList.remove('active');
-});
+        if (commentsPanel) commentsPanel.style.display = 'none';
+        var cbtn = document.getElementById('btn-comments');
+        if (cbtn) cbtn.classList.remove('active');
+      });
       bindClick('btn-close-toc', function() {
-  if (tocPanel) tocPanel.style.display = 'none';
-  var tbtn = document.getElementById('btn-toc');
-  if (tbtn) tbtn.classList.remove('active');
-});
-      bindClick('btn-close-version', function() { if (versionPanel) versionPanel.style.display = 'none'; });
-      bindClick('btn-close-goal', function() { if (goalBar) goalBar.style.display = 'none'; });
+        if (tocPanel) tocPanel.style.display = 'none';
+        var tbtn = document.getElementById('btn-toc');
+        if (tbtn) tbtn.classList.remove('active');
+      });
+      bindClick('btn-close-version', function() {
+        if (versionPanel) versionPanel.style.display = 'none';
+        var vbtn = document.getElementById('btn-version-history');
+        if (vbtn) vbtn.classList.remove('active');
+      });
+      bindClick('btn-close-metadata', function() {
+        if (metadataPanel) metadataPanel.style.display = 'none';
+        var mbtn = document.getElementById('btn-metadata');
+        if (mbtn) mbtn.classList.remove('active');
+      });
+      bindClick('btn-close-goal', function() {
+        if (goalBar) goalBar.style.display = 'none';
+        var gbtn = document.getElementById('btn-goal');
+        if (gbtn) gbtn.classList.remove('active');
+      });
       bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
 
       bindClick('btn-close-templates', function() { var d = document.getElementById('templates-dialog-overlay'); if (d) d.style.display = 'none'; });
