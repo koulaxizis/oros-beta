@@ -246,8 +246,8 @@
         '<p><strong>Date:</strong> [YYYY-MM-DD] · <strong>Time:</strong> [HH:MM] · <strong>Location:</strong> [Room / Virtual link]</p>'
     }
   ];
-
-  // ===== SPECIAL CHARACTER DATA =====
+  
+    // ===== SPECIAL CHARACTER DATA =====
   var SPECIAL_CHARS = {
     greek: 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάέήίόύώϊϋΐΰ'.split(''),
     math: ['\u00B1','\u00D7','\u00F7','\u2260','\u2248','\u2264','\u2265','\u221E','\u222B','\u2211','\u221A','\u2202','\u2207','\u220F','\u2234','\u2235','\u221D','\u2208','\u2209','\u222A','\u2229','\u2282','\u2283','\u2286','\u2287','\u2295','\u2297','\u2299','\u226A','\u226B','\u00AC','\u2227','\u2228','\u2200','\u2203'],
@@ -481,8 +481,8 @@
       this.render();
     }
   };
-
-  // ===== HELPER FUNCTIONS =====
+  
+    // ===== HELPER FUNCTIONS =====
   function bindClick(id, fn) {
     clickHandlers[id] = fn;
   }
@@ -1325,94 +1325,6 @@
     bindClick('btn-accept-all-changes', acceptAllChanges);
     bindClick('btn-reject-all-changes', rejectAllChanges);
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
-	  // ===== FOOTNOTE CLEANUP ON DELETE =====
-  var footnoteCleanupObserver = null;
-
-  function setupFootnoteCleanup() {
-    if (!richEditor || footnoteCleanupObserver) return;
-    
-    footnoteCleanupObserver = new MutationObserver(function(mutations) {
-      for (var m = 0; m < mutations.length; m++) {
-        var mutation = mutations[m];
-        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-          checkAndRemoveOrphanFootnotes(mutation.removedNodes);
-        }
-      }
-    });
-    
-    footnoteCleanupObserver.observe(richEditor, { 
-      childList: true, 
-      subtree: true 
-    });
-  }
-
-  function checkAndRemoveOrphanFootnotes(removedNodes) {
-    var removedRefs = [];
-    
-    for (var i = 0; i < removedNodes.length; i++) {
-      var node = removedNodes[i];
-      
-      // Check if removed node contains footnote refs
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        var refs = node.querySelectorAll('.footnote-ref');
-        for (var r = 0; r < refs.length; r++) {
-          var fnId = refs[r].getAttribute('data-fn-id');
-          if (fnId) removedRefs.push(fnId);
-        }
-        
-        // Also check the node itself
-        if (node.classList && node.classList.contains('footnote-ref')) {
-          var fnId = node.getAttribute('data-fn-id');
-          if (fnId) removedRefs.push(fnId);
-        }
-      }
-      
-      // Recursively check descendants
-      var allRefs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
-      for (var n = 0; n < allRefs.length; n++) {
-        var fnId = allRefs[n].getAttribute('data-fn-id');
-        if (fnId && removedRefs.indexOf(fnId) === -1) {
-          removedRefs.push(fnId);
-        }
-      }
-    }
-    
-    // Remove orphaned footnotes from metadata
-    if (removedRefs.length > 0) {
-      removeFootnotesByIds(removedRefs);
-    }
-  }
-
-  function removeFootnotesByIds(fnIds) {
-    var tab = tabsModule.getActive();
-    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
-    
-    var originalCount = tab.metadata.footnotes.length;
-    tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
-      return fnIds.indexOf(f.fnId) === -1;
-    });
-    
-    // Rebuild the footnote area display
-    restoreFootnotes();
-    
-    // Save the updated metadata
-    tabsModule.setMetadata(tab.metadata);
-    
-    // Update save indicator
-    updateSaveIndicator('saved');
-  }
-
-  function removeFootnoteFnId(fnId) {
-    var tab = tabsModule.getActive();
-    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
-    
-    tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
-      return f.fnId !== fnId;
-    });
-    
-    restoreFootnotes();
-    tabsModule.setMetadata(tab.metadata);
-  }
   }
 
   function toggleTrackChanges() {
@@ -1630,16 +1542,20 @@
     meta.comments = comments;
     tabsModule.setMetadata(meta);
   }
-
-  // ===== FOOTNOTES =====
+  
+    // ===== FOOTNOTES =====
   var footnoteCounter = 0;
-  var savedFootnoteRange = null;       // ← πρέπει να υπάρχει αυτή η γραμμή
-  var savedCommentRange = null;       // ← που προσθέσαμε
+  var savedFootnoteRange = null;
+  var savedCommentRange = null;
+  var savedLinkRange = null;
+  var savedImageRange = null;
+  var savedTableRange = null;
 
   function setupFootnotes() {
     bindClick('btn-footnote', insertFootnote);
     bindClick('btn-insert-footnote', insertFootnoteFromDialog);
     bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
+    setupFootnoteCleanup();
   }
 
   function insertFootnote() {
@@ -1699,7 +1615,6 @@
       range.deleteContents();
       range.insertNode(sup);
 
-      // Place cursor after the inserted sup
       var newRange = document.createRange();
       newRange.setStartAfter(sup);
       newRange.collapse(true);
@@ -1737,7 +1652,7 @@
     showToast('Footnote added');
   }
 
-    function setupFootnoteLinkHandler(link) {
+  function setupFootnoteLinkHandler(link) {
     if (!link) return;
     link.addEventListener('click', function(e) {
       e.preventDefault();
@@ -1753,80 +1668,7 @@
     });
   }
 
-  // ===== FORWARD FOOTNOTE REFERENCE CLICK HANDLER =====
-    function _handleFootnoteRefClick(e) {
-    console.log('[FN] Click detected on:', e.target.tagName, e.target.className);
-
-    var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
-    if (!link) {
-      console.log('[FN] No .footnote-ref found in ancestors');
-      return;
-    }
-
-    console.log('[FN] Found link:', link.tagName, 'data-fn-id:', link.getAttribute('data-fn-id'));
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    var fnId = link.getAttribute('data-fn-id');
-    if (!fnId) {
-      var href = link.getAttribute('href') || '';
-      fnId = href.replace('#', '');
-    }
-    if (!fnId) {
-      console.log('[FN] No fnId found');
-      return;
-    }
-
-    console.log('[FN] Looking for element with id:', fnId);
-    var fnEl = document.getElementById(fnId);
-    if (!fnEl) {
-      console.warn('[FN] NOT FOUND — element #' + fnId + ' does not exist in DOM');
-      return;
-    }
-
-    console.log('[FN] Found element:', fnEl.tagName, fnEl.id, fnEl.className);
-
-    fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    var all = document.querySelectorAll('.footnote-entry');
-    for (var i = 0; i < all.length; i++) {
-      all[i].classList.remove('flash-highlight');
-      all[i].style.backgroundColor = '';
-    }
-
-    void fnEl.offsetWidth;
-    fnEl.classList.add('flash-highlight');
-    fnEl.style.cssText += ';background-color: rgba(109,76,255,0.35) !important;transition: background-color 0.3s ease;';
-
-    console.log('[FN] Highlight applied. Class:', fnEl.className, 'Style:', fnEl.style.backgroundColor);
-
-    if (fnEl._flashTimeout) clearTimeout(fnEl._flashTimeout);
-    fnEl._flashTimeout = setTimeout(function() {
-      fnEl.classList.remove('flash-highlight');
-      fnEl.style.backgroundColor = '';
-      console.log('[FN] Highlight removed');
-    }, 1500);
-  }
-
-  function bindForwardRefClicks() {
-    if (!richEditor) {
-      console.warn('[FN] richEditor is null in bindForwardRefClicks');
-      return;
-    }
-    console.log('[FN] Binding forward ref click handler');
-    richEditor.removeEventListener('click', _handleFootnoteRefClick);
-    richEditor.addEventListener('click', _handleFootnoteRefClick);
-  }
-    if (!richEditor) return;
-
-    // Always rebind — allow multiple restores after refresh / tab switch
-    richEditor.removeEventListener('click', _handleFootnoteRefClick);
-    richEditor.addEventListener('click', _handleFootnoteRefClick);
-  }
-
   function _handleFootnoteRefClick(e) {
-    // Find nearest footnote-ref ancestor (could be <sup> or <a>)
     var link = e.target.closest ? e.target.closest('.footnote-ref') : null;
     if (!link) return;
 
@@ -1842,27 +1684,29 @@
       return;
     }
 
-    // Scroll to footnote
     fnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Remove any existing highlights first
     var allHighlights = document.querySelectorAll('.footnote-entry.flash-highlight');
     for (var i = 0; i < allHighlights.length; i++) {
       allHighlights[i].classList.remove('flash-highlight');
     }
 
-    // Force reflow for animation restart
     void fnEl.offsetWidth;
-
-    // Add highlight
     fnEl.classList.add('flash-highlight');
+    fnEl.style.cssText += ';background-color: rgba(109,76,255,0.35) !important;transition: background-color 0.3s ease;';
 
-    // Schedule removal
     if (fnEl._flashTimeout) clearTimeout(fnEl._flashTimeout);
     fnEl._flashTimeout = setTimeout(function() {
       fnEl.classList.remove('flash-highlight');
+      fnEl.style.backgroundColor = '';
       delete fnEl._flashTimeout;
     }, 1500);
+  }
+
+  function bindForwardRefClicks() {
+    if (!richEditor) return;
+    richEditor.removeEventListener('click', _handleFootnoteRefClick);
+    richEditor.addEventListener('click', _handleFootnoteRefClick);
   }
 
   function restoreFootnotes() {
@@ -1870,7 +1714,6 @@
     var fnArea = document.getElementById('footnote-area');
     if (!fnArea) return;
 
-    // ALWAYS clear and rebuild
     fnArea.innerHTML = '';
     footnoteCounter = 0;
 
@@ -1892,639 +1735,339 @@
     }
     fnArea.style.display = '';
 
-    // Bind forward ref clicks (editor -> footnote area)
     bindForwardRefClicks();
   }
 
-  // ===== VERSION HISTORY =====
-  var versionHistoryInterval = null;
+  /* ===== FOOTNOTE CLEANUP ON DELETE ===== */
+  var footnoteCleanupObserver = null;
 
-  function setupVersionHistory() {
-    bindClick('btn-version-history', toggleVersionsPanel);
-    startVersionSnapshots();
-  }
-
-  function toggleVersionsPanel() {
-    if (!versionPanel) return;
-    var isVisible = versionPanel.style.display !== 'none';
-    versionPanel.style.display = isVisible ? 'none' : '';
-    var btn = document.getElementById('btn-version-history');
-    if (btn) btn.classList.toggle('active', !isVisible);
-    if (!isVisible) refreshVersionList();
-  }
-
-  function startVersionSnapshots() {
-    if (versionHistoryInterval) clearInterval(versionHistoryInterval);
-    versionHistoryInterval = setInterval(function() {
-      var tab = tabsModule.getActive();
-      if (!tab) return;
-      var content = richEditor ? richEditor.innerHTML : '';
-      var hash = simpleHash(content);
-      tab.versions = tab.versions || [];
-      var lastVersion = tab.versions[tab.versions.length - 1];
-      if (lastVersion && lastVersion.hash === hash) return;
-      tab.versions.push({ hash: hash, timestamp: new Date().toISOString(), snapshot: content });
-      if (tab.versions.length > 20) tab.versions.shift();
-      tabsModule.persist();
-    }, 30000);
-  }
-
-  function simpleHash(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
-    return hash.toString();
-  }
-
-  function refreshVersionList() {
-    if (!versionList) return;
-    var tab = tabsModule.getActive();
-    if (!tab || !tab.versions) { versionList.innerHTML = '<div class="empty-msg">No versions</div>'; return; }
-    var versions = tab.versions;
-    var html = '';
-    for (var i = versions.length - 1; i >= 0; i--) {
-      var v = versions[i];
-      var date = new Date(v.timestamp).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-      html += '<div class="version-item" data-index="' + i + '"><span class="version-date">' + date + '</span><button class="version-restore" data-index="' + i + '">Restore</button></div>';
-    }
-    versionList.innerHTML = html;
-    var restoreBtns = versionList.querySelectorAll('.version-restore');
-    for (var r = 0; r < restoreBtns.length; r++) {
-      (function(btn, idx) {
-        btn.addEventListener('click', function() {
-          if (!confirm('Restore this version? Unsaved changes will be lost.')) return;
-          richEditor.innerHTML = versions[idx].snapshot;
-          tabsModule.setContent(richEditor.innerHTML);
-          showToast('Version restored');
-        });
-      })(restoreBtns[r], r);
-    }
-  }
-
-  // ===== ZEN MODE =====
-  function setupZenMode() {
-    bindClick('btn-zen', toggleZenMode);
-
-    // Capture-phase override — fires BEFORE main.js handler
-    document.addEventListener('click', function(e) {
-      var target = e.target.closest ? e.target.closest('#btn-zen') : null;
-      if (target) {
-        e.stopPropagation();
-        e.preventDefault();
-        toggleZenMode();
+  function setupFootnoteCleanup() {
+    if (!richEditor || footnoteCleanupObserver) return;
+    footnoteCleanupObserver = new MutationObserver(function(mutations) {
+      for (var m = 0; m < mutations.length; m++) {
+        var mutation = mutations[m];
+        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+          checkAndRemoveOrphanFootnotes(mutation.removedNodes);
+        }
       }
-    }, true);
+    });
+    footnoteCleanupObserver.observe(richEditor, { childList: true, subtree: true });
+  }
 
-    var zenToggle = document.getElementById('toggle-zen-mode');
-    if (zenToggle) {
-      zenToggle.addEventListener('change', function() {
-        setZenMode(this.checked);
+  function checkAndRemoveOrphanFootnotes(removedNodes) {
+    var removedRefs = [];
+    for (var i = 0; i < removedNodes.length; i++) {
+      var node = removedNodes[i];
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        var refs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
+        for (var r = 0; r < refs.length; r++) {
+          var fnId = refs[r].getAttribute('data-fn-id');
+          if (fnId && removedRefs.indexOf(fnId) === -1) removedRefs.push(fnId);
+        }
+      }
+    }
+    if (removedRefs.length > 0) removeFootnotesByIds(removedRefs);
+  }
+
+  function removeFootnotesByIds(fnIds) {
+    var tab = tabsModule.getActive();
+    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
+    tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
+      return fnIds.indexOf(f.fnId) === -1;
+    });
+    restoreFootnotes();
+    tabsModule.setMetadata(tab.metadata);
+    updateSaveIndicator('saved');
+  }
+  
+    // ===== DIALOG INSERT HANDLERS =====
+  function setupDialogInsertHandlers() {
+    // --- LINK ---
+    bindClick('btn-insert-link', function() {
+      var urlInput = document.getElementById('link-url-input');
+      var textInput = document.getElementById('link-text-input');
+      var url = urlInput ? urlInput.value.trim() : '';
+      var text = textInput ? textInput.value.trim() : '';
+      if (!url) { showToast('Enter a URL'); return; }
+      if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) url = 'https://' + url;
+
+      var dlg = document.getElementById('link-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      if (richEditor) {
+        richEditor.focus();
+        var sel = window.getSelection();
+        var range;
+        if (savedLinkRange) {
+          range = savedLinkRange;
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else if (sel.rangeCount > 0) {
+          range = sel.getRangeAt(0);
+        } else {
+          range = document.createRange();
+          range.selectNodeContents(richEditor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+
+        var link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = text || url;
+
+        range.deleteContents();
+        range.insertNode(link);
+
+        var newRange = document.createRange();
+        newRange.setStartAfter(link);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+
+      if (urlInput) urlInput.value = '';
+      if (textInput) textInput.value = '';
+      savedLinkRange = null;
+      saveCurrentTabContent();
+      showToast('Link inserted');
+    });
+
+    bindClick('btn-cancel-link', function() {
+      var dlg = document.getElementById('link-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+    });
+
+    var btnLink = document.getElementById('btn-link');
+    if (btnLink) {
+      btnLink.addEventListener('mousedown', function() {
+        var sel = window.getSelection();
+        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+          savedLinkRange = sel.getRangeAt(0).cloneRange();
+        }
+      });
+    }
+
+    // --- TABLE ---
+    bindClick('btn-create-table', function() {
+      var rowsInput = document.getElementById('table-rows-select');
+      var colsInput = document.getElementById('table-cols-select');
+      var rows = parseInt(rowsInput ? rowsInput.value : '3', 10) || 3;
+      var cols = parseInt(colsInput ? colsInput.value : '3', 10) || 3;
+      if (rows < 1) rows = 1; if (rows > 20) rows = 20;
+      if (cols < 1) cols = 1; if (cols > 10) cols = 10;
+
+      var dlg = document.getElementById('table-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      if (!richEditor) return;
+      richEditor.focus();
+
+      var sel = window.getSelection();
+      var range;
+      if (sel.rangeCount > 0 && richEditor.contains(sel.anchorNode)) {
+        range = sel.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(richEditor);
+        range.collapse(false);
+      }
+
+      var tableHtml = '<table class="custom-table"><thead><tr>';
+      for (var c = 0; c < cols; c++) {
+        tableHtml += '<th>Header ' + (c + 1) + '</th>';
+      }
+      tableHtml += '</tr></thead><tbody>';
+      for (var r = 0; r < rows; r++) {
+        tableHtml += '<tr>';
+        for (var c2 = 0; c2 < cols; c2++) {
+          tableHtml += '<td>&nbsp;</td>';
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table><p><br></p>';
+
+      var tempDiv = document.createElement('div');
+      tempDiv.innerHTML = tableHtml;
+      var table = tempDiv.firstChild;
+
+      range.deleteContents();
+      range.insertNode(table);
+
+      var firstCell = table.querySelector('td');
+      if (firstCell) {
+        var cellRange = document.createRange();
+        cellRange.selectNodeContents(firstCell);
+        cellRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(cellRange);
+      }
+
+      saveCurrentTabContent();
+      updateStats();
+      showToast('Table inserted');
+    });
+
+    // --- IMAGE ---
+    var sourceType = document.getElementById('image-source-type');
+    var uploadField = document.getElementById('image-upload-field');
+    var urlField = document.getElementById('image-url-field');
+
+    if (sourceType) {
+      sourceType.addEventListener('change', function() {
+        if (this.value === 'upload') {
+          if (uploadField) uploadField.style.display = '';
+          if (urlField) urlField.style.display = 'none';
+        } else {
+          if (uploadField) uploadField.style.display = 'none';
+          if (urlField) urlField.style.display = '';
+        }
+      });
+    }
+
+    var btnImg = document.getElementById('btn-image');
+    if (btnImg) {
+      btnImg.addEventListener('mousedown', function() {
+        var sel = window.getSelection();
+        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+          savedImageRange = sel.getRangeAt(0).cloneRange();
+        }
+      });
+    }
+
+    bindClick('btn-image-confirm', function() {
+      var srcType = sourceType ? sourceType.value : 'url';
+      var urlInput = document.getElementById('image-url-input');
+      var fileInput = document.getElementById('image-file-input');
+      var captionInput = document.getElementById('image-caption-input');
+      var caption = captionInput ? captionInput.value.trim() : '';
+
+      var dlg = document.getElementById('image-dialog-overlay');
+      if (dlg) dlg.style.display = 'none';
+
+      function insertImage(src) {
+        if (!richEditor) return;
+        richEditor.focus();
+
+        var sel = window.getSelection();
+        var range;
+        if (savedImageRange) {
+          range = savedImageRange;
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else if (sel.rangeCount > 0) {
+          range = sel.getRangeAt(0);
+        } else {
+          range = document.createRange();
+          range.selectNodeContents(richEditor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+
+        var img = document.createElement('img');
+        img.src = src;
+        img.className = 'editor-image';
+        if (caption) img.alt = caption;
+
+        range.deleteContents();
+        range.insertNode(img);
+
+        if (caption) {
+          var captionEl = document.createElement('p');
+          captionEl.style.cssText = 'text-align:center;color:var(--text-muted,#888);font-size:0.85em;font-style:italic;';
+          captionEl.textContent = caption;
+          range.insertNode(captionEl);
+        }
+
+        var newRange = document.createRange();
+        newRange.setStartAfter(caption ? img.nextSibling : img);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+
+        savedImageRange = null;
+        saveCurrentTabContent();
+        updateStats();
+        showToast('Image inserted');
+      }
+
+      if (srcType === 'upload' && fileInput && fileInput.files && fileInput.files[0]) {
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onload = function(ev) { insertImage(ev.target.result); };
+        reader.readAsDataURL(file);
+      } else if (srcType === 'url' && urlInput && urlInput.value.trim()) {
+        insertImage(urlInput.value.trim());
+      } else {
+        showToast('Select an image first');
+        if (dlg) dlg.style.display = 'flex';
+        return;
+      }
+
+      if (urlInput) urlInput.value = '';
+      if (fileInput) fileInput.value = '';
+      if (captionInput) captionInput.value = '';
+    });
+
+    // --- SPECIAL CHARACTERS ---
+    setupSpecialCharsGrid();
+
+    var btnImage2 = document.getElementById('btn-image');
+    if (btnImage2) {
+      btnImage2.addEventListener('click', function() {
+        if (sourceType) sourceType.value = 'upload';
+        if (uploadField) uploadField.style.display = '';
+        if (urlField) urlField.style.display = 'none';
       });
     }
   }
 
-  function toggleZenMode() {
-    var isZen = document.body.hasAttribute('data-zen');
-    setZenMode(!isZen);
-  }
+  function setupSpecialCharsGrid() {
+    var grid = document.getElementById('special-chars-grid');
+    var tabsContainer = document.getElementById('special-chars-tabs');
+    if (!grid || !tabsContainer) return;
 
-  function setZenMode(enabled) {
-    if (enabled) {
-      document.body.setAttribute('data-zen', 'true');
-      localStorage.setItem('oros_zen_mode', 'true');
-    } else {
-      document.body.removeAttribute('data-zen');
-      localStorage.setItem('oros_zen_mode', 'false');
-    }
-    var zenToggle = document.getElementById('toggle-zen-mode');
-    if (zenToggle) zenToggle.checked = enabled;
-    window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', { detail: { enabled: enabled } }));
-    showToast(enabled ? 'Zen Mode ON' : 'Zen Mode OFF');
-    clampToViewport();
-  }
+    var currentCategory = 'greek';
 
-  // ===== GOAL BAR =====
-  function setupGoalBar() {
-    bindClick('btn-goal', toggleGoalSettings);
-    goalTargetInput = document.getElementById('goal-target-input');
-    goalUnitSelect = document.getElementById('goal-unit-select');
-    goalLockCheckbox = document.getElementById('goal-lock-checkbox');
-    if (goalTargetInput) goalTargetInput.addEventListener('change', saveGoal);
-    if (goalUnitSelect) goalUnitSelect.addEventListener('change', saveGoal);
-    if (goalLockCheckbox) goalLockCheckbox.addEventListener('change', saveGoal);
-    loadGoal();
-  }
-
-  function toggleGoalSettings() {
-    if (!goalBar) return;
-    var isVisible = goalBar.style.display !== 'none';
-    goalBar.style.display = isVisible ? 'none' : '';
-    var btn = document.getElementById('btn-goal');
-    if (btn) btn.classList.toggle('active', !isVisible);
-  }
-
-  function saveGoal() {
-    if (goalTargetInput) localStorage.setItem('oros_writer_goal', goalTargetInput.value || 0);
-    if (goalUnitSelect) localStorage.setItem('oros_writer_goal_unit', goalUnitSelect.value);
-    updateStats();
-  }
-
-  function loadGoal() {
-    if (goalTargetInput) {
-      var saved = localStorage.getItem('oros_writer_goal');
-      goalTargetInput.value = saved || 1000;
-    }
-    if (goalUnitSelect) {
-      var savedUnit = localStorage.getItem('oros_writer_goal_unit');
-      goalUnitSelect.value = savedUnit || 'words';
-    }
-    updateGoalBar();
-  }
-
-  function updateGoalBar() {
-    if (!goalBar || !goalBarContent || !goalBarFill) return;
-    var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-    if (goal <= 0) { goalBar.style.display = 'none'; return; }
-    goalBar.style.display = '';
-    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
-    var current = 0;
-    if (richEditor) {
-      if (unit === 'chars') current = richEditor.innerText.length;
-      else current = (richEditor.innerText.trim() || '').split(/\s+/).length;
-    }
-    var pct = Math.min(100, Math.round((current / goal) * 100));
-    goalBarFill.style.width = pct + '%';
-    var remaining = Math.max(0, goal - current);
-    goalBarContent.textContent = remaining + (unit === 'chars' ? ' chars' : ' words') + ' left';
-  }
-
-  // ===== SESSION TIMER =====
-  function setupSessionTimer() {
-    bindClick('btn-session', function() {
-      if (sessionBar) {
-        sessionBar.style.display = sessionBar.style.display === 'none' ? '' : 'none';
+    function renderGrid(cat) {
+      currentCategory = cat;
+      var chars = SPECIAL_CHARS[cat] || [];
+      var html = '';
+      for (var i = 0; i < chars.length; i++) {
+        html += '<div class="sc-char" data-char="' + escapeHtml(chars[i]) + '">' + chars[i] + '</div>';
       }
-    });
-    bindClick('btn-start-session', startSession);
-    bindClick('btn-stop-session', stopSession);
-    bindClick('btn-reset-session', resetSession);
-    bindClick('btn-close-session', function() { if (sessionBar) sessionBar.style.display = 'none'; });
-    loadSessionTarget();
-  }
+      grid.innerHTML = html;
 
-  function startSession() {
-    if (sessionInterval) clearInterval(sessionInterval);
-    sessionStartTime = Date.now();
-    sessionSeconds = 0;
-    var targetMinutes = localStorage.getItem('oros_writer_session_time');
-    sessionInterval = setInterval(function() {
-      sessionSeconds++;
-      if (sessionDisplay) {
-        var mins = Math.floor(sessionSeconds / 60);
-        var secs = sessionSeconds % 60;
-        sessionDisplay.textContent = mins + ':' + secs.toString().padStart(2, '0');
+      var charEls = grid.querySelectorAll('.sc-char');
+      for (var j = 0; j < charEls.length; j++) {
+        (function(el) {
+          el.addEventListener('click', function() {
+            var ch = el.getAttribute('data-char');
+            if (!richEditor || !ch) return;
+            richEditor.focus();
+            document.execCommand('insertText', false, ch);
+            updateStats();
+          });
+        })(charEls[j]);
       }
-      if (targetMinutes && sessionSeconds >= parseInt(targetMinutes, 10) * 60) {
-        showToast(getTrans('session_complete') || 'Session complete!');
-        stopSession();
-      }
-    }, 1000);
-    showToast(getTrans('session_started') || 'Session started');
-  }
+    }
 
-  function stopSession() {
-    if (sessionInterval) clearInterval(sessionInterval);
-    sessionInterval = null;
-    if (sessionDisplay) sessionDisplay.textContent = '--:--';
-    showToast(getTrans('session_stopped') || 'Session stopped');
-  }
-
-  function resetSession() {
-    stopSession();
-    sessionSeconds = 0;
-    if (sessionDisplay) sessionDisplay.textContent = '--:--';
-  }
-
-  function loadSessionTarget() {
-    var targetW = localStorage.getItem('oros_writer_session_words');
-    var targetM = localStorage.getItem('oros_writer_session_time');
-    var wInp = document.getElementById('session-word-target');
-    var mInp = document.getElementById('session-time-target');
-    if (wInp) wInp.value = targetW || 500;
-    if (mInp) mInp.value = targetM || 25;
-  }
-
-  // ===== EXPORT / IMPORT =====
-  function setupExportImport() {
-    bindClick('btn-export', function(e) {
-      e.stopPropagation();
-      var dd = document.getElementById('export-dropdown');
-      if (dd) dd.classList.toggle('active');
-    });
-    bindClick('btn-import', function(e) {
-      e.stopPropagation();
-      var dd = document.getElementById('import-dropdown');
-      if (dd) dd.classList.toggle('active');
-    });
-
-    var exportItems = document.querySelectorAll('#export-dropdown button[data-format]');
-    for (var i = 0; i < exportItems.length; i++) {
-      (function(btn) {
-        var fmt = btn.getAttribute('data-format');
-        bindClick('btn-export-' + fmt, function() {
-          if (fmt === 'txt') exportTxt();
-          else if (fmt === 'md') exportMd();
-          else if (fmt === 'html') exportHtml();
-          else if (fmt === 'pdf') exportPdf();
-          else if (fmt === 'docx') exportDocx();
-          else if (fmt === 'rtf') exportRtf();
-          else if (fmt === 'json') exportJson();
-          else if (fmt === 'epub') exportEpub();
-          var dd = document.getElementById('export-dropdown');
-          if (dd) dd.classList.remove('active');
+    var tabs = tabsContainer.querySelectorAll('.sc-tab');
+    for (var t = 0; t < tabs.length; t++) {
+      (function(tab) {
+        tab.addEventListener('click', function() {
+          for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove('active');
+          tab.classList.add('active');
+          renderGrid(tab.getAttribute('data-cat'));
         });
-      })(exportItems[i]);
+      })(tabs[t]);
     }
 
-    bindClick('btn-import-txt', importTxt);
-    bindClick('btn-close-export', hideExportOptions);
-    bindClick('btn-close-import', hideImportOptions);
-    setupFileImport();
+    renderGrid('greek');
   }
-
-  function showExportOptions() { var el = document.getElementById('export-dropdown'); if (el) el.classList.add('active'); }
-  function hideExportOptions() { var el = document.getElementById('export-dropdown'); if (el) el.classList.remove('active'); }
-  function showImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.add('active'); }
-  function hideImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.remove('active'); }
-
-  function exportTxt() {
-    if (!richEditor) return;
-    var blob = new Blob([richEditor.innerText], { type: 'text/plain' });
-    downloadBlob(blob, getTabTitle() + '.txt');
-  }
-
-  function exportMd() {
-    if (!richEditor) return;
-    var blob = new Blob([richEditor.innerText], { type: 'text/markdown' });
-    downloadBlob(blob, getTabTitle() + '.md');
-  }
-
-  function exportHtml() {
-    if (!richEditor) return;
-    var blob = new Blob(['<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' + richEditor.innerHTML + '</body></html>'], { type: 'text/html' });
-    downloadBlob(blob, getTabTitle() + '.html');
-  }
-
-  function exportPdf() {
-    window.print();
-  }
-
-  function exportDocx() {
-    try {
-      if (!window.JSZip) { showToast('JSZip not loaded'); return; }
-      var zip = new JSZip();
-      zip.file('document.txt', richEditor ? richEditor.innerText : '');
-      zip.generateAsync({ type: 'blob' }).then(function(blob) {
-        downloadBlob(blob, getTabTitle() + '.docx');
-        showToast('DOCX exported');
-      }).catch(function(e) { showToast('Export failed: ' + e.message); });
-    } catch(e) { showToast('Export failed: ' + e.message); }
-  }
-
-  function exportRtf() {
-    try {
-      var text = richEditor ? richEditor.innerText : '';
-      text = text.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}');
-      var rtf = '{\\rtf1\\ansi ' + text + '}';
-      var blob = new Blob([rtf], { type: 'application/rtf' });
-      downloadBlob(blob, getTabTitle() + '.rtf');
-      showToast('RTF exported');
-    } catch(e) { showToast('Export failed: ' + e.message); }
-  }
-
-  function exportJson() {
-    var tab = tabsModule.getActive();
-    var blob = new Blob([JSON.stringify(tab, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, getTabTitle() + '.json');
-  }
-
-  function exportEpub() {
-    showToast('EPUB export coming soon');
-  }
-
-  function downloadBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function importTxt() {
-    showImportOptions();
-  }
-
-  function setupFileImport() {
-    var fileInput = document.getElementById('file-input-hidden');
-    if (!fileInput) return;
-    fileInput.addEventListener('change', function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var content = ev.target.result;
-        if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
-          richEditor.innerHTML = content;
-        } else if (file.name.endsWith('.rtf')) {
-          var html = (typeof window.parseRTF === 'function')
-            ? window.parseRTF(content)
-            : '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-          richEditor.innerHTML = html;
-        } else {
-          richEditor.innerHTML = '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-        }
-        tabsModule.setContent(richEditor.innerHTML);
-        tabsModule.setMetadata({ modified: new Date().toISOString() });
-        hideImportOptions();
-        showToast('File imported');
-        updateStats();
-      };
-      reader.readAsText(file);
-      fileInput.value = '';
-    });
-  }
-  
-    // ===== STYLE SELECTOR =====
-  function setupStyleSelector() {
-    stylesSelect = document.getElementById('styles-select');
-    if (!stylesSelect) return;
-    stylesSelect.addEventListener('change', function() {
-      var style = this.value;
-      if (!style) return;
-      var tag = (style === 'normal') ? 'p' : (style === 'quote') ? 'blockquote' : (style === 'code') ? 'pre' : style;
-      execCmd('formatBlock', tag);
-    });
-    if (richEditor) {
-      richEditor.addEventListener('keyup', updateStyleSelector);
-      richEditor.addEventListener('click', updateStyleSelector);
-    }
-  }
-
-  function updateStyleSelector() {
-    if (!stylesSelect || !richEditor) return;
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    var node = sel.getRangeAt(0).startContainer;
-    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-    while (node && node !== richEditor && node.nodeType === Node.ELEMENT_NODE) {
-      var tag = node.tagName.toLowerCase();
-      if (tag === 'p') { stylesSelect.value = 'normal'; return; }
-      if (tag === 'blockquote') { stylesSelect.value = 'quote'; return; }
-      if (tag === 'pre') { stylesSelect.value = 'code'; return; }
-      if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') { stylesSelect.value = tag; return; }
-      node = node.parentElement;
-    }
-  }
-
-  // ===== KEYBOARD SHORTCUTS =====
-  function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); execCmd('undo'); }
-        else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); execCmd('redo'); }
-        else if (e.key === 'b') { e.preventDefault(); execCmd('bold'); }
-        else if (e.key === 'i') { e.preventDefault(); execCmd('italic'); }
-        else if (e.key === 'u') { e.preventDefault(); execCmd('underline'); }
-        else if (e.key === 's') { e.preventDefault(); e.stopPropagation(); saveCurrentTabContent(); showToast(getTrans('autosave') || 'Saved'); }
-        else if (e.key === 'f' && !e.shiftKey) { e.preventDefault(); if (findBar) { findBar.style.display = findBar.style.display === 'none' ? '' : 'none'; if (findBar.style.display !== 'none' && findInput) findInput.focus(); } }
-        else if (e.key === 'f' && e.shiftKey) { e.preventDefault(); insertFootnote(); }
-        else if (e.key === 'k') { e.preventDefault(); var btn = document.getElementById('btn-link'); if (btn) btn.click(); }
-        else if (e.key === ',') { e.preventDefault(); execCmd('subscript'); }
-        else if (e.key === '.') { e.preventDefault(); execCmd('superscript'); }
-        else if (e.key === 'Enter') {
-          e.preventDefault();
-          var pb = document.createElement('div');
-          pb.className = 'page-break';
-          pb.style.pageBreakAfter = 'always';
-          pb.innerHTML = '<hr style="border:none;border-top:1px dashed #ccc;margin:1em 0;">';
-          richEditor.focus();
-          document.execCommand('insertHTML', false, pb.outerHTML + '<p><br></p>');
-        }
-        else if (e.key === 'o') {
-          e.preventDefault();
-          var fi = document.getElementById('file-input-hidden');
-          if (fi) fi.click();
-        }
-        else if (e.key === 'c' && e.shiftKey) {
-          e.preventDefault();
-          if (commentsPanel) {
-            if (commentsPanel.style.display === 'none') {
-              commentsPanel.style.display = '';
-              var cbtn = document.getElementById('btn-comments');
-              if (cbtn) cbtn.classList.add('active');
-            }
-            refreshCommentsList();
-            var addArea = document.getElementById('comment-add-area');
-            if (addArea) addArea.style.display = '';
-            var ci = document.getElementById('comment-input');
-            if (ci) ci.focus();
-          }
-        }
-        else if (e.key === 'g') { e.preventDefault(); toggleGoalSettings(); }
-        else if (e.key === 'n') {
-          e.preventDefault();
-          tabsModule.create({ content: '<p><br></p>', metadata: {} });
-          setTimeout(function() { if (richEditor) richEditor.focus(); }, 50);
-        }
-      }
-    });
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'F9') {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleZenMode();
-      }
-    }, true);
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        if (qfmMenu && qfmMenu.style.display !== 'none') { qfmMenu.style.display = 'none'; return; }
-        var dialogs = ['link-dialog-overlay', 'table-dialog-overlay', 'image-dialog-overlay',
-                       'templates-dialog-overlay', 'special-chars-dialog-overlay',
-                       'footnote-dialog-overlay', 'help-dialog-overlay'];
-        for (var di = 0; di < dialogs.length; di++) {
-          var dlg = document.getElementById(dialogs[di]);
-          if (dlg && dlg.style.display !== 'none') { dlg.style.display = 'none'; return; }
-        }
-        var panels = ['comments-panel', 'version-history-panel', 'wordfreq-panel',
-                      'metadata-panel', 'outline-panel', 'toc-panel', 'find-replace-bar',
-                      'session-bar', 'goal-bar'];
-        for (var i = 0; i < panels.length; i++) {
-          var p = document.getElementById(panels[i]);
-          if (p && p.style.display !== 'none') { p.style.display = 'none'; return; }
-        }
-        var exp = document.getElementById('export-dropdown');
-        if (exp && exp.classList.contains('active')) { exp.classList.remove('active'); return; }
-        var isZen = document.body.hasAttribute('data-zen');
-        if (isZen) { document.body.removeAttribute('data-zen'); localStorage.setItem('oros_zen_mode', 'false'); }
-      }
-    });
-  }
-
-  // ===== COMMAND EXECUTION =====
-  function execCmd(command, value) {
-    if (!richEditor) return;
-    if (command === 'insertImage' && value) {
-      var img = document.createElement('img');
-      img.src = value;
-      richEditor.focus();
-      document.execCommand('insertHTML', false, img.outerHTML);
-      return;
-    }
-    richEditor.focus();
-    document.execCommand(command, false, value);
-  }
-
-  // ===== TOOLBAR BINDINGS =====
-  function setupToolbarBindings() {
-    bindClick('btn-bold', function() { execCmd('bold'); });
-    bindClick('btn-italic', function() { execCmd('italic'); });
-    bindClick('btn-underline', function() { execCmd('underline'); });
-    bindClick('btn-strikethrough', function() { execCmd('strikethrough'); });
-    bindClick('btn-superscript', function() { execCmd('superscript'); });
-    bindClick('btn-subscript', function() { execCmd('subscript'); });
-    bindClick('btn-align-left', function() { execCmd('justifyLeft'); });
-    bindClick('btn-align-center', function() { execCmd('justifyCenter'); });
-    bindClick('btn-align-right', function() { execCmd('justifyRight'); });
-    bindClick('btn-align-justify', function() { execCmd('justifyFull'); });
-    bindClick('btn-numbers', function() { execCmd('insertOrderedList'); });
-    bindClick('btn-bullets', function() { execCmd('insertUnorderedList'); });
-    bindClick('btn-indent', function() {
-      if (!richEditor) return;
-      richEditor.focus();
-      var sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      var node = sel.getRangeAt(0).startContainer;
-      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-      while (node && node !== richEditor) {
-        var tag = node.tagName;
-        if (/^(P|H1|H2|H3|H4|H5|H6|LI|DIV)$/.test(tag)) {
-          var ml = parseInt(node.style.marginLeft || '0', 10);
-          node.style.marginLeft = (ml + 40) + 'px';
-          break;
-        }
-        node = node.parentElement;
-      }
-    });
-    bindClick('btn-outdent', function() {
-      if (!richEditor) return;
-      richEditor.focus();
-      var sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      var node = sel.getRangeAt(0).startContainer;
-      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-      while (node && node !== richEditor) {
-        var tag = node.tagName;
-        if (/^(P|H1|H2|H3|H4|H5|H6|LI|DIV)$/.test(tag)) {
-          var ml = parseInt(node.style.marginLeft || '0', 10);
-          node.style.marginLeft = Math.max(0, ml - 40) + 'px';
-          break;
-        }
-        node = node.parentElement;
-      }
-    });
-        bindClick('btn-link', function() {
-      var dlg = document.getElementById('link-dialog-overlay');
-      if (!dlg) return;
-      
-      var sel = window.getSelection();
-      var selectedText = '';
-      if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
-        selectedText = sel.toString().trim();
-        savedLinkRange = sel.getRangeAt(0).cloneRange();
-      } else {
-        savedLinkRange = null;
-      }
-      
-      dlg.style.display = 'flex';
-      var urlInput = document.getElementById('link-url-input');
-      var textInput = document.getElementById('link-text-input');
-      if (urlInput) urlInput.value = '';
-      if (textInput) textInput.value = selectedText;
-      setTimeout(function() { if (urlInput) urlInput.focus(); }, 50);
-    });
-    bindClick('btn-image', function() {
-      var dlg = document.getElementById('image-dialog-overlay');
-      if (dlg) dlg.style.display = 'flex';
-    });
-    bindClick('btn-code', function() { execCmd('formatBlock', 'pre'); });
-    bindClick('btn-quote', function() { execCmd('formatBlock', 'blockquote'); });
-    bindClick('btn-clear', function() {
-      if (!confirm('Clear all content?')) return;
-      if (richEditor) richEditor.innerHTML = '<p><br></p>';
-      saveCurrentTabContent();
-      updateStats();
-    });
-    bindClick('btn-clear-formatting', function() { execCmd('removeFormat'); });
-    bindClick('btn-undo', function() { execCmd('undo'); });
-    bindClick('btn-redo', function() { execCmd('redo'); });
-    bindClick('btn-hr', function() {
-      if (!richEditor) return;
-      richEditor.focus();
-      document.execCommand('insertHorizontalRule');
-    });
-    bindClick('btn-page-break', function() {
-      if (!richEditor) return;
-      var pb = document.createElement('div');
-      pb.className = 'page-break';
-      pb.style.pageBreakAfter = 'always';
-      pb.innerHTML = '<hr style="border:none;border-top:1px dashed #ccc;margin:1em 0;">';
-      richEditor.focus();
-      document.execCommand('insertHTML', false, pb.outerHTML + '<p><br></p>');
-    });
-    bindClick('btn-open', function() {
-      var fi = document.getElementById('file-input-hidden');
-      if (fi) fi.click();
-    });
-    bindClick('btn-templates', function() {
-      var dlg = document.getElementById('templates-dialog-overlay');
-      if (dlg) { dlg.style.display = 'flex'; renderTemplatesGrid(); }
-    });
-     bindClick('btn-special-chars', function() {
-      var dlg = document.getElementById('special-chars-dialog-overlay');
-      if (dlg) dlg.style.display = 'flex';
-    });
-     bindClick('btn-table', function() {
-      var dlg = document.getElementById('table-dialog-overlay');
-      if (dlg) dlg.style.display = 'flex';
-    });
-    bindClick('btn-reading-mode', function() {
-      var ed = document.getElementById('editor-wrapper');
-      if (ed) ed.classList.add('reading-mode-active');
-      var exitBtn = document.getElementById('btn-exit-reading-mode');
-      if (exitBtn) exitBtn.style.display = '';
-    });
-    bindClick('btn-exit-reading-mode', function() {
-      var ed = document.getElementById('editor-wrapper');
-      if (ed) ed.classList.remove('reading-mode-active');
-      var exitBtn = document.getElementById('btn-exit-reading-mode');
-      if (exitBtn) exitBtn.style.display = 'none';
-    });
-    bindClick('btn-find', function() {
-      if (findBar) {
-        findBar.style.display = findBar.style.display === 'none' ? '' : 'none';
-        if (findBar.style.display !== 'none' && findInput) findInput.focus();
-      }
-    });
-    bindClick('btn-session', function() {
-      if (sessionBar) {
-        sessionBar.style.display = sessionBar.style.display === 'none' ? '' : 'none';
-      }
-    });
-  }
-  
-  
 
   // ===== SMART TYPOGRAPHY =====
   var smartTypoPatterns = [
@@ -2724,8 +2267,24 @@
       }
     });
   }
-  
-    // ===== METADATA PANEL =====
+
+  // ===== LINK CLICK HANDLER =====
+  function setupLinkClickHandler() {
+    if (!richEditor) return;
+    richEditor.addEventListener('click', function(e) {
+      var link = e.target.closest ? e.target.closest('a') : null;
+      if (!link && e.target.tagName === 'A') link = e.target;
+      if (link && link.getAttribute('href')) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.open(link.href, '_blank');
+        }
+      }
+    });
+  }
+
+  // ===== METADATA PANEL =====
   function setupMetadataPanel() {
     bindClick('btn-metadata', toggleMetadataPanel);
     if (metaTitle) metaTitle.addEventListener('blur', saveMetadataField);
@@ -2944,7 +2503,7 @@
     qfmEnabled = localStorage.getItem('oros_quick_tbar_show') !== 'false';
   });
 
-  // ===== HELP BUTTON (capture-phase override) =====
+  // ===== HELP BUTTON =====
   document.addEventListener('click', function(e) {
     var target = e.target.closest ? e.target.closest('#btn-help') : null;
     if (target) {
@@ -2965,366 +2524,6 @@
       setTimeout(check, 100);
     }
     check();
-  }
-  
-  /* ===== FOOTNOTE CLEANUP ON DELETE ===== */
-var footnoteCleanupObserver = null;
-
-function setupFootnoteCleanup() {
-  if (!richEditor || footnoteCleanupObserver) return;
-  
-  footnoteCleanupObserver = new MutationObserver(function(mutations) {
-    for (var m = 0; m < mutations.length; m++) {
-      var mutation = mutations[m];
-      if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-        checkAndRemoveOrphanFootnotes(mutation.removedNodes);
-      }
-    }
-  });
-  
-  footnoteCleanupObserver.observe(richEditor, { 
-    childList: true, 
-    subtree: true 
-  });
-}
-
-function checkAndRemoveOrphanFootnotes(removedNodes) {
-  var removedRefs = [];
-  
-  for (var i = 0; i < removedNodes.length; i++) {
-    var node = removedNodes[i];
-    
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      var refs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
-      for (var r = 0; r < refs.length; r++) {
-        var fnId = refs[r].getAttribute('data-fn-id');
-        if (fnId && removedRefs.indexOf(fnId) === -1) removedRefs.push(fnId);
-      }
-    }
-    
-    var allRefs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
-    for (var n = 0; n < allRefs.length; n++) {
-      var fnId = allRefs[n].getAttribute('data-fn-id');
-      if (fnId && removedRefs.indexOf(fnId) === -1) {
-        removedRefs.push(fnId);
-      }
-    }
-  }
-  
-  if (removedRefs.length > 0) {
-    removeFootnotesByIds(removedRefs);
-  }
-}
-
-function removeFootnotesByIds(fnIds) {
-  var tab = tabsModule.getActive();
-  if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
-  
-  tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
-    return fnIds.indexOf(f.fnId) === -1;
-  });
-  
-  restoreFootnotes();
-  tabsModule.setMetadata(tab.metadata);
-  updateSaveIndicator('saved');
-}
-
-  // ===== DIALOG INSERT HANDLERS =====
-  var savedLinkRange = null;
-  var savedImageRange = null;
-  var savedTableRange = null;
-
-  function setupDialogInsertHandlers() {
-    // --- LINK ---
-    bindClick('btn-insert-link', function() {
-      var urlInput = document.getElementById('link-url-input');
-      var textInput = document.getElementById('link-text-input');
-      var url = urlInput ? urlInput.value.trim() : '';
-      var text = textInput ? textInput.value.trim() : '';
-      if (!url) { showToast('Enter a URL'); return; }
-      if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) url = 'https://' + url;
-
-      var dlg = document.getElementById('link-dialog-overlay');
-      if (dlg) dlg.style.display = 'none';
-
-      if (richEditor) {
-        richEditor.focus();
-        var sel = window.getSelection();
-        var range;
-        if (savedLinkRange) {
-          range = savedLinkRange;
-          sel.removeAllRanges();
-          sel.addRange(range);
-        } else if (sel.rangeCount > 0) {
-          range = sel.getRangeAt(0);
-        } else {
-          range = document.createRange();
-          range.selectNodeContents(richEditor);
-          range.collapse(false);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-
-        var link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = text || url;
-
-        range.deleteContents();
-        range.insertNode(link);
-
-        var newRange = document.createRange();
-        newRange.setStartAfter(link);
-        newRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      }
-
-      if (urlInput) urlInput.value = '';
-      if (textInput) textInput.value = '';
-      savedLinkRange = null;
-      saveCurrentTabContent();
-      showToast('Link inserted');
-    });
-
-    bindClick('btn-cancel-link', function() {
-      var dlg = document.getElementById('link-dialog-overlay');
-      if (dlg) dlg.style.display = 'none';
-    });
-
-    // Save selection before link dialog opens
-    var btnLink = document.getElementById('btn-link');
-    if (btnLink) {
-      btnLink.addEventListener('mousedown', function() {
-        var sel = window.getSelection();
-        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
-          savedLinkRange = sel.getRangeAt(0).cloneRange();
-        }
-      });
-    }
-
-    // --- TABLE ---
-    bindClick('btn-create-table', function() {
-      var rowsInput = document.getElementById('table-rows-select');
-      var colsInput = document.getElementById('table-cols-select');
-      var rows = parseInt(rowsInput ? rowsInput.value : '3', 10) || 3;
-      var cols = parseInt(colsInput ? colsInput.value : '3', 10) || 3;
-      if (rows < 1) rows = 1; if (rows > 20) rows = 20;
-      if (cols < 1) cols = 1; if (cols > 10) cols = 10;
-
-      var dlg = document.getElementById('table-dialog-overlay');
-      if (dlg) dlg.style.display = 'none';
-
-      if (!richEditor) return;
-      richEditor.focus();
-
-      var sel = window.getSelection();
-      var range;
-      if (sel.rangeCount > 0 && richEditor.contains(sel.anchorNode)) {
-        range = sel.getRangeAt(0);
-      } else {
-        range = document.createRange();
-        range.selectNodeContents(richEditor);
-        range.collapse(false);
-      }
-
-      var tableHtml = '<table class="custom-table"><thead><tr>';
-      for (var c = 0; c < cols; c++) {
-        tableHtml += '<th>Header ' + (c + 1) + '</th>';
-      }
-      tableHtml += '</tr></thead><tbody>';
-      for (var r = 0; r < rows; r++) {
-        tableHtml += '<tr>';
-        for (var c2 = 0; c2 < cols; c2++) {
-          tableHtml += '<td>&nbsp;</td>';
-        }
-        tableHtml += '</tr>';
-      }
-      tableHtml += '</tbody></table><p><br></p>';
-
-      var tempDiv = document.createElement('div');
-      tempDiv.innerHTML = tableHtml;
-      var table = tempDiv.firstChild;
-
-      range.deleteContents();
-      range.insertNode(table);
-
-      // Place cursor in first cell
-      var firstCell = table.querySelector('td');
-      if (firstCell) {
-        var cellRange = document.createRange();
-        cellRange.selectNodeContents(firstCell);
-        cellRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(cellRange);
-      }
-
-      saveCurrentTabContent();
-      updateStats();
-      showToast('Table inserted');
-    });
-
-    // --- IMAGE ---
-    var sourceType = document.getElementById('image-source-type');
-    var uploadField = document.getElementById('image-upload-field');
-    var urlField = document.getElementById('image-url-field');
-
-    if (sourceType) {
-      sourceType.addEventListener('change', function() {
-        if (this.value === 'upload') {
-          if (uploadField) uploadField.style.display = '';
-          if (urlField) urlField.style.display = 'none';
-        } else {
-          if (uploadField) uploadField.style.display = 'none';
-          if (urlField) urlField.style.display = '';
-        }
-      });
-    }
-
-    // Save selection before image dialog opens
-    var btnImg = document.getElementById('btn-image');
-    if (btnImg) {
-      btnImg.addEventListener('mousedown', function() {
-        var sel = window.getSelection();
-        if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
-          savedImageRange = sel.getRangeAt(0).cloneRange();
-        }
-      });
-    }
-
-    bindClick('btn-image-confirm', function() {
-      var srcType = sourceType ? sourceType.value : 'url';
-      var urlInput = document.getElementById('image-url-input');
-      var fileInput = document.getElementById('image-file-input');
-      var captionInput = document.getElementById('image-caption-input');
-      var caption = captionInput ? captionInput.value.trim() : '';
-
-      var dlg = document.getElementById('image-dialog-overlay');
-      if (dlg) dlg.style.display = 'none';
-
-      function insertImage(src) {
-        if (!richEditor) return;
-        richEditor.focus();
-
-        var sel = window.getSelection();
-        var range;
-        if (savedImageRange) {
-          range = savedImageRange;
-          sel.removeAllRanges();
-          sel.addRange(range);
-        } else if (sel.rangeCount > 0) {
-          range = sel.getRangeAt(0);
-        } else {
-          range = document.createRange();
-          range.selectNodeContents(richEditor);
-          range.collapse(false);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-
-        var img = document.createElement('img');
-        img.src = src;
-        img.className = 'editor-image';
-        if (caption) img.alt = caption;
-
-        range.deleteContents();
-        range.insertNode(img);
-
-        if (caption) {
-          var captionEl = document.createElement('p');
-          captionEl.style.cssText = 'text-align:center;color:var(--text-muted,#888);font-size:0.85em;font-style:italic;';
-          captionEl.textContent = caption;
-          range.insertNode(captionEl);
-        }
-
-        var newRange = document.createRange();
-        newRange.setStartAfter(caption ? img.nextSibling : img);
-        newRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-
-        savedImageRange = null;
-        saveCurrentTabContent();
-        updateStats();
-        showToast('Image inserted');
-      }
-
-      if (srcType === 'upload' && fileInput && fileInput.files && fileInput.files[0]) {
-        var file = fileInput.files[0];
-        var reader = new FileReader();
-        reader.onload = function(ev) { insertImage(ev.target.result); };
-        reader.readAsDataURL(file);
-      } else if (srcType === 'url' && urlInput && urlInput.value.trim()) {
-        insertImage(urlInput.value.trim());
-      } else {
-        showToast('Select an image first');
-        if (dlg) dlg.style.display = 'flex';
-        return;
-      }
-
-      // Reset fields
-      if (urlInput) urlInput.value = '';
-      if (fileInput) fileInput.value = '';
-      if (captionInput) captionInput.value = '';
-    });
-
-    // --- SPECIAL CHARACTERS ---
-    setupSpecialCharsGrid();
-
-    // Restore default source type on dialog open
-    var btnImage = document.getElementById('btn-image');
-    if (btnImage) {
-      btnImage.addEventListener('click', function() {
-        if (sourceType) sourceType.value = 'upload';
-        if (uploadField) uploadField.style.display = '';
-        if (urlField) urlField.style.display = 'none';
-      });
-    }
-  }
-
-  function setupSpecialCharsGrid() {
-    var grid = document.getElementById('special-chars-grid');
-    var tabsContainer = document.getElementById('special-chars-tabs');
-    if (!grid || !tabsContainer) return;
-
-    var currentCategory = 'greek';
-
-    function renderGrid(cat) {
-      currentCategory = cat;
-      var chars = SPECIAL_CHARS[cat] || [];
-      var html = '';
-      for (var i = 0; i < chars.length; i++) {
-        html += '<div class="sc-char" data-char="' + escapeHtml(chars[i]) + '">' + chars[i] + '</div>';
-      }
-      grid.innerHTML = html;
-
-      var charEls = grid.querySelectorAll('.sc-char');
-      for (var j = 0; j < charEls.length; j++) {
-        (function(el) {
-          el.addEventListener('click', function() {
-            var ch = el.getAttribute('data-char');
-            if (!richEditor || !ch) return;
-            richEditor.focus();
-            document.execCommand('insertText', false, ch);
-            updateStats();
-          });
-        })(charEls[j]);
-      }
-    }
-
-    var tabs = tabsContainer.querySelectorAll('.sc-tab');
-    for (var t = 0; t < tabs.length; t++) {
-      (function(tab) {
-        tab.addEventListener('click', function() {
-          for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove('active');
-          tab.classList.add('active');
-          renderGrid(tab.getAttribute('data-cat'));
-        });
-      })(tabs[t]);
-    }
-
-    renderGrid('greek');
   }
 
   function startApp() {
@@ -3354,7 +2553,6 @@ function removeFootnotesByIds(fnIds) {
       setupWordFrequency();
       setupComments();
       setupFootnotes();
-	  setupFootnoteCleanup();
       setupVersionHistory();
       setupZenMode();
       setupGoalBar();
@@ -3363,8 +2561,8 @@ function removeFootnotesByIds(fnIds) {
       setupStyleSelector();
       setupKeyboardShortcuts();
       setupToolbarBindings();
-	  setupDialogInsertHandlers();
-	  setupLinkClickHandler();
+      setupDialogInsertHandlers();
+      setupLinkClickHandler();
       setupEditorInput();
       setupWindowResize();
       setupCloseWarning();
@@ -3385,21 +2583,6 @@ function removeFootnotesByIds(fnIds) {
         loadAndRestoreComments();
         updateStats();
       }
-	  
-	    function setupLinkClickHandler() {
-    if (!richEditor) return;
-    richEditor.addEventListener('click', function(e) {
-      var link = e.target.closest ? e.target.closest('a') : null;
-      if (!link && e.target.tagName === 'A') link = e.target;
-      if (link && link.getAttribute('href')) {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.open(link.href, '_blank');
-        }
-      }
-    });
-  }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-outline', function() { if (outlinePanel) outlinePanel.style.display = 'none'; });
@@ -3515,8 +2698,7 @@ function removeFootnotesByIds(fnIds) {
         var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         downloadBlob(blob, 'oros-writer-database.json');
       });
-	  
-	        // Re-render after DOM is fully settled (fixes elements not yet available)
+
       setTimeout(function() {
         renderAutocorrectRules();
         renderTemplatesGrid();
