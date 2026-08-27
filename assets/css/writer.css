@@ -1783,3 +1783,7 @@ body[data-zen="true"] .side-panel {
   min-width: 28px;
   text-align: center;
 }
+
+.rich-editor a {
+  cursor: pointer;
+}

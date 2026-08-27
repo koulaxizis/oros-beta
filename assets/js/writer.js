@@ -2318,9 +2318,25 @@
         node = node.parentElement;
       }
     });
-    bindClick('btn-link', function() {
+        bindClick('btn-link', function() {
       var dlg = document.getElementById('link-dialog-overlay');
-      if (dlg) { dlg.style.display = 'flex'; var urlInput = document.getElementById('link-url-input'); if (urlInput) { urlInput.value = ''; setTimeout(function() { urlInput.focus(); }, 50); } }
+      if (!dlg) return;
+      
+      var sel = window.getSelection();
+      var selectedText = '';
+      if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+        selectedText = sel.toString().trim();
+        savedLinkRange = sel.getRangeAt(0).cloneRange();
+      } else {
+        savedLinkRange = null;
+      }
+      
+      dlg.style.display = 'flex';
+      var urlInput = document.getElementById('link-url-input');
+      var textInput = document.getElementById('link-text-input');
+      if (urlInput) urlInput.value = '';
+      if (textInput) textInput.value = selectedText;
+      setTimeout(function() { if (urlInput) urlInput.focus(); }, 50);
     });
     bindClick('btn-image', function() {
       var dlg = document.getElementById('image-dialog-overlay');
@@ -2823,6 +2839,22 @@
     }
   }, true);
 
+  // ===== LINK CLICK HANDLER (Ctrl+Click opens in new tab) =====
+  function setupLinkClickHandler() {
+    if (!richEditor) return;
+    richEditor.addEventListener('click', function(e) {
+      var link = e.target.closest ? e.target.closest('a') : null;
+      if (!link && e.target.tagName === 'A') link = e.target;
+      if (link && link.getAttribute('href')) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.open(link.href, '_blank');
+        }
+      }
+    });
+  }
+
   // ===== INITIALIZATION =====
   function waitForTranslations(callback) {
     var attempts = 0;
@@ -3232,6 +3264,7 @@ function removeFootnotesByIds(fnIds) {
       setupKeyboardShortcuts();
       setupToolbarBindings();
 	  setupDialogInsertHandlers();
+	  setupLinkClickHandler();
       setupEditorInput();
       setupWindowResize();
       setupCloseWarning();
@@ -3252,6 +3285,21 @@ function removeFootnotesByIds(fnIds) {
         loadAndRestoreComments();
         updateStats();
       }
+	  
+	    function setupLinkClickHandler() {
+    if (!richEditor) return;
+    richEditor.addEventListener('click', function(e) {
+      var link = e.target.closest ? e.target.closest('a') : null;
+      if (!link && e.target.tagName === 'A') link = e.target;
+      if (link && link.getAttribute('href')) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.open(link.href, '_blank');
+        }
+      }
+    });
+  }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-metadata', function() { if (metadataPanel) metadataPanel.style.display = 'none'; });
