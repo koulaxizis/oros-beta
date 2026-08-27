@@ -2832,6 +2832,68 @@
     }
     check();
   }
+  
+  /* ===== FOOTNOTE CLEANUP ON DELETE ===== */
+var footnoteCleanupObserver = null;
+
+function setupFootnoteCleanup() {
+  if (!richEditor || footnoteCleanupObserver) return;
+  
+  footnoteCleanupObserver = new MutationObserver(function(mutations) {
+    for (var m = 0; m < mutations.length; m++) {
+      var mutation = mutations[m];
+      if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+        checkAndRemoveOrphanFootnotes(mutation.removedNodes);
+      }
+    }
+  });
+  
+  footnoteCleanupObserver.observe(richEditor, { 
+    childList: true, 
+    subtree: true 
+  });
+}
+
+function checkAndRemoveOrphanFootnotes(removedNodes) {
+  var removedRefs = [];
+  
+  for (var i = 0; i < removedNodes.length; i++) {
+    var node = removedNodes[i];
+    
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      var refs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
+      for (var r = 0; r < refs.length; r++) {
+        var fnId = refs[r].getAttribute('data-fn-id');
+        if (fnId && removedRefs.indexOf(fnId) === -1) removedRefs.push(fnId);
+      }
+    }
+    
+    var allRefs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
+    for (var n = 0; n < allRefs.length; n++) {
+      var fnId = allRefs[n].getAttribute('data-fn-id');
+      if (fnId && removedRefs.indexOf(fnId) === -1) {
+        removedRefs.push(fnId);
+      }
+    }
+  }
+  
+  if (removedRefs.length > 0) {
+    removeFootnotesByIds(removedRefs);
+  }
+}
+
+function removeFootnotesByIds(fnIds) {
+  var tab = tabsModule.getActive();
+  if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
+  
+  tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
+    return fnIds.indexOf(f.fnId) === -1;
+  });
+  
+  restoreFootnotes();
+  tabsModule.setMetadata(tab.metadata);
+  updateSaveIndicator('saved');
+}
 
   function startApp() {
     applyTheme();
@@ -2860,7 +2922,7 @@
       setupWordFrequency();
       setupComments();
       setupFootnotes();
-	  setupFootnoteCleanup()
+	  setupFootnoteCleanup();
       setupVersionHistory();
       setupZenMode();
       setupGoalBar();
