@@ -1,4 +1,4 @@
-γ/* ============================================
+/* ============================================
    orOS Writer — Complete Stylesheet v1.3
    Fixes: Single-row toolbar, page sizes, 
    word count arrow, session centering, 
@@ -125,8 +125,6 @@
   margin-top: 56px;
   background: var(--bg-dark);
   overflow: hidden;
-  position: relative;
-  z-index: 1;
 }
 
 .reading-progress-container {
@@ -571,8 +569,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   margin-top: 56px;
   background: var(--bg-dark);
   overflow: hidden;
-  position: relative;
-  z-index: 1;
 }
 
 /* Footer fixed position - ensures nothing gets pushed */
