@@ -1633,7 +1633,8 @@
 
   // ===== FOOTNOTES =====
   var footnoteCounter = 0;
-  var savedCommentRange = null;
+  var savedFootnoteRange = null;       // ← πρέπει να υπάρχει αυτή η γραμμή
+  var savedCommentRange = null;       // ← που προσθέσαμε
   var footnoteClickHandlersBound = false;
 
   function setupFootnotes() {
