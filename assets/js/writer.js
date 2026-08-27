@@ -1405,7 +1405,7 @@
     showToast('All changes rejected');
   }
 
-    // ===== COMMENTS =====
+      // ===== COMMENTS =====
   function setupComments() {
     bindClick('btn-comments', toggleCommentsPanel);
     bindClick('btn-add-comment', addCommentFromPanel);
@@ -1427,7 +1427,7 @@
       }
     });
 
-    // Click on commented text → highlight comment card (SEPARATE listener)
+    // Click on commented text → highlight comment card (independent listener)
     if (richEditor) {
       richEditor.addEventListener('click', function(e) {
         var highlight = e.target.closest ? e.target.closest('.comment-highlight') : null;
