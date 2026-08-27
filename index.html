@@ -101,6 +101,33 @@
   <script src="assets/js/components/header.js" defer></script>
   <script src="assets/js/components/footer.js" defer></script>
   <script src="assets/js/main.js" defer></script>
+
+  <style>
+    .tool-card-wrapper { position: relative; }
+    .tool-info-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      background: var(--bg-panel, #1e1e2e);
+      border: 1px solid var(--border-color, #333);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted, #888);
+      font-size: 0.8rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .tool-info-btn:hover {
+      opacity: 1;
+      color: var(--primary, #6d4aff);
+    }
+  </style>
 </head>
 <body class="landing-page noscript">
   <script>document.body.classList.remove('noscript'); document.body.classList.add('js-enabled');</script>
@@ -121,7 +148,7 @@
       </div>
 
       <div class="tools-grid">
-                <div class="tool-card-wrapper">
+        <div class="tool-card-wrapper">
           <a href="writer.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
             <div class="tool-icon"><i class="fa fa-pencil"></i></div>
             <h2 class="tool-name" data-i18n="editor_name">Writer</h2>
@@ -156,7 +183,7 @@
           <h2 class="tool-name" data-i18n="characters_name">Characters</h2>
           <p class="tool-desc" data-i18n="characters_desc">Design characters &amp; relationships</p>
         </a>
-		        <a href="habits.html" class="tool-card" aria-label="Open Habit Tracker — build and track daily habits">
+        <a href="habits.html" class="tool-card" aria-label="Open Habit Tracker — build and track daily habits">
           <div class="tool-icon"><i class="fa fa-check-circle"></i></div>
           <h2 class="tool-name" data-i18n="habits_name">Habits</h2>
           <p class="tool-desc" data-i18n="habits_desc">Track habits &amp; streaks</p>
@@ -179,23 +206,23 @@
           <li>Writing goals with lock option</li>
           <li>Document outline navigation</li>
           <li>Word frequency analysis</li>
-          <li>Comments and annotations</li>
-          <li>Footnotes and endnotes</li>
+          <li>Comments with text highlighting</li>
+          <li>Footnotes with click-to-highlight</li>
           <li>Auto-generated table of contents</li>
           <li>Track changes with accept/reject</li>
-          <li>Document templates</li>
+          <li>Document templates (built-in + custom)</li>
           <li>Version history with restore</li>
-          <li>Special characters picker</li>
+          <li>Special characters &amp; emoji picker</li>
           <li>Writing session timer (Pomodoro)</li>
-          <li>Distraction-free reading mode</li>
-          <li>Page size and margins</li>
-          <li>Headers and footers</li>
+          <li>Distraction-free Zen Mode</li>
+          <li>Quick format menu (Alt + Right-click)</li>
           <li>Smart typography (auto-convert quotes, symbols)</li>
           <li>Custom auto-correction rules</li>
-          <li>Quick format menu (Alt + Right-click)</li>
           <li>Typewriter sound effect</li>
-          <li>Import .txt, .md, .rtf, .docx</li>
-          <li>Export to .md, .txt, .rtf, .docx, .pdf</li>
+          <li>Ctrl+Click links open in new tab</li>
+          <li>Import .txt, .md, .rtf, .html</li>
+          <li>Export to .txt, .md, .html, .rtf, .pdf</li>
+          <li>Database export (settings + all documents)</li>
         </ul>
       </div>
       <div class="dialog-actions">
@@ -228,7 +255,7 @@
 
   <div id="oros-footer"></div>
   
-    <script>
+  <script>
     (function() {
       function openModal() {
         var d = document.getElementById('writer-features-overlay');
@@ -258,7 +285,50 @@
       });
     })();
   </script>
-  
+
+  <!-- ===== ZEN MODE + HELP BUTTON ===== -->
+  <script>
+    (function() {
+      'use strict';
+
+      // --- Zen Mode ---
+      var zenToggle = document.getElementById('toggle-zen-mode');
+      if (zenToggle) {
+        // Restore saved state
+        if (localStorage.getItem('oros_zen_mode') === 'true') {
+          document.body.setAttribute('data-zen', 'true');
+          zenToggle.checked = true;
+        }
+        zenToggle.addEventListener('change', function() {
+          if (this.checked) {
+            document.body.setAttribute('data-zen', 'true');
+            localStorage.setItem('oros_zen_mode', 'true');
+          } else {
+            document.body.removeAttribute('data-zen');
+            localStorage.setItem('oros_zen_mode', 'false');
+          }
+        });
+      }
+
+      // --- Help Button → Beta Warning ---
+      // Delegated handler — catches help button regardless of when header loads
+      document.addEventListener('click', function(e) {
+        var helpBtn = e.target.closest ? e.target.closest('#btn-help, .help-btn, [data-help]') : null;
+        if (!helpBtn) {
+          if (e.target && e.target.id === 'btn-help') helpBtn = e.target;
+        }
+        if (helpBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          var overlay = document.getElementById('beta-popup-overlay');
+          if (overlay) {
+            overlay.classList.add('visible');
+          }
+        }
+      }, true); // capture phase to catch early
+    })();
+  </script>
+
   <!-- ===== BETA WARNING POPUP ===== -->
   <div class="beta-popup-overlay" id="beta-popup-overlay">
     <div class="beta-popup">
@@ -267,9 +337,9 @@
       </div>
       <h2 class="beta-popup-title" data-i18n="beta_popup_title">Beta Channel Warning</h2>
       <div class="beta-popup-body">
-        <p data-i18n="beta_popup_p1">You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
-        <p data-i18n="beta_popup_p2">Data loss may occur. You use this software at your own risk.</p>
-        <p data-i18n="beta_popup_p3" class="beta-popup-emphasis">We strongly encourage you to save your work frequently to a local file.</p>
+        <p id="beta-popup-p1">You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
+        <p id="beta-popup-p2">Data loss may occur. You use this software at your own risk.</p>
+        <p id="beta-popup-p3" class="beta-popup-emphasis">We strongly encourage you to save your work frequently to a local file.</p>
       </div>
       <div class="beta-popup-actions">
         <button class="beta-popup-btn primary" id="beta-popup-accept" data-i18n="beta_popup_accept">I understand and continue</button>
@@ -318,8 +388,9 @@
         return t[key] || key;
       }
 
-      // Localize buttons if i18n hasn't run yet
+      // Localize buttons and paragraphs
       function localizeButtons() {
+        // Buttons (plain text)
         var btns = [
           { id: 'beta-popup-accept', key: 'beta_popup_accept' },
           { id: 'beta-popup-remind', key: 'beta_popup_remind' },
@@ -332,12 +403,34 @@
             el.dataset.localized = 'true';
           }
         });
+
+        // Paragraphs (innerHTML preserves <strong> etc.)
+        var paras = [
+          { id: 'beta-popup-p1', key: 'beta_popup_p1', fallback: 'You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.' },
+          { id: 'beta-popup-p2', key: 'beta_popup_p2', fallback: 'Data loss may occur. You use this software at your own risk.' },
+          { id: 'beta-popup-p3', key: 'beta_popup_p3', fallback: 'We strongly encourage you to save your work frequently to a local file.' }
+        ];
+        paras.forEach(function(p) {
+          var el = document.getElementById(p.id);
+          if (el && !el.dataset.localized) {
+            var val = getTrans(p.key);
+            el.innerHTML = (val && val !== p.key) ? val : p.fallback;
+            el.dataset.localized = 'true';
+          }
+        });
+
+        // Title
+        var title = document.querySelector('.beta-popup-title');
+        if (title && !title.dataset.localized) {
+          var tVal = getTrans('beta_popup_title');
+          title.textContent = (tVal && tVal !== 'beta_popup_title') ? tVal : 'Beta Channel Warning';
+          title.dataset.localized = 'true';
+        }
       }
 
       function init() {
         if (!shouldShowPopup()) return;
 
-        // Wait for DOM to be ready
         var overlay = document.getElementById('beta-popup-overlay');
         if (!overlay) return;
 
