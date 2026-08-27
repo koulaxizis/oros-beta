@@ -1503,6 +1503,18 @@
   function toggleCommentsPanel() {
     if (!commentsPanel) return;
     var isVisible = commentsPanel.style.display !== 'none';
+    if (!isVisible) {
+      var sel = window.getSelection();
+      if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+        savedCommentRange = sel.getRangeAt(0).cloneRange();
+      } else {
+        savedCommentRange = null;
+      }
+      var addArea = document.getElementById('comment-add-area');
+      if (addArea) addArea.style.display = '';
+      var ci = document.getElementById('comment-input');
+      if (ci) { ci.value = ''; setTimeout(function() { ci.focus(); }, 100); }
+    }
     commentsPanel.style.display = isVisible ? 'none' : '';
     var btn = document.getElementById('btn-comments');
     if (btn) btn.classList.toggle('active', !isVisible);
@@ -1568,10 +1580,25 @@
   function addCommentFromPanel() {
     var textarea = document.getElementById('comment-input');
     if (!textarea || !textarea.value.trim()) { showToast('Enter comment text'); return; }
-    var selectedText = window.getSelection().toString().trim();
-    if (!selectedText) { showToast('Select text to comment'); return; }
+
+    if (!savedCommentRange || savedCommentRange.collapsed) {
+      showToast('Select text to comment on first');
+      return;
+    }
+
+    var selectedText = savedCommentRange.toString().trim();
+    if (!selectedText) { showToast('Select text to comment on first'); return; }
+
+    if (richEditor) {
+      richEditor.focus();
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedCommentRange);
+    }
+
     createComment(textarea.value.trim(), selectedText);
     textarea.value = '';
+    savedCommentRange = null;
     refreshCommentsList();
     saveComments();
     showToast('Comment added');
@@ -1606,7 +1633,7 @@
 
   // ===== FOOTNOTES =====
   var footnoteCounter = 0;
-  var savedFootnoteRange = null;
+  var savedCommentRange = null;
   var footnoteClickHandlersBound = false;
 
   function setupFootnotes() {
