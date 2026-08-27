@@ -2450,13 +2450,26 @@
           var dlg = document.getElementById(dialogs[di]);
           if (dlg && dlg.style.display !== 'none') { dlg.style.display = 'none'; return; }
         }
-        var panels = ['comments-panel', 'version-history-panel', 'wordfreq-panel',
-                      'metadata-panel', 'outline-panel', 'toc-panel', 'find-replace-bar',
-                      'session-bar', 'goal-bar'];
-        for (var i = 0; i < panels.length; i++) {
-          var p = document.getElementById(panels[i]);
-          if (p && p.style.display !== 'none') { p.style.display = 'none'; return; }
-        }
+        var panels = [
+  { id: 'comments-panel', btn: 'btn-comments' },
+  { id: 'version-history-panel', btn: 'btn-version-history' },
+  { id: 'wordfreq-panel', btn: 'btn-wordfreq' },
+  { id: 'metadata-panel', btn: 'btn-metadata' },
+  { id: 'outline-panel', btn: 'btn-outline' },
+  { id: 'toc-panel', btn: 'btn-toc' },
+  { id: 'find-replace-bar', btn: 'btn-find' },
+  { id: 'session-bar', btn: 'btn-session' },
+  { id: 'goal-bar', btn: 'btn-goal' }
+];
+for (var i = 0; i < panels.length; i++) {
+  var p = document.getElementById(panels[i].id);
+  if (p && p.style.display !== 'none') {
+    p.style.display = 'none';
+    var pbtn = document.getElementById(panels[i].btn);
+    if (pbtn) pbtn.classList.remove('active');
+    return;
+  }
+}
         var exp = document.getElementById('export-dropdown');
         if (exp && exp.classList.contains('active')) { exp.classList.remove('active'); return; }
         var isZen = document.body.hasAttribute('data-zen');
@@ -3426,8 +3439,16 @@
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
       bindClick('btn-close-outline', function() { if (outlinePanel) outlinePanel.style.display = 'none'; });
       bindClick('btn-close-wordfreq', function() { if (wordFreqPanel) wordFreqPanel.style.display = 'none'; });
-      bindClick('btn-close-comments', function() { if (commentsPanel) commentsPanel.style.display = 'none'; });
-      bindClick('btn-close-toc', function() { if (tocPanel) tocPanel.style.display = 'none'; });
+      bindClick('btn-close-comments', function() {
+  if (commentsPanel) commentsPanel.style.display = 'none';
+  var cbtn = document.getElementById('btn-comments');
+  if (cbtn) cbtn.classList.remove('active');
+});
+      bindClick('btn-close-toc', function() {
+  if (tocPanel) tocPanel.style.display = 'none';
+  var tbtn = document.getElementById('btn-toc');
+  if (tbtn) tbtn.classList.remove('active');
+});
       bindClick('btn-close-version', function() { if (versionPanel) versionPanel.style.display = 'none'; });
       bindClick('btn-close-goal', function() { if (goalBar) goalBar.style.display = 'none'; });
       bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });

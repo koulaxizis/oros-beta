@@ -127,6 +127,14 @@
       opacity: 1;
       color: var(--primary, #6d4aff);
     }
+	
+	/* Hide Zen Mode toggle on landing page only */
+.landing-page .zen-mode-toggle,
+.landing-page #toggle-zen-mode,
+.landing-page [data-action="zen"] {
+  display: none !important;
+}
+
   </style>
 </head>
 <body class="landing-page noscript">
@@ -240,15 +248,11 @@
       </div>
       <div class="settings-body">
         <div class="toggles-container">
-          <div class="toggle-row">
-            <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
-            <label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>
-          </div>
-          <div class="toggle-row">
-            <span class="toggle-label" data-i18n="install_app">Install as App</span>
-            <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
-          </div>
-        </div>
+  <div class="toggle-row">
+    <span class="toggle-label" data-i18n="install_app">Install as App</span>
+    <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
+  </div>
+</div>
       </div>
     </div>
   </div>
@@ -290,25 +294,6 @@
   <script>
     (function() {
       'use strict';
-
-      // --- Zen Mode ---
-      var zenToggle = document.getElementById('toggle-zen-mode');
-      if (zenToggle) {
-        // Restore saved state
-        if (localStorage.getItem('oros_zen_mode') === 'true') {
-          document.body.setAttribute('data-zen', 'true');
-          zenToggle.checked = true;
-        }
-        zenToggle.addEventListener('change', function() {
-          if (this.checked) {
-            document.body.setAttribute('data-zen', 'true');
-            localStorage.setItem('oros_zen_mode', 'true');
-          } else {
-            document.body.removeAttribute('data-zen');
-            localStorage.setItem('oros_zen_mode', 'false');
-          }
-        });
-      }
 
       // --- Help Button → Beta Warning ---
       // Delegated handler — catches help button regardless of when header loads

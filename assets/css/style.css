@@ -1307,3 +1307,14 @@ body:not(.js-enabled) .noscript-message {
 .dialog-overlay > *:not(.dialog) {
   pointer-events: none;
 }
+
+/* ===== HIDE ZEN MODE ON LANDING PAGE ===== */
+body.landing-page #btn-zen,
+body.landing-page .btn-zen,
+body.landing-page [data-action="zen"],
+body.landing-page #toggle-zen-mode,
+body.landing-page .toggle-row:has(#toggle-zen-mode),
+body.landing-page .zen-toggle,
+body.landing-page [id*="zen"]:not(.hero):not(.hero *) {
+  display: none !important;
+}
