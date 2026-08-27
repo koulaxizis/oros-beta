@@ -1324,6 +1324,94 @@
     bindClick('btn-accept-all-changes', acceptAllChanges);
     bindClick('btn-reject-all-changes', rejectAllChanges);
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
+	  // ===== FOOTNOTE CLEANUP ON DELETE =====
+  var footnoteCleanupObserver = null;
+
+  function setupFootnoteCleanup() {
+    if (!richEditor || footnoteCleanupObserver) return;
+    
+    footnoteCleanupObserver = new MutationObserver(function(mutations) {
+      for (var m = 0; m < mutations.length; m++) {
+        var mutation = mutations[m];
+        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+          checkAndRemoveOrphanFootnotes(mutation.removedNodes);
+        }
+      }
+    });
+    
+    footnoteCleanupObserver.observe(richEditor, { 
+      childList: true, 
+      subtree: true 
+    });
+  }
+
+  function checkAndRemoveOrphanFootnotes(removedNodes) {
+    var removedRefs = [];
+    
+    for (var i = 0; i < removedNodes.length; i++) {
+      var node = removedNodes[i];
+      
+      // Check if removed node contains footnote refs
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        var refs = node.querySelectorAll('.footnote-ref');
+        for (var r = 0; r < refs.length; r++) {
+          var fnId = refs[r].getAttribute('data-fn-id');
+          if (fnId) removedRefs.push(fnId);
+        }
+        
+        // Also check the node itself
+        if (node.classList && node.classList.contains('footnote-ref')) {
+          var fnId = node.getAttribute('data-fn-id');
+          if (fnId) removedRefs.push(fnId);
+        }
+      }
+      
+      // Recursively check descendants
+      var allRefs = node.querySelectorAll ? node.querySelectorAll('.footnote-ref') : [];
+      for (var n = 0; n < allRefs.length; n++) {
+        var fnId = allRefs[n].getAttribute('data-fn-id');
+        if (fnId && removedRefs.indexOf(fnId) === -1) {
+          removedRefs.push(fnId);
+        }
+      }
+    }
+    
+    // Remove orphaned footnotes from metadata
+    if (removedRefs.length > 0) {
+      removeFootnotesByIds(removedRefs);
+    }
+  }
+
+  function removeFootnotesByIds(fnIds) {
+    var tab = tabsModule.getActive();
+    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
+    
+    var originalCount = tab.metadata.footnotes.length;
+    tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
+      return fnIds.indexOf(f.fnId) === -1;
+    });
+    
+    // Rebuild the footnote area display
+    restoreFootnotes();
+    
+    // Save the updated metadata
+    tabsModule.setMetadata(tab.metadata);
+    
+    // Update save indicator
+    updateSaveIndicator('saved');
+  }
+
+  function removeFootnoteFnId(fnId) {
+    var tab = tabsModule.getActive();
+    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
+    
+    tab.metadata.footnotes = tab.metadata.footnotes.filter(function(f) {
+      return f.fnId !== fnId;
+    });
+    
+    restoreFootnotes();
+    tabsModule.setMetadata(tab.metadata);
+  }
   }
 
   function toggleTrackChanges() {
@@ -2769,6 +2857,7 @@
       setupWordFrequency();
       setupComments();
       setupFootnotes();
+	  setupFootnoteCleanup()
       setupVersionHistory();
       setupZenMode();
       setupGoalBar();

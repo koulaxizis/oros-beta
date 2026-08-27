@@ -541,12 +541,51 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
   flex-shrink: 0;
   max-height: 200px;
   overflow-y: auto;
+  margin: 0; /* IMPORTANT: Don't affect outside flow */
+  position: relative;
+  z-index: 1;
 }
 
-.footnote-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.footnote-title { font-size: 13px; font-weight: 600; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.5px; }
-.footnote-item { display: flex; gap: 6px; margin: 4px 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-.footnote-item-num { color: var(--accent-gold); font-weight: 600; flex-shrink: 0; min-width: 18px; }
+/* Ensure footnote area is inside rich-wrapper's flex flow */
+.rich-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Move footnote-area INSIDE rich-editor context */
+#footnote-area {
+  order: 99;
+  width: 100%;
+}
+
+/* Or alternatively, force the editor wrapper to contain it properly */
+#editor-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 112px);
+  margin-top: 56px;
+  background: var(--bg-dark);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Footer fixed position - ensures nothing gets pushed */
+#oros-footer {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  background: var(--bg-dark) !important;
+  border-top: 1px solid var(--border-color) !important;
+  height: 56px !important;
+}
 
 /* ===== SAVE INDICATOR & STATS ===== */
 .save-indicator-overlay {
@@ -1778,4 +1817,38 @@ body.writer-page {
   padding: 0 12px;
   position: relative;
   top: -10px;
+}
+
+/* ===== FOOTNOTE LINK STYLING ===== */
+.footnote-ref {
+  color: var(--accent-gold, #c8a96e);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footnote-ref:hover {
+  text-decoration: underline;
+  color: var(--accent-gold-light, #d4b876);
+}
+
+.footnote-back {
+  color: var(--accent-gold, #c8a96e) !important;
+  font-weight: 600;
+  text-decoration: none;
+  margin-right: 8px;
+  transition: color 0.15s;
+}
+.footnote-back:hover {
+  text-decoration: none;
+  color: var(--accent-gold-light, #d4b876);
+}
+
+/* Ensure all footnote links use proper colors */
+.footnote-entry a {
+  color: var(--accent-gold, #c8a96e) !important;
+}
+
+.footnote-entry a:hover {
+  color: var(--accent-gold-light, #d4b876) !important;
 }
