@@ -1455,7 +1455,7 @@
     }
   }
 
-  function saveComments() {
+    function saveComments() {
     if (!richEditor) return [];
     var tab = tabsModule.getActive();
     if (!tab) return [];
@@ -1466,10 +1466,10 @@
       var id = highlights[i].getAttribute('data-comment-id');
       if (!id || seenIds[id]) continue;
       seenIds[id] = true;
-      var author = highlights[i].getAttribute('data-author') || 'Anonymous';
       var text = highlights[i].getAttribute('data-text') || '';
       var timestamp = highlights[i].getAttribute('data-timestamp') || new Date().toISOString();
-      comments.push({ id: id, author: author, text: text, timestamp: timestamp });
+      var quoted = highlights[i].getAttribute('data-quoted') || highlights[i].textContent || '';
+      comments.push({ id: id, text: text, timestamp: timestamp, quoted: quoted });
     }
     var meta = tabsModule.getMetadata();
     meta.comments = comments;
@@ -1532,7 +1532,7 @@
     }
   }
 
-  function addCommentFromPanel() {
+    function addCommentFromPanel() {
     var textarea = document.getElementById('comment-input');
     if (!textarea || !textarea.value.trim()) { showToast('Enter comment text'); return; }
 
@@ -1555,38 +1555,45 @@
     textarea.value = '';
     savedCommentRange = null;
     refreshCommentsList();
-    saveComments();
     showToast('Comment added');
   }
 
-    function createComment(commentText, quotedText) {
+      function createComment(commentText, quotedText) {
     var id = 'comm_' + Date.now();
     var timestamp = new Date().toISOString();
     var highlight = document.createElement('span');
     highlight.className = 'comment-highlight';
     highlight.setAttribute('data-comment-id', id);
-    highlight.setAttribute('data-timestamp', timestamp);
+    highlight.setAttribute('data-text', commentText);
     highlight.setAttribute('data-quoted', quotedText);
+    highlight.setAttribute('data-timestamp', timestamp);
     highlight.textContent = quotedText;
-    
+
     var sel = window.getSelection();
     if (sel.rangeCount === 0) return;
     var range = sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(highlight);
-    
+
+    var newRange = document.createRange();
+    newRange.setStartAfter(highlight);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+
     var tab = tabsModule.getActive();
     if (!tab) return;
     var meta = tabsModule.getMetadata();
     var comments = meta.comments || [];
-    comments.push({ 
-      id: id, 
-      text: commentText, 
+    comments.push({
+      id: id,
+      text: commentText,
       timestamp: timestamp,
       quoted: quotedText
     });
     meta.comments = comments;
     tabsModule.setMetadata(meta);
+    saveCurrentTabContent();
   }
   
       // ===== FOOTNOTES =====
@@ -1604,80 +1611,106 @@
     setupFootnoteCleanup();
   }
   
-    /* ===== COMMENT CLEANUP ON DELETE ===== */
+   /* ===== COMMENT CLEANUP ON DELETE ===== */
   var commentCleanupObserver = null;
+  var commentCleanupTimer = null;
 
   function setupCommentCleanup() {
     if (!richEditor || commentCleanupObserver) return;
-    commentCleanupObserver = new MutationObserver(function(mutations) {
-      for (var m = 0; m < mutations.length; m++) {
-        var mutation = mutations[m];
-        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-          checkAndRemoveOrphanComments(mutation.removedNodes);
-        }
-      }
+    commentCleanupObserver = new MutationObserver(function() {
+      clearTimeout(commentCleanupTimer);
+      commentCleanupTimer = setTimeout(checkAndRemoveOrphanComments, 200);
     });
-    commentCleanupObserver.observe(richEditor, { childList: true, subtree: true });
+    commentCleanupObserver.observe(richEditor, { childList: true, subtree: true, characterData: true });
   }
 
-  function checkAndRemoveOrphanComments(removedNodes) {
-    var removedIds = [];
-    for (var i = 0; i < removedNodes.length; i++) {
-      var node = removedNodes[i];
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        var comms = node.querySelectorAll ? node.querySelectorAll('.comment-highlight') : [];
-        for (var c = 0; c < comms.length; c++) {
-          var cid = comms[c].getAttribute('data-comment-id');
-          if (cid && removedIds.indexOf(cid) === -1) removedIds.push(cid);
-        }
+  function checkAndRemoveOrphanComments() {
+    var tab = tabsModule.getActive();
+    if (!tab || !tab.metadata || !tab.metadata.comments) return;
+    var comments = tab.metadata.comments;
+    var orphaned = [];
+
+    for (var i = 0; i < comments.length; i++) {
+      var id = comments[i].id;
+      var highlight = richEditor.querySelector('[data-comment-id="' + id + '"]');
+      if (!highlight || !highlight.textContent.trim()) {
+        orphaned.push(id);
       }
     }
-    if (removedIds.length > 0) deleteCommentsByIds(removedIds);
+
+    if (orphaned.length === 0) return;
+
+    for (var o = 0; o < orphaned.length; o++) {
+      var els = richEditor.querySelectorAll('[data-comment-id="' + orphaned[o] + '"]');
+      for (var e = 0; e < els.length; e++) {
+        var parent = els[e].parentNode;
+        parent.replaceChild(document.createTextNode(els[e].textContent), els[e]);
+        parent.normalize();
+      }
+    }
+
+    tab.metadata.comments = comments.filter(function(c) {
+      return orphaned.indexOf(c.id) === -1;
+    });
+    tabsModule.setMetadata(tab.metadata);
+    saveCurrentTabContent();
+    refreshCommentsList();
   }
 
   function deleteCommentsByIds(commIds) {
     var tab = tabsModule.getActive();
     if (!tab || !tab.metadata || !tab.metadata.comments) return;
+
+    for (var i = 0; i < commIds.length; i++) {
+      var els = richEditor.querySelectorAll('[data-comment-id="' + commIds[i] + '"]');
+      for (var e = 0; e < els.length; e++) {
+        var parent = els[e].parentNode;
+        parent.replaceChild(document.createTextNode(els[e].textContent), els[e]);
+        parent.normalize();
+      }
+    }
+
     tab.metadata.comments = tab.metadata.comments.filter(function(c) {
       return commIds.indexOf(c.id) === -1;
     });
-    saveComments();
     tabsModule.setMetadata(tab.metadata);
-    updateSaveIndicator('saved');
+    saveCurrentTabContent();
+    refreshCommentsList();
   }
-  
+
   function deleteCommentById(id) {
     var tab = tabsModule.getActive();
     if (!tab || !tab.metadata || !tab.metadata.comments) return;
-    
-    // Remove highlight from text
+
     var highlights = richEditor.querySelectorAll('[data-comment-id="' + id + '"]');
     for (var h = 0; h < highlights.length; h++) {
       var parent = highlights[h].parentNode;
       parent.replaceChild(document.createTextNode(highlights[h].textContent), highlights[h]);
       parent.normalize();
     }
-    
-    // Remove from metadata
+
     tab.metadata.comments = tab.metadata.comments.filter(function(c) { return c.id !== id; });
     tabsModule.setMetadata(tab.metadata);
+    saveCurrentTabContent();
     refreshCommentsList();
     showToast('Comment deleted');
   }
-  
+
   function highlightCommentInText(commentId) {
     clearCommentHighlight();
     var highlights = richEditor.querySelectorAll('[data-comment-id="' + commentId + '"]');
     for (var h = 0; h < highlights.length; h++) {
-      var el = highlights[h];
-      el.classList.add('comment-flash');
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(function() { el.classList.remove('comment-flash'); }, 1500);
+      highlights[h].classList.add('comment-flash');
+      highlights[h].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+    setTimeout(function() {
+      var flashes = richEditor.querySelectorAll('.comment-flash');
+      for (var f = 0; f < flashes.length; f++) flashes[f].classList.remove('comment-flash');
+    }, 1500);
   }
-  
+
   function clearCommentHighlight() {
-    var highlights = richEditor.querySelectorAll('.comment-flash');
+    var highlights = richEditor ? richEditor.querySelectorAll('.comment-flash') : [];
     for (var h = 0; h < highlights.length; h++) {
       highlights[h].classList.remove('comment-flash');
     }
