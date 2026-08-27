@@ -1405,13 +1405,14 @@
     showToast('All changes rejected');
   }
 
-  // ===== COMMENTS =====
+    // ===== COMMENTS =====
   function setupComments() {
     bindClick('btn-comments', toggleCommentsPanel);
     bindClick('btn-add-comment', addCommentFromPanel);
     loadAndRestoreComments();
-	
-	    document.addEventListener('selectionchange', function() {
+
+    // selectionchange listener — keeps savedCommentRange updated
+    document.addEventListener('selectionchange', function() {
       if (!commentsPanel || commentsPanel.style.display === 'none') return;
       var sel = window.getSelection();
       if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
@@ -1424,8 +1425,9 @@
           if (ci) ci.placeholder = '"' + range.toString().substring(0, 40) + (range.toString().length > 40 ? '…' : '') + '"';
         }
       }
-	  
-	      // Click on commented text → highlight comment card
+    });
+
+    // Click on commented text → highlight comment card
     if (richEditor) {
       richEditor.addEventListener('click', function(e) {
         var highlight = e.target.closest ? e.target.closest('.comment-highlight') : null;
@@ -1449,8 +1451,6 @@
         }
       });
     }
-	
-    });
   }
 
     function toggleCommentsPanel() {
