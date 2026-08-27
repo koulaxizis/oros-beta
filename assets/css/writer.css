@@ -19,7 +19,7 @@
   scrollbar-width: thin;
   flex-shrink: 0;
   position: relative;
-  z-index: 999;
+  z-index: 1001; /* Changed from 999 */
   min-height: 38px;
 }
 
@@ -125,6 +125,8 @@
   margin-top: 56px;
   background: var(--bg-dark);
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .reading-progress-container {

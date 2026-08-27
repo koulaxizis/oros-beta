@@ -1515,91 +1515,99 @@
     tabsModule.setMetadata(meta);
   }
 
-     // ===== FOOTNOTES =====
-  var footnoteCounter = 0;
+  // ===== FOOTNOTES =====
+var footnoteCounter = 0;
+var savedFootnoteRange = null;  // ADD THIS LINE
 
-  function setupFootnotes() {
-    bindClick('btn-footnote', insertFootnote);
-    bindClick('btn-insert-footnote', insertFootnoteFromDialog);
-    bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
-  }
+function setupFootnotes() {
+  bindClick('btn-footnote', insertFootnote);
+  bindClick('btn-insert-footnote', insertFootnoteFromDialog);
+  bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
+}
 
-  function insertFootnote() {
-    var dlg = document.getElementById('footnote-dialog-overlay');
-    if (dlg) {
-      dlg.style.display = 'flex';
-      var txtInput = document.getElementById('footnote-text-input');
-      var selectedText = window.getSelection().toString().trim();
-      if (txtInput) {
-        txtInput.value = selectedText || '';
-        setTimeout(function() { txtInput.focus(); }, 50);
-      }
-    }
-  }
-
-  function insertFootnoteFromDialog() {
-    var txtInput = document.getElementById('footnote-text-input');
-    var text = txtInput ? txtInput.value.trim() : '';
-    if (!text) { showToast('Enter footnote text'); return; }
-
-    var dlg = document.getElementById('footnote-dialog-overlay');
-    if (dlg) dlg.style.display = 'none';
-
-    footnoteCounter++;
-    var refId = 'fn_ref_' + footnoteCounter;
-    var fnId = 'fn_' + footnoteCounter;
-    var sup = document.createElement('sup');
-    sup.innerHTML = '<a href="#' + fnId + '" id="' + refId + '" class="footnote-ref">[' + footnoteCounter + ']</a>';
-
+function insertFootnote() {
+  var dlg = document.getElementById('footnote-dialog-overlay');
+  if (dlg) {
+    // SAVE SELECTION BEFORE DIALOG OPENS
     var sel = window.getSelection();
-    if (sel.rangeCount === 0) { showToast('Click in the editor first'); return; }
-    var range = sel.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(sup);
-
-    var fnArea = document.getElementById('footnote-area');
-    if (fnArea) {
-      fnArea.style.display = '';
-      var fnEntry = document.createElement('div');
-      fnEntry.id = fnId;
-      fnEntry.className = 'footnote-entry';
-      fnEntry.innerHTML = '<a href="#' + refId + '" class="footnote-back">\u2191</a> <span class="footnote-text">' + escapeHtml(text) + '</span>';
-      fnArea.appendChild(fnEntry);
-      fnArea.scrollIntoView({ behavior: 'smooth' });
+    if (sel.rangeCount > 0 && richEditor && richEditor.contains(sel.anchorNode)) {
+      savedFootnoteRange = sel.getRangeAt(0).cloneRange();
     }
-
-    var tab = tabsModule.getActive();
-    if (tab) {
-      var meta = tabsModule.getMetadata();
-      var footnotes = meta.footnotes || [];
-      footnotes.push({ refId: refId, fnId: fnId, number: footnoteCounter, text: text });
-      meta.footnotes = footnotes;
-      tabsModule.setMetadata(meta);
+    
+    dlg.style.display = 'flex';
+    var txtInput = document.getElementById('footnote-text-input');
+    if (txtInput) {
+      txtInput.value = savedFootnoteRange ? savedFootnoteRange.toString() : '';
+      setTimeout(function() { txtInput.focus(); }, 50);
     }
+  }
+}
 
-    if (txtInput) txtInput.value = '';
-    saveCurrentTabContent();
-    showToast('Footnote added');
+function insertFootnoteFromDialog() {
+  var txtInput = document.getElementById('footnote-text-input');
+  var text = txtInput ? txtInput.value.trim() : '';
+  if (!text) { showToast('Enter footnote text'); return; }
+
+  var dlg = document.getElementById('footnote-dialog-overlay');
+  if (dlg) dlg.style.display = 'none';
+
+  footnoteCounter++;
+  var refId = 'fn_ref_' + footnoteCounter;
+  var fnId = 'fn_' + footnoteCounter;
+  var sup = document.createElement('sup');
+  sup.innerHTML = '<a href="#' + fnId + '" id="' + refId + '" class="footnote-ref">[' + footnoteCounter + ']</a>';
+
+  // RESTORE SELECTION OR FALLBACK TO END
+  var range;
+  if (savedFootnoteRange && !savedFootnoteRange.collapsed) {
+    range = savedFootnoteRange;
+  } else if (richEditor) {
+    // Fallback: insert at cursor position or end
+    richEditor.focus();
+    var sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      range = sel.getRangeAt(0);
+    } else {
+      // Place at end of editor if nothing selected
+      range = document.createRange();
+      range.selectNodeContents(richEditor);
+      range.collapse(false);
+    }
+  } else {
+    showToast('Click in the editor first');
+    return;
   }
 
-  function restoreFootnotes() {
-    var tab = tabsModule.getActive();
-    if (!tab || !tab.metadata || !tab.metadata.footnotes) return;
-    var fnArea = document.getElementById('footnote-area');
-    if (!fnArea) return;
-    var footnotes = tab.metadata.footnotes;
-    footnoteCounter = 0;
-    for (var i = 0; i < footnotes.length; i++) {
-      var f = footnotes[i];
-      var entry = document.createElement('div');
-      entry.id = f.fnId;
-      entry.className = 'footnote-entry';
-      entry.innerHTML = '<a href="#' + f.refId + '" class="footnote-back">\u2191</a> <span class="footnote-text">' + escapeHtml(f.text) + '</span>';
-      fnArea.appendChild(entry);
-      footnoteCounter = Math.max(footnoteCounter, f.number);
-    }
-    if (footnotes.length > 0) fnArea.style.display = '';
+  // Clear the saved range after use
+  savedFootnoteRange = null;
+
+  range.deleteContents();
+  range.insertNode(sup);
+
+  var fnArea = document.getElementById('footnote-area');
+  if (fnArea) {
+    fnArea.style.display = '';
+    var fnEntry = document.createElement('div');
+    fnEntry.id = fnId;
+    fnEntry.className = 'footnote-entry';
+    fnEntry.innerHTML = '<a href="#' + refId + '" class="footnote-back">\u2191</a> <span class="footnote-text">' + escapeHtml(text) + '</span>';
+    fnArea.appendChild(fnEntry);
+    fnArea.scrollIntoView({ behavior: 'smooth' });
   }
+
+  var tab = tabsModule.getActive();
+  if (tab) {
+    var meta = tabsModule.getMetadata();
+    var footnotes = meta.footnotes || [];
+    footnotes.push({ refId: refId, fnId: fnId, number: footnoteCounter, text: text });
+    meta.footnotes = footnotes;
+    tabsModule.setMetadata(meta);
+  }
+
+  if (txtInput) txtInput.value = '';
+  saveCurrentTabContent();
+  showToast('Footnote added');
+}
 
   // ===== VERSION HISTORY =====
   var versionHistoryInterval = null;
