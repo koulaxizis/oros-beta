@@ -1082,6 +1082,7 @@ body.zen-mode .stats-overlay,
 body.zen-mode .save-indicator-overlay,
 body.zen-mode .goal-bar,
 body.zen-mode .session-bar,
+body[data-zen="true"] .footnote-area,
 body.zen-mode .find-replace-bar {
   display: none !important;
 }
@@ -1114,6 +1115,7 @@ body[data-zen="true"] .stats-overlay,
 body[data-zen="true"] .save-indicator-overlay,
 body[data-zen="true"] .goal-bar,
 body[data-zen="true"] .session-bar,
+body[data-zen="true"] .footnote-area,
 body[data-zen="true"] .find-replace-bar {
   display: none !important;
 }
