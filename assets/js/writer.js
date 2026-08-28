@@ -2020,7 +2020,7 @@
         hash: hash,
         timestamp: new Date().toISOString(),
         snapshot: content,
-        type: 'auto'  // ← Εδώ πρέπει να υπάρχει ρητά 'auto'
+        type: 'auto'
       });
 
       trimAutoVersions(tab);
@@ -2051,11 +2051,19 @@
     if (!tab || !richEditor) return;
     var content = richEditor.innerHTML;
     tab.versions = tab.versions || [];
+    
+    // Check if the last version has the same content — skip duplicate
+    var lastVersion = tab.versions[tab.versions.length - 1];
+    if (lastVersion && lastVersion.type === 'manual' && lastVersion.hash === simpleHash(content)) {
+      showToast('No changes to save');
+      return;
+    }
+    
     tab.versions.push({
       hash: simpleHash(content),
       timestamp: new Date().toISOString(),
       snapshot: content,
-      type: 'manual'  // ← Ρητό 'manual' — αυτό λείπετε ίσως σε παλιά snapshots
+      type: 'manual'
     });
     tabsModule.persist();
     refreshVersionList();
@@ -2068,7 +2076,7 @@
     return hash.toString();
   }
 
-    function refreshVersionList() {
+      function refreshVersionList() {
     if (!versionList) return;
     var tab = tabsModule.getActive();
     if (!tab || !tab.versions || tab.versions.length === 0) {
@@ -2080,7 +2088,7 @@
     for (var i = versions.length - 1; i >= 0; i--) {
       var v = versions[i];
       var date = new Date(v.timestamp).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-      var isManual = v.type === 'manual';  // ← Σωστός έλεγχος
+      var isManual = v.type === 'manual';
       var badge = isManual
         ? '<span class="version-badge manual-badge">Manual</span>'
         : '<span class="version-badge auto-badge">Auto</span>';
@@ -2100,18 +2108,26 @@
     }
     versionList.innerHTML = html;
 
+    // Rebind events after each render
     var restoreBtns = versionList.querySelectorAll('.version-restore');
     for (var r = 0; r < restoreBtns.length; r++) {
       (function(btn, idx) {
         btn.addEventListener('click', function() {
-          if (!confirm('Restore this version? Unsaved changes will be lost.')) return;
+          if (!confirm('Restore this version? This will overwrite current content.')) return;
+          
+          // Restore content
           richEditor.innerHTML = versions[idx].snapshot;
           tabsModule.setContent(richEditor.innerHTML);
           
-          // ← ΕΠΑΝΑΦΟΡΑ FOOTNOTES & COMMENTS
+          // CRITICAL: Restore footnotes from metadata to panel
           restoreFootnotes();
-          loadAndRestoreComments();
+          
+          // CRITICAL: Refresh comments panel from metadata
+          refreshCommentsList();
+          
+          // Update stats and UI
           updateStats();
+          updateSaveIndicator('saved');
           
           showToast('Version restored');
         });
@@ -2124,9 +2140,16 @@
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           if (!confirm('Delete this manual snapshot?')) return;
+          
+          // Remove from array
           tab.versions.splice(idx, 1);
+          
+          // Persist to localStorage
           tabsModule.persist();
+          
+          // CRITICAL: Re-render the list IMMEDIATELY
           refreshVersionList();
+          
           showToast('Snapshot deleted');
         });
       })(deleteBtns[d], d);
