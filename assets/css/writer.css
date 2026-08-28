@@ -1930,14 +1930,15 @@ body[data-zen="true"] .side-panel {
 
 .session-display-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  gap: 8px;
   margin: 0 8px;
-  min-width: 120px;
+  min-width: 160px;
+  justify-content: center;
 }
 
 .session-words-display {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
-  margin-top: 2px;
 }

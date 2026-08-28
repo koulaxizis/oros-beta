@@ -2274,7 +2274,10 @@
       }
     });
     bindClick('btn-start-session', startSession);
-    bindClick('btn-stop-session', stopSession);
+    bindClick('btn-stop-session', function() {
+      showToast('Session stopped manually');
+      stopSession();
+    });
 	bindClick('btn-pause-session', pauseSession);
     bindClick('btn-reset-session', resetSession);
     bindClick('btn-close-session', function() {
@@ -2369,10 +2372,11 @@
     if (sessionInterval) clearInterval(sessionInterval);
     sessionInterval = null;
     var startBtn = document.getElementById('btn-start-session');
+    var pauseBtn = document.getElementById('btn-pause-session');
     var stopBtn = document.getElementById('btn-stop-session');
     if (startBtn) startBtn.style.display = '';
+    if (pauseBtn) pauseBtn.style.display = 'none';
     if (stopBtn) stopBtn.style.display = 'none';
-    showToast('Session stopped');
   }
   
     function pauseSession() {
