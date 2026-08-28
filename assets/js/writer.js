@@ -1330,6 +1330,10 @@
     bindClick('btn-accept-all-changes', acceptAllChanges);
     bindClick('btn-reject-all-changes', rejectAllChanges);
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
+
+    if (richEditor) {
+      richEditor.addEventListener('beforeinput', handleTrackBeforeInput);
+    }
   }
 
   function toggleTrackChanges() {
@@ -1340,73 +1344,218 @@
       btn.setAttribute('title', trackingChanges ? (getTrans('track_changes_off') || 'Track changes OFF') : (getTrans('track_changes_on') || 'Track changes ON'));
     }
     if (trackChangesBar) trackChangesBar.style.display = trackingChanges ? '' : 'none';
-    if (trackChangesObserver) { trackChangesObserver.disconnect(); trackChangesObserver = null; }
-    if (trackingChanges) {
-      trackChangesObserver = new MutationObserver(handleTrackChangesMutation);
-      trackChangesObserver.observe(richEditor, { childList: true, subtree: true });
-    }
     showToast(trackingChanges ? 'Track Changes ON' : 'Track Changes OFF');
   }
 
-  function handleTrackChangesMutation(mutations) {
-    if (!trackingChanges) return;
-    for (var i = 0; i < mutations.length; i++) {
-      var m = mutations[i];
-      if (m.type === 'childList' && m.addedNodes.length > 0) {
-        for (var j = 0; j < m.addedNodes.length; j++) {
-          var node = m.addedNodes[j];
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            if (!node.hasAttribute('data-change-id')) {
-              node.setAttribute('data-change-id', 'ins_' + Date.now());
-              node.classList.add('track-insertion');
-            }
-          }
+  function trackChangePostProcess() {
+    playTypewriterSound();
+    isTyping = true;
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(function() {
+      if (isTyping) { saveCurrentTabContent(); isTyping = false; }
+    }, 10000);
+    updateStats();
+    updateReadingProgress();
+  }
+
+  function handleTrackBeforeInput(e) {
+    if (!trackingChanges || !richEditor) return;
+
+    var inputType = e.inputType;
+    var data = e.data;
+    var sel = window.getSelection();
+
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0);
+
+    // === INSERTIONS ===
+    if (inputType === 'insertText' && data) {
+      e.preventDefault();
+      var insSpan = document.createElement('span');
+      insSpan.className = 'track-insertion';
+      insSpan.textContent = data;
+      range.deleteContents();
+      range.insertNode(insSpan);
+      var afterIns = document.createRange();
+      afterIns.setStartAfter(insSpan);
+      afterIns.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(afterIns);
+      trackChangePostProcess();
+      return;
+    }
+
+    if (inputType === 'insertFromPaste' || inputType === 'insertReplacementText') {
+      var pasteText = '';
+      if (e.dataTransfer) {
+        pasteText = e.dataTransfer.getData('text/plain') || '';
+      }
+      if (!pasteText) pasteText = data || '';
+      if (pasteText) {
+        e.preventDefault();
+        var pasteSpan = document.createElement('span');
+        pasteSpan.className = 'track-insertion';
+        pasteSpan.textContent = pasteText;
+        range.deleteContents();
+        range.insertNode(pasteSpan);
+        var afterPaste = document.createRange();
+        afterPaste.setStartAfter(pasteSpan);
+        afterPaste.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(afterPaste);
+        trackChangePostProcess();
+      }
+      return;
+    }
+
+    if (inputType === 'insertParagraph' || inputType === 'insertLineBreak') {
+      e.preventDefault();
+      var brSpan = document.createElement('span');
+      brSpan.className = 'track-insertion';
+      brSpan.innerHTML = '<br>';
+      range.deleteContents();
+      range.insertNode(brSpan);
+      var afterBr = document.createRange();
+      afterBr.setStartAfter(brSpan);
+      afterBr.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(afterBr);
+      trackChangePostProcess();
+      return;
+    }
+
+    // === DELETIONS ===
+    if (inputType === 'deleteContentBackward' || inputType === 'deleteContentForward' || inputType === 'deleteByCut') {
+      e.preventDefault();
+      handleTrackDeletion(range, inputType);
+      return;
+    }
+  }
+
+  function handleTrackDeletion(range, inputType) {
+    var sel = window.getSelection();
+    var direction = (inputType === 'deleteContentForward') ? 'forward' : 'backward';
+
+    // If range is collapsed, extend by one character
+    if (range.collapsed) {
+      var node = range.startContainer;
+      var offset = range.startOffset;
+
+      if (direction === 'backward') {
+        if (node.nodeType === Node.TEXT_NODE && offset > 0) {
+          range.setStart(node, offset - 1);
+        } else {
+          sel.modify('extend', 'backward', 'character');
+          if (sel.rangeCount > 0) range = sel.getRangeAt(0);
+        }
+      } else {
+        if (node.nodeType === Node.TEXT_NODE && offset < node.textContent.length) {
+          range.setEnd(node, offset + 1);
+        } else {
+          sel.modify('extend', 'forward', 'character');
+          if (sel.rangeCount > 0) range = sel.getRangeAt(0);
         }
       }
+
+      if (range.collapsed) return;
     }
+
+    // If inside an already-deleted span → permanent delete
+    var common = range.commonAncestorContainer;
+    var delParent = (common.nodeType === Node.ELEMENT_NODE) ? common : common.parentElement;
+    if (delParent && delParent.closest && delParent.closest('.track-deletion')) {
+      range.deleteContents();
+      sel.removeAllRanges();
+      var r = document.createRange();
+      r.collapse(true);
+      sel.addRange(r);
+      trackChangePostProcess();
+      return;
+    }
+
+    // Wrap extracted content in deletion span
+    var delSpan = document.createElement('span');
+    delSpan.className = 'track-deletion';
+    delSpan.setAttribute('data-change-id', 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+    delSpan.style.textDecoration = 'line-through';
+    delSpan.style.color = 'var(--text-muted, #888)';
+
+    var contents = range.extractContents();
+    if (!contents || (!contents.textContent && !contents.firstChild)) return;
+
+    delSpan.appendChild(contents);
+    range.insertNode(delSpan);
+
+    // Move cursor after the deletion span
+    var afterDel = document.createRange();
+    afterDel.setStartAfter(delSpan);
+    afterDel.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(afterDel);
+    trackChangePostProcess();
   }
 
   function acceptAllChanges() {
     if (!richEditor) return;
+
+    // First unwrap insertions (keep their text/structure)
     var inserts = richEditor.querySelectorAll('.track-insertion');
     for (var i = 0; i < inserts.length; i++) {
-      var parent = inserts[i].parentNode;
-      parent.replaceChild(document.createTextNode(inserts[i].textContent), inserts[i]);
-      parent.normalize();
+      var iparent = inserts[i].parentNode;
+      if (!iparent) continue;
+      while (inserts[i].firstChild) {
+        iparent.insertBefore(inserts[i].firstChild, inserts[i]);
+      }
+      iparent.removeChild(inserts[i]);
+      iparent.normalize();
     }
+
+    // Then remove all deletions (confirm the deletion)
     var deletes = richEditor.querySelectorAll('.track-deletion');
     for (var d = 0; d < deletes.length; d++) {
-      var pNode = deletes[d].parentNode;
-      pNode.removeChild(deletes[d]);
-      pNode.normalize();
+      var dparent = deletes[d].parentNode;
+      if (!dparent) continue;
+      dparent.removeChild(deletes[d]);
+      dparent.normalize();
     }
-    if (trackChangesObserver) { trackChangesObserver.disconnect(); trackChangesObserver = null; }
+
     trackingChanges = false;
     var btn = document.getElementById('btn-track-changes');
     if (btn) btn.classList.remove('active');
     if (trackChangesBar) trackChangesBar.style.display = 'none';
+    saveCurrentTabContent();
     showToast('All changes accepted');
   }
 
   function rejectAllChanges() {
     if (!richEditor) return;
+
+    // First remove all insertions (undo the insertion)
     var inserts = richEditor.querySelectorAll('.track-insertion');
     for (var i = 0; i < inserts.length; i++) {
-      var parent = inserts[i].parentNode;
-      parent.removeChild(inserts[i]);
-      parent.normalize();
+      var iparent = inserts[i].parentNode;
+      if (!iparent) continue;
+      iparent.removeChild(inserts[i]);
+      iparent.normalize();
     }
+
+    // Then unwrap deletions (restore the original text)
     var deletes = richEditor.querySelectorAll('.track-deletion');
     for (var d = 0; d < deletes.length; d++) {
-      var pNode = deletes[d].parentNode;
-      pNode.replaceChild(document.createTextNode(deletes[d].textContent), deletes[d]);
-      pNode.normalize();
+      var dparent = deletes[d].parentNode;
+      if (!dparent) continue;
+      while (deletes[d].firstChild) {
+        dparent.insertBefore(deletes[d].firstChild, deletes[d]);
+      }
+      dparent.removeChild(deletes[d]);
+      dparent.normalize();
     }
-    if (trackChangesObserver) { trackChangesObserver.disconnect(); trackChangesObserver = null; }
+
     trackingChanges = false;
     var btn = document.getElementById('btn-track-changes');
     if (btn) btn.classList.remove('active');
     if (trackChangesBar) trackChangesBar.style.display = 'none';
+    saveCurrentTabContent();
     showToast('All changes rejected');
   }
 
