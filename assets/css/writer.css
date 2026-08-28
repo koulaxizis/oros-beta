@@ -1872,3 +1872,72 @@ body[data-zen="true"] .side-panel {
   background: rgba(231, 76, 60, 0.15);
   border-color: var(--danger, #e74c3c);
 }
+
+/* ===== FILE INPUT STYLING ===== */
+#image-file-input {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#image-file-input:hover {
+  border-color: var(--accent-gold);
+}
+
+#image-file-input::-webkit-file-upload-button {
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  margin-right: 8px;
+  transition: filter 0.15s;
+}
+
+#image-file-input::-webkit-file-upload-button:hover {
+  filter: brightness(1.1);
+}
+
+#image-file-input::-moz-file-upload-button {
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+/* ===== SESSION TIMER CENTERING ===== */
+.session-bar {
+  justify-content: center !important;
+}
+
+.session-display-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 8px;
+  min-width: 120px;
+}
+
+.session-words-display {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

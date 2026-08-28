@@ -2275,6 +2275,7 @@
     });
     bindClick('btn-start-session', startSession);
     bindClick('btn-stop-session', stopSession);
+	bindClick('btn-pause-session', pauseSession);
     bindClick('btn-reset-session', resetSession);
     bindClick('btn-close-session', function() {
       if (sessionBar) sessionBar.style.display = 'none';
@@ -2294,14 +2295,22 @@
     loadSessionTarget();
   }
 
-  function startSession() {
-    if (sessionInterval) clearInterval(sessionInterval);
+    function startSession() {
+    if (sessionInterval) {
+      // Resume from pause
+      sessionStartTime = Date.now() - (sessionSeconds * 1000);
+      startCountdown();
+      return;
+    }
+    
     sessionStartTime = Date.now();
     sessionSeconds = 0;
 
     var startBtn = document.getElementById('btn-start-session');
+    var pauseBtn = document.getElementById('btn-pause-session');
     var stopBtn = document.getElementById('btn-stop-session');
     if (startBtn) startBtn.style.display = 'none';
+    if (pauseBtn) pauseBtn.style.display = '';
     if (stopBtn) stopBtn.style.display = '';
 
     var targetMinutes = parseInt(localStorage.getItem('oros_writer_session_time'), 10) || 25;
@@ -2313,34 +2322,46 @@
       sessionDisplay.textContent = '0:00';
     }
 
-    sessionInterval = setInterval(function() {
-      sessionSeconds++;
-      if (sessionDisplay) {
-        var mins = Math.floor(sessionSeconds / 60);
-        var secs = sessionSeconds % 60;
-        sessionDisplay.textContent = mins + ':' + secs.toString().padStart(2, '0');
+    var wordsDisplay = document.getElementById('session-words-display');
+    if (wordsDisplay) wordsDisplay.textContent = '0/' + wordTarget + ' words';
 
-        var remaining = (targetMinutes * 60) - sessionSeconds;
-        if (remaining <= 300 && remaining > 0) {
-          sessionDisplay.classList.add('warning');
+    function startCountdown() {
+      sessionInterval = setInterval(function() {
+        sessionSeconds++;
+        
+        if (sessionDisplay) {
+          var mins = Math.floor(sessionSeconds / 60);
+          var secs = sessionSeconds % 60;
+          sessionDisplay.textContent = mins + ':' + secs.toString().padStart(2, '0');
+
+          var remaining = (targetMinutes * 60) - sessionSeconds;
+          if (remaining <= 300 && remaining > 0) {
+            sessionDisplay.classList.add('warning');
+          }
         }
-      }
 
-      var currentWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
-      var wordsWritten = currentWords - startWords;
+        var currentWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
+        var wordsWritten = currentWords - startWords;
+        if (wordsWritten < 0) wordsWritten = 0;
 
-      if (sessionSeconds >= targetMinutes * 60) {
-        showToast('\u23F0 Time\'s up! ' + wordsWritten + ' words written.');
-        stopSession();
-        return;
-      }
+        if (wordsDisplay) {
+          wordsDisplay.textContent = wordsWritten + '/' + wordTarget + ' words';
+        }
 
-      if (wordsWritten >= wordTarget) {
-        showToast('\uD83C\uDFAF Goal reached! ' + wordsWritten + ' words in ' + Math.floor(sessionSeconds / 60) + ' min.');
-        stopSession();
-      }
-    }, 1000);
+        if (sessionSeconds >= targetMinutes * 60) {
+          showToast('\u23F0 Time\'s up! ' + wordsWritten + ' words written.');
+          stopSession();
+          return;
+        }
 
+        if (wordsWritten >= wordTarget) {
+          showToast('\uD83C\uDFCA Goal reached! ' + wordsWritten + ' words in ' + Math.floor(sessionSeconds / 60) + ' min.');
+          stopSession();
+        }
+      }, 1000);
+    }
+
+    startCountdown();
     showToast('Session started \u2014 ' + wordTarget + ' words / ' + targetMinutes + ' min');
   }
 
@@ -2352,6 +2373,18 @@
     if (startBtn) startBtn.style.display = '';
     if (stopBtn) stopBtn.style.display = 'none';
     showToast('Session stopped');
+  }
+  
+    function pauseSession() {
+    if (sessionInterval) {
+      clearInterval(sessionInterval);
+      sessionInterval = null;
+      showToast('Session paused');
+      var pauseBtn = document.getElementById('btn-pause-session');
+      var startBtn = document.getElementById('btn-start-session');
+      if (pauseBtn) pauseBtn.style.display = 'none';
+      if (startBtn) startBtn.style.display = '';
+    }
   }
 
   function resetSession() {
