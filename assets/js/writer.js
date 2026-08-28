@@ -1347,6 +1347,17 @@
     showToast(trackingChanges ? 'Track Changes ON' : 'Track Changes OFF');
   }
 
+  function trackChangePostProcess() {
+    playTypewriterSound();
+    isTyping = true;
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(function() {
+      if (isTyping) { saveCurrentTabContent(); isTyping = false; }
+    }, 10000);
+    updateStats();
+    updateReadingProgress();
+  }
+
   function handleTrackBeforeInput(e) {
     if (!trackingChanges || !richEditor) return;
 
