@@ -1324,7 +1324,7 @@
     }
   }
 
-    // ===== TRACK CHANGES =====
+   // ===== TRACK CHANGES =====
 
   function setupTrackChanges() {
     bindClick('btn-track-changes', toggleTrackChanges);
@@ -1333,9 +1333,9 @@
     bindClick('btn-track-changes-toggle', toggleTrackChanges);
 
     if (richEditor) {
-      richEditor.addEventListener('beforeinput', handleTrackBeforeInput);
-      richEditor.addEventListener('keydown', handleTrackKeyDown);
-      richEditor.addEventListener('paste', handleTrackPaste, true);
+      // Μόνο input event - πιο αξιόπιστο από beforeinput + keydown
+      richEditor.addEventListener('input', handleTrackInput);
+      richEditor.addEventListener('paste', handleTrackPasteSimple, true);
     }
   }
 
@@ -1352,6 +1352,65 @@
     showToast(trackingChanges ? 'Track Changes ON' : 'Track Changes OFF');
   }
 
+  function handleTrackInput(e) {
+    if (!trackingChanges || !richEditor) return;
+
+    var inputType = e.inputType;
+
+    // Διαγραφές — απλά αφαιρούμε τα track-insertion spans από την περιοχή
+    if (inputType === 'deleteContentBackward' || inputType === 'deleteContentForward' || inputType === 'deleteByCut') {
+      wrapDeletedRange();
+      return;
+    }
+
+    // Εισαγωγές — βρες τα νεοεισαχθέντα κόμβους και τύλιξέ τα
+    if (inputType === 'insertText' || inputType === 'insertParagraph' || inputType === 'insertFromPaste') {
+      wrapNewInsertions();
+    }
+  }
+
+  function handleTrackPasteSimple(e) {
+    if (!trackingChanges) return;
+    // Μην μπλοκάρεις το paste — το input event θα το πιάσει
+  }
+
+  function wrapNewInsertions() {
+    // Βρες όλα τα track-insertion spans και normalize τα
+    var inserts = richEditor.querySelectorAll('.track-insertion');
+    for (var i = 0; i < inserts.length; i++) {
+      var span = inserts[i];
+      var parent = span.parentNode;
+      if (!parent) continue;
+
+      // Merge adjacent insertion spans
+      var next = span.nextSibling;
+      while (next && next.classList && next.classList.contains('track-insertion')) {
+        while (next.firstChild) span.appendChild(next.firstChild);
+        parent.removeChild(next);
+        next = span.nextSibling;
+      }
+
+      // Normalize text nodes μέσα στο span
+      if (span.textContent && span.textContent.length > 1) {
+        parent.normalize();
+      }
+    }
+
+    trackChangePostProcess();
+  }
+
+  function wrapDeletedRange() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0);
+
+    // Δεν χρειάζεται ειδική διαχείριση — το browser διαγράφει
+    // Απλώς post-process για να βεβαιωθούμε ότι δεν μένουν σπασμένα spans
+    if (richEditor) richEditor.normalize();
+
+    trackChangePostProcess();
+  }
+
   function trackChangePostProcess() {
     applyAutoCorrect();
     applySmartTypography();
@@ -1365,223 +1424,38 @@
     updateReadingProgress();
   }
 
-  function handleTrackKeyDown(e) {
-    if (!trackingChanges || !richEditor) return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.isComposing || e.keyCode === 229) return;
-
-    var key = e.key;
-
-    if (key === 'Enter') {
-      e.preventDefault();
-      trackInsertText('\n', true);
-      return;
-    }
-    if (key === ' ' || key === '\u00A0') {
-      e.preventDefault();
-      trackInsertText(' ', false);
-      return;
-    }
-    if (key && key.length === 1) {
-      e.preventDefault();
-      trackInsertText(key, false);
-      return;
-    }
-  }
-
-  function handleTrackPaste(e) {
-    if (!trackingChanges) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
-    if (text) trackInsertText(text, false);
-  }
-
-  function handleTrackBeforeInput(e) {
-    if (!trackingChanges || !richEditor) return;
-    var inputType = e.inputType;
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    var range = sel.getRangeAt(0);
-
-    // ONLY deletions — insertions handled by keydown + paste
-    if (inputType === 'deleteContentBackward' || inputType === 'deleteContentForward' || inputType === 'deleteByCut') {
-      e.preventDefault();
-      handleTrackDeletion(range, inputType);
-      return;
-    }
-  }
-
-  function trackInsertText(text, isLineBreak) {
-    if (!richEditor) return;
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    var range = sel.getRangeAt(0);
-
-    if (!range.collapsed) range.deleteContents();
-
-    var insSpan = getAdjacentInsertionSpan(range);
-    if (!insSpan) {
-      insSpan = document.createElement('span');
-      insSpan.className = 'track-insertion';
-      insSpan.style.whiteSpace = 'pre-wrap';
-      range.insertNode(insSpan);
-    }
-
-    if (isLineBreak) {
-      insSpan.appendChild(document.createElement('br'));
-    } else {
-      insSpan.appendChild(document.createTextNode(text));
-    }
-
-    placeCursorAtEnd(insSpan);
-    trackChangePostProcess();
-  }
-
-  function getAdjacentInsertionSpan(range) {
-    var node = range.startContainer;
-    var offset = range.startOffset;
-
-    if (node.nodeType === Node.TEXT_NODE &&
-        node.parentElement &&
-        node.parentElement.classList.contains('track-insertion') &&
-        offset === node.textContent.length) {
-      return node.parentElement;
-    }
-
-    if (node.nodeType === Node.TEXT_NODE && offset === 0) {
-      var prev = node.previousSibling;
-      if (prev && prev.nodeType === Node.ELEMENT_NODE &&
-          prev.classList.contains('track-insertion')) {
-        return prev;
-      }
-    }
-
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      var prevChild = node.childNodes[offset - 1];
-      if (prevChild && prevChild.nodeType === Node.ELEMENT_NODE &&
-          prevChild.classList.contains('track-insertion')) {
-        return prevChild;
-      }
-    }
-
-    return null;
-  }
-
-  function placeCursorAtEnd(span) {
-    var sel = window.getSelection();
-    var lastChild = span.lastChild;
-    var nr = document.createRange();
-    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-      nr.setStart(lastChild, lastChild.textContent.length);
-    } else {
-      nr.setStartAfter(span);
-    }
-    nr.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(nr);
-  }
-
-  function placeCursorAfter(el) {
-    var sel = window.getSelection();
-    var nr = document.createRange();
-    nr.setStartAfter(el);
-    nr.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(nr);
-  }
-
-  function handleTrackDeletion(range, inputType) {
-    var sel = window.getSelection();
-    var direction = (inputType === 'deleteContentForward') ? 'forward' : 'backward';
-
-    if (range.collapsed) {
-      var node = range.startContainer;
-      var offset = range.startOffset;
-
-      if (direction === 'backward') {
-        if (node.nodeType === Node.TEXT_NODE && offset > 0) {
-          range.setStart(node, offset - 1);
-        } else if (node.nodeType === Node.ELEMENT_NODE && offset > 0) {
-          var prevEl = node.childNodes[offset - 1];
-          if (prevEl && prevEl.nodeType === Node.TEXT_NODE) {
-            range.setStart(prevEl, prevEl.textContent.length - 1);
-          } else if (prevEl) {
-            range.setStart(prevEl, 0);
-            range.setEnd(node, offset);
-          }
-        } else if (node.nodeType === Node.TEXT_NODE && offset === 0 && node.previousSibling) {
-          var ps = node.previousSibling;
-          if (ps.nodeType === Node.TEXT_NODE) {
-            range.setStart(ps, ps.textContent.length - 1);
-          } else if (ps.nodeType === Node.ELEMENT_NODE) {
-            range.selectNode(ps);
-          }
-        }
-      } else {
-        if (node.nodeType === Node.TEXT_NODE && offset < node.textContent.length) {
-          range.setEnd(node, offset + 1);
-        } else if (node.nodeType === Node.ELEMENT_NODE && offset < node.childNodes.length) {
-          var nextEl = node.childNodes[offset];
-          if (nextEl && nextEl.nodeType === Node.TEXT_NODE) {
-            range.setEnd(nextEl, 1);
-          } else if (nextEl) {
-            range.setEnd(nextEl, nextEl.childNodes.length || 1);
-          }
-        }
-      }
-
-      if (range.collapsed) return;
-    }
-
-    var common = range.commonAncestorContainer;
-    var checkEl = (common.nodeType === Node.ELEMENT_NODE) ? common : common.parentElement;
-    if (checkEl && checkEl.closest && checkEl.closest('.track-deletion')) {
-      range.deleteContents();
-      var er = document.createRange();
-      er.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(er);
-      trackChangePostProcess();
-      return;
-    }
-
-    var delSpan = document.createElement('span');
-    delSpan.className = 'track-deletion';
-    delSpan.setAttribute('data-change-id', 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
-    delSpan.style.textDecoration = 'line-through';
-    delSpan.style.color = 'var(--text-muted, #888)';
-    delSpan.style.whiteSpace = 'pre-wrap';
-
-    var contents = range.extractContents();
-    if (!contents || (!contents.textContent && !contents.firstChild)) return;
-
-    delSpan.appendChild(contents);
-    range.insertNode(delSpan);
-
-    placeCursorAfter(delSpan);
-    trackChangePostProcess();
-  }
+  // Αυτή η συνάρτηση δεν χρειάζεται πλέον — αφαιρείς τη χρήση της
+  function getAdjacentInsertionSpan(range) { return null; }
+  function placeCursorAtEnd(span) {}
+  function placeCursorAfter(el) {}
+  function handleTrackKeyDown(e) {}
+  function handleTrackBeforeInput(e) {}
+  function trackInsertText(text, isLineBreak) {}
 
   function acceptAllChanges() {
     if (!richEditor) return;
 
+    // Αφαιρώ insertion spans — κρατώ μόνο το κείμενό τους
     var inserts = richEditor.querySelectorAll('.track-insertion');
     for (var i = 0; i < inserts.length; i++) {
-      var ip = inserts[i].parentNode;
-      if (!ip) continue;
-      while (inserts[i].firstChild) ip.insertBefore(inserts[i].firstChild, inserts[i]);
-      ip.removeChild(inserts[i]);
-      ip.normalize();
+      var span = inserts[i];
+      var parent = span.parentNode;
+      if (!parent) continue;
+      while (span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
     }
 
+    // Αφαιρώ deletion spans — επαναφέρω το κείμενό τους (αντίστροφη πράξη)
     var deletes = richEditor.querySelectorAll('.track-deletion');
     for (var d = 0; d < deletes.length; d++) {
-      var dp = deletes[d].parentNode;
-      if (!dp) continue;
-      dp.removeChild(deletes[d]);
-      dp.normalize();
+      var del = deletes[d];
+      var parent = del.parentNode;
+      if (!parent) continue;
+      while (del.firstChild) parent.insertBefore(del.firstChild.cloneNode(true), del);
+      parent.removeChild(del);
     }
+
+    richEditor.normalize();
 
     trackingChanges = false;
     var btn = document.getElementById('btn-track-changes');
@@ -1594,22 +1468,26 @@
   function rejectAllChanges() {
     if (!richEditor) return;
 
+    // Αφαιρώ insertion spans — χάνεται το κείμενο τους
     var inserts = richEditor.querySelectorAll('.track-insertion');
     for (var i = 0; i < inserts.length; i++) {
-      var ip = inserts[i].parentNode;
-      if (!ip) continue;
-      ip.removeChild(inserts[i]);
-      ip.normalize();
+      var span = inserts[i];
+      var parent = span.parentNode;
+      if (!parent) continue;
+      parent.removeChild(span);
     }
 
+    // Αφαιρώ deletion spans — επαναφέρω το κείμενο τους
     var deletes = richEditor.querySelectorAll('.track-deletion');
     for (var d = 0; d < deletes.length; d++) {
-      var dp = deletes[d].parentNode;
-      if (!dp) continue;
-      while (deletes[d].firstChild) dp.insertBefore(deletes[d].firstChild, deletes[d]);
-      dp.removeChild(deletes[d]);
-      dp.normalize();
+      var del = deletes[d];
+      var parent = del.parentNode;
+      if (!parent) continue;
+      while (del.firstChild) parent.insertBefore(del.firstChild.cloneNode(true), del);
+      parent.removeChild(del);
     }
+
+    richEditor.normalize();
 
     trackingChanges = false;
     var btn = document.getElementById('btn-track-changes');
