@@ -1347,56 +1347,83 @@
     showToast(trackingChanges ? 'Track Changes ON' : 'Track Changes OFF');
   }
 
-  function trackChangePostProcess() {
-    playTypewriterSound();
-    isTyping = true;
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(function() {
-      if (isTyping) { saveCurrentTabContent(); isTyping = false; }
-    }, 10000);
-    updateStats();
-    updateReadingProgress();
-  }
-
   function handleTrackBeforeInput(e) {
     if (!trackingChanges || !richEditor) return;
 
     var inputType = e.inputType;
     var data = e.data;
     var sel = window.getSelection();
-
     if (!sel || sel.rangeCount === 0) return;
     var range = sel.getRangeAt(0);
 
-    // === INSERTIONS ===
+    // === INSERT TEXT ===
     if (inputType === 'insertText' && data) {
       e.preventDefault();
-      var insSpan = document.createElement('span');
-      insSpan.className = 'track-insertion';
-      insSpan.textContent = data;
       range.deleteContents();
-      range.insertNode(insSpan);
-      var afterIns = document.createRange();
-      afterIns.setStartAfter(insSpan);
-      afterIns.collapse(true);
+
+      // Find existing adjacent insertion span or create new
+      var insSpan = null;
+      var node = range.startContainer;
+      var offset = range.startOffset;
+
+      // Case 1: cursor at end of text node inside track-insertion
+      if (node.nodeType === Node.TEXT_NODE &&
+          node.parentElement && node.parentElement.classList.contains('track-insertion') &&
+          offset === node.textContent.length) {
+        insSpan = node.parentElement;
+      }
+      // Case 2: cursor at start of text node, previous sibling is track-insertion
+      else if (node.nodeType === Node.TEXT_NODE && offset === 0 &&
+               node.previousSibling && node.previousSibling.nodeType === Node.ELEMENT_NODE &&
+               node.previousSibling.classList.contains('track-insertion')) {
+        insSpan = node.previousSibling;
+      }
+      // Case 3: cursor in element, last child is track-insertion
+      else if (node.nodeType === Node.ELEMENT_NODE) {
+        var prevChild = node.childNodes[offset - 1];
+        if (prevChild && prevChild.nodeType === Node.ELEMENT_NODE &&
+            prevChild.classList.contains('track-insertion')) {
+          insSpan = prevChild;
+        }
+      }
+
+      if (!insSpan) {
+        insSpan = document.createElement('span');
+        insSpan.className = 'track-insertion';
+        insSpan.style.whiteSpace = 'pre-wrap';
+        range.insertNode(insSpan);
+      }
+
+      insSpan.appendChild(document.createTextNode(data));
+
+      // Place cursor at end of last text node in span
+      var lastText = insSpan.lastChild;
+      var nr = document.createRange();
+      if (lastText && lastText.nodeType === Node.TEXT_NODE) {
+        nr.setStart(lastText, lastText.textContent.length);
+      } else {
+        nr.setStartAfter(insSpan);
+      }
+      nr.collapse(true);
       sel.removeAllRanges();
-      sel.addRange(afterIns);
+      sel.addRange(nr);
+
       trackChangePostProcess();
       return;
     }
 
+    // === INSERT FROM PASTE ===
     if (inputType === 'insertFromPaste' || inputType === 'insertReplacementText') {
       var pasteText = '';
-      if (e.dataTransfer) {
-        pasteText = e.dataTransfer.getData('text/plain') || '';
-      }
+      if (e.dataTransfer) pasteText = e.dataTransfer.getData('text/plain') || '';
       if (!pasteText) pasteText = data || '';
       if (pasteText) {
         e.preventDefault();
+        range.deleteContents();
         var pasteSpan = document.createElement('span');
         pasteSpan.className = 'track-insertion';
+        pasteSpan.style.whiteSpace = 'pre-wrap';
         pasteSpan.textContent = pasteText;
-        range.deleteContents();
         range.insertNode(pasteSpan);
         var afterPaste = document.createRange();
         afterPaste.setStartAfter(pasteSpan);
@@ -1408,10 +1435,12 @@
       return;
     }
 
+    // === INSERT PARAGRAPH / LINE BREAK ===
     if (inputType === 'insertParagraph' || inputType === 'insertLineBreak') {
       e.preventDefault();
       var brSpan = document.createElement('span');
       brSpan.className = 'track-insertion';
+      brSpan.style.whiteSpace = 'pre-wrap';
       brSpan.innerHTML = '<br>';
       range.deleteContents();
       range.insertNode(brSpan);
@@ -1436,7 +1465,7 @@
     var sel = window.getSelection();
     var direction = (inputType === 'deleteContentForward') ? 'forward' : 'backward';
 
-    // If range is collapsed, extend by one character
+    // If range is collapsed, extend by one character using Range API
     if (range.collapsed) {
       var node = range.startContainer;
       var offset = range.startOffset;
@@ -1444,16 +1473,26 @@
       if (direction === 'backward') {
         if (node.nodeType === Node.TEXT_NODE && offset > 0) {
           range.setStart(node, offset - 1);
-        } else {
-          sel.modify('extend', 'backward', 'character');
-          if (sel.rangeCount > 0) range = sel.getRangeAt(0);
+        } else if (node.nodeType === Node.ELEMENT_NODE && offset > 0) {
+          var prevEl = node.childNodes[offset - 1];
+          if (prevEl) {
+            range.setStart(prevEl, 0);
+            range.setEnd(node, offset);
+          }
+        } else if (node.nodeType === Node.TEXT_NODE && offset === 0 && node.previousSibling) {
+          var ps = node.previousSibling;
+          if (ps.nodeType === Node.TEXT_NODE) {
+            range.setStart(ps, ps.textContent.length - 1);
+          }
         }
       } else {
         if (node.nodeType === Node.TEXT_NODE && offset < node.textContent.length) {
           range.setEnd(node, offset + 1);
-        } else {
-          sel.modify('extend', 'forward', 'character');
-          if (sel.rangeCount > 0) range = sel.getRangeAt(0);
+        } else if (node.nodeType === Node.ELEMENT_NODE && offset < node.childNodes.length) {
+          var nextEl = node.childNodes[offset];
+          if (nextEl) {
+            range.setEnd(nextEl, nextEl.childNodes.length || 1);
+          }
         }
       }
 
@@ -1462,23 +1501,24 @@
 
     // If inside an already-deleted span → permanent delete
     var common = range.commonAncestorContainer;
-    var delParent = (common.nodeType === Node.ELEMENT_NODE) ? common : common.parentElement;
-    if (delParent && delParent.closest && delParent.closest('.track-deletion')) {
+    var checkEl = (common.nodeType === Node.ELEMENT_NODE) ? common : common.parentElement;
+    if (checkEl && checkEl.closest && checkEl.closest('.track-deletion')) {
       range.deleteContents();
       sel.removeAllRanges();
-      var r = document.createRange();
-      r.collapse(true);
-      sel.addRange(r);
+      var er = document.createRange();
+      er.collapse(true);
+      sel.addRange(er);
       trackChangePostProcess();
       return;
     }
 
-    // Wrap extracted content in deletion span
+    // Extract content and wrap in deletion span
     var delSpan = document.createElement('span');
     delSpan.className = 'track-deletion';
     delSpan.setAttribute('data-change-id', 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
     delSpan.style.textDecoration = 'line-through';
     delSpan.style.color = 'var(--text-muted, #888)';
+    delSpan.style.whiteSpace = 'pre-wrap';
 
     var contents = range.extractContents();
     if (!contents || (!contents.textContent && !contents.firstChild)) return;
