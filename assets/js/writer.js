@@ -2708,14 +2708,12 @@ for (var i = 0; i < panels.length; i++) {
       if (dlg) dlg.style.display = 'flex';
     });
     bindClick('btn-reading-mode', function() {
-      var ed = document.getElementById('editor-wrapper');
-      if (ed) ed.classList.add('reading-mode-active');
+      document.body.classList.add('reading-mode');
       var exitBtn = document.getElementById('btn-exit-reading-mode');
       if (exitBtn) exitBtn.style.display = '';
     });
     bindClick('btn-exit-reading-mode', function() {
-      var ed = document.getElementById('editor-wrapper');
-      if (ed) ed.classList.remove('reading-mode-active');
+      document.body.classList.remove('reading-mode');
       var exitBtn = document.getElementById('btn-exit-reading-mode');
       if (exitBtn) exitBtn.style.display = 'none';
     });
@@ -3765,7 +3763,7 @@ for (var i = 0; i < panels.length; i++) {
     });
   }
 
-  function initializeElements() {
+    function initializeElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-wrapper');
     tabBar = document.querySelector('#tab-bar');
@@ -3775,11 +3773,11 @@ for (var i = 0; i < panels.length; i++) {
     statsGoalEl = document.querySelector('.stats-goal');
     statsDetailed = document.getElementById('stats-detailed');
     goalBar = document.getElementById('goal-bar') || document.querySelector('.goal-bar');
-    goalBarContent = document.querySelector('.goal-bar-content');
-    goalBarFill = document.querySelector('.goal-bar-fill');
+    goalBarContent = document.getElementById('goal-bar-content') || document.querySelector('.goal-bar-content');
+    goalBarFill = document.getElementById('goal-bar-fill') || document.querySelector('.goal-bar-fill');
     sessionBar = document.getElementById('session-bar') || document.querySelector('.session-bar');
     sessionDisplay = document.getElementById('session-display');
-    findBar = document.getElementById('find-replace-bar');
+    findBar = document.getElementById('find-replace-bar') || document.querySelector('.find-replace-bar');
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');
     metadataPanel = document.getElementById('metadata-panel');
