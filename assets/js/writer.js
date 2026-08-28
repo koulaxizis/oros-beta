@@ -596,15 +596,19 @@
     }
 
     if (statsGoalEl) {
-      var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-      var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
-      if (goal > 0) {
-        var current = (unit === 'chars') ? chars : words;
-        var pct = Math.round((current / goal) * 100);
-        if (pct >= 100) { statsGoalEl.textContent = '\uD83C\uDF89 ' + pct + '%'; statsGoalEl.style.color = 'var(--success)'; }
-        else { statsGoalEl.textContent = pct + '%'; statsGoalEl.style.color = ''; }
-        statsGoalEl.style.display = '';
-      } else { statsGoalEl.style.display = 'none'; }
+      if (goalBar && goalBar.style.display !== 'none') {
+        var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+        var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
+        if (goal > 0) {
+          var current = (unit === 'chars') ? chars : words;
+          var pct = Math.round((current / goal) * 100);
+          if (pct >= 100) { statsGoalEl.textContent = '\uD83C\uDF89 ' + pct + '%'; statsGoalEl.style.color = 'var(--success)'; }
+          else { statsGoalEl.textContent = pct + '%'; statsGoalEl.style.color = ''; }
+          statsGoalEl.style.display = '';
+        } else { statsGoalEl.style.display = 'none'; }
+      } else {
+        statsGoalEl.style.display = 'none';
+      }
     }
 
     updateReadingProgress();
@@ -2191,14 +2195,19 @@
   }
 
   // ===== GOAL BAR =====
-  function setupGoalBar() {
+    function setupGoalBar() {
     bindClick('btn-goal', toggleGoalSettings);
     goalTargetInput = document.getElementById('goal-target-input');
     goalUnitSelect = document.getElementById('goal-unit-select');
     goalLockCheckbox = document.getElementById('goal-lock-checkbox');
     if (goalTargetInput) goalTargetInput.addEventListener('change', saveGoal);
     if (goalUnitSelect) goalUnitSelect.addEventListener('change', saveGoal);
-    if (goalLockCheckbox) goalLockCheckbox.addEventListener('change', saveGoal);
+    if (goalLockCheckbox) goalLockCheckbox.addEventListener('change', function() {
+      var locked = goalLockCheckbox.checked;
+      if (goalTargetInput) goalTargetInput.disabled = locked;
+      if (goalUnitSelect) goalUnitSelect.disabled = locked;
+      saveGoal();
+    });
     loadGoal();
   }
 
@@ -2213,7 +2222,9 @@
   function saveGoal() {
     if (goalTargetInput) localStorage.setItem('oros_writer_goal', goalTargetInput.value || 0);
     if (goalUnitSelect) localStorage.setItem('oros_writer_goal_unit', goalUnitSelect.value);
+    if (goalLockCheckbox) localStorage.setItem('oros_writer_goal_lock', goalLockCheckbox.checked ? '1' : '0');
     updateGoalBar();
+    showToast('Goal saved');
   }
 
   function loadGoal() {
@@ -2224,6 +2235,13 @@
     if (goalUnitSelect) {
       var savedUnit = localStorage.getItem('oros_writer_goal_unit');
       goalUnitSelect.value = savedUnit || 'words';
+    }
+    if (goalLockCheckbox) {
+      goalLockCheckbox.checked = localStorage.getItem('oros_writer_goal_lock') === '1';
+      if (goalLockCheckbox.checked) {
+        if (goalTargetInput) goalTargetInput.disabled = true;
+        if (goalUnitSelect) goalUnitSelect.disabled = true;
+      }
     }
     updateGoalBar();
   }
@@ -2246,7 +2264,7 @@
   }
 
   // ===== SESSION TIMER =====
-  function setupSessionTimer() {
+    function setupSessionTimer() {
     bindClick('btn-session', function() {
       if (sessionBar) {
         var isVisible = sessionBar.style.display !== 'none';
@@ -2263,6 +2281,16 @@
       var sbtn = document.getElementById('btn-session');
       if (sbtn) sbtn.classList.remove('active');
     });
+	
+	    var wTarget = document.getElementById('session-word-target');
+    var tTarget = document.getElementById('session-time-target');
+    if (wTarget) wTarget.addEventListener('change', function() {
+      localStorage.setItem('oros_writer_session_words', wTarget.value || 500);
+    });
+    if (tTarget) tTarget.addEventListener('change', function() {
+      localStorage.setItem('oros_writer_session_time', tTarget.value || 25);
+    });
+	
     loadSessionTarget();
   }
 
@@ -2270,33 +2298,69 @@
     if (sessionInterval) clearInterval(sessionInterval);
     sessionStartTime = Date.now();
     sessionSeconds = 0;
-    var targetMinutes = localStorage.getItem('oros_writer_session_time');
+
+    var startBtn = document.getElementById('btn-start-session');
+    var stopBtn = document.getElementById('btn-stop-session');
+    if (startBtn) startBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = '';
+
+    var targetMinutes = parseInt(localStorage.getItem('oros_writer_session_time'), 10) || 25;
+    var wordTarget = parseInt(localStorage.getItem('oros_writer_session_words'), 10) || 500;
+    var startWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
+
+    if (sessionDisplay) {
+      sessionDisplay.classList.remove('complete', 'warning');
+      sessionDisplay.textContent = '0:00';
+    }
+
     sessionInterval = setInterval(function() {
       sessionSeconds++;
       if (sessionDisplay) {
         var mins = Math.floor(sessionSeconds / 60);
         var secs = sessionSeconds % 60;
         sessionDisplay.textContent = mins + ':' + secs.toString().padStart(2, '0');
+
+        var remaining = (targetMinutes * 60) - sessionSeconds;
+        if (remaining <= 300 && remaining > 0) {
+          sessionDisplay.classList.add('warning');
+        }
       }
-      if (targetMinutes && sessionSeconds >= parseInt(targetMinutes, 10) * 60) {
-        showToast(getTrans('session_complete') || 'Session complete!');
+
+      var currentWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
+      var wordsWritten = currentWords - startWords;
+
+      if (sessionSeconds >= targetMinutes * 60) {
+        showToast('\u23F0 Time\'s up! ' + wordsWritten + ' words written.');
+        stopSession();
+        return;
+      }
+
+      if (wordsWritten >= wordTarget) {
+        showToast('\uD83C\uDFAF Goal reached! ' + wordsWritten + ' words in ' + Math.floor(sessionSeconds / 60) + ' min.');
         stopSession();
       }
     }, 1000);
-    showToast(getTrans('session_started') || 'Session started');
+
+    showToast('Session started \u2014 ' + wordTarget + ' words / ' + targetMinutes + ' min');
   }
 
   function stopSession() {
     if (sessionInterval) clearInterval(sessionInterval);
     sessionInterval = null;
-    if (sessionDisplay) sessionDisplay.textContent = '--:--';
-    showToast(getTrans('session_stopped') || 'Session stopped');
+    var startBtn = document.getElementById('btn-start-session');
+    var stopBtn = document.getElementById('btn-stop-session');
+    if (startBtn) startBtn.style.display = '';
+    if (stopBtn) stopBtn.style.display = 'none';
+    showToast('Session stopped');
   }
 
   function resetSession() {
     stopSession();
     sessionSeconds = 0;
-    if (sessionDisplay) sessionDisplay.textContent = '--:--';
+    if (sessionDisplay) {
+      sessionDisplay.textContent = '--:--';
+      sessionDisplay.classList.remove('complete', 'warning');
+    }
   }
 
   function loadSessionTarget() {
@@ -3324,7 +3388,7 @@ for (var i = 0; i < panels.length; i++) {
         else if (tag === 'h4') indent = 'padding-left:4.5em;';
         else if (tag === 'h5') indent = 'padding-left:6em;';
         else if (tag === 'h6') indent = 'padding-left:7.5em;';
-        html += '<li style="' + indent + '"><a href="#toc-' + i + '" onclick="return false;">' + escapeHtml(text) + '</a></li>';
+        html += '<li style="' + indent + '"><a href="#toc-' + i + '" class="toc-link" style="color:var(--accent-gold-light);text-decoration:none;">' + escapeHtml(text) + '</a></li>';
         heads[i].id = 'toc-' + i;
       }
       html += '</ul><p><br></p>';
@@ -3354,6 +3418,23 @@ for (var i = 0; i < panels.length; i++) {
       sel.addRange(newRange);
 
       saveCurrentTabContent();
+	  
+	  var tocLinks = richEditor.querySelectorAll('.toc-link');
+    for (var tl = 0; tl < tocLinks.length; tl++) {
+      (function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          var targetId = link.getAttribute('href').substring(1);
+          var target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('outline-flash');
+            setTimeout(function() { target.classList.remove('outline-flash'); }, 1200);
+          }
+        });
+      })(tocLinks[tl]);
+    }
+	
       updateStats();
       showToast('Table of Contents inserted');
     });
@@ -3632,6 +3713,7 @@ for (var i = 0; i < panels.length; i++) {
       });
       bindClick('btn-close-goal', function() {
         if (goalBar) goalBar.style.display = 'none';
+        if (statsGoalEl) statsGoalEl.style.display = 'none';
         var gbtn = document.getElementById('btn-goal');
         if (gbtn) gbtn.classList.remove('active');
       });
