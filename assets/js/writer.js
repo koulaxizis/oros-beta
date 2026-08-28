@@ -1866,7 +1866,7 @@
     renumberFootnotes();
   }
 
-  function renumberFootnotes() {
+      function renumberFootnotes() {
     if (!richEditor) return;
 
     var refs = richEditor.querySelectorAll('.footnote-ref');
@@ -1879,7 +1879,6 @@
     var footnotes = (tab && tab.metadata && tab.metadata.footnotes) || [];
     var fnArea = document.getElementById('footnote-area');
 
-    // Build maps by current IDs (collected BEFORE any mutations)
     var entryMap = {};
     if (fnArea) {
       var entries = fnArea.querySelectorAll('.footnote-entry');
@@ -1893,26 +1892,22 @@
       metaMap[footnotes[m].fnId] = footnotes[m];
     }
 
-    // Renumber sequentially based on DOM order of refs in the editor
     for (var i = 0; i < refs.length; i++) {
       var newNum = i + 1;
       var newFnId = 'fn_' + newNum;
       var newRefId = 'fn_ref_' + newNum;
       var oldFnId = refs[i].getAttribute('data-fn-id');
 
-      // Update ref in editor
       refs[i].href = '#' + newFnId;
       refs[i].id = newRefId;
       refs[i].setAttribute('data-fn-id', newFnId);
       refs[i].innerHTML = '[' + newNum + ']';
 
-      // Update entry in footnote area
       var entry = entryMap[oldFnId];
       if (entry) {
         entry.id = newFnId;
         var backLink = entry.querySelector('.footnote-back');
         if (backLink) {
-          // Clone to remove old event listeners cleanly
           var newBackLink = backLink.cloneNode(true);
           newBackLink.href = '#' + newRefId;
           newBackLink.setAttribute('data-ref-id', newRefId);
@@ -1922,7 +1917,6 @@
         }
       }
 
-      // Update metadata
       var metaFn = metaMap[oldFnId];
       if (metaFn) {
         metaFn.refId = newRefId;
@@ -1931,11 +1925,19 @@
       }
     }
 
-    // Sort footnotes in metadata by new number
     footnotes.sort(function(a, b) { return a.number - b.number; });
     if (tab) {
       tab.metadata.footnotes = footnotes;
       tabsModule.setMetadata(tab.metadata);
+    }
+
+    // Re-order footnote entries in DOM to match editor order
+    if (fnArea) {
+      for (var ri = 0; ri < refs.length; ri++) {
+        var refFnId = refs[ri].getAttribute('data-fn-id');
+        var matchingEntry = fnArea.querySelector('#' + refFnId);
+        if (matchingEntry) fnArea.appendChild(matchingEntry);
+      }
     }
 
     footnoteCounter = refs.length;
@@ -1985,7 +1987,7 @@
     updateSaveIndicator('saved');
   }
   
-// ===== VERSION HISTORY =====
+  // ===== VERSION HISTORY =====
   var versionHistoryInterval = null;
   var MAX_AUTO_VERSIONS = 8;
 
@@ -2020,7 +2022,8 @@
         hash: hash,
         timestamp: new Date().toISOString(),
         snapshot: content,
-        type: 'auto'
+        type: 'auto',
+        metadata: cloneObject(tab.metadata || {})
       });
 
       trimAutoVersions(tab);
@@ -2051,19 +2054,13 @@
     if (!tab || !richEditor) return;
     var content = richEditor.innerHTML;
     tab.versions = tab.versions || [];
-    
-    // Check if the last version has the same content — skip duplicate
-    var lastVersion = tab.versions[tab.versions.length - 1];
-    if (lastVersion && lastVersion.type === 'manual' && lastVersion.hash === simpleHash(content)) {
-      showToast('No changes to save');
-      return;
-    }
-    
+
     tab.versions.push({
       hash: simpleHash(content),
       timestamp: new Date().toISOString(),
       snapshot: content,
-      type: 'manual'
+      type: 'manual',
+      metadata: cloneObject(tab.metadata || {})
     });
     tabsModule.persist();
     refreshVersionList();
@@ -2076,7 +2073,7 @@
     return hash.toString();
   }
 
-      function refreshVersionList() {
+  function refreshVersionList() {
     if (!versionList) return;
     var tab = tabsModule.getActive();
     if (!tab || !tab.versions || tab.versions.length === 0) {
@@ -2108,51 +2105,47 @@
     }
     versionList.innerHTML = html;
 
-    // Rebind events after each render
     var restoreBtns = versionList.querySelectorAll('.version-restore');
     for (var r = 0; r < restoreBtns.length; r++) {
-      (function(btn, idx) {
+      (function(btn) {
         btn.addEventListener('click', function() {
-          if (!confirm('Restore this version? This will overwrite current content.')) return;
-          
-          // Restore content
+          var idx = parseInt(btn.getAttribute('data-index'), 10);
+          if (isNaN(idx) || !versions[idx]) return;
+          if (!confirm('Restore this version? Unsaved changes will be lost.')) return;
+
           richEditor.innerHTML = versions[idx].snapshot;
           tabsModule.setContent(richEditor.innerHTML);
-          
-          // CRITICAL: Restore footnotes from metadata to panel
+
+          if (versions[idx].metadata) {
+            tabsModule.setMetadata(cloneObject(versions[idx].metadata));
+          }
+
           restoreFootnotes();
-          
-          // CRITICAL: Refresh comments panel from metadata
           refreshCommentsList();
-          
-          // Update stats and UI
+          loadMetadataFields();
           updateStats();
           updateSaveIndicator('saved');
-          
+
           showToast('Version restored');
         });
-      })(restoreBtns[r], r);
+      })(restoreBtns[r]);
     }
 
     var deleteBtns = versionList.querySelectorAll('.version-delete');
     for (var d = 0; d < deleteBtns.length; d++) {
-      (function(btn, idx) {
+      (function(btn) {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
+          var idx = parseInt(btn.getAttribute('data-index'), 10);
+          if (isNaN(idx) || !tab.versions[idx]) return;
           if (!confirm('Delete this manual snapshot?')) return;
-          
-          // Remove from array
+
           tab.versions.splice(idx, 1);
-          
-          // Persist to localStorage
           tabsModule.persist();
-          
-          // CRITICAL: Re-render the list IMMEDIATELY
           refreshVersionList();
-          
           showToast('Snapshot deleted');
         });
-      })(deleteBtns[d], d);
+      })(deleteBtns[d]);
     }
   }
 
