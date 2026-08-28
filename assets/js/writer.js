@@ -2263,11 +2263,12 @@
       if (goalElapsedSeconds >= goalTotalSeconds) {
         var current = getCurrentGoalCount();
         var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-        if (current < goal) {
-          showToast('⏰ Time is up! ' + current + '/' + goal + ' words');
-        } else {
-          showToast('🎉 Success! Goal reached');
-        }
+              var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
+      if (current < goal) {
+        showToast('⏰ Time is up! ' + current + '/' + goal + ' ' + unitLabel);
+      } else {
+        showToast('🎉 Success! ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1) + ' goal reached');
+      }
         stopGoalTimer();
       }
     }, 1000);
@@ -2280,7 +2281,7 @@
     }
   }
 
-  function clearGoal() {
+    function clearGoal() {
     stopGoalTimer();
     goalNotified = false;
     localStorage.removeItem('oros_writer_goal');
@@ -2288,7 +2289,6 @@
     if (goalTargetInput) goalTargetInput.value = '';
     if (goalTimeInput) goalTimeInput.value = '';
     if (goalProgressDisplay) goalProgressDisplay.textContent = '';
-    if (statsGoalEl) statsGoalEl.style.display = 'none';
     showToast('Goal cleared');
   }
 
@@ -2313,7 +2313,8 @@
 
     if (current >= goal) {
       if (!goalNotified) {
-        showToast('🎉 Success! Goal reached');
+        var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
+        showToast('🎉 Success! ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1) + ' goal reached');
         goalNotified = true;
       }
       if (goalInterval) stopGoalTimer();
