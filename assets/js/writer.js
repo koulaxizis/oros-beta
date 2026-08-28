@@ -33,6 +33,7 @@
   var goalTimeInput = null;
   var goalProgressDisplay = null;
   var goalInterval = null;
+  var goalNotified = false;
   var goalTotalSeconds = 0;
   var goalElapsedSeconds = 0;
   var findBar = null;
@@ -590,22 +591,6 @@
         rows[4].textContent = paragraphs;
         rows[5].textContent = readingTime + ' min';
         rows[6].textContent = speakingTime + ' min';
-      }
-    }
-
-    if (statsGoalEl) {
-      if (goalBar && goalBar.style.display !== 'none') {
-        var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-        var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
-        if (goal > 0) {
-          var current = (unit === 'chars') ? chars : words;
-          var pct = Math.round((current / goal) * 100);
-          if (pct >= 100) { statsGoalEl.textContent = '\uD83C\uDF89 ' + pct + '%'; statsGoalEl.style.color = 'var(--success)'; }
-          else { statsGoalEl.textContent = pct + '%'; statsGoalEl.style.color = ''; }
-          statsGoalEl.style.display = '';
-        } else { statsGoalEl.style.display = 'none'; }
-      } else {
-        statsGoalEl.style.display = 'none';
       }
     }
 
@@ -2213,7 +2198,6 @@
     bindClick('btn-clear-goal', clearGoal);
     bindClick('btn-close-goal', function() {
       if (goalBar) goalBar.style.display = 'none';
-      if (statsGoalEl) statsGoalEl.style.display = 'none';
       stopGoalTimer();
       var gbtn = document.getElementById('btn-goal');
       if (gbtn) gbtn.classList.remove('active');
@@ -2229,14 +2213,21 @@
     var btn = document.getElementById('btn-goal');
     if (btn) btn.classList.toggle('active', !isVisible);
   }
+  
+    function countWordsFiltered(text) {
+    if (!text || !text.trim()) return 0;
+    return text.trim().split(/\s+/).filter(function(w) {
+      return /[a-zA-Z0-9\u0370-\u03FF\u1F00-\u1FFF]/.test(w);
+    }).length;
+  }
 
   function getCurrentGoalCount() {
     if (!richEditor) return 0;
     var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
     var text = richEditor.innerText.trim() || '';
-    if (unit === 'chars') return text.length;
+    if (unit === 'chars') return text.replace(/\s/g, '').length;
     if (unit === 'paras') return richEditor.querySelectorAll('p').length;
-    return text ? text.split(/\s+/).length : 0;
+    return countWordsFiltered(text);
   }
 
   function saveGoal() {
@@ -2250,6 +2241,7 @@
     if (goalLockCheckbox) localStorage.setItem('oros_writer_goal_lock', goalLockCheckbox.checked ? '1' : '0');
 
     stopGoalTimer();
+    goalNotified = false;
 
     if (target > 0 && timeMin > 0) {
       startGoalTimer(timeMin);
@@ -2290,6 +2282,7 @@
 
   function clearGoal() {
     stopGoalTimer();
+    goalNotified = false;
     localStorage.removeItem('oros_writer_goal');
     localStorage.removeItem('oros_writer_goal_time');
     if (goalTargetInput) goalTargetInput.value = '';
@@ -2318,22 +2311,14 @@
 
     if (goalProgressDisplay) goalProgressDisplay.textContent = progressText;
 
-    if (statsGoalEl && goalBar && goalBar.style.display !== 'none') {
-      if (pct >= 100) {
-        statsGoalEl.textContent = '🎉 ' + pct + '%';
-        statsGoalEl.style.color = 'var(--success)';
-      } else {
-        statsGoalEl.textContent = pct + '%';
-        statsGoalEl.style.color = '';
+    if (current >= goal) {
+      if (!goalNotified) {
+        showToast('🎉 Success! Goal reached');
+        goalNotified = true;
       }
-      statsGoalEl.style.display = '';
-    } else if (statsGoalEl) {
-      statsGoalEl.style.display = 'none';
-    }
-
-    if (current >= goal && goalInterval) {
-      showToast('🎉 Success! Goal reached');
-      stopGoalTimer();
+      if (goalInterval) stopGoalTimer();
+    } else {
+      goalNotified = false;
     }
   }
 
@@ -3160,6 +3145,22 @@ for (var i = 0; i < panels.length; i++) {
   // ===== EDITOR INPUT =====
   function setupEditorInput() {
     if (!richEditor) return;
+	
+	    richEditor.addEventListener('keydown', function(e) {
+      if (!goalLockCheckbox || !goalLockCheckbox.checked) return;
+      var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+      if (goal <= 0) return;
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var navKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Tab', 'Escape'];
+      if (navKeys.indexOf(e.key) !== -1) return;
+
+      var current = getCurrentGoalCount();
+      if (current >= goal) {
+        e.preventDefault();
+        showToast('🔒 Goal limit reached. Unlock to continue.');
+      }
+    });
 
     richEditor.addEventListener('input', function() {
       playTypewriterSound();
@@ -3663,7 +3664,6 @@ for (var i = 0; i < panels.length; i++) {
       });
       bindClick('btn-close-goal', function() {
         if (goalBar) goalBar.style.display = 'none';
-        if (statsGoalEl) statsGoalEl.style.display = 'none';
         var gbtn = document.getElementById('btn-goal');
         if (gbtn) gbtn.classList.remove('active');
       });
