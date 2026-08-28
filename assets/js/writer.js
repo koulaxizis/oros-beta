@@ -1333,6 +1333,8 @@
 
     if (richEditor) {
       richEditor.addEventListener('beforeinput', handleTrackBeforeInput);
+    richEditor.addEventListener('keydown', handleTrackKeyDownBackup);
+  }
     }
   }
 
@@ -1368,9 +1370,11 @@
     var range = sel.getRangeAt(0);
 
     // === INSERT TEXT ===
-    if (inputType === 'insertText' && data) {
-      e.preventDefault();
-      range.deleteContents();
+        if (inputType === 'insertText' && data) {
+      // Don't preventDefault - let browser insert, we'll wrap in keydown backup
+      // This allows proper handling across all browsers
+      return;
+    }
 
       // Find existing adjacent insertion span or create new
       var insSpan = null;
@@ -1424,26 +1428,10 @@
     }
 
     // === INSERT FROM PASTE ===
-    if (inputType === 'insertFromPaste' || inputType === 'insertReplacementText') {
-      var pasteText = '';
-      if (e.dataTransfer) pasteText = e.dataTransfer.getData('text/plain') || '';
-      if (!pasteText) pasteText = data || '';
-      if (pasteText) {
-        e.preventDefault();
-        range.deleteContents();
-        var pasteSpan = document.createElement('span');
-        pasteSpan.className = 'track-insertion';
-        pasteSpan.style.whiteSpace = 'pre-wrap';
-        pasteSpan.textContent = pasteText;
-        range.insertNode(pasteSpan);
-        var afterPaste = document.createRange();
-        afterPaste.setStartAfter(pasteSpan);
-        afterPaste.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(afterPaste);
-        trackChangePostProcess();
+         if (pasteText) {
+        // Paste already handled - don't interfere
+        return;
       }
-      return;
     }
 
     // === INSERT PARAGRAPH / LINE BREAK ===
@@ -1470,6 +1458,82 @@
       handleTrackDeletion(range, inputType);
       return;
     }
+  }
+
+  function handleTrackKeyDownBackup(e) {
+    if (!trackingChanges || !richEditor) return;
+
+    // Skip modifier-only keys
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    var key = e.key;
+    if (!key || key.length > 1 || e.isComposing) return;
+
+    // Regular printable character
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    var range = sel.getRangeAt(0);
+
+    // Prevent the default insertion (we'll do it ourselves)
+    e.preventDefault();
+
+    // Merge with adjacent insertion span if possible
+    var insSpan = findAdjacentInsertionSpan(range);
+    if (!insSpan) {
+      insSpan = document.createElement('span');
+      insSpan.className = 'track-insertion';
+      insSpan.style.whiteSpace = 'pre-wrap';
+      range.deleteContents();
+      range.insertNode(insSpan);
+    }
+
+    // Insert the character
+    insSpan.appendChild(document.createTextNode(key));
+
+    // Move cursor to end of span
+    var nr = document.createRange();
+    var lastChild = insSpan.lastChild;
+    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+      nr.setStart(lastChild, lastChild.textContent.length);
+    } else {
+      nr.setStartAfter(insSpan);
+    }
+    nr.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(nr);
+
+    trackChangePostProcess();
+  }
+
+  function findAdjacentInsertionSpan(range) {
+    var node = range.startContainer;
+    var offset = range.startOffset;
+
+    // Case 1: Cursor at end of text node inside track-insertion
+    if (node.nodeType === Node.TEXT_NODE &&
+        node.parentElement &&
+        node.parentElement.classList.contains('track-insertion') &&
+        offset === node.textContent.length) {
+      return node.parentElement;
+    }
+
+    // Case 2: Cursor at start of text node, previous sibling is track-insertion
+    if (node.nodeType === Node.TEXT_NODE && offset === 0) {
+      var prev = node.previousSibling;
+      if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.classList.contains('track-insertion')) {
+        return prev;
+      }
+    }
+
+    // Case 3: Cursor inside element, check previous sibling at same level
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      var prevSibling = node.childNodes[offset - 1];
+      if (prevSibling && prevSibling.nodeType === Node.ELEMENT_NODE && prevSibling.classList.contains('track-insertion')) {
+        return prevSibling;
+      }
+    }
+
+    return null;
   }
 
   function handleTrackDeletion(range, inputType) {
@@ -3318,6 +3382,28 @@ for (var i = 0; i < panels.length; i++) {
       }
     } catch(e) {}
   }
+  
+    function trackChangesMonitorUntrackedNodes() {
+    if (!richEditor || !trackingChanges) return;
+    // Simple check: count text nodes that aren't wrapped
+    var textNodes = [];
+    var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null);
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      var parent = node.parentElement;
+      if (parent && (parent.classList.contains('track-insertion') || parent.classList.contains('track-deletion'))) {
+        continue; // Already tracked
+      }
+      // Only collect if it has meaningful content
+      if (node.textContent.trim().length > 0) {
+        textNodes.push(node);
+      }
+    }
+    // If there are untracked nodes and we're actively typing, flag them for review
+    if (textNodes.length > 0) {
+      console.log('Untracked text nodes detected:', textNodes.length);
+    }
+  }
 
   // ===== EDITOR INPUT =====
   function setupEditorInput() {
@@ -3335,6 +3421,11 @@ for (var i = 0; i < panels.length; i++) {
       updateStats();
       updateReadingProgress();
     });
+	
+	    // Track changes monitoring
+    if (trackingChanges) {
+      trackChangesMonitorUntrackedNodes();
+    }
 
     richEditor.addEventListener('paste', function(e) {
       if (!smartPasteEnabled) return;
