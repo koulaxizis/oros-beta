@@ -3,7 +3,7 @@
    Fixes: Header/tabs layout, footnote area,
    single-row toolbar, page sizes, 
    word count arrow, session centering, 
-   exit reading position, track changes, comments
+   exit reading position, comments
    Author: Christos Koulaxizis | orOS Ecosystem
    ============================================ */
 
@@ -277,8 +277,7 @@ body.writer-page {
 /* ===== SECONDARY BARS ===== */
 .goal-bar,
 .session-bar,
-.find-replace-bar,
-.track-changes-bar {
+.find-replace-bar {
   display: none;
   align-items: center;
   gap: 8px;
@@ -366,19 +365,6 @@ body.writer-page {
   margin-left: 4px;
   white-space: nowrap;
 }
-
-.track-changes-bar { background: var(--accent-gold-dim); }
-
-.tc-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent-gold);
-}
-
-.tracker-insert { color: var(--success); border-bottom: 1px dotted var(--success); }
-.tracker-delete { color: var(--danger); text-decoration: line-through; }
-.tracker-insert::before { content: '+'; font-weight: bold; font-size: 0.8em; opacity: 0.7; }
-.tracker-delete::before { content: '-'; font-weight: bold; font-size: 0.8em; opacity: 0.7; }
 
 /* ===== MINI BUTTONS ===== */
 .mini-btn {
@@ -694,13 +680,17 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 
 /* ===== WORD FREQUENCY PANEL ===== */
 .wordfreq-summary { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
-.wordfreq-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.wordfreq-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; }
 .wf-word { min-width: 80px; font-size: 12px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 .wordfreq-bar { flex: 1; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
 .wordfreq-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-gold), var(--accent-gold-light)); border-radius: 3px; transition: width 300ms ease; }
-.wordfreq-count { min-width: 24px; text-align: right; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.wordfreq-count { min-width: 32px; text-align: right; font-size: 12px; color: var(--text-muted); font-weight: 600; }
 .wordfreq-item.overused .wf-word { color: var(--accent-gold-light); }
+.wordfreq-item:hover { background: var(--bg-hover); }
 .wordfreq-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 8px; text-align: center; }
+.word-row { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px solid var(--border-color); }
+.word-row .word { flex: 1; color: var(--text-primary); font-size: 12px; }
+.word-row .count { color: var(--text-muted); font-size: 12px; min-width: 32px; text-align: right; }
 
 /* ===== COMMENTS PANEL ===== */
 #comments-list { display: flex; flex-direction: column; gap: 8px; }
@@ -744,6 +734,25 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .version-actions { display: flex; gap: 4px; margin-top: 6px; }
 .version-actions button { font-size: 11px; padding: 2px 8px; background: transparent; border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
 .version-actions button:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+
+.version-restore {
+  padding: 4px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 6px;
+  width: 100%;
+}
+.version-restore:hover {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: var(--bg-dark);
+}
 
 /* ===== METADATA PANEL ===== */
 .meta-field { margin-bottom: 12px; }
@@ -938,8 +947,7 @@ body.reading-mode .save-indicator-overlay,
 body.reading-mode .reading-progress-container,
 body.reading-mode .goal-bar,
 body.reading-mode .session-bar,
-body.reading-mode .find-replace-bar,
-body.reading-mode .track-changes-bar {
+body.reading-mode .find-replace-bar {
   display: none !important;
 }
 
@@ -1074,8 +1082,7 @@ body.zen-mode .stats-overlay,
 body.zen-mode .save-indicator-overlay,
 body.zen-mode .goal-bar,
 body.zen-mode .session-bar,
-body.zen-mode .find-replace-bar,
-body.zen-mode .track-changes-bar {
+body.zen-mode .find-replace-bar {
   display: none !important;
 }
 
@@ -1107,8 +1114,7 @@ body[data-zen="true"] .stats-overlay,
 body[data-zen="true"] .save-indicator-overlay,
 body[data-zen="true"] .goal-bar,
 body[data-zen="true"] .session-bar,
-body[data-zen="true"] .find-replace-bar,
-body[data-zen="true"] .track-changes-bar {
+body[data-zen="true"] .find-replace-bar {
   display: none !important;
 }
 
@@ -1230,7 +1236,6 @@ body[data-zen="true"] .side-panel {
   .goal-bar,
   .session-bar,
   .find-replace-bar,
-  .track-changes-bar,
   .stats-overlay,
   .save-indicator-overlay,
   .reading-progress-container,
@@ -1575,7 +1580,7 @@ body[data-zen="true"] .side-panel {
     padding: 0 4px;
     font-size: 13px;
   }
-    .styles-dropdown {
+  .styles-dropdown {
     height: 28px;
     font-size: 12px;
     max-width: 110px;

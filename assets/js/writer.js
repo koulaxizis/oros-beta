@@ -30,7 +30,6 @@
   var sessionBar = null;
   var sessionDisplay = null;
   var findBar = null;
-  var trackChangesBar = null;
   var stylesSelect = null;
   var footnoteArea = null;
   var metadataPanel = null;
@@ -76,7 +75,6 @@
   var sessionInterval = null;
   var sessionStartTime = null;
   var sessionSeconds = 0;
-  var trackingChanges = false;
   var trackChangesObserver = null;
   var customTemplates = [];
   var clickHandlers = {};
@@ -1322,179 +1320,6 @@
       var topPct = Math.round((arr[0].count / total) * 100);
       wordFreqSummary.textContent = unique + ' unique words · Top "' + arr[0].word + '" ' + topPct + '%';
     }
-  }
-
-   // ===== TRACK CHANGES =====
-
-  function setupTrackChanges() {
-    bindClick('btn-track-changes', toggleTrackChanges);
-    bindClick('btn-accept-all-changes', acceptAllChanges);
-    bindClick('btn-reject-all-changes', rejectAllChanges);
-    bindClick('btn-track-changes-toggle', toggleTrackChanges);
-
-    if (richEditor) {
-      // Μόνο input event - πιο αξιόπιστο από beforeinput + keydown
-      richEditor.addEventListener('input', handleTrackInput);
-      richEditor.addEventListener('paste', handleTrackPasteSimple, true);
-    }
-  }
-
-  function toggleTrackChanges() {
-    trackingChanges = !trackingChanges;
-    var btn = document.getElementById('btn-track-changes');
-    if (btn) {
-      btn.classList.toggle('active', trackingChanges);
-      btn.setAttribute('title', trackingChanges
-        ? (getTrans('track_changes_off') || 'Track changes OFF')
-        : (getTrans('track_changes_on') || 'Track changes ON'));
-    }
-    if (trackChangesBar) trackChangesBar.style.display = trackingChanges ? '' : 'none';
-    showToast(trackingChanges ? 'Track Changes ON' : 'Track Changes OFF');
-  }
-
-  function handleTrackInput(e) {
-    if (!trackingChanges || !richEditor) return;
-
-    var inputType = e.inputType;
-
-    // Διαγραφές — απλά αφαιρούμε τα track-insertion spans από την περιοχή
-    if (inputType === 'deleteContentBackward' || inputType === 'deleteContentForward' || inputType === 'deleteByCut') {
-      wrapDeletedRange();
-      return;
-    }
-
-    // Εισαγωγές — βρες τα νεοεισαχθέντα κόμβους και τύλιξέ τα
-    if (inputType === 'insertText' || inputType === 'insertParagraph' || inputType === 'insertFromPaste') {
-      wrapNewInsertions();
-    }
-  }
-
-  function handleTrackPasteSimple(e) {
-    if (!trackingChanges) return;
-    // Μην μπλοκάρεις το paste — το input event θα το πιάσει
-  }
-
-  function wrapNewInsertions() {
-    // Βρες όλα τα track-insertion spans και normalize τα
-    var inserts = richEditor.querySelectorAll('.track-insertion');
-    for (var i = 0; i < inserts.length; i++) {
-      var span = inserts[i];
-      var parent = span.parentNode;
-      if (!parent) continue;
-
-      // Merge adjacent insertion spans
-      var next = span.nextSibling;
-      while (next && next.classList && next.classList.contains('track-insertion')) {
-        while (next.firstChild) span.appendChild(next.firstChild);
-        parent.removeChild(next);
-        next = span.nextSibling;
-      }
-
-      // Normalize text nodes μέσα στο span
-      if (span.textContent && span.textContent.length > 1) {
-        parent.normalize();
-      }
-    }
-
-    trackChangePostProcess();
-  }
-
-  function wrapDeletedRange() {
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    var range = sel.getRangeAt(0);
-
-    // Δεν χρειάζεται ειδική διαχείριση — το browser διαγράφει
-    // Απλώς post-process για να βεβαιωθούμε ότι δεν μένουν σπασμένα spans
-    if (richEditor) richEditor.normalize();
-
-    trackChangePostProcess();
-  }
-
-  function trackChangePostProcess() {
-    applyAutoCorrect();
-    applySmartTypography();
-    playTypewriterSound();
-    isTyping = true;
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(function() {
-      if (isTyping) { saveCurrentTabContent(); isTyping = false; }
-    }, 10000);
-    updateStats();
-    updateReadingProgress();
-  }
-
-  // Αυτή η συνάρτηση δεν χρειάζεται πλέον — αφαιρείς τη χρήση της
-  function getAdjacentInsertionSpan(range) { return null; }
-  function placeCursorAtEnd(span) {}
-  function placeCursorAfter(el) {}
-  function handleTrackKeyDown(e) {}
-  function handleTrackBeforeInput(e) {}
-  function trackInsertText(text, isLineBreak) {}
-
-  function acceptAllChanges() {
-    if (!richEditor) return;
-
-    // Αφαιρώ insertion spans — κρατώ μόνο το κείμενό τους
-    var inserts = richEditor.querySelectorAll('.track-insertion');
-    for (var i = 0; i < inserts.length; i++) {
-      var span = inserts[i];
-      var parent = span.parentNode;
-      if (!parent) continue;
-      while (span.firstChild) parent.insertBefore(span.firstChild, span);
-      parent.removeChild(span);
-    }
-
-    // Αφαιρώ deletion spans — επαναφέρω το κείμενό τους (αντίστροφη πράξη)
-    var deletes = richEditor.querySelectorAll('.track-deletion');
-    for (var d = 0; d < deletes.length; d++) {
-      var del = deletes[d];
-      var parent = del.parentNode;
-      if (!parent) continue;
-      while (del.firstChild) parent.insertBefore(del.firstChild.cloneNode(true), del);
-      parent.removeChild(del);
-    }
-
-    richEditor.normalize();
-
-    trackingChanges = false;
-    var btn = document.getElementById('btn-track-changes');
-    if (btn) btn.classList.remove('active');
-    if (trackChangesBar) trackChangesBar.style.display = 'none';
-    saveCurrentTabContent();
-    showToast('All changes accepted');
-  }
-
-  function rejectAllChanges() {
-    if (!richEditor) return;
-
-    // Αφαιρώ insertion spans — χάνεται το κείμενο τους
-    var inserts = richEditor.querySelectorAll('.track-insertion');
-    for (var i = 0; i < inserts.length; i++) {
-      var span = inserts[i];
-      var parent = span.parentNode;
-      if (!parent) continue;
-      parent.removeChild(span);
-    }
-
-    // Αφαιρώ deletion spans — επαναφέρω το κείμενο τους
-    var deletes = richEditor.querySelectorAll('.track-deletion');
-    for (var d = 0; d < deletes.length; d++) {
-      var del = deletes[d];
-      var parent = del.parentNode;
-      if (!parent) continue;
-      while (del.firstChild) parent.insertBefore(del.firstChild.cloneNode(true), del);
-      parent.removeChild(del);
-    }
-
-    richEditor.normalize();
-
-    trackingChanges = false;
-    var btn = document.getElementById('btn-track-changes');
-    if (btn) btn.classList.remove('active');
-    if (trackChangesBar) trackChangesBar.style.display = 'none';
-    saveCurrentTabContent();
-    showToast('All changes rejected');
   }
 
     // ===== COMMENTS =====
@@ -3244,11 +3069,6 @@ for (var i = 0; i < panels.length; i++) {
       updateStats();
       updateReadingProgress();
     });
-	
-	    // Track changes monitoring
-    if (trackingChanges) {
-      trackChangesMonitorUntrackedNodes();
-    }
 
     richEditor.addEventListener('paste', function(e) {
       if (!smartPasteEnabled) return;
@@ -3678,7 +3498,6 @@ for (var i = 0; i < panels.length; i++) {
       setupMetadataPanel();
       setupOutlinePanel();
       setupTableOfContents();
-      setupTrackChanges();
       setupLoremIpsum();
       setupQuickFormatMenu();
       applyPageSettings();
@@ -3873,7 +3692,6 @@ for (var i = 0; i < panels.length; i++) {
     sessionBar = document.querySelector('.session-bar');
     sessionDisplay = document.getElementById('session-display');
     findBar = document.getElementById('find-replace-bar');
-    trackChangesBar = document.getElementById('track-changes-bar');
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');
     metadataPanel = document.getElementById('metadata-panel');
