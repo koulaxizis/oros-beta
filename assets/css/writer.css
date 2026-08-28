@@ -939,64 +939,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .sc-custom-row input { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); font-size: 12px; padding: 4px 8px; outline: none; width: 120px; transition: border-color 0.15s; }
 .sc-custom-row input:focus { border-color: var(--accent-gold); }
 
-/* ===== READING MODE ===== */
-body.reading-mode #main-toolbar,
-body.reading-mode #tab-bar,
-body.reading-mode .stats-overlay,
-body.reading-mode .save-indicator-overlay,
-body.reading-mode .reading-progress-container,
-body.reading-mode .goal-bar,
-body.reading-mode .session-bar,
-body.reading-mode .find-replace-bar {
-  display: none !important;
-}
-
-body.reading-mode .rich-editor {
-  max-width: 720px;
-  font-size: 18px;
-  line-height: 2;
-  font-family: var(--font-primary);
-  padding: 60px 40px;
-  color: var(--text-primary);
-}
-
-body.reading-mode #editor-wrapper {
-  height: calc(100vh - 56px);
-}
-
-body.reading-mode .rich-wrapper {
-  background: var(--bg-dark);
-}
-
-#btn-exit-reading-mode {
-  display: none;
-  position: fixed;
-  top: 56px;
-  right: 16px;
-  z-index: 2100;
-  background: var(--bg-panel);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-family: var(--font-primary);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  align-items: center;
-  gap: 6px;
-}
-
-body.reading-mode #btn-exit-reading-mode {
-  display: inline-flex;
-}
-
-#btn-exit-reading-mode:hover {
-  background: var(--accent-gold);
-  color: var(--bg-dark);
-}
-
 /* ===== FOCUS MODE ===== */
 body.focus-mode .rich-editor p,
 body.focus-mode .rich-editor h1,

@@ -2205,7 +2205,7 @@
   function toggleGoalSettings() {
     if (!goalBar) return;
     var isVisible = goalBar.style.display !== 'none';
-    goalBar.style.display = isVisible ? 'none' : '';
+    goalBar.style.display = isVisible ? 'none' : 'flex';
     var btn = document.getElementById('btn-goal');
     if (btn) btn.classList.toggle('active', !isVisible);
   }
@@ -2250,7 +2250,7 @@
     bindClick('btn-session', function() {
       if (sessionBar) {
         var isVisible = sessionBar.style.display !== 'none';
-        sessionBar.style.display = isVisible ? 'none' : '';
+        sessionBar.style.display = isVisible ? 'none' : 'flex';
         var sbtn = document.getElementById('btn-session');
         if (sbtn) sbtn.classList.toggle('active', !isVisible);
       }
@@ -2491,7 +2491,7 @@
         else if (e.key === 'i') { e.preventDefault(); execCmd('italic'); }
         else if (e.key === 'u') { e.preventDefault(); execCmd('underline'); }
         else if (e.key === 's') { e.preventDefault(); e.stopPropagation(); saveCurrentTabContent(); showToast(getTrans('autosave') || 'Saved'); }
-        else if (e.key === 'f' && !e.shiftKey) { e.preventDefault(); if (findBar) { findBar.style.display = findBar.style.display === 'none' ? '' : 'none'; if (findBar.style.display !== 'none' && findInput) findInput.focus(); } }
+        else if (e.key === 'f' && !e.shiftKey) { e.preventDefault(); if (findBar) { findBar.style.display = findBar.style.display === 'none' ? 'flex' : 'none'; if (findBar.style.display !== 'none' && findInput) findInput.focus(); } }
         else if (e.key === 'f' && e.shiftKey) { e.preventDefault(); insertFootnote(); }
         else if (e.key === 'k') { e.preventDefault(); var btn = document.getElementById('btn-link'); if (btn) btn.click(); }
         else if (e.key === ',') { e.preventDefault(); execCmd('subscript'); }
@@ -2707,26 +2707,16 @@ for (var i = 0; i < panels.length; i++) {
       var dlg = document.getElementById('table-dialog-overlay');
       if (dlg) dlg.style.display = 'flex';
     });
-    bindClick('btn-reading-mode', function() {
-      document.body.classList.add('reading-mode');
-      var exitBtn = document.getElementById('btn-exit-reading-mode');
-      if (exitBtn) exitBtn.style.display = '';
-    });
-    bindClick('btn-exit-reading-mode', function() {
-      document.body.classList.remove('reading-mode');
-      var exitBtn = document.getElementById('btn-exit-reading-mode');
-      if (exitBtn) exitBtn.style.display = 'none';
-    });
     bindClick('btn-find', function() {
       if (findBar) {
-        findBar.style.display = findBar.style.display === 'none' ? '' : 'none';
+        findBar.style.display = findBar.style.display === 'none' ? 'flex' : 'none';
         if (findBar.style.display !== 'none' && findInput) findInput.focus();
       }
     });
     bindClick('btn-session', function() {
       if (sessionBar) {
         var isVisible = sessionBar.style.display !== 'none';
-        sessionBar.style.display = isVisible ? 'none' : '';
+        sessionBar.style.display = isVisible ? 'none' : 'flex';
         var sbtn = document.getElementById('btn-session');
         if (sbtn) sbtn.classList.toggle('active', !isVisible);
       }
@@ -3763,7 +3753,7 @@ for (var i = 0; i < panels.length; i++) {
     });
   }
 
-    function initializeElements() {
+      function initializeElements() {
     richEditor = document.getElementById('rich-editor');
     richWrapper = document.querySelector('.rich-wrapper');
     tabBar = document.querySelector('#tab-bar');
