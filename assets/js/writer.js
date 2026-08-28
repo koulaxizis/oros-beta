@@ -27,8 +27,14 @@
   var statsGoalEl = null;
   var statsDetailed = null;
   var goalBar = null;
-  var sessionBar = null;
-  var sessionDisplay = null;
+  var goalTargetInput = null;
+  var goalUnitSelect = null;
+  var goalLockCheckbox = null;
+  var goalTimeInput = null;
+  var goalProgressDisplay = null;
+  var goalInterval = null;
+  var goalTotalSeconds = 0;
+  var goalElapsedSeconds = 0;
   var findBar = null;
   var stylesSelect = null;
   var footnoteArea = null;
@@ -50,9 +56,6 @@
   var metaCreated = null;
   var metaModified = null;
   var exportDropdown = null;
-  var goalTargetInput = null;
-  var goalUnitSelect = null;
-  var goalLockCheckbox = null;
   var findInput = null;
   var replaceInput = null;
   var frResults = null;
@@ -68,13 +71,8 @@
     var readingProgressEnabled = true; // Always on — toggle removed
   var currentLang = 'en';
   var toastContainer = null;
-  var goalBarContent = null;
-  var goalBarFill = null;
   var windowResizeDebounce = null;
   var AUTO_SAVE_INTERVAL_MS = 300000;
-  var sessionInterval = null;
-  var sessionStartTime = null;
-  var sessionSeconds = 0;
   var trackChangesObserver = null;
   var customTemplates = [];
   var clickHandlers = {};
@@ -613,7 +611,7 @@
 
     updateReadingProgress();
     updateOutline();
-    updateGoalBar();
+       updateGoalProgress();;
   }
 
   function setupStatsToggle() {
@@ -2195,19 +2193,32 @@
   }
 
   // ===== GOAL BAR =====
-    function setupGoalBar() {
+      function setupGoalBar() {
     bindClick('btn-goal', toggleGoalSettings);
     goalTargetInput = document.getElementById('goal-target-input');
     goalUnitSelect = document.getElementById('goal-unit-select');
     goalLockCheckbox = document.getElementById('goal-lock-checkbox');
-    if (goalTargetInput) goalTargetInput.addEventListener('change', saveGoal);
-    if (goalUnitSelect) goalUnitSelect.addEventListener('change', saveGoal);
+    goalTimeInput = document.getElementById('goal-time-input');
+    goalProgressDisplay = document.getElementById('goal-bar-progress');
+
     if (goalLockCheckbox) goalLockCheckbox.addEventListener('change', function() {
       var locked = goalLockCheckbox.checked;
       if (goalTargetInput) goalTargetInput.disabled = locked;
       if (goalUnitSelect) goalUnitSelect.disabled = locked;
+      if (goalTimeInput) goalTimeInput.disabled = locked;
       saveGoal();
     });
+
+    bindClick('btn-set-goal', saveGoal);
+    bindClick('btn-clear-goal', clearGoal);
+    bindClick('btn-close-goal', function() {
+      if (goalBar) goalBar.style.display = 'none';
+      if (statsGoalEl) statsGoalEl.style.display = 'none';
+      stopGoalTimer();
+      var gbtn = document.getElementById('btn-goal');
+      if (gbtn) gbtn.classList.remove('active');
+    });
+
     loadGoal();
   }
 
@@ -2219,194 +2230,129 @@
     if (btn) btn.classList.toggle('active', !isVisible);
   }
 
+  function getCurrentGoalCount() {
+    if (!richEditor) return 0;
+    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
+    var text = richEditor.innerText.trim() || '';
+    if (unit === 'chars') return text.length;
+    if (unit === 'paras') return richEditor.querySelectorAll('p').length;
+    return text ? text.split(/\s+/).length : 0;
+  }
+
   function saveGoal() {
-    if (goalTargetInput) localStorage.setItem('oros_writer_goal', goalTargetInput.value || 0);
-    if (goalUnitSelect) localStorage.setItem('oros_writer_goal_unit', goalUnitSelect.value);
+    var target = parseInt(goalTargetInput ? goalTargetInput.value : 0, 10) || 0;
+    var unit = goalUnitSelect ? goalUnitSelect.value : 'words';
+    var timeMin = parseInt(goalTimeInput ? goalTimeInput.value : 0, 10) || 0;
+
+    localStorage.setItem('oros_writer_goal', target);
+    localStorage.setItem('oros_writer_goal_unit', unit);
+    localStorage.setItem('oros_writer_goal_time', timeMin);
     if (goalLockCheckbox) localStorage.setItem('oros_writer_goal_lock', goalLockCheckbox.checked ? '1' : '0');
-    updateGoalBar();
+
+    stopGoalTimer();
+
+    if (target > 0 && timeMin > 0) {
+      startGoalTimer(timeMin);
+    }
+
+    updateGoalProgress();
     showToast('Goal saved');
   }
 
+  function startGoalTimer(minutes) {
+    stopGoalTimer();
+    goalTotalSeconds = minutes * 60;
+    goalElapsedSeconds = 0;
+
+    goalInterval = setInterval(function() {
+      goalElapsedSeconds++;
+      updateGoalProgress();
+
+      if (goalElapsedSeconds >= goalTotalSeconds) {
+        var current = getCurrentGoalCount();
+        var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+        if (current < goal) {
+          showToast('⏰ Time is up! ' + current + '/' + goal + ' words');
+        } else {
+          showToast('🎉 Success! Goal reached');
+        }
+        stopGoalTimer();
+      }
+    }, 1000);
+  }
+
+  function stopGoalTimer() {
+    if (goalInterval) {
+      clearInterval(goalInterval);
+      goalInterval = null;
+    }
+  }
+
+  function clearGoal() {
+    stopGoalTimer();
+    localStorage.removeItem('oros_writer_goal');
+    localStorage.removeItem('oros_writer_goal_time');
+    if (goalTargetInput) goalTargetInput.value = '';
+    if (goalTimeInput) goalTimeInput.value = '';
+    if (goalProgressDisplay) goalProgressDisplay.textContent = '';
+    if (statsGoalEl) statsGoalEl.style.display = 'none';
+    showToast('Goal cleared');
+  }
+
+  function updateGoalProgress() {
+    var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+    if (goal <= 0) return;
+
+    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
+    var current = getCurrentGoalCount();
+    var pct = Math.min(100, Math.round((current / goal) * 100));
+
+    var progressText = current + '/' + goal + ' ' + unit + ' (' + pct + '%)';
+
+    if (goalInterval && goalTotalSeconds > 0) {
+      var timeLeft = goalTotalSeconds - goalElapsedSeconds;
+      var mins = Math.floor(timeLeft / 60);
+      var secs = timeLeft % 60;
+      progressText += ' · ⏱ ' + mins + ':' + secs.toString().padStart(2, '0');
+    }
+
+    if (goalProgressDisplay) goalProgressDisplay.textContent = progressText;
+
+    if (statsGoalEl && goalBar && goalBar.style.display !== 'none') {
+      if (pct >= 100) {
+        statsGoalEl.textContent = '🎉 ' + pct + '%';
+        statsGoalEl.style.color = 'var(--success)';
+      } else {
+        statsGoalEl.textContent = pct + '%';
+        statsGoalEl.style.color = '';
+      }
+      statsGoalEl.style.display = '';
+    } else if (statsGoalEl) {
+      statsGoalEl.style.display = 'none';
+    }
+
+    if (current >= goal && goalInterval) {
+      showToast('🎉 Success! Goal reached');
+      stopGoalTimer();
+    }
+  }
+
   function loadGoal() {
-    if (goalTargetInput) {
-      var saved = localStorage.getItem('oros_writer_goal');
-      goalTargetInput.value = saved || 1000;
-    }
-    if (goalUnitSelect) {
-      var savedUnit = localStorage.getItem('oros_writer_goal_unit');
-      goalUnitSelect.value = savedUnit || 'words';
-    }
+    var saved = localStorage.getItem('oros_writer_goal');
+    if (saved && goalTargetInput) goalTargetInput.value = saved;
+    var savedUnit = localStorage.getItem('oros_writer_goal_unit');
+    if (savedUnit && goalUnitSelect) goalUnitSelect.value = savedUnit;
+    var savedTime = localStorage.getItem('oros_writer_goal_time');
+    if (savedTime && goalTimeInput) goalTimeInput.value = savedTime;
     if (goalLockCheckbox) {
       goalLockCheckbox.checked = localStorage.getItem('oros_writer_goal_lock') === '1';
       if (goalLockCheckbox.checked) {
         if (goalTargetInput) goalTargetInput.disabled = true;
         if (goalUnitSelect) goalUnitSelect.disabled = true;
+        if (goalTimeInput) goalTimeInput.disabled = true;
       }
     }
-    updateGoalBar();
-  }
-
-  function updateGoalBar() {
-    if (!goalBar || !goalBarContent || !goalBarFill) return;
-    var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-    if (goal <= 0) { goalBar.style.display = 'none'; return; }
-    goalBar.style.display = '';
-    var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
-    var current = 0;
-    if (richEditor) {
-      if (unit === 'chars') current = richEditor.innerText.length;
-      else current = (richEditor.innerText.trim() || '').split(/\s+/).length;
-    }
-    var pct = Math.min(100, Math.round((current / goal) * 100));
-    goalBarFill.style.width = pct + '%';
-    var remaining = Math.max(0, goal - current);
-    goalBarContent.textContent = remaining + (unit === 'chars' ? ' chars' : ' words') + ' left';
-  }
-
-  // ===== SESSION TIMER =====
-    function setupSessionTimer() {
-    bindClick('btn-session', function() {
-      if (sessionBar) {
-        var isVisible = sessionBar.style.display !== 'none';
-        sessionBar.style.display = isVisible ? 'none' : 'flex';
-        var sbtn = document.getElementById('btn-session');
-        if (sbtn) sbtn.classList.toggle('active', !isVisible);
-      }
-    });
-    bindClick('btn-start-session', startSession);
-    bindClick('btn-stop-session', function() {
-      showToast('Session stopped manually');
-      stopSession();
-    });
-	bindClick('btn-pause-session', pauseSession);
-    bindClick('btn-reset-session', resetSession);
-    bindClick('btn-close-session', function() {
-      if (sessionBar) sessionBar.style.display = 'none';
-      var sbtn = document.getElementById('btn-session');
-      if (sbtn) sbtn.classList.remove('active');
-    });
-	
-	    var wTarget = document.getElementById('session-word-target');
-    var tTarget = document.getElementById('session-time-target');
-    if (wTarget) wTarget.addEventListener('change', function() {
-      localStorage.setItem('oros_writer_session_words', wTarget.value || 500);
-    });
-    if (tTarget) tTarget.addEventListener('change', function() {
-      localStorage.setItem('oros_writer_session_time', tTarget.value || 25);
-    });
-	
-    loadSessionTarget();
-  }
-
-    function startSession() {
-    if (sessionInterval) {
-      // Resume from pause
-      sessionStartTime = Date.now() - (sessionSeconds * 1000);
-      startCountdown();
-      return;
-    }
-    
-    sessionStartTime = Date.now();
-    sessionSeconds = 0;
-
-    var startBtn = document.getElementById('btn-start-session');
-    var pauseBtn = document.getElementById('btn-pause-session');
-    var stopBtn = document.getElementById('btn-stop-session');
-    if (startBtn) startBtn.style.display = 'none';
-    if (pauseBtn) pauseBtn.style.display = '';
-    if (stopBtn) stopBtn.style.display = '';
-
-    var targetMinutes = parseInt(localStorage.getItem('oros_writer_session_time'), 10) || 25;
-    var wordTarget = parseInt(localStorage.getItem('oros_writer_session_words'), 10) || 500;
-    var startWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
-
-    if (sessionDisplay) {
-      sessionDisplay.classList.remove('complete', 'warning');
-      sessionDisplay.textContent = '0:00';
-    }
-
-    var wordsDisplay = document.getElementById('session-words-display');
-    if (wordsDisplay) wordsDisplay.textContent = '0/' + wordTarget + ' words';
-
-    function startCountdown() {
-      sessionInterval = setInterval(function() {
-        sessionSeconds++;
-        
-        if (sessionDisplay) {
-          var mins = Math.floor(sessionSeconds / 60);
-          var secs = sessionSeconds % 60;
-          sessionDisplay.textContent = mins + ':' + secs.toString().padStart(2, '0');
-
-          var remaining = (targetMinutes * 60) - sessionSeconds;
-          if (remaining <= 300 && remaining > 0) {
-            sessionDisplay.classList.add('warning');
-          }
-        }
-
-        var currentWords = richEditor ? (richEditor.innerText.trim() ? richEditor.innerText.trim().split(/\s+/).length : 0) : 0;
-        var wordsWritten = currentWords - startWords;
-        if (wordsWritten < 0) wordsWritten = 0;
-
-        if (wordsDisplay) {
-          wordsDisplay.textContent = wordsWritten + '/' + wordTarget + ' words';
-        }
-
-        if (sessionSeconds >= targetMinutes * 60) {
-          showToast('\u23F0 Time\'s up! ' + wordsWritten + ' words written.');
-          stopSession();
-          return;
-        }
-
-        if (wordsWritten >= wordTarget) {
-          showToast('\uD83C\uDFCA Goal reached! ' + wordsWritten + ' words in ' + Math.floor(sessionSeconds / 60) + ' min.');
-          stopSession();
-        }
-      }, 1000);
-    }
-
-    startCountdown();
-    showToast('Session started \u2014 ' + wordTarget + ' words / ' + targetMinutes + ' min');
-  }
-
-  function stopSession() {
-    if (sessionInterval) clearInterval(sessionInterval);
-    sessionInterval = null;
-    var startBtn = document.getElementById('btn-start-session');
-    var pauseBtn = document.getElementById('btn-pause-session');
-    var stopBtn = document.getElementById('btn-stop-session');
-    if (startBtn) startBtn.style.display = '';
-    if (pauseBtn) pauseBtn.style.display = 'none';
-    if (stopBtn) stopBtn.style.display = 'none';
-  }
-  
-    function pauseSession() {
-    if (sessionInterval) {
-      clearInterval(sessionInterval);
-      sessionInterval = null;
-      showToast('Session paused');
-      var pauseBtn = document.getElementById('btn-pause-session');
-      var startBtn = document.getElementById('btn-start-session');
-      if (pauseBtn) pauseBtn.style.display = 'none';
-      if (startBtn) startBtn.style.display = '';
-    }
-  }
-
-  function resetSession() {
-    stopSession();
-    sessionSeconds = 0;
-    if (sessionDisplay) {
-      sessionDisplay.textContent = '--:--';
-      sessionDisplay.classList.remove('complete', 'warning');
-    }
-  }
-
-  function loadSessionTarget() {
-    var targetW = localStorage.getItem('oros_writer_session_words');
-    var targetM = localStorage.getItem('oros_writer_session_time');
-    var wInp = document.getElementById('session-word-target');
-    var mInp = document.getElementById('session-time-target');
-    if (wInp) wInp.value = targetW || 500;
-    if (mInp) mInp.value = targetM || 25;
+    updateGoalProgress();
   }
 
   // ===== EXPORT / IMPORT =====
@@ -2814,15 +2760,6 @@ for (var i = 0; i < panels.length; i++) {
         if (findBar.style.display !== 'none' && findInput) findInput.focus();
       }
     });
-    bindClick('btn-session', function() {
-      if (sessionBar) {
-        var isVisible = sessionBar.style.display !== 'none';
-        sessionBar.style.display = isVisible ? 'none' : 'flex';
-        var sbtn = document.getElementById('btn-session');
-        if (sbtn) sbtn.classList.toggle('active', !isVisible);
-      }
-    });
-  }
 
   
     // ===== DIALOG INSERT HANDLERS =====
@@ -3690,7 +3627,6 @@ for (var i = 0; i < panels.length; i++) {
       setupVersionHistory();
       setupZenMode();
       setupGoalBar();
-      setupSessionTimer();
       setupExportImport();
       setupStyleSelector();
       setupKeyboardShortcuts();
@@ -3829,7 +3765,7 @@ for (var i = 0; i < panels.length; i++) {
       bindClick('btn-clear-goal', function() {
         localStorage.removeItem('oros_writer_goal');
         if (goalTargetInput) goalTargetInput.value = '';
-        updateGoalBar();
+           updateGoalProgress();;
       });
 
       bindClick('btn-add-autocorrect', addAutocorrectRule);
@@ -3882,10 +3818,6 @@ for (var i = 0; i < panels.length; i++) {
     statsGoalEl = document.querySelector('.stats-goal');
     statsDetailed = document.getElementById('stats-detailed');
     goalBar = document.getElementById('goal-bar') || document.querySelector('.goal-bar');
-    goalBarContent = document.getElementById('goal-bar-content') || document.querySelector('.goal-bar-content');
-    goalBarFill = document.getElementById('goal-bar-fill') || document.querySelector('.goal-bar-fill');
-    sessionBar = document.getElementById('session-bar') || document.querySelector('.session-bar');
-    sessionDisplay = document.getElementById('session-display');
     findBar = document.getElementById('find-replace-bar') || document.querySelector('.find-replace-bar');
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');

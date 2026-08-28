@@ -276,7 +276,6 @@ body.writer-page {
 
 /* ===== SECONDARY BARS ===== */
 .goal-bar,
-.session-bar,
 .find-replace-bar {
   display: none;
   align-items: center;
@@ -313,21 +312,6 @@ body.writer-page {
   color: var(--text-secondary);
   cursor: pointer;
 }
-
-.session-label { font-size: 13px; color: var(--text-secondary); }
-
-.session-display {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent-gold);
-  margin-left: auto;
-  margin-right: auto;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-.session-display.complete { color: var(--success); }
-.session-display.warning { color: #ff9800; }
 
 .find-replace-bar input[type="text"] {
   height: 30px;
@@ -1941,4 +1925,46 @@ body[data-zen="true"] .side-panel {
 .session-words-display {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* ===== GOAL TRACKER PROGRESS ===== */
+.goal-bar {
+  justify-content: center;
+}
+
+.goal-bar-progress {
+  font-size: 13px;
+  color: var(--accent-gold);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.goal-time-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 2px;
+}
+
+.goal-bar-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+#goal-time-input {
+  height: 30px;
+  padding: 0 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-primary);
+  outline: none;
+  width: 50px;
+}
+
+#goal-time-input:focus {
+  border-color: var(--accent-gold);
 }

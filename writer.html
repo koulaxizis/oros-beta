@@ -196,9 +196,6 @@
         <button class="action-btn" id="btn-version-history" data-i18n-tooltip="tooltip_version_history" title="Version history">
           <i class="fa fa-history"></i>
         </button>
-        <button class="action-btn" id="btn-session" data-i18n-tooltip="tooltip_session" title="Writing session timer">
-          <i class="fa fa-clock-o"></i>
-        </button>
         <span class="tb-separator"></span>
         <button class="action-btn" id="btn-goal" data-i18n-tooltip="tooltip_goal" title="Writing goal (Ctrl+G)">
           <i class="fa fa-bullseye"></i>
@@ -236,34 +233,21 @@
       </div>
     </div>
 
-    <div class="goal-bar" id="goal-bar" style="display:none;">
+        <div class="goal-bar" id="goal-bar" style="display:none;">
       <select id="goal-unit-select">
         <option value="words" data-i18n="goal_unit_words">Words</option>
         <option value="chars" data-i18n="goal_unit_chars">Characters</option>
         <option value="paras" data-i18n="goal_unit_paras">Paragraphs</option>
       </select>
-      <input type="number" id="goal-target-input" min="1" placeholder="Target" />
+      <input type="number" id="goal-target-input" min="1" placeholder="Target" style="width:80px;" />
+      <span class="goal-time-label">⏱</span>
+      <input type="number" id="goal-time-input" min="0" placeholder="min" />
+      <span class="goal-bar-label">min</span>
       <label class="goal-lock-label"><input type="checkbox" id="goal-lock-checkbox"> Lock</label>
       <button class="mini-btn" id="btn-set-goal"><i class="fa fa-check"></i></button>
       <button class="mini-btn" id="btn-clear-goal"><i class="fa fa-trash-o"></i></button>
       <button class="mini-btn" id="btn-close-goal"><i class="fa fa-times"></i></button>
-    </div>
-
-        <div class="session-bar" id="session-bar" style="display:none;">
-      <span class="session-label" data-i18n="session_target">Target</span>
-      <input type="number" id="session-word-target" min="1" value="500" style="width:70px;" />
-      <span class="session-label" data-i18n="session_words">words</span>
-      <span class="session-label" data-i18n="session_time">Time</span>
-      <input type="number" id="session-time-target" min="1" value="25" style="width:50px;" />
-      <span class="session-label" data-i18n="session_minutes">min</span>
-      <button class="mini-btn" id="btn-start-session"><i class="fa fa-play"></i></button>
-      <button class="mini-btn" id="btn-pause-session" style="display:none;"><i class="fa fa-pause"></i></button>
-      <button class="mini-btn" id="btn-stop-session" style="display:none;"><i class="fa fa-stop"></i></button>
-      <div class="session-display-container">
-        <span class="session-display" id="session-display"></span>
-        <span class="session-words-display" id="session-words-display">0/0 words</span>
-      </div>
-      <button class="mini-btn" id="btn-close-session"><i class="fa fa-times"></i></button>
+      <span class="goal-bar-progress" id="goal-bar-progress"></span>
     </div>
 
     <div class="find-replace-bar" id="find-replace-bar" style="display:none;">
