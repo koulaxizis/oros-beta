@@ -2223,7 +2223,17 @@
     var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
     var text = richEditor.innerText.trim() || '';
     if (unit === 'chars') return text.replace(/\s/g, '').length;
-    if (unit === 'paras') return richEditor.querySelectorAll('p').length;
+    if (unit === 'paras') {
+      var blocks = richEditor.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, div');
+      var count = 0;
+      for (var i = 0; i < blocks.length; i++) {
+        if (blocks[i].textContent.trim()) count++;
+      }
+      if (count === 0 && text) {
+        count = text.split(/\n+/).filter(function(l) { return l.trim(); }).length;
+      }
+      return count;
+    }
     return countWordsFiltered(text);
   }
 
@@ -2313,7 +2323,6 @@
 
     if (current >= goal) {
       if (!goalNotified) {
-        var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
         showToast('🎉 Success! ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1) + ' goal reached');
         goalNotified = true;
       }
@@ -3762,11 +3771,7 @@ for (var i = 0; i < panels.length; i++) {
       bindClick('btn-cancel-footnote', function() { var d = document.getElementById('footnote-dialog-overlay'); if (d) d.style.display = 'none'; });
 
       bindClick('btn-set-goal', saveGoal);
-      bindClick('btn-clear-goal', function() {
-        localStorage.removeItem('oros_writer_goal');
-        if (goalTargetInput) goalTargetInput.value = '';
-           updateGoalProgress();;
-      });
+      bindClick('btn-clear-goal', clearGoal);
 
       bindClick('btn-add-autocorrect', addAutocorrectRule);
       bindClick('btn-reset-autocorrect', resetAutocorrectRules);
