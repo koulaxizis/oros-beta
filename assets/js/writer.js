@@ -2607,7 +2607,6 @@
   { id: 'outline-panel', btn: 'btn-outline' },
   { id: 'toc-panel', btn: 'btn-toc' },
   { id: 'find-replace-bar', btn: 'btn-find' },
-  { id: 'session-bar', btn: 'btn-session' },
   { id: 'goal-bar', btn: 'btn-goal' }
 ];
 for (var i = 0; i < panels.length; i++) {
@@ -2760,6 +2759,7 @@ for (var i = 0; i < panels.length; i++) {
         if (findBar.style.display !== 'none' && findInput) findInput.focus();
       }
     });
+  }
 
   
     // ===== DIALOG INSERT HANDLERS =====
@@ -3155,28 +3155,6 @@ for (var i = 0; i < panels.length; i++) {
         sel.addRange(range);
       }
     } catch(e) {}
-  }
-  
-    function trackChangesMonitorUntrackedNodes() {
-    if (!richEditor || !trackingChanges) return;
-    // Simple check: count text nodes that aren't wrapped
-    var textNodes = [];
-    var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null);
-    while (walker.nextNode()) {
-      var node = walker.currentNode;
-      var parent = node.parentElement;
-      if (parent && (parent.classList.contains('track-insertion') || parent.classList.contains('track-deletion'))) {
-        continue; // Already tracked
-      }
-      // Only collect if it has meaningful content
-      if (node.textContent.trim().length > 0) {
-        textNodes.push(node);
-      }
-    }
-    // If there are untracked nodes and we're actively typing, flag them for review
-    if (textNodes.length > 0) {
-      console.log('Untracked text nodes detected:', textNodes.length);
-    }
   }
 
   // ===== EDITOR INPUT =====
@@ -3615,7 +3593,6 @@ for (var i = 0; i < panels.length; i++) {
       loadAutoCorrections();
       loadCustomTemplates();
       loadGoal();
-      loadSessionTarget();
 
       tabsModule.init('#tab-bar');
       setupStatsToggle();
