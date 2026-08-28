@@ -1985,7 +1985,7 @@
     updateSaveIndicator('saved');
   }
   
-      // ===== VERSION HISTORY =====
+// ===== VERSION HISTORY =====
   var versionHistoryInterval = null;
   var MAX_AUTO_VERSIONS = 8;
 
@@ -2020,7 +2020,7 @@
         hash: hash,
         timestamp: new Date().toISOString(),
         snapshot: content,
-        type: 'auto'
+        type: 'auto'  // ← Εδώ πρέπει να υπάρχει ρητά 'auto'
       });
 
       trimAutoVersions(tab);
@@ -2055,7 +2055,7 @@
       hash: simpleHash(content),
       timestamp: new Date().toISOString(),
       snapshot: content,
-      type: 'manual'
+      type: 'manual'  // ← Ρητό 'manual' — αυτό λείπετε ίσως σε παλιά snapshots
     });
     tabsModule.persist();
     refreshVersionList();
@@ -2068,7 +2068,7 @@
     return hash.toString();
   }
 
-  function refreshVersionList() {
+    function refreshVersionList() {
     if (!versionList) return;
     var tab = tabsModule.getActive();
     if (!tab || !tab.versions || tab.versions.length === 0) {
@@ -2080,7 +2080,7 @@
     for (var i = versions.length - 1; i >= 0; i--) {
       var v = versions[i];
       var date = new Date(v.timestamp).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-      var isManual = v.type === 'manual';
+      var isManual = v.type === 'manual';  // ← Σωστός έλεγχος
       var badge = isManual
         ? '<span class="version-badge manual-badge">Manual</span>'
         : '<span class="version-badge auto-badge">Auto</span>';
@@ -2107,6 +2107,12 @@
           if (!confirm('Restore this version? Unsaved changes will be lost.')) return;
           richEditor.innerHTML = versions[idx].snapshot;
           tabsModule.setContent(richEditor.innerHTML);
+          
+          // ← ΕΠΑΝΑΦΟΡΑ FOOTNOTES & COMMENTS
+          restoreFootnotes();
+          loadAndRestoreComments();
+          updateStats();
+          
           showToast('Version restored');
         });
       })(restoreBtns[r], r);
@@ -3705,18 +3711,6 @@ for (var i = 0; i < panels.length; i++) {
 
       bindClick('btn-add-autocorrect', addAutocorrectRule);
       bindClick('btn-reset-autocorrect', resetAutocorrectRules);
-
-      bindClick('btn-add-version', function() {
-        var tab2 = tabsModule.getActive();
-        if (!tab2 || !richEditor) return;
-        var content = richEditor.innerHTML;
-        tab2.versions = tab2.versions || [];
-        tab2.versions.push({ hash: simpleHash(content), timestamp: new Date().toISOString(), snapshot: content });
-        if (tab2.versions.length > 20) tab2.versions.shift();
-        tabsModule.persist();
-        refreshVersionList();
-        showToast('Snapshot saved');
-      });
 
       bindClick('btn-toc-refresh', function() { if (tocList && outlineList) tocList.innerHTML = outlineList.innerHTML; });
 
