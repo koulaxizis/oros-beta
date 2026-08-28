@@ -1883,3 +1883,48 @@ body[data-zen="true"] .side-panel {
   border-left: 3px solid var(--primary, #6d4aff);
   transition: background-color 0.2s ease;
 }
+
+/* ===== VERSION HISTORY ENHANCED ===== */
+.version-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.version-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.version-item.manual-version {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-dim);
+}
+
+.manual-badge {
+  background: var(--accent-gold);
+  color: var(--bg-dark);
+}
+
+.auto-badge {
+  background: var(--bg-input);
+  color: var(--text-muted);
+}
+
+.version-delete {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--danger, #e74c3c);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.version-delete:hover {
+  background: rgba(231, 76, 60, 0.15);
+  border-color: var(--danger, #e74c3c);
+}

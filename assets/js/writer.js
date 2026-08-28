@@ -1985,11 +1985,13 @@
     updateSaveIndicator('saved');
   }
   
-    // ===== VERSION HISTORY =====
+      // ===== VERSION HISTORY =====
   var versionHistoryInterval = null;
+  var MAX_AUTO_VERSIONS = 8;
 
   function setupVersionHistory() {
     bindClick('btn-version-history', toggleVersionsPanel);
+    bindClick('btn-add-version', addManualSnapshot);
     startVersionSnapshots();
   }
 
@@ -2010,12 +2012,54 @@
       var content = richEditor ? richEditor.innerHTML : '';
       var hash = simpleHash(content);
       tab.versions = tab.versions || [];
+
       var lastVersion = tab.versions[tab.versions.length - 1];
       if (lastVersion && lastVersion.hash === hash) return;
-      tab.versions.push({ hash: hash, timestamp: new Date().toISOString(), snapshot: content });
-      if (tab.versions.length > 20) tab.versions.shift();
+
+      tab.versions.push({
+        hash: hash,
+        timestamp: new Date().toISOString(),
+        snapshot: content,
+        type: 'auto'
+      });
+
+      trimAutoVersions(tab);
       tabsModule.persist();
     }, 30000);
+  }
+
+  function trimAutoVersions(tab) {
+    var autoIndices = [];
+    for (var i = 0; i < tab.versions.length; i++) {
+      if (tab.versions[i].type === 'auto' || !tab.versions[i].type) {
+        autoIndices.push(i);
+      }
+    }
+    while (autoIndices.length > MAX_AUTO_VERSIONS) {
+      tab.versions.splice(autoIndices.shift(), 1);
+      autoIndices = [];
+      for (var j = 0; j < tab.versions.length; j++) {
+        if (tab.versions[j].type === 'auto' || !tab.versions[j].type) {
+          autoIndices.push(j);
+        }
+      }
+    }
+  }
+
+  function addManualSnapshot() {
+    var tab = tabsModule.getActive();
+    if (!tab || !richEditor) return;
+    var content = richEditor.innerHTML;
+    tab.versions = tab.versions || [];
+    tab.versions.push({
+      hash: simpleHash(content),
+      timestamp: new Date().toISOString(),
+      snapshot: content,
+      type: 'manual'
+    });
+    tabsModule.persist();
+    refreshVersionList();
+    showToast('Manual snapshot saved');
   }
 
   function simpleHash(str) {
@@ -2027,15 +2071,35 @@
   function refreshVersionList() {
     if (!versionList) return;
     var tab = tabsModule.getActive();
-    if (!tab || !tab.versions) { versionList.innerHTML = '<div class="empty-msg">No versions</div>'; return; }
+    if (!tab || !tab.versions || tab.versions.length === 0) {
+      versionList.innerHTML = '<div class="empty-msg">No versions</div>';
+      return;
+    }
     var versions = tab.versions;
     var html = '';
     for (var i = versions.length - 1; i >= 0; i--) {
       var v = versions[i];
       var date = new Date(v.timestamp).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-      html += '<div class="version-item" data-index="' + i + '"><span class="version-date">' + date + '</span><button class="version-restore" data-index="' + i + '">Restore</button></div>';
+      var isManual = v.type === 'manual';
+      var badge = isManual
+        ? '<span class="version-badge manual-badge">Manual</span>'
+        : '<span class="version-badge auto-badge">Auto</span>';
+      var deleteBtn = isManual
+        ? '<button class="version-delete" data-index="' + i + '" title="Delete"><i class="fa fa-trash"></i></button>'
+        : '';
+      html += '<div class="version-item' + (isManual ? ' manual-version' : '') + '" data-index="' + i + '">' +
+        '<div class="version-item-row">' +
+          '<span class="version-date">' + date + '</span>' +
+          badge +
+        '</div>' +
+        '<div class="version-item-actions">' +
+          '<button class="version-restore" data-index="' + i + '">Restore</button>' +
+          deleteBtn +
+        '</div>' +
+      '</div>';
     }
     versionList.innerHTML = html;
+
     var restoreBtns = versionList.querySelectorAll('.version-restore');
     for (var r = 0; r < restoreBtns.length; r++) {
       (function(btn, idx) {
@@ -2046,6 +2110,20 @@
           showToast('Version restored');
         });
       })(restoreBtns[r], r);
+    }
+
+    var deleteBtns = versionList.querySelectorAll('.version-delete');
+    for (var d = 0; d < deleteBtns.length; d++) {
+      (function(btn, idx) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (!confirm('Delete this manual snapshot?')) return;
+          tab.versions.splice(idx, 1);
+          tabsModule.persist();
+          refreshVersionList();
+          showToast('Snapshot deleted');
+        });
+      })(deleteBtns[d], d);
     }
   }
 
