@@ -40,8 +40,6 @@
   var stylesSelect = null;
   var footnoteArea = null;
   var metadataPanel = null;
-  var outlinePanel = null;
-  var outlineList = null;
   var wordFreqPanel = null;
   var wordFreqList = null;
   var wordFreqSummary = null;
@@ -595,7 +593,6 @@
     }
 
     updateReadingProgress();
-    updateOutline();
        updateGoalProgress();;
   }
 
@@ -2251,7 +2248,7 @@
     showToast('Goal saved');
   }
 
-  function startGoalTimer(minutes) {
+      function startGoalTimer(minutes) {
     stopGoalTimer();
     goalTotalSeconds = minutes * 60;
     goalElapsedSeconds = 0;
@@ -2261,15 +2258,16 @@
       updateGoalProgress();
 
       if (goalElapsedSeconds >= goalTotalSeconds) {
-        var current = getCurrentGoalCount();
-        var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
-              var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
-      if (current < goal) {
-        showToast('⏰ Time is up! ' + current + '/' + goal + ' ' + unitLabel);
-      } else {
-        showToast('🎉 Success! ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1) + ' goal reached');
-      }
         stopGoalTimer();
+        var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
+        var unit = localStorage.getItem('oros_writer_goal_unit') || 'words';
+        var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
+        var current = getCurrentGoalCount();
+        if (current < goal) {
+          showToast('⏰ Time is up! ' + current + '/' + goal + ' ' + unitLabel);
+        } else {
+          showToast('🎉 Success! ' + unitLabel.charAt(0).toUpperCase() + unitLabel.slice(1) + ' goal reached');
+        }
       }
     }, 1000);
   }
@@ -2300,10 +2298,12 @@
     var current = getCurrentGoalCount();
     var pct = Math.min(100, Math.round((current / goal) * 100));
 
-    var progressText = current + '/' + goal + ' ' + unit + ' (' + pct + '%)';
+    var unitLabel = unit === 'chars' ? 'characters' : (unit === 'paras' ? 'paragraphs' : 'words');
+    var progressText = current + '/' + goal + ' ' + unitLabel + ' (' + pct + '%)';
 
     if (goalInterval && goalTotalSeconds > 0) {
       var timeLeft = goalTotalSeconds - goalElapsedSeconds;
+      if (timeLeft < 0) timeLeft = 0;
       var mins = Math.floor(timeLeft / 60);
       var secs = timeLeft % 60;
       progressText += ' · ⏱ ' + mins + ':' + secs.toString().padStart(2, '0');
@@ -2590,7 +2590,6 @@
   { id: 'version-history-panel', btn: 'btn-version-history' },
   { id: 'wordfreq-panel', btn: 'btn-wordfreq' },
   { id: 'metadata-panel', btn: 'btn-metadata' },
-  { id: 'outline-panel', btn: 'btn-outline' },
   { id: 'toc-panel', btn: 'btn-toc' },
   { id: 'find-replace-bar', btn: 'btn-find' },
   { id: 'goal-bar', btn: 'btn-goal' }
@@ -3400,7 +3399,35 @@ for (var i = 0; i < panels.length; i++) {
     tocPanel.style.display = isVisible ? 'none' : '';
     var btn = document.getElementById('btn-toc');
     if (btn) btn.classList.toggle('active', !isVisible);
-    if (!isVisible && tocList && outlineList) tocList.innerHTML = outlineList.innerHTML;
+    if (!isVisible && tocList) {
+      var heads = richEditor.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      var html = '';
+      for (var i = 0; i < heads.length; i++) {
+        var tag = heads[i].tagName.toLowerCase();
+        var text = heads[i].textContent.trim() || '(empty)';
+        var indent = '';
+        if (tag === 'h2') indent = 'padding-left:1.5em;';
+        else if (tag === 'h3') indent = 'padding-left:3em;';
+        else if (tag === 'h4') indent = 'padding-left:4.5em;';
+        else if (tag === 'h5') indent = 'padding-left:6em;';
+        else if (tag === 'h6') indent = 'padding-left:7.5em;';
+        html += '<div class="toc-item" data-idx="' + i + '" style="' + indent + 'cursor:pointer;">' + escapeHtml(text) + '</div>';
+      }
+      tocList.innerHTML = html || '<div class="empty-msg">No headings</div>';
+      var items = tocList.querySelectorAll('.toc-item');
+      for (var j = 0; j < items.length; j++) {
+        (function(item, idx) {
+          item.addEventListener('click', function() {
+            var heading = richEditor.querySelectorAll('h1, h2, h3, h4, h5, h6')[idx];
+            if (heading) {
+              heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              heading.classList.add('outline-flash');
+              setTimeout(function() { heading.classList.remove('outline-flash'); }, 1200);
+            }
+          });
+        })(items[j], j);
+      }
+    }
   }
 
   // ===== LOREM IPSUM =====
@@ -3617,7 +3644,6 @@ for (var i = 0; i < panels.length; i++) {
       setupCloseWarning();
       setupPWAInstallButton();
       setupMetadataPanel();
-      setupOutlinePanel();
       setupTableOfContents();
       setupLoremIpsum();
       setupQuickFormatMenu();
@@ -3633,11 +3659,7 @@ for (var i = 0; i < panels.length; i++) {
       }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
-      bindClick('btn-close-outline', function() {
-        if (outlinePanel) outlinePanel.style.display = 'none';
-        var obtn = document.getElementById('btn-outline');
-        if (obtn) obtn.classList.remove('active');
-      });
+
       bindClick('btn-close-wordfreq', function() {
         if (wordFreqPanel) wordFreqPanel.style.display = 'none';
         var wfbtn = document.getElementById('btn-wordfreq');
@@ -3800,8 +3822,6 @@ for (var i = 0; i < panels.length; i++) {
     stylesSelect = document.getElementById('styles-select');
     footnoteArea = document.getElementById('footnote-area');
     metadataPanel = document.getElementById('metadata-panel');
-    outlinePanel = document.getElementById('outline-panel');
-    outlineList = document.getElementById('outline-list');
     wordFreqPanel = document.getElementById('wordfreq-panel');
     wordFreqList = document.getElementById('wordfreq-list');
     wordFreqSummary = document.getElementById('wordfreq-summary');

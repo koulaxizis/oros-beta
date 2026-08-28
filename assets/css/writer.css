@@ -645,23 +645,6 @@ mark.find-match.current { background: rgba(255, 152, 0, 0.5); outline: 1px solid
 .panel-close { flex-shrink: 0; }
 .panel-body { padding: 12px 14px; overflow-y: auto; flex: 1; }
 
-/* ===== OUTLINE PANEL ===== */
-.outline-empty { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 8px; text-align: center; }
-.outline-item { padding: 6px 10px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); font-size: 13px; transition: background 0.15s, color 0.15s; margin-bottom: 2px; }
-.outline-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-.outline-item-h1 { padding-left: 10px; font-weight: 600; }
-.outline-item-h2 { padding-left: 24px; font-weight: 500; }
-.outline-item-h3 { padding-left: 38px; font-size: 12px; }
-
-.rich-editor h1.outline-flash,
-.rich-editor h2.outline-flash,
-.rich-editor h3.outline-flash { animation: outline-flash-anim 1.2s ease; }
-
-@keyframes outline-flash-anim {
-  0%, 100% { background: transparent; }
-  50% { background: var(--accent-gold-dim); }
-}
-
 /* ===== WORD FREQUENCY PANEL ===== */
 .wordfreq-summary { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
 .wordfreq-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; }
