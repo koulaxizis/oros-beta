@@ -90,7 +90,7 @@
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="assets/css/icons.css">
@@ -128,7 +128,154 @@
       color: var(--primary, #6d4aff);
     }
 
-    /* ===== WELCOME POPUP (STABLE) ===== */
+    /* ===== POPUP CHANNEL SWITCHER ===== */
+    .channel-switch-box {
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      text-align: left;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .channel-switch-label {
+      display: block;
+      font-weight: 600;
+      color: var(--accent-gold);
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .channel-switch-text {
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .channel-switch-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .channel-switch-link:hover {
+      filter: brightness(1.15);
+      color: white;
+    }
+
+    .channel-switch-icon {
+      font-size: 1rem;
+    }
+
+    /* ===== BETA POPUP (EXISTING STYLES) ===== */
+    .beta-popup-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+    }
+    .beta-popup-overlay.visible { display: flex; }
+
+    .beta-popup {
+      background: var(--bg-panel, #1e1e2e);
+      border: 1px solid var(--border-color, #333);
+      border-radius: 12px;
+      max-width: 480px;
+      width: 90vw;
+      padding: 36px 32px 28px;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+      animation: betaPopIn 0.35s ease;
+    }
+    @keyframes betaPopIn {
+      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .beta-popup-icon {
+      font-size: 2.8rem;
+      color: var(--warning-orange, #ff6b35);
+      margin-bottom: 14px;
+    }
+    .beta-popup-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary, #eee);
+      margin: 0 0 16px;
+    }
+    .beta-popup-body {
+      text-align: left;
+    }
+    .beta-popup-body p {
+      font-size: 0.9rem;
+      color: var(--text-secondary, #ccc);
+      line-height: 1.6;
+      margin: 0 0 12px;
+    }
+    .beta-popup-emphasis {
+      color: var(--warning-orange, #ff6b35);
+      font-weight: 600;
+    }
+
+    .beta-popup-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .beta-popup-btn {
+      padding: 11px 20px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: var(--font-primary, sans-serif);
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .beta-popup-btn.primary {
+      background: var(--primary, #6d4aff);
+      color: white;
+      border-color: var(--primary, #6d4aff);
+    }
+    .beta-popup-btn.primary:hover {
+      filter: brightness(1.15);
+    }
+    .beta-popup-btn.secondary {
+      background: transparent;
+      color: var(--text-muted, #888);
+      border-color: var(--border-color, #333);
+    }
+    .beta-popup-btn.secondary:hover {
+      color: var(--text-secondary, #aaa);
+      border-color: var(--text-secondary, #aaa);
+    }
+    .beta-popup-btn.tertiary {
+      background: transparent;
+      color: var(--text-muted, #666);
+      border: none;
+      font-size: 0.82rem;
+      padding: 6px 20px;
+    }
+    .beta-popup-btn.tertiary:hover {
+      color: var(--text-primary, #ccc);
+      text-decoration: underline;
+    }
+
+    /* ===== WELCOME POPUP ===== */
     .welcome-popup-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -427,6 +574,17 @@
         <p id="beta-popup-p1">You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.</p>
         <p id="beta-popup-p2">Data loss may occur. You use this software at your own risk.</p>
         <p id="beta-popup-p3" class="beta-popup-emphasis">We strongly encourage you to save your work frequently to a local file.</p>
+
+        <!-- CHANNEL SWITCH BOX (BETA → STABLE) -->
+        <div class="channel-switch-box">
+          <span class="channel-switch-label">Want stability?</span>
+          <span class="channel-switch-text">
+            Try the <strong>stable channel</strong> for a polished experience with fewer bugs.
+          </span>
+          <a href="index.html" id="beta-to-stable-link" class="channel-switch-link" target="_blank">
+            <i class="fa fa-arrow-right channel-switch-icon"></i> Go to Stable Channel
+          </a>
+        </div>
       </div>
       <div class="beta-popup-actions">
         <button class="beta-popup-btn primary" id="beta-popup-accept" data-i18n="beta_popup_accept">I understand and continue</button>
@@ -455,6 +613,18 @@
           <a href="mailto:koulaxizis@glarolykoi.net">koulaxizis@glarolykoi.net</a>
         </p>
       </div>
+
+      <!-- CHANNEL SWITCH BOX (STABLE → BETA) -->
+      <div class="channel-switch-box">
+        <span class="channel-switch-label">Love experimentation?</span>
+        <span class="channel-switch-text">
+          Try the <strong>beta channel</strong> to test new features before they're released. May contain bugs!
+        </span>
+        <a href="https://koulaxizis.github.io/oros-beta/index.html" id="stable-to-beta-link" class="channel-switch-link" target="_blank">
+          <i class="fa fa-flask channel-switch-icon"></i> Go to Beta Channel
+        </a>
+      </div>
+
       <div class="welcome-popup-actions">
         <button class="welcome-popup-btn primary" id="welcome-popup-close">Got it!</button>
         <button class="welcome-popup-btn secondary" id="welcome-popup-dismiss">Don't show again</button>
@@ -489,6 +659,16 @@
         var lang = localStorage.getItem('oros-language') || 'en';
         var t = (window.OROS_TRANSLATIONS && window.OROS_TRANSLATIONS[lang]) || {};
         return t[key] || key;
+      }
+
+      function getBaseHref() {
+        if (typeof OROS_CONFIG !== 'undefined' && OROS_CONFIG.baseHref) {
+          return OROS_CONFIG.baseHref;
+        }
+        // Auto-detect based on URL
+        var url = window.location.href;
+        if (url.indexOf('/oros-beta/') !== -1) return '/oros-beta/';
+        return '/oros/';
       }
 
       // ===== BETA POPUP =====
@@ -544,6 +724,20 @@
           title.textContent = (tVal && tVal !== 'beta_popup_title') ? tVal : 'Beta Channel Warning';
           title.dataset.localized = 'true';
         }
+
+        // Set correct stable link based on baseHref
+        var stableLink = document.getElementById('beta-to-stable-link');
+        if (stableLink) {
+          var base = getBaseHref();
+          if (base && base.indexOf('/beta/') !== -1) {
+            // Currently in beta repo → link to parent (stable)
+            stableLink.href = '../index.html';
+          } else if (base === '/') {
+            stableLink.href = '/oros/index.html';
+          } else {
+            stableLink.href = 'index.html';
+          }
+        }
       }
 
       // ===== STABLE WELCOME POPUP =====
@@ -561,6 +755,42 @@
       function hideWelcomePopup() {
         var overlay = document.getElementById('welcome-popup-overlay');
         if (overlay) overlay.classList.remove('visible');
+      }
+
+      function localizeBetaButtonsOnLangChange() {
+        var btns = [
+          { id: 'beta-popup-accept', key: 'beta_popup_accept' },
+          { id: 'beta-popup-remind', key: 'beta_popup_remind' },
+          { id: 'beta-popup-never', key: 'beta_popup_never' }
+        ];
+        btns.forEach(function(b) {
+          var el = document.getElementById(b.id);
+          if (el) {
+            el.textContent = getTrans(b.key);
+            el.dataset.localized = 'true';
+          }
+        });
+
+        var paras = [
+          { id: 'beta-popup-p1', key: 'beta_popup_p1', fallback: 'You are using a <strong>beta version</strong> of orOS. All applications are in a testing phase and may contain bugs or unstable features.' },
+          { id: 'beta-popup-p2', key: 'beta_popup_p2', fallback: 'Data loss may occur. You use this software at your own risk.' },
+          { id: 'beta-popup-p3', key: 'beta_popup_p3', fallback: 'We strongly encourage you to save your work frequently to a local file.' }
+        ];
+        paras.forEach(function(p) {
+          var el = document.getElementById(p.id);
+          if (el) {
+            var val = getTrans(p.key);
+            el.innerHTML = (val && val !== p.key) ? val : p.fallback;
+            el.dataset.localized = 'true';
+          }
+        });
+
+        var title = document.querySelector('.beta-popup-title');
+        if (title) {
+          var tVal = getTrans('beta_popup_title');
+          title.textContent = (tVal && tVal !== 'beta_popup_title') ? tVal : 'Beta Channel Warning';
+          title.dataset.localized = 'true';
+        }
       }
 
       function init() {
@@ -588,8 +818,8 @@
               hideBetaPopup();
             });
 
-            window.addEventListener('oros-language-changed', localizeBetaButtons);
-            document.addEventListener('languageChanged', localizeBetaButtons);
+            window.addEventListener('oros-language-changed', localizeBetaButtonsOnLangChange);
+            document.addEventListener('languageChanged', localizeBetaButtonsOnLangChange);
           }
         }
 
