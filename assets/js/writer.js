@@ -1348,19 +1348,22 @@
     });
   }
 
-    function findInDocument() {
+      function findInDocument() {
     hideSearchHighlights();
     if (!findInput || !richEditor) return;
     var term = findInput.value.trim();
     if (!term) { if (frResults) frResults.textContent = '0/0'; return; }
 
-    var formatFilter = findFormatFilter ? findFormatFilter.value : 'all';
-    var currentIdx = 0;
+    var rawFilter = findFormatFilter ? findFormatFilter.value : 'all';
+    // Ασφάλεια: αν δεν αναγνωρίζεται, treat as 'all'
+    var knownFilters = ['all', 'bold', 'italic', 'underline', 'strikethrough'];
+    var formatFilter = knownFilters.indexOf(rawFilter) !== -1 ? rawFilter : 'all';
 
     var count = 0;
     var nodes = [];
     var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null);
     while (walker.nextNode()) { nodes.push(walker.currentNode); }
+
     for (var i = 0; i < nodes.length; i++) {
       var node = nodes[i];
       var text = node.textContent;
@@ -1371,26 +1374,24 @@
           var hasFmt = false;
           var el = node.parentElement;
           while (el && el !== richEditor) {
-            if (formatFilter === 'bold') {
-              if (el.tagName === 'B' || el.tagName === 'STRONG' ||
-                  (el.style && (el.style.fontWeight === 'bold' || el.style.fontWeight === '700'))) {
-                hasFmt = true; break;
-              }
-            } else if (formatFilter === 'italic') {
-              if (el.tagName === 'I' || el.tagName === 'EM' ||
-                  (el.style && el.style.fontStyle === 'italic')) {
-                hasFmt = true; break;
-              }
-            } else if (formatFilter === 'underline') {
-              if (el.tagName === 'U' ||
-                  (el.style && el.style.textDecoration && el.style.textDecoration.indexOf('underline') !== -1)) {
-                hasFmt = true; break;
-              }
-            } else if (formatFilter === 'strikethrough') {
-              if (el.tagName === 'S' || el.tagName === 'DEL' ||
-                  (el.style && el.style.textDecoration && el.style.textDecoration.indexOf('line-through') !== -1)) {
-                hasFmt = true; break;
-              }
+            var tag = el.tagName;
+            var style = el.style;
+            if (formatFilter === 'bold' &&
+                (tag === 'B' || tag === 'STRONG' ||
+                 (style && (style.fontWeight === 'bold' || style.fontWeight === '700')))) {
+              hasFmt = true; break;
+            } else if (formatFilter === 'italic' &&
+                (tag === 'I' || tag === 'EM' ||
+                 (style && style.fontStyle === 'italic'))) {
+              hasFmt = true; break;
+            } else if (formatFilter === 'underline' &&
+                (tag === 'U' ||
+                 (style && style.textDecoration && style.textDecoration.indexOf('underline') !== -1))) {
+              hasFmt = true; break;
+            } else if (formatFilter === 'strikethrough' &&
+                (tag === 'S' || tag === 'DEL' ||
+                 (style && style.textDecoration && style.textDecoration.indexOf('line-through') !== -1))) {
+              hasFmt = true; break;
             }
             el = el.parentElement;
           }
@@ -1403,13 +1404,16 @@
         highlight.className = 'find-match';
         highlight.textContent = text.substring(pos, pos + term.length);
         var after = document.createTextNode(text.substring(pos + term.length));
-        fragment.appendChild(before); fragment.appendChild(highlight); fragment.appendChild(after);
+        fragment.appendChild(before);
+        fragment.appendChild(highlight);
+        fragment.appendChild(after);
         node.parentNode.replaceChild(fragment, node);
         count++;
         node = after;
         pos += term.length;
       }
     }
+
     if (frResults) frResults.textContent = count + '/' + count;
   }
 
