@@ -1534,7 +1534,7 @@
     if (!isVisible) calculateWordFrequency();
   }
 
-  function calculateWordFrequency() {
+    function calculateWordFrequency() {
     if (!richEditor) return;
     var text = richEditor.innerText || '';
     text = text.toLowerCase().replace(/[.,!?;:"'()\[\]{}]/g, '').trim();
@@ -1549,14 +1549,40 @@
     for (var k = 0; k < keys.length; k++) { arr.push({ word: keys[k], count: freq[keys[k]] }); }
     arr.sort(function(a, b) { return b.count - a.count; });
     arr = arr.slice(0, 50);
-    var html = '';
-    for (var j = 0; j < arr.length; j++) { html += '<div class="word-row"><span class="word">' + escapeHtml(arr[j].word) + '</span><span class="count">' + arr[j].count + '</span></div>'; }
-    if (wordFreqList) wordFreqList.innerHTML = html || '<div class="empty-msg">Type to analyze</div>';
-    if (wordFreqSummary && arr.length > 0) {
-      var unique = arr.length;
-      var total = words.length;
-      var topPct = Math.round((arr[0].count / total) * 100);
-      wordFreqSummary.textContent = unique + ' unique words · Top "' + arr[0].word + '" ' + topPct + '%';
+
+    // Σύνοψη σε πλαίσιο
+    if (wordFreqSummary) {
+      if (arr.length > 0 && words.length > 0) {
+        var unique = arr.length;
+        var topPct = Math.round((arr[0].count / words.length) * 100);
+        wordFreqSummary.innerHTML =
+          '<div class="wordfreq-summary-box">' +
+          '<span class="wordfreq-summary-icon"><i class="fa fa-language"></i></span>' +
+          '<span class="wordfreq-summary-text">' + unique + ' unique words · Top "' + escapeHtml(arr[0].word) + '" ' + topPct + '%</span>' +
+          '</div>';
+      } else {
+        wordFreqSummary.innerHTML = '<div class="wordfreq-summary-box">Type to analyze word frequency</div>';
+      }
+    }
+
+    // Λίστα με χρυσές μπάρες
+    if (wordFreqList) {
+      if (arr.length === 0) {
+        wordFreqList.innerHTML = '<div class="wordfreq-empty">Type to analyze</div>';
+      } else {
+        var maxCount = arr[0].count;
+        var html = '';
+        for (var j = 0; j < arr.length; j++) {
+          var pct = Math.round((arr[j].count / maxCount) * 100);
+          var isOverused = arr[j].count >= 5 && (arr[j].count / words.length) > 0.03;
+          html += '<div class="wordfreq-item' + (isOverused ? ' overused' : '') + '">' +
+            '<span class="wf-word">' + escapeHtml(arr[j].word) + '</span>' +
+            '<div class="wordfreq-bar"><div class="wordfreq-bar-fill" style="width:' + pct + '%;"></div></div>' +
+            '<span class="wordfreq-count">' + arr[j].count + '</span>' +
+            '</div>';
+        }
+        wordFreqList.innerHTML = html;
+      }
     }
   }
 
