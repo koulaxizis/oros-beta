@@ -75,6 +75,15 @@
   var trackChangesObserver = null;
   var customTemplates = [];
   var clickHandlers = {};
+    var PAGE_DIMENSIONS = {
+    'a4':         { w: 210, h: 297, unit: 'mm' },
+    'letter':     { w: 216, h: 279, unit: 'mm' },
+    'legal':      { w: 216, h: 356, unit: 'mm' },
+    'a3':         { w: 297, h: 420, unit: 'mm' },
+    'a5':         { w: 148, h: 210, unit: 'mm' },
+    'b5':         { w: 176, h: 250, unit: 'mm' },
+    'full-width': { w: 100, h: 0,  unit: '%'  }
+  };
 
   // ===== TEMPLATE DATA =====
     var TEMPLATES = [
@@ -786,10 +795,30 @@
     printStyle.textContent = '@media print{@page{margin:' + top + 'cm ' + right + 'cm ' + bottom + 'cm ' + left + 'cm;}}';
   }
   
-    function syncPageSizeToUI(size) {
+      function syncPageSizeToUI(size) {
     var select = document.getElementById('page-size-select');
     if (select && select.value !== size) {
       select.value = size;
+    }
+
+    // Ενημέρωση ή δημιουργία πεδίου διαστάσεων
+    var dims = PAGE_DIMENSIONS[size];
+    if (!dims) return;
+
+    var dimInfo = document.getElementById('page-dimensions-info');
+    if (!dimInfo) {
+      // Δημιουργία δυναμικά αν δεν υπάρχει στο HTML
+      var panel = document.getElementById('page-size-select');
+      if (panel && panel.parentNode) {
+        dimInfo = document.createElement('div');
+        dimInfo.id = 'page-dimensions-info';
+        dimInfo.className = 'page-dimensions-info';
+        panel.parentNode.insertBefore(dimInfo, panel.nextSibling);
+      }
+    }
+    if (dimInfo) {
+      var hText = dims.h > 0 ? dims.h + dims.unit : 'auto';
+      dimInfo.textContent = dims.w + dims.unit + ' × ' + hText;
     }
   }
   
@@ -799,14 +828,12 @@
     var footerText = meta.footerText || '';
     var showPageNum = meta.footerPageNum !== false;
 
-    // Ενημέρωση attributes για print
     if (richEditor) {
       richEditor.setAttribute('data-header-text', headerText);
       richEditor.setAttribute('data-footer-text', footerText);
       richEditor.setAttribute('data-show-page-num', showPageNum ? '1' : '0');
     }
 
-    // VISUAL INDICATORS για preview (δεν είναι proper header/footer)
     var editorWrapper = document.querySelector('.rich-wrapper');
     if (!editorWrapper) return;
 
@@ -816,34 +843,36 @@
     if (!headerPreview) {
       headerPreview = document.createElement('div');
       headerPreview.className = 'header-preview';
-      headerPreview.style.cssText = 'position:absolute;top:-30px;left:0;right:0;height:24px;background:#f5f5f5;border-bottom:1px solid #ddd;font-size:9pt;color:#666;text-align:center;padding:4px;z-index:10;display:none;pointer-events:none;';
       editorWrapper.insertBefore(headerPreview, editorWrapper.firstChild);
     }
 
     if (!footerPreview) {
       footerPreview = document.createElement('div');
       footerPreview.className = 'footer-preview';
-      footerPreview.style.cssText = 'position:absolute;bottom:-30px;left:0;right:0;height:24px;background:#f5f5f5;border-top:1px solid #ddd;font-size:9pt;color:#666;text-align:center;padding:4px;z-index:10;display:none;pointer-events:none;';
       editorWrapper.appendChild(footerPreview);
     }
 
-    if (headerText || showPageNum) {
-      var headerContent = headerText + (showPageNum ? ' — Page [preview]' : '');
-      headerPreview.textContent = headerContent;
-      headerPreview.style.display = 'block';
+    // Header content
+    if (headerText) {
+      headerPreview.textContent = headerText;
+      headerPreview.style.display = '';
     } else {
       headerPreview.style.display = 'none';
     }
 
+    // Footer content (includes page number preview)
     if (footerText || showPageNum) {
-      var footerContent = footerText + (showPageNum ? (footerText ? ' — ' : '') + 'Page [preview]' : '');
-      footerPreview.textContent = footerContent;
-      footerPreview.style.display = 'block';
+      var fc = footerText || '';
+      if (showPageNum) {
+        fc += (fc ? ' — ' : '') + 'Page [preview]';
+      }
+      footerPreview.textContent = fc;
+      footerPreview.style.display = '';
     } else {
       footerPreview.style.display = 'none';
     }
 
-    // Print CSS (πραγματικό header/footer)
+    // Print CSS (real header/footer)
     var hfStyle = document.getElementById('oros-print-header-footer');
     if (!hfStyle) {
       hfStyle = document.createElement('style');
@@ -3844,18 +3873,19 @@ for (var i = 0; i < panels.length; i++) {
       setupQuickFormatMenu();
       applyPageSettings();
 	  
-	      // Όταν αλλάζει το page size από το UI
-    var pageSizeSelect = document.getElementById('page-size-select');
-    if (pageSizeSelect) {
-      pageSizeSelect.addEventListener('change', function() {
-        var meta = tabsModule.getMetadata();
-        meta.pageSize = this.value;
-        tabsModule.setMetadata(meta);
-        applyPageSize(this.value);
-        applyPageMargins();
-        applyHeaderFooter();
-      });
-    }
+          // Όταν αλλάζει το page size από το UI
+      var pageSizeSelect = document.getElementById('page-size-select');
+      if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function() {
+          var meta = tabsModule.getMetadata();
+          meta.pageSize = this.value;
+          tabsModule.setMetadata(meta);
+          applyPageSize(this.value);
+          applyPageMargins();
+          applyHeaderFooter();
+          syncPageSizeToUI(this.value);
+        });
+      }
 	  
       clampToViewport();
 
