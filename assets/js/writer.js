@@ -871,7 +871,7 @@
     if (footerText || showPageNum) {
       var fc = footerText || '';
       if (showPageNum && fc) fc += ' — ';
-      if (showPageNum) fc += 'Σελ. [προεπισκόπηση]';
+      if (showPageNum) fc += (currentLang === 'el' ? 'Σελ. [προεπισκόπηση]' : 'Page [preview]');
       footerPreview.textContent = fc;
       footerPreview.style.display = 'block';
     } else {
@@ -1312,11 +1312,28 @@
   var findHistory = [];
   var findHistoryIndex = -1;
 
-  function setupFindReplace() {
+    function setupFindReplace() {
     if (findInput) {
-      findInput.addEventListener('keyup', function() {
+      findInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          findInDocument();
+          findNext();
+          return;
+        }
+      });
+      findInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') return;
         clearTimeout(findTypingTimer);
         findTypingTimer = setTimeout(findInDocument, 300);
+      });
+    }
+    if (replaceInput) {
+      replaceInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          replaceMatch();
+        }
       });
     }
     bindClick('btn-find-prev', findPrevious);
@@ -1331,11 +1348,15 @@
     });
   }
 
-  function findInDocument() {
+    function findInDocument() {
     hideSearchHighlights();
     if (!findInput || !richEditor) return;
     var term = findInput.value.trim();
     if (!term) { if (frResults) frResults.textContent = '0/0'; return; }
+
+    var formatFilter = findFormatFilter ? findFormatFilter.value : 'all';
+    var currentIdx = 0;
+
     var count = 0;
     var nodes = [];
     var walker = document.createTreeWalker(richEditor, NodeFilter.SHOW_TEXT, null);
@@ -1345,10 +1366,41 @@
       var text = node.textContent;
       var pos = 0;
       while ((pos = text.toLowerCase().indexOf(term.toLowerCase(), pos)) !== -1) {
+
+        if (formatFilter !== 'all') {
+          var hasFmt = false;
+          var el = node.parentElement;
+          while (el && el !== richEditor) {
+            if (formatFilter === 'bold') {
+              if (el.tagName === 'B' || el.tagName === 'STRONG' ||
+                  (el.style && (el.style.fontWeight === 'bold' || el.style.fontWeight === '700'))) {
+                hasFmt = true; break;
+              }
+            } else if (formatFilter === 'italic') {
+              if (el.tagName === 'I' || el.tagName === 'EM' ||
+                  (el.style && el.style.fontStyle === 'italic')) {
+                hasFmt = true; break;
+              }
+            } else if (formatFilter === 'underline') {
+              if (el.tagName === 'U' ||
+                  (el.style && el.style.textDecoration && el.style.textDecoration.indexOf('underline') !== -1)) {
+                hasFmt = true; break;
+              }
+            } else if (formatFilter === 'strikethrough') {
+              if (el.tagName === 'S' || el.tagName === 'DEL' ||
+                  (el.style && el.style.textDecoration && el.style.textDecoration.indexOf('line-through') !== -1)) {
+                hasFmt = true; break;
+              }
+            }
+            el = el.parentElement;
+          }
+          if (!hasFmt) { pos += term.length; continue; }
+        }
+
         var fragment = document.createDocumentFragment();
         var before = document.createTextNode(text.substring(0, pos));
-        var highlight = document.createElement('span');
-        highlight.className = 'search-match';
+        var highlight = document.createElement('mark');
+        highlight.className = 'find-match';
         highlight.textContent = text.substring(pos, pos + term.length);
         var after = document.createTextNode(text.substring(pos + term.length));
         fragment.appendChild(before); fragment.appendChild(highlight); fragment.appendChild(after);
@@ -1361,9 +1413,9 @@
     if (frResults) frResults.textContent = count + '/' + count;
   }
 
-  function hideSearchHighlights() {
+    function hideSearchHighlights() {
     if (!richEditor) return;
-    var matches = richEditor.querySelectorAll('.search-match');
+    var matches = richEditor.querySelectorAll('.find-match');
     for (var i = 0; i < matches.length; i++) {
       var parent = matches[i].parentNode;
       parent.replaceChild(document.createTextNode(matches[i].textContent), matches[i]);
@@ -1375,22 +1427,46 @@
   function findNext() { findNavigate(1); }
   function findPrevious() { findNavigate(-1); }
 
-  function findNavigate(dir) {
+    function findNavigate(dir) {
     if (!findInput || !richEditor) return;
     var term = findInput.value.trim();
     if (!term) return;
-    var matches = richEditor.querySelectorAll('.search-match');
+    var matches = richEditor.querySelectorAll('.find-match');
     if (matches.length === 0) {
       findInDocument();
-      matches = richEditor.querySelectorAll('.search-match');
+      matches = richEditor.querySelectorAll('.find-match');
     }
     if (matches.length === 0) return;
+
+    for (var r = 0; r < matches.length; r++) matches[r].classList.remove('current');
+
     var sel = window.getSelection();
+    var anchorNode = sel.anchorNode;
+    var currentMatchIdx = 0;
+
+    if (anchorNode) {
+      for (var i = 0; i < matches.length; i++) {
+        if (matches[i].contains(anchorNode) || matches[i] === anchorNode) {
+          currentMatchIdx = i;
+          break;
+        }
+      }
+    }
+
+    var nextIdx = dir > 0
+      ? (currentMatchIdx + 1) % matches.length
+      : (currentMatchIdx - 1 + matches.length) % matches.length;
+
+    var target = matches[nextIdx];
+    target.classList.add('current');
+
     var range = document.createRange();
-    range.selectNodeContents(matches[0]);
+    range.selectNodeContents(target);
     sel.removeAllRanges();
     sel.addRange(range);
-    matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    if (frResults) frResults.textContent = (nextIdx + 1) + '/' + matches.length;
   }
 
   function replaceMatch() {
@@ -1405,16 +1481,24 @@
     findNext();
   }
 
-  function replaceAll() {
+    function replaceAll() {
     if (!findInput || !richEditor) return;
     var term = findInput.value.trim();
     if (!term) { showToast('Enter find text'); return; }
     var replacement = replaceInput ? replaceInput.value : '';
-    var regex = new RegExp(escapeRegex(term), 'gi');
-    richEditor.innerHTML = richEditor.innerHTML.replace(regex, function(match) { return replacement; });
+
+    var matches = richEditor.querySelectorAll('.find-match');
+    var replaced = 0;
+    for (var i = 0; i < matches.length; i++) {
+      matches[i].textContent = replacement;
+      replaced++;
+    }
+
     hideSearchHighlights();
+    findInDocument();
+    saveCurrentTabContent();
     updateStats();
-    showToast('Replaced all occurrences');
+    showToast(replaced + ' occurrence' + (replaced !== 1 ? 's' : '') + ' replaced');
   }
 
   function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
