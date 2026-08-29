@@ -862,7 +862,7 @@
     // Display header
     if (headerText) {
       headerPreview.textContent = headerText;
-      headerPreview.style.display = '';
+      headerPreview.style.display = 'block';
     } else {
       headerPreview.style.display = 'none';
     }
@@ -871,9 +871,9 @@
     if (footerText || showPageNum) {
       var fc = footerText || '';
       if (showPageNum && fc) fc += ' — ';
-      if (showPageNum) fc += 'Page [preview]';
+      if (showPageNum) fc += 'Σελ. [προεπισκόπηση]';
       footerPreview.textContent = fc;
-      footerPreview.style.display = '';
+      footerPreview.style.display = 'block';
     } else {
       footerPreview.style.display = 'none';
     }
@@ -903,16 +903,17 @@
     hfStyle.textContent = css;
   }
 
-  function applyPageSettings() {
+    function applyPageSettings() {
     var fontSize = localStorage.getItem('oros_writer_font_size') || '16';
     if (richEditor) richEditor.style.fontSize = fontSize + 'px';
     var fontFamily = localStorage.getItem('oros_writer_font_family');
     if (fontFamily && richEditor) richEditor.style.fontFamily = fontFamily;
     var lineHeight = localStorage.getItem('oros_writer_line_height') || '1.8';
     if (richEditor) richEditor.style.lineHeight = lineHeight;
-    var maxWidth = localStorage.getItem('oros_writer_max_width') || '900';
-    if (richEditor) richEditor.style.maxWidth = maxWidth + 'px';
+    // ΜΗΝ θέτεις inline max-width — ελέγχεται από CSS [data-page-size] selectors
+    if (richEditor) richEditor.style.maxWidth = '';
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
+    applyPageSize(meta.pageSize || 'a4');
     applyPageMargins();
     applyHeaderFooter();
   }

@@ -1979,45 +1979,6 @@ body[data-zen="true"] .side-panel {
   }
 }
 
-/* ===== HEADER / FOOTER PREVIEW ===== */
-.header-preview {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-color);
-  font-size: 9pt;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 4px 12px;
-  z-index: 10;
-  display: none;
-  pointer-events: none;
-}
-
-.footer-preview {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-color);
-  font-size: 9pt;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 4px 12px;
-  z-index: 10;
-  display: none;
-  pointer-events: none;
-}
-
-.page-dimensions-info {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  padding: 4px 8px;
-  background: var(--bg-input);
-  border-radius: 4px;
-  text-align: center;
-}
-
 /* ===== HEADER / FOOTER PREVIEW (VISUAL) ===== */
 .header-preview {
   position: absolute;
