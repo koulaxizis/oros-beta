@@ -1040,7 +1040,8 @@
   }
 
   // ===== AUTOCORRECT =====
-  var DEFAULT_AUTOCORRECT = {
+    var DEFAULT_AUTOCORRECT = {
+    // --- Typos & Contractions ---
     'dont': "don't", 'cant': "can't", 'wont': "won't", 'isnt': "isn't",
     'wasnt': "wasn't", 'havent': "haven't", 'didnt': "didn't",
     'wouldnt': "wouldn't", 'couldnt': "couldn't", 'shouldnt': "shouldn't",
@@ -1049,7 +1050,33 @@
     'definately': 'definitely', 'occured': 'occurred', 'untill': 'until',
     'thier': 'their', 'freind': 'friend', 'wich': 'which',
     'alot': 'a lot',
-    'den einai': '\u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9', 'miso': '\u03BC\u03B9\u03C3\u03CC', 'duo': '\u03B4\u03CD\u03BF', 'itan': '\u03B7\u03C4\u03B1\u03BD'
+    // --- Greek ---
+    'den einai': '\u03B4\u03B5\u03BD \u03B5\u03AF\u03BD\u03B1\u03B9', 'miso': '\u03BC\u03B9\u03C3\u03CC', 'duo': '\u03B4\u03CD\u03BF', 'itan': '\u03B7\u03C4\u03B1\u03BD',
+    // --- Symbols ---
+    '(c)': '\u00A9',
+    '(r)': '\u00AE',
+    '(tm)': '\u2122',
+    '(p)': '\u00B6',
+    '(sm)': '\u2120',
+    '->': '\u2192',
+    '<-': '\u2190',
+    '<->': '\u2194',
+    '=>': '\u21D2',
+    '<=': '\u21D0',
+    '+/-': '\u00B1',
+    '1/2': '\u00BD',
+    '1/4': '\u00BC',
+    '3/4': '\u00BE',
+    '1/3': '\u2153',
+    '2/3': '\u2154',
+    '...': '\u2026',
+    '--': '\u2013',
+    '---': '\u2014',
+    '<<': '\u00AB',
+    '>>': '\u00BB',
+    '(sec)': '\u00A7',
+    '(deg)': '\u00B0',
+    '(euro)': '\u20AC'
   };
   var autocorrectRules = {};
 
