@@ -2017,3 +2017,55 @@ body[data-zen="true"] .side-panel {
   border-radius: 4px;
   text-align: center;
 }
+
+/* ===== HEADER / FOOTER PREVIEW (VISUAL) ===== */
+.header-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(109, 76, 255, 0.08);
+  border-bottom: 1px solid var(--accent-gold);
+  font-size: 11px;
+  color: var(--accent-gold);
+  text-align: center;
+  padding: 6px 12px;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+  font-weight: 600;
+}
+
+.footer-preview {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(109, 76, 255, 0.08);
+  border-top: 1px solid var(--accent-gold);
+  font-size: 11px;
+  color: var(--accent-gold);
+  text-align: center;
+  padding: 6px 12px;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+  font-weight: 600;
+}
+
+/* Βεβαιούμαστε ότι το rich-wrapper επιτρέπει overflow */
+.rich-wrapper {
+  overflow: visible !important;
+}
+
+.page-dimensions-info {
+  font-size: 11px;
+  color: var(--accent-gold);
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--font-primary);
+  border: 1px solid var(--border-color);
+}
