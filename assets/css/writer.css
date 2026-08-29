@@ -1461,8 +1461,8 @@ body[data-zen="true"] .side-panel {
     flex-shrink: 0;
   }
   .toolbar-center {
-    flex: none;
-    justify-content: flex-start;
+    flex: 1;
+    justify-content: center;
   }
   .action-btn,
   .fmt-text-btn {
@@ -1489,7 +1489,7 @@ body[data-zen="true"] .side-panel {
 }
 
 @media (min-width: 1400px) {
-  .main-toolbar { overflow-x: visible; }
+  .main-toolbar { overflow: visible; }
   .action-btn, .fmt-text-btn {
     min-width: 28px;
     height: 28px;
