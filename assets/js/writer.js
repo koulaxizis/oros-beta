@@ -756,10 +756,72 @@
 
   // ===== PAGE SETTINGS =====
   function applyPageSize(size) {
-    if (!richEditor) return;
+    if (!richWrapper) richWrapper = document.querySelector('.rich-wrapper');
+    if (!richEditor) richEditor = document.getElementById('rich-editor');
     var validSizes = ['a4', 'letter', 'legal', 'a3', 'a5', 'b5', 'full-width'];
     if (validSizes.indexOf(size) === -1) size = 'a4';
-    richEditor.setAttribute('data-page-size', size);
+    if (richWrapper) richWrapper.setAttribute('data-page-size', size);
+    if (richEditor) richEditor.setAttribute('data-page-size', size);
+  }
+
+  function applyPageMargins() {
+    var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
+    var top = parseFloat(meta.marginTop) || 2.54;
+    var bottom = parseFloat(meta.marginBottom) || 2.54;
+    var left = parseFloat(meta.marginLeft) || 2.54;
+    var right = parseFloat(meta.marginRight) || 2.54;
+    if (richEditor) {
+      richEditor.style.paddingTop = top + 'cm';
+      richEditor.style.paddingBottom = bottom + 'cm';
+      richEditor.style.paddingLeft = left + 'cm';
+      richEditor.style.paddingRight = right + 'cm';
+    }
+    var printStyle = document.getElementById('oros-print-margins');
+    if (!printStyle) {
+      printStyle = document.createElement('style');
+      printStyle.id = 'oros-print-margins';
+      document.head.appendChild(printStyle);
+    }
+    printStyle.textContent = '@media print{@page{margin:' + top + 'cm ' + right + 'cm ' + bottom + 'cm ' + left + 'cm;}}';
+  }
+  
+    function applyHeaderFooter() {
+    var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
+    var headerText = meta.headerText || '';
+    var footerText = meta.footerText || '';
+    var showPageNum = meta.footerPageNum !== false;
+
+    if (richEditor) {
+      richEditor.setAttribute('data-header-text', headerText);
+      richEditor.setAttribute('data-footer-text', footerText);
+      richEditor.setAttribute('data-show-page-num', showPageNum ? '1' : '0');
+    }
+
+    // Ενημέρωση ή δημιουργία print style
+    var hfStyle = document.getElementById('oros-print-header-footer');
+    if (!hfStyle) {
+      hfStyle = document.createElement('style');
+      hfStyle.id = 'oros-print-header-footer';
+      document.head.appendChild(hfStyle);
+    }
+
+    var css = '@media print {';
+    if (headerText) {
+      css += '.rich-editor::before{content:"' + headerText.replace(/"/g, '\\"') + '";display:block;position:fixed;top:0;left:0;right:0;text-align:center;font-size:9pt;color:#666;border-bottom:1px solid #ccc;padding:4px 0;}';
+    }
+    var footerContent = '';
+    if (footerText) {
+      footerContent += '"' + footerText.replace(/"/g, '\\"') + '"';
+    }
+    if (showPageNum) {
+      if (footerText) footerContent += ' — ';
+      footerContent += '"Page " counter(page) " of " counter(pages)';
+    }
+    if (footerContent) {
+      css += '.rich-editor::after{content:' + footerContent + ';display:block;position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:9pt;color:#666;border-top:1px solid #ccc;padding:4px 0;}';
+    }
+    css += '}';
+    hfStyle.textContent = css;
   }
 
   function applyPageSettings() {
@@ -773,6 +835,8 @@
     if (richEditor) richEditor.style.maxWidth = maxWidth + 'px';
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
     applyPageSize(meta.pageSize || 'a4');
+    applyPageMargins();
+    applyHeaderFooter();
   }
 
   function savePageSettings() {
@@ -786,7 +850,7 @@
     var footerPageNum = document.getElementById('footer-page-num');
 
     var meta = tabsModule.getMetadata();
-    if (pageSize) { meta.pageSize = pageSize.value; applyPageSize(pageSize.value); }
+    if (pageSize) meta.pageSize = pageSize.value;
     if (marginTop) meta.marginTop = marginTop.value;
     if (marginBottom) meta.marginBottom = marginBottom.value;
     if (marginLeft) meta.marginLeft = marginLeft.value;
@@ -797,6 +861,12 @@
     meta.modified = new Date().toISOString();
     tabsModule.setMetadata(meta);
     if (metaModified) metaModified.textContent = meta.modified;
+
+    // Εφαρμογή άμεσα
+    applyPageSize(meta.pageSize || 'a4');
+    applyPageMargins();
+    applyHeaderFooter();
+    showToast('Page settings applied');
   }
 
   function loadPageSettingsFields() {
@@ -2393,6 +2463,16 @@
   function showImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.add('active'); }
   function hideImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.remove('active'); }
 
+  function getDocumentMetaHeader() {
+    var meta = tabsModule.getMetadata();
+    var lines = [];
+    if (meta.title) lines.push('Title: ' + meta.title);
+    if (meta.author) lines.push('Author: ' + meta.author);
+    if (meta.category) lines.push('Category: ' + meta.category);
+    if (meta.tags) lines.push('Tags: ' + meta.tags);
+    return lines.join('\n');
+  }
+
   function exportTxt() {
     if (!richEditor) return;
     var blob = new Blob([richEditor.innerText], { type: 'text/plain' });
@@ -2407,12 +2487,35 @@
 
   function exportHtml() {
     if (!richEditor) return;
-    var blob = new Blob(['<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' + richEditor.innerHTML + '</body></html>'], { type: 'text/html' });
+    var metaHeader = getDocumentMetaHeader();
+    var metaHtml = '';
+    if (metaHeader) {
+      metaHtml = '<div style="border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:20px;font-size:9pt;color:#666;">' +
+        escapeHtml(metaHeader).replace(/\n/g, '<br>') + '</div>';
+    }
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' +
+      escapeHtml(getTabTitle()) + '</title></head><body>' + metaHtml +
+      richEditor.innerHTML + '</body></html>';
+    var blob = new Blob([html], { type: 'text/html' });
     downloadBlob(blob, getTabTitle() + '.html');
   }
 
   function exportPdf() {
-    window.print();
+    var metaHeader = getDocumentMetaHeader();
+    var content = richEditor ? richEditor.innerHTML : '';
+    var metaHtml = '';
+    if (metaHeader) {
+      metaHtml = '<div style="border-bottom:1px solid #ccc;padding:8px 0;margin-bottom:24px;font-size:9pt;color:#666;">' +
+        escapeHtml(metaHeader).replace(/\n/g, '<br>') + '</div>';
+    }
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<style>@page{margin:2.5cm 2cm}body{font-family:Georgia,serif;font-size:12pt;line-height:1.6;}</style>' +
+      '</head><body>' + metaHtml + content + '</body></html>';
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var w = window.open(url, '_blank');
+    if (w) setTimeout(function() { w.print(); }, 300);
+    else window.print();
   }
 
   function exportDocx() {
@@ -2429,9 +2532,11 @@
 
   function exportRtf() {
     try {
+      var metaHeader = getDocumentMetaHeader();
       var text = richEditor ? richEditor.innerText : '';
+      if (metaHeader) text = metaHeader + '\n\n' + text;
       text = text.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}');
-      var rtf = '{\\rtf1\\ansi ' + text + '}';
+      var rtf = '{\\rtf1\\ansi\\ansicpg1252 ' + text + '}';
       var blob = new Blob([rtf], { type: 'application/rtf' });
       downloadBlob(blob, getTabTitle() + '.rtf');
       showToast('RTF exported');
@@ -2440,7 +2545,16 @@
 
   function exportJson() {
     var tab = tabsModule.getActive();
-    var blob = new Blob([JSON.stringify(tab, null, 2)], { type: 'application/json' });
+    var exportData = {
+      title: tab ? tab.title : 'Untitled',
+      content: tab ? tab.content : '',
+      metadata: tab ? tab.metadata : {},
+      versions: tab ? tab.versions : [],
+      exportedAt: new Date().toISOString(),
+      application: 'orOS Writer',
+      version: CONFIG.VERSION
+    };
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     downloadBlob(blob, getTabTitle() + '.json');
   }
 
@@ -3204,6 +3318,9 @@ for (var i = 0; i < panels.length; i++) {
       loadMetadataFields();
       restoreFootnotes();
       loadAndRestoreComments();
+      applyPageSize(tab.metadata ? tab.metadata.pageSize || 'a4' : 'a4');
+      applyPageMargins();
+      applyHeaderFooter();
       updateStats();
       updateSaveIndicator('saved');
     });
@@ -3302,6 +3419,26 @@ for (var i = 0; i < panels.length; i++) {
     if (metaCategory) meta.category = metaCategory.value;
     meta.modified = new Date().toISOString();
     tabsModule.setMetadata(meta);
+
+    // Ενημέρωση τίτλου καρτέλας
+    var tab = tabsModule.getActive();
+    if (tab && metaTitle) {
+      var newTitle = metaTitle.value.trim() || 'Untitled';
+      if (tab.title !== newTitle) {
+        tab.title = newTitle;
+        tabsModule.persist();
+        tabsModule.render();
+      }
+    }
+
+    // Ενημέρωση <title> browser tab
+    document.title = (metaTitle ? metaTitle.value : 'Untitled') + ' — orOS Writer';
+
+    // Εμφάνιση ημερομηνίας τροποποίησης
+    var metaDates = document.getElementById('meta-dates');
+    if (metaDates) metaDates.style.display = '';
+    if (metaModified) metaModified.textContent = 'Modified: ' + new Date(meta.modified).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
+
     updateSaveIndicator('saved');
   }
 
@@ -3693,6 +3830,9 @@ for (var i = 0; i < panels.length; i++) {
         if (metadataPanel) metadataPanel.style.display = 'none';
         var mbtn = document.getElementById('btn-metadata');
         if (mbtn) mbtn.classList.remove('active');
+      });
+	        bindClick('btn-apply-page-settings', function() {
+        savePageSettings();
       });
       bindClick('btn-close-goal', function() {
         if (goalBar) goalBar.style.display = 'none';

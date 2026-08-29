@@ -1951,3 +1951,51 @@ body[data-zen="true"] .side-panel {
 #goal-time-input:focus {
   border-color: var(--accent-gold);
 }
+
+/* ===== PAGE SIZE (visual preview in editor) ===== */
+.rich-wrapper[data-page-size="a4"],
+.rich-editor[data-page-size="a4"] {
+  width: 210mm; min-height: 297mm; max-width: 210mm;
+}
+.rich-wrapper[data-page-size="letter"],
+.rich-editor[data-page-size="letter"] {
+  width: 216mm; min-height: 279mm; max-width: 216mm;
+}
+.rich-wrapper[data-page-size="legal"],
+.rich-editor[data-page-size="legal"] {
+  width: 216mm; min-height: 356mm; max-width: 216mm;
+}
+.rich-wrapper[data-page-size="a3"],
+.rich-editor[data-page-size="a3"] {
+  width: 297mm; min-height: 420mm; max-width: 297mm;
+}
+.rich-wrapper[data-page-size="a5"],
+.rich-editor[data-page-size="a5"] {
+  width: 148mm; min-height: 210mm; max-width: 148mm;
+}
+.rich-wrapper[data-page-size="b5"],
+.rich-editor[data-page-size="b5"] {
+  width: 176mm; min-height: 250mm; max-width: 176mm;
+}
+.rich-wrapper[data-page-size="full-width"],
+.rich-editor[data-page-size="full-width"] {
+  width: 100%; max-width: 100%; min-height: auto;
+}
+
+/* ===== PRINT HEADER / FOOTER ===== */
+@media print {
+  body * { visibility: hidden; }
+  .rich-editor, .rich-editor * { visibility: visible; }
+  .rich-editor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .toolbar-group, .tab-bar, .find-replace-bar, .goal-bar,
+  .side-panel, .dialog-overlay, .stats-overlay,
+  .reading-progress-container, .save-indicator-overlay,
+  .footnote-area, #oros-header, #oros-footer {
+    display: none !important;
+  }
+}
