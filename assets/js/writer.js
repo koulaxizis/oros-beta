@@ -1338,6 +1338,21 @@
     }
     bindClick('btn-find-prev', findPrevious);
     bindClick('btn-find-next', findNext);
+	    bindClick('btn-find-search', function() {
+      findInDocument();
+      var matches = richEditor.querySelectorAll('.find-match');
+      if (matches.length > 0) {
+        for (var r = 0; r < matches.length; r++) matches[r].classList.remove('current');
+        matches[0].classList.add('current');
+        var range = document.createRange();
+        range.selectNodeContents(matches[0]);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (frResults) frResults.textContent = '1/' + matches.length;
+      }
+    });
     bindClick('btn-replace', replaceMatch);
     bindClick('btn-replace-all', replaceAll);
     bindClick('btn-close-find', function() {
