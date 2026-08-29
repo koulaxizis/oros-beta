@@ -2116,3 +2116,10 @@ body[data-zen="true"] .side-panel {
     gap: 4px;
   }
 }
+
+/* ===== TOOLBAR CENTERING — FINAL OVERRIDE ===== */
+.toolbar-center {
+  flex: 1 1 0% !important;
+  justify-content: center !important;
+  flex-shrink: 1 !important;
+}

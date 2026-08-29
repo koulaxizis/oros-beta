@@ -651,6 +651,9 @@
             <h4 style="font-size:14px;color:var(--accent-gold);margin:0 0 8px;">Database Management</h4>
             <p class="settings-desc" style="font-size:0.8rem;color:var(--text-muted,#888);margin-bottom:12px;">Export all Writer data: settings, tabs, templates, autocorrect rules, and version history.</p>
             <button class="db-export-btn" id="btn-export-database"><i class="fa fa-database"></i> Export Full Database (.json)</button>
+<button class="db-export-btn" id="btn-import-database" style="margin-top:8px;border-color:var(--accent-gold);color:var(--accent-gold-light);"><i class="fa fa-upload"></i> Import Database (.json)</button>
+<input type="file" id="database-import-input" accept=".json" style="display:none;">
+<p class="settings-desc" style="font-size:0.78rem;color:var(--text-muted,#888);margin-top:10px;line-height:1.5;">Export captures <strong>everything</strong>: tabs, documents, footnotes, comments, version history, metadata, custom templates, auto-correction rules, goals, page settings, theme, language, and all preferences. Import replaces all current data and reloads the app.</p>
             </div>
         </div>
                 <div class="tab-panel" id="advanced-settings" style="display:none;">

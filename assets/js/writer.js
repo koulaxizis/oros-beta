@@ -4271,18 +4271,81 @@ for (var i = 0; i < panels.length; i++) {
 
       bindClick('btn-toc-refresh', function() { if (tocList && outlineList) tocList.innerHTML = outlineList.innerHTML; });
 
+      // ===== FULL DATABASE EXPORT — captures ALL oros* localStorage keys =====
       bindClick('btn-export-database', function() {
         var data = {
-          settings: JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + 'settings') || '{}'),
-          tabs: JSON.parse(localStorage.getItem(tabsModule.STORAGE_TABS) || '[]'),
-          customTemplates: customTemplates,
-          autocorrectRules: autocorrectRules,
-          goal: localStorage.getItem('oros_writer_goal'),
-          goalUnit: localStorage.getItem('oros_writer_goal_unit')
+          _meta: {
+            app: 'orOS Writer',
+            version: CONFIG.VERSION,
+            exportedAt: new Date().toISOString(),
+            type: 'full-database',
+            keyCount: 0
+          },
+          localStorage: {}
         };
+
+        // Scan ALL localStorage for oros* prefixed keys (covers oros_ and oros- prefixes)
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.indexOf('oros') === 0) {
+            data.localStorage[key] = localStorage.getItem(key);
+          }
+        }
+        data._meta.keyCount = Object.keys(data.localStorage).length;
+
         var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         downloadBlob(blob, 'oros-writer-database.json');
+        showToast('Full database exported (' + data._meta.keyCount + ' keys)');
       });
+
+      // ===== FULL DATABASE IMPORT — restores ALL oros* localStorage keys =====
+      bindClick('btn-import-database', function() {
+        var input = document.getElementById('database-import-input');
+        if (input) input.click();
+      });
+
+      var dbImportInput = document.getElementById('database-import-input');
+      if (dbImportInput) {
+        dbImportInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            try {
+              var data = JSON.parse(ev.target.result);
+              if (!data._meta || data._meta.type !== 'full-database') {
+                showToast('Invalid database file');
+                return;
+              }
+              if (!confirm('This will REPLACE ALL current data with the imported database.\n\nAll current tabs, settings, and templates will be overwritten. Continue?')) return;
+
+              // Clear existing oros* keys first
+              var keysToRemove = [];
+              for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && k.indexOf('oros') === 0) keysToRemove.push(k);
+              }
+              for (var r = 0; r < keysToRemove.length; r++) {
+                localStorage.removeItem(keysToRemove[r]);
+              }
+
+              // Restore all keys from backup
+              var restored = 0;
+              Object.keys(data.localStorage).forEach(function(key) {
+                localStorage.setItem(key, data.localStorage[key]);
+                restored++;
+              });
+
+              showToast('Database restored (' + restored + ' keys). Reloading...');
+              setTimeout(function() { location.reload(); }, 800);
+            } catch(err) {
+              showToast('Import failed: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+          dbImportInput.value = '';
+        });
+      }
 
       setTimeout(function() {
         renderAutocorrectRules();
