@@ -2942,7 +2942,7 @@
 
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        if (qfmMenu && qfmMenu.style.display !== 'none') { qfmMenu.style.display = 'none'; return; }
+        if (qfmMenu && qfmMenu.classList.contains('visible')) { qfmMenu.classList.remove('visible'); return; }
         var dialogs = ['link-dialog-overlay', 'table-dialog-overlay', 'image-dialog-overlay',
                        'templates-dialog-overlay', 'special-chars-dialog-overlay',
                        'footnote-dialog-overlay', 'help-dialog-overlay'];
@@ -3917,7 +3917,7 @@ for (var i = 0; i < panels.length; i++) {
     qfmMenu = document.createElement('div');
     qfmMenu.className = 'quick-format-menu';
     qfmMenu.style.cssText =
-      'position:fixed;display:none;z-index:10000;' +
+      'position:fixed;z-index:10000;' +
       'background:var(--bg-panel,#1e1e2e);' +
       'border:1px solid var(--border-color,#333);' +
       'border-radius:6px;padding:4px 0;box-shadow:0 4px 16px rgba(0,0,0,0.4);' +
@@ -3968,7 +3968,7 @@ for (var i = 0; i < panels.length; i++) {
 
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        qfmMenu.style.display = 'none';
+        qfmMenu.classList.remove('visible');
         if (!richEditor) return;
         richEditor.focus();
         if (item.cmd) {
@@ -4002,7 +4002,7 @@ for (var i = 0; i < panels.length; i++) {
           var y = e.clientY;
           qfmMenu.style.left = x + 'px';
           qfmMenu.style.top = y + 'px';
-          qfmMenu.style.display = 'block';
+          qfmMenu.classList.add('visible');
 
           setTimeout(function() {
             var rect = qfmMenu.getBoundingClientRect();
@@ -4018,9 +4018,9 @@ for (var i = 0; i < panels.length; i++) {
     }
 
     document.addEventListener('click', function(e) {
-      if (qfmMenu && qfmMenu.style.display !== 'none') {
+      if (qfmMenu && qfmMenu.classList.contains('visible')) {
         if (!qfmMenu.contains(e.target)) {
-          qfmMenu.style.display = 'none';
+          qfmMenu.classList.remove('visible');
         }
       }
     });
