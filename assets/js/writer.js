@@ -2658,33 +2658,38 @@
   }
 
   // ===== EXPORT / IMPORT =====
-  function setupExportImport() {
-    bindClick('btn-export', function(e) {
-      e.stopPropagation();
-      var dd = document.getElementById('export-dropdown');
-      if (dd) dd.classList.toggle('active');
-    });
-    bindClick('btn-import', function(e) {
-      e.stopPropagation();
-      var dd = document.getElementById('import-dropdown');
-      if (dd) dd.classList.toggle('active');
+    function setupExportImport() {
+    var exportBtn = document.getElementById('btn-export');
+    var exportDropdown = document.getElementById('export-dropdown');
+
+    if (exportBtn && exportDropdown) {
+      exportBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        exportDropdown.classList.toggle('active');
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      if (exportDropdown && exportDropdown.classList.contains('active')) {
+        if (!e.target.closest('#export-dropdown-container')) {
+          exportDropdown.classList.remove('active');
+        }
+      }
     });
 
     var exportItems = document.querySelectorAll('#export-dropdown button[data-format]');
     for (var i = 0; i < exportItems.length; i++) {
       (function(btn) {
-        var fmt = btn.getAttribute('data-format');
-        bindClick('btn-export-' + fmt, function() {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var fmt = btn.getAttribute('data-format');
           if (fmt === 'txt') exportTxt();
           else if (fmt === 'md') exportMd();
-          else if (fmt === 'html') exportHtml();
-          else if (fmt === 'pdf') exportPdf();
-          else if (fmt === 'docx') exportDocx();
           else if (fmt === 'rtf') exportRtf();
-          else if (fmt === 'json') exportJson();
+          else if (fmt === 'docx') exportDocx();
+          else if (fmt === 'pdf') exportPdf();
           else if (fmt === 'epub') exportEpub();
-          var dd = document.getElementById('export-dropdown');
-          if (dd) dd.classList.remove('active');
+          if (exportDropdown) exportDropdown.classList.remove('active');
         });
       })(exportItems[i]);
     }
@@ -3562,6 +3567,78 @@ for (var i = 0; i < panels.length; i++) {
       updateSaveIndicator('saved');
     });
   }
+  
+    // ===== DRAG & DROP FILE OPENING =====
+  function setupDragDrop() {
+    if (!richEditor) return;
+
+    var dragCounter = 0;
+    var dropOverlay = null;
+
+    function createOverlay() {
+      if (dropOverlay) return;
+      dropOverlay = document.createElement('div');
+      dropOverlay.style.cssText =
+        'position:fixed;top:0;left:0;width:100%;height:100%;' +
+        'background:rgba(109,74,255,0.15);' +
+        'border:3px dashed var(--accent-gold,#c8a96e);' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'z-index:9999;pointer-events:none;' +
+        'font-size:1.2rem;color:var(--accent-gold,#c8a96e);' +
+        'font-weight:600;backdrop-filter:blur(2px);';
+      dropOverlay.innerHTML = '<i class="fa fa-download" style="margin-right:10px;font-size:1.5rem;"></i> Drop file to open';
+      document.body.appendChild(dropOverlay);
+    }
+
+    function removeOverlay() {
+      if (dropOverlay) { dropOverlay.remove(); dropOverlay = null; }
+    }
+
+    document.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.indexOf('Files') !== -1) {
+        dragCounter++;
+        createOverlay();
+      }
+    });
+
+    document.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) { dragCounter = 0; removeOverlay(); }
+    });
+
+    document.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+
+    document.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dragCounter = 0;
+      removeOverlay();
+
+      if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+
+      for (var i = 0; i < e.dataTransfer.files.length; i++) {
+        var file = e.dataTransfer.files[i];
+        var fileName = file.name.toLowerCase();
+        var valid = ['.txt', '.md', '.markdown', '.rtf', '.html', '.htm', '.docx', '.odt'].some(function(ext) {
+          return fileName.endsWith(ext);
+        });
+        if (!valid) {
+          showToast('Unsupported file: ' + file.name);
+          continue;
+        }
+
+        if (i === 0 && richEditor && richEditor.innerHTML.trim() === '<p><br></p>') {
+          loadFileIntoEditor(file, false);
+        } else {
+          loadFileIntoEditor(file, true);
+        }
+      }
+    });
+  }
 
   // ===== WINDOW RESIZE =====
   function setupWindowResize() {
@@ -3835,7 +3912,8 @@ for (var i = 0; i < panels.length; i++) {
   var qfmMenu = null;
   var savedRange = null;
 
-  function setupQuickFormatMenu() {
+    function setupQuickFormatMenu() {
+    if (qfmMenu) { qfmMenu.remove(); }
     qfmMenu = document.createElement('div');
     qfmMenu.className = 'quick-format-menu';
     qfmMenu.style.cssText =
@@ -3888,7 +3966,8 @@ for (var i = 0; i < panels.length; i++) {
         btn.style.background = 'none';
       });
 
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
         qfmMenu.style.display = 'none';
         if (!richEditor) return;
         richEditor.focus();
@@ -3915,7 +3994,6 @@ for (var i = 0; i < panels.length; i++) {
 
     if (richEditor) {
       richEditor.addEventListener('contextmenu', function(e) {
-        if (!qfmEnabled) return;
         if (e.altKey) {
           e.preventDefault();
           saveSelection();
@@ -3947,7 +4025,7 @@ for (var i = 0; i < panels.length; i++) {
       }
     });
   }
-
+  
   function saveSelection() {
     var sel = window.getSelection();
     if (sel.rangeCount > 0) {
@@ -4027,6 +4105,7 @@ for (var i = 0; i < panels.length; i++) {
       setupDialogInsertHandlers();
       setupLinkClickHandler();
       setupEditorInput();
+	  setupDragDrop();
       setupWindowResize();
       setupCloseWarning();
       setupPWAInstallButton();
@@ -4034,6 +4113,7 @@ for (var i = 0; i < panels.length; i++) {
       setupTableOfContents();
       setupLoremIpsum();
       setupQuickFormatMenu();
+	  setupLaunchQueue();
       applyPageSettings();
 	  
             // Event listener για αλλαγή page size
@@ -4062,6 +4142,23 @@ for (var i = 0; i < panels.length; i++) {
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====
 
+      bindClick('btn-reset-margins', function() {
+        var defaults = { top: '2.54', bottom: '2.54', left: '2.54', right: '2.54' };
+        var ids = ['margin-top', 'margin-bottom', 'margin-left', 'margin-right'];
+        for (var i = 0; i < ids.length; i++) {
+          var el = document.getElementById(ids[i]);
+          if (el) el.value = defaults[ids[i].replace('margin-', '')];
+        }
+        var meta = tabsModule.getMetadata();
+        meta.marginTop = '2.54';
+        meta.marginBottom = '2.54';
+        meta.marginLeft = '2.54';
+        meta.marginRight = '2.54';
+        tabsModule.setMetadata(meta);
+        applyPageMargins();
+        showToast('Margins reset to 2.54 cm');
+      });
+	  
       bindClick('btn-close-wordfreq', function() {
         if (wordFreqPanel) wordFreqPanel.style.display = 'none';
         var wfbtn = document.getElementById('btn-wordfreq');
@@ -4257,5 +4354,89 @@ for (var i = 0; i < panels.length; i++) {
     closeTab: function(id) { tabsModule.close(id); },
     init: startApp
   };
+  
+    // ===== FILE HANDLING API (Default App for Documents) =====
+  function setupLaunchQueue() {
+    if (!('launchQueue' in window) || !window.launchQueue || !window.launchQueue.setConsumer) return;
+
+    window.launchQueue.setConsumer(function(launchParams) {
+      if (!launchParams.files || launchParams.files.length === 0) return;
+
+      var filesProcessed = 0;
+      var firstFile = null;
+
+      for (var i = 0; i < launchParams.files.length; i++) {
+        var fileHandle = launchParams.files[i];
+
+        fileHandle.getFile().then(function(file) {
+          if (!firstFile) {
+            firstFile = file;
+            loadFileIntoEditor(file, true);
+          } else {
+            loadFileIntoEditor(file, false);
+          }
+          filesProcessed++;
+        }).catch(function(e) {
+          console.warn('Failed to open file via launch queue:', e);
+        });
+      }
+    });
+  }
+
+    function loadFileIntoEditor(file, asNewTab) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var content = ev.target.result;
+      var fileName = file.name.toLowerCase();
+      var html = '';
+
+      if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+        html = content;
+      } else if (fileName.endsWith('.rtf')) {
+        html = (typeof window.parseRTF === 'function')
+          ? window.parseRTF(content)
+          : '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
+      } else if (fileName.endsWith('.docx')) {
+        if (window.mammoth) {
+          mammoth.convertToHtml({ arrayBuffer: ev.target.result })
+            .then(function(result) {
+              if (asNewTab) {
+                tabsModule.create({ content: result.value || '<p><br></p>',
+                  title: file.name.replace(/\.[^.]+$/, ''), metadata: {} });
+              } else {
+                if (richEditor) richEditor.innerHTML = result.value || '<p><br></p>';
+                saveCurrentTabContent();
+              }
+              showToast(file.name + ' opened');
+              updateStats();
+            })
+            .catch(function() { showToast('Failed to read .docx'); });
+          return;
+        }
+        html = '<p>' + escapeHtml(content) + '</p>';
+      } else {
+        html = '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
+      }
+
+      if (asNewTab) {
+        tabsModule.create({
+          content: html,
+          title: file.name.replace(/\.[^.]+$/, ''),
+          metadata: { created: new Date().toISOString() }
+        });
+      } else {
+        if (richEditor) richEditor.innerHTML = html;
+        saveCurrentTabContent();
+      }
+      showToast(file.name + ' opened');
+      updateStats();
+    };
+
+    if (file.name.toLowerCase().endsWith('.docx') && window.mammoth) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
+  }
 
 })();
