@@ -762,6 +762,7 @@
     if (validSizes.indexOf(size) === -1) size = 'a4';
     if (richWrapper) richWrapper.setAttribute('data-page-size', size);
     if (richEditor) richEditor.setAttribute('data-page-size', size);
+    syncPageSizeToUI(size);  // <-- ΠΡΟΣΘΕΣΕ ΤΗΝ
   }
 
   function applyPageMargins() {
@@ -785,19 +786,64 @@
     printStyle.textContent = '@media print{@page{margin:' + top + 'cm ' + right + 'cm ' + bottom + 'cm ' + left + 'cm;}}';
   }
   
-    function applyHeaderFooter() {
+    function syncPageSizeToUI(size) {
+    var select = document.getElementById('page-size-select');
+    if (select && select.value !== size) {
+      select.value = size;
+    }
+  }
+  
+      function applyHeaderFooter() {
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
     var headerText = meta.headerText || '';
     var footerText = meta.footerText || '';
     var showPageNum = meta.footerPageNum !== false;
 
+    // Ενημέρωση attributes για print
     if (richEditor) {
       richEditor.setAttribute('data-header-text', headerText);
       richEditor.setAttribute('data-footer-text', footerText);
       richEditor.setAttribute('data-show-page-num', showPageNum ? '1' : '0');
     }
 
-    // Ενημέρωση ή δημιουργία print style
+    // VISUAL INDICATORS για preview (δεν είναι proper header/footer)
+    var editorWrapper = document.querySelector('.rich-wrapper');
+    if (!editorWrapper) return;
+
+    var headerPreview = editorWrapper.querySelector('.header-preview');
+    var footerPreview = editorWrapper.querySelector('.footer-preview');
+
+    if (!headerPreview) {
+      headerPreview = document.createElement('div');
+      headerPreview.className = 'header-preview';
+      headerPreview.style.cssText = 'position:absolute;top:-30px;left:0;right:0;height:24px;background:#f5f5f5;border-bottom:1px solid #ddd;font-size:9pt;color:#666;text-align:center;padding:4px;z-index:10;display:none;pointer-events:none;';
+      editorWrapper.insertBefore(headerPreview, editorWrapper.firstChild);
+    }
+
+    if (!footerPreview) {
+      footerPreview = document.createElement('div');
+      footerPreview.className = 'footer-preview';
+      footerPreview.style.cssText = 'position:absolute;bottom:-30px;left:0;right:0;height:24px;background:#f5f5f5;border-top:1px solid #ddd;font-size:9pt;color:#666;text-align:center;padding:4px;z-index:10;display:none;pointer-events:none;';
+      editorWrapper.appendChild(footerPreview);
+    }
+
+    if (headerText || showPageNum) {
+      var headerContent = headerText + (showPageNum ? ' — Page [preview]' : '');
+      headerPreview.textContent = headerContent;
+      headerPreview.style.display = 'block';
+    } else {
+      headerPreview.style.display = 'none';
+    }
+
+    if (footerText || showPageNum) {
+      var footerContent = footerText + (showPageNum ? (footerText ? ' — ' : '') + 'Page [preview]' : '');
+      footerPreview.textContent = footerContent;
+      footerPreview.style.display = 'block';
+    } else {
+      footerPreview.style.display = 'none';
+    }
+
+    // Print CSS (πραγματικό header/footer)
     var hfStyle = document.getElementById('oros-print-header-footer');
     if (!hfStyle) {
       hfStyle = document.createElement('style');
@@ -810,11 +856,9 @@
       css += '.rich-editor::before{content:"' + headerText.replace(/"/g, '\\"') + '";display:block;position:fixed;top:0;left:0;right:0;text-align:center;font-size:9pt;color:#666;border-bottom:1px solid #ccc;padding:4px 0;}';
     }
     var footerContent = '';
-    if (footerText) {
-      footerContent += '"' + footerText.replace(/"/g, '\\"') + '"';
-    }
+    if (footerText) footerContent += '"' + footerText.replace(/"/g, '\\"') + '"';
     if (showPageNum) {
-      if (footerText) footerContent += ' — ';
+      if (footerContent) footerContent += ' — ';
       footerContent += '"Page " counter(page) " of " counter(pages)';
     }
     if (footerContent) {
@@ -834,7 +878,6 @@
     var maxWidth = localStorage.getItem('oros_writer_max_width') || '900';
     if (richEditor) richEditor.style.maxWidth = maxWidth + 'px';
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
-    applyPageSize(meta.pageSize || 'a4');
     applyPageMargins();
     applyHeaderFooter();
   }
@@ -869,7 +912,7 @@
     showToast('Page settings applied');
   }
 
-  function loadPageSettingsFields() {
+    function loadPageSettingsFields() {
     var meta = tabsModule.getMetadata();
     var setVal = function(id, val, fallback) { var el = document.getElementById(id); if (el) el.value = val || fallback; };
     setVal('page-size-select', meta.pageSize, 'a4');
@@ -882,6 +925,8 @@
     var fpn = document.getElementById('footer-page-num');
     if (fpn) fpn.checked = meta.footerPageNum !== false;
     applyPageSize(meta.pageSize || 'a4');
+    applyPageMargins();
+    applyHeaderFooter();
   }
 
   function clampToViewport() {
@@ -3403,12 +3448,16 @@ for (var i = 0; i < panels.length; i++) {
     loadMetadataFields();
   }
 
-  function toggleMetadataPanel() {
+    function toggleMetadataPanel() {
     if (!metadataPanel) return;
     var isVisible = metadataPanel.style.display !== 'none';
     metadataPanel.style.display = isVisible ? 'none' : '';
     var btn = document.getElementById('btn-metadata');
     if (btn) btn.classList.toggle('active', !isVisible);
+    if (!isVisible) {
+      loadPageSettingsFields();
+      loadMetadataFields();
+    }
   }
 
   function saveMetadataField() {
@@ -3794,6 +3843,20 @@ for (var i = 0; i < panels.length; i++) {
       setupLoremIpsum();
       setupQuickFormatMenu();
       applyPageSettings();
+	  
+	      // Όταν αλλάζει το page size από το UI
+    var pageSizeSelect = document.getElementById('page-size-select');
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener('change', function() {
+        var meta = tabsModule.getMetadata();
+        meta.pageSize = this.value;
+        tabsModule.setMetadata(meta);
+        applyPageSize(this.value);
+        applyPageMargins();
+        applyHeaderFooter();
+      });
+    }
+	  
       clampToViewport();
 
       var tab = tabsModule.getActive();
