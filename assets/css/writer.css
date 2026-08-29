@@ -2063,3 +2063,63 @@ body[data-zen="true"] .side-panel {
   font-weight: 700;
   color: var(--accent-gold-light);
 }
+
+/* ===== TOOLBAR SIZE ADJUSTMENT ===== */
+.main-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap !important;
+  padding: 6px 12px;
+  min-height: 48px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.action-btn,
+.fmt-text-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.action-btn i,
+.fmt-text-btn i {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.tb-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color, #333);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.styles-dropdown {
+  font-size: 14px;
+  padding: 6px 10px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* Mobile fallback */
+@media (max-width: 768px) {
+  .main-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+}
