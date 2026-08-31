@@ -379,6 +379,15 @@
       this.tabs.splice(idx, 1);
       if (this.activeId === id) { var newIdx = Math.min(idx, this.tabs.length - 1); this.activeId = this.tabs[newIdx].id; }
       this.persist(); this.render();
+// ===== AUTOSYNC ON TAB CLOSE =====
+      if (window.orosSync) {
+        var api = window.orosSync.get();
+        if (api && api.dirHandle) api.saveBackup().catch(function(){});
+      }
+
+      this.fireEvent('close', tab);
+      this.fireEvent('switch', this.getActive());
+    },
       this.fireEvent('close', tab);
       this.fireEvent('switch', this.getActive());
     },
@@ -3721,7 +3730,7 @@ for (var i = 0; i < panels.length; i++) {
       showToast('Table inserted');
     });
 	
-	  function checkPlaceholder() {
+	   function checkPlaceholder() {
     if (!richEditor) return;
     var html = richEditor.innerHTML.trim();
     var isEmpty = html === '' || html === '<p><br></p>' || html === '<p></p>' || html === '<br>';
@@ -4014,11 +4023,10 @@ for (var i = 0; i < panels.length; i++) {
       }
     });
 
-    richEditor.addEventListener('input', function() {
+        richEditor.addEventListener('input', function() {
       playTypewriterSound();
       applyAutoCorrect();
       applySmartTypography();
-      checkPlaceholder();
       isTyping = true;
       clearTimeout(typingTimer);
       typingTimer = setTimeout(function() {
@@ -4026,6 +4034,7 @@ for (var i = 0; i < panels.length; i++) {
       }, 10000);
       updateStats();
       updateReadingProgress();
+      checkPlaceholder();
     });
 
     richEditor.addEventListener('paste', function(e) {
@@ -4054,6 +4063,7 @@ for (var i = 0; i < panels.length; i++) {
       applyHeaderFooter();
       updateStats();
       updateSaveIndicator('saved');
+	  checkPlaceholder();
     });
   }
   
@@ -4658,18 +4668,40 @@ for (var i = 0; i < panels.length; i++) {
         });
       });
     },
+	
+	    reauthorizeDirHandle: function() {
+      if (!cloudSync._pendingDirHandle) return Promise.resolve(null);
+      return cloudSync._pendingDirHandle.requestPermission({ mode: 'readwrite' }).then(function(rp) {
+        if (rp === 'granted') {
+          cloudSync.dirHandle = cloudSync._pendingDirHandle;
+          cloudSync._pendingDirHandle = null;
+          cloudSync.updateStatus('synced', null);
+          cloudSync.updateDirDisplay();
+          cloudSync.saveBackup();
+          showToast('Sync folder reconnected: ' + cloudSync.dirHandle.name);
+          return cloudSync.dirHandle;
+        }
+        showToast('Permission denied');
+        return null;
+      }).catch(function() { return null; });
+    },
 
-    restoreDirHandle: function() {
+       restoreDirHandle: function() {
       return cloudSync.idbGet(cloudSync.DIR_HANDLE_KEY).then(function(handle) {
         if (!handle) return null;
         if (!handle.queryPermission) { cloudSync.dirHandle = handle; return handle; }
         return handle.queryPermission({ mode: 'readwrite' }).then(function(perms) {
-          if (perms === 'granted') { cloudSync.dirHandle = handle; return handle; }
-          if (handle.requestPermission) {
-            return handle.requestPermission({ mode: 'readwrite' }).then(function(rp) {
-              if (rp === 'granted') { cloudSync.dirHandle = handle; return handle; }
-              return null;
-            });
+          if (perms === 'granted') {
+            cloudSync.dirHandle = handle;
+            return handle;
+          }
+          // Permission not granted on reload — store handle for later user-gesture grant
+          cloudSync._pendingDirHandle = handle;
+          cloudSync.updateStatus('idle', null);
+          // Show a reconnect button or notification
+          cloudSync.updateDirDisplay();
+          if (cloudSync._pendingDirHandle) {
+            showToast('Click "Choose Sync Folder" to re-authorize');
           }
           return null;
         });
@@ -4972,6 +5004,12 @@ for (var i = 0; i < panels.length; i++) {
       }
 
       bindClick('btn-cloud-connect', function() {
+        if (cloudSync._pendingDirHandle) {
+          cloudSync.reauthorizeDirHandle();
+          return;
+        }
+        cloudSync.pickDirectory().then(function(handle) {
+      bindClick('btn-cloud-connect', function() {
         cloudSync.pickDirectory().then(function(handle) {
           if (handle) {
             showToast('Sync folder: ' + handle.name);
@@ -5013,6 +5051,7 @@ for (var i = 0; i < panels.length; i++) {
         restoreFootnotes();
         loadAndRestoreComments();
         updateStats();
+		checkPlaceholder();
       }
 
       // ===== PANEL & DIALOG CLOSE HANDLERS =====

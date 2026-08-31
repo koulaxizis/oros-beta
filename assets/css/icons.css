@@ -194,3 +194,15 @@
 .fa-camera:before          { content: '\f030'; }
 .fa-paragraph:before       { content: '\f1dd'; }
 .fa-video-camera:before { content: '\f03d'; }
+
+/* ===== CLOUD SYNC ===== */
+.fa-cloud-upload:before   { content: '\f0ee'; }
+.fa-cloud-download:before { content: '\f0ed'; }
+.fa-plug:before           { content: '\f1e6'; }
+.fa-chain-broken:before   { content: '\f127'; }
+
+/* ===== EXPORT DROPDOWN — MISSING ICONS ===== */
+.fa-markdown:before       { content: '\f60f'; }
+.fa-html5:before          { content: '\f13b'; }
+.fa-file-code-o:before    { content: '\f1c9'; }
+.fa-file-archive-o:before { content: '\f1c6'; }

@@ -413,9 +413,8 @@ body.writer-page {
   color: var(--text-muted);
   pointer-events: none;
   font-style: italic;
-  position: absolute;
-  top: 48px;
-  left: 64px;
+  position: relative;
+  display: block;
 }
 
 .rich-editor h1 { font-size: 2em; font-weight: 700; margin: 0.8em 0 0.4em; color: var(--accent-gold-light); line-height: 1.3; }
