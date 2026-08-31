@@ -225,12 +225,12 @@
   </button>
   <div class="dropdown-content" id="export-dropdown">
     <button data-format="txt"><i class="fa fa-file-text-o"></i> TXT</button>
-    <button data-format="md"><i class="fa fa-markdown"></i> Markdown</button>
+    <button data-format="md"><i class="fa fa-file-text-o"></i> MD</button>
     <button data-format="html"><i class="fa fa-html5"></i> HTML</button>
     <button data-format="pdf"><i class="fa fa-file-pdf-o"></i> PDF</button>
     <button data-format="docx"><i class="fa fa-file-word-o"></i> DOCX</button>
     <button data-format="rtf"><i class="fa fa-file-code-o"></i> RTF</button>
-    <button data-format="orosdoc"><i class="fa fa-file-archive-o"></i> .orosdoc</button>
+    <button data-format="orosdoc"><i class="fa fa-file-archive-o"></i> OROS</button>
     <button data-format="json"><i class="fa fa-file-code-o"></i> JSON</button>
   </div>
 </div>
@@ -733,6 +733,51 @@
                 <button class="db-export-btn" id="btn-idb-restore" style="margin-top:0;flex:1;min-width:140px;">
                   <i class="fa fa-database"></i> Restore from IndexedDB
                 </button>
+              </div>
+
+              <div class="settings-divider" style="margin-top:16px;"></div>
+
+              <div class="sync-help">
+                <h4 style="font-size:14px;color:var(--accent-gold);margin:0 0 8px;" data-i18n="sync_help_browser_title">Browser Support</h4>
+                <table class="sync-help-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="sync_help_col_browser">Browser</th>
+                      <th data-i18n="sync_help_col_access">File Access</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td data-i18n="sync_help_br_chrome">Chrome / Edge / Brave (Desktop)</td>
+                      <td class="ok" data-i18n="sync_help_full">✓ Full</td>
+                    </tr>
+                    <tr>
+                      <td data-i18n="sync_help_br_opera">Opera (Desktop)</td>
+                      <td class="ok" data-i18n="sync_help_yes">✓ Yes</td>
+                    </tr>
+                    <tr>
+                      <td data-i18n="sync_help_br_firefox">Firefox</td>
+                      <td class="no" data-i18n="sync_help_idb_only">✗ IndexedDB only</td>
+                    </tr>
+                    <tr>
+                      <td data-i18n="sync_help_br_safari">Safari (macOS / iOS)</td>
+                      <td class="no" data-i18n="sync_help_idb_only">✗ IndexedDB only</td>
+                    </tr>
+                    <tr>
+                      <td data-i18n="sync_help_br_android">All browsers (Android)</td>
+                      <td class="no" data-i18n="sync_help_use_import">✗ Use Import / Export</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="font-size:14px;color:var(--accent-gold);margin:18px 0 8px;" data-i18n="sync_help_syncthing_title">Syncthing Workflow</h4>
+                <ol class="sync-help-list">
+                  <li data-i18n="sync_help_step1"><strong>Desktop:</strong> Connect sync folder (e.g. Documents/oros-sync)</li>
+                  <li data-i18n="sync_help_step2"><strong>Syncthing:</strong> Share that folder with your Android device</li>
+                  <li data-i18n="sync_help_step3"><strong>Desktop:</strong> Data syncs automatically every 5 min</li>
+                  <li data-i18n="sync_help_step4"><strong>Android:</strong> Writer → Import Database → select oros-writer-sync.json</li>
+                  <li data-i18n="sync_help_step5"><strong>Android → Desktop:</strong> Export Database, place file in synced folder, use Restore from Cloud</li>
+                </ol>
               </div>
             </div>
           </div>

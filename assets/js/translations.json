@@ -680,7 +680,25 @@
     "desc_novel": "Chapter structure",
     "desc_screenplay": "Film script format",
     "desc_poem": "Centered verse format",
-    "desc_meeting": "Agenda and notes"
+    "desc_meeting": "Agenda and notes",
+	"sync_help_browser_title": "Browser Support",
+"sync_help_col_browser": "Browser",
+"sync_help_col_access": "File Access",
+"sync_help_br_chrome": "Chrome / Edge / Brave (Desktop)",
+"sync_help_br_opera": "Opera (Desktop)",
+"sync_help_br_firefox": "Firefox",
+"sync_help_br_safari": "Safari (macOS / iOS)",
+"sync_help_br_android": "Όλοι οι browsers (Android)",
+"sync_help_full": "✓ Πλήρης",
+"sync_help_yes": "✓ Ναι",
+"sync_help_idb_only": "✗ Μόνο IndexedDB",
+"sync_help_use_import": "✗ Χρήση Import / Export",
+"sync_help_syncthing_title": "Ροή Συγχρονισμού",
+"sync_help_step1": "<strong>Desktop:</strong> Σύνδεση φακέλου συγχρονισμού (π.χ. Documents/oros-sync)",
+"sync_help_step2": "<strong>Syncthing:</strong> Κοινή χρήση φακέλου με τη συσκευή Android",
+"sync_help_step3": "<strong>Desktop:</strong> Τα δεδομένα συγχρονίζονται αυτόματα κάθε 5 λεπτά",
+"sync_help_step4": "<strong>Android:</strong> Writer → Import Database → επίλεξε oros-writer-sync.json",
+"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, τοποθέτησε το αρχείο στον synced φάκελο, χρήση Restore from Cloud"
   },
 
   "el": {
@@ -1364,6 +1382,24 @@
     "desc_novel": "Δομή κεφαλαίου",
     "desc_screenplay": "Μορφή σεναρίου ταινίας",
     "desc_poem": "Μορφή κεντραρισμένων στίχων",
-    "desc_meeting": "Ατζέντα και σημειώσεις"
+    "desc_meeting": "Ατζέντα και σημειώσεις",
+	"sync_help_browser_title": "Υποστήριξη Browsers",
+"sync_help_col_browser": "Browser",
+"sync_help_col_access": "Πρόσβαση Αρχείων",
+"sync_help_br_chrome": "Chrome / Edge / Brave (Desktop)",
+"sync_help_br_opera": "Opera (Desktop)",
+"sync_help_br_firefox": "Firefox",
+"sync_help_br_safari": "Safari (macOS / iOS)",
+"sync_help_br_android": "Όλοι οι browsers (Android)",
+"sync_help_full": "✓ Πλήρης",
+"sync_help_yes": "✓ Ναι",
+"sync_help_idb_only": "✗ Μόνο IndexedDB",
+"sync_help_use_import": "✗ Χρήση Import / Export",
+"sync_help_syncthing_title": "Ροή Συγχρονισμού",
+"sync_help_step1": "<strong>Desktop:</strong> Σύνδεση φακέλου συγχρονισμού (π.χ. Documents/oros-sync)",
+"sync_help_step2": "<strong>Syncthing:</strong> Κοινή χρήση φακέλου με τη συσκευή Android",
+"sync_help_step3": "<strong>Desktop:</strong> Τα δεδομένα συγχρονίζονται αυτόματα κάθε 5 λεπτά",
+"sync_help_step4": "<strong>Android:</strong> Writer → Import Database → επίλεξε oros-writer-sync.json",
+"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, τοποθέτησε το αρχείο στον synced φάκελο, χρήση Restore from Cloud"
   }
 }
