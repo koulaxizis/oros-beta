@@ -756,7 +756,14 @@
     for (var i = 0; i < translatable.length; i++) {
       var key = translatable[i].getAttribute('data-i18n');
       var val = getTrans(key);
-      if (val && val !== key) translatable[i].textContent = val;
+      if (val && val !== key) {
+        // Keys containing HTML markup need innerHTML, not textContent
+        if (val.indexOf('<') !== -1) {
+          translatable[i].innerHTML = val;
+        } else {
+          translatable[i].textContent = val;
+        }
+      }
     }
     var placeholders = document.querySelectorAll('[data-i18n-placeholder]');
     for (var j = 0; j < placeholders.length; j++) {
@@ -3110,12 +3117,12 @@
           }
 
           // Set document title
-          if (meta.title) {
-            document.title = meta.title;
-            if (tabsModule && tabsModule.getActiveTab()) {
-              tabsModule.getActiveTab().title = meta.title;
-              if (typeof refreshTabLabels === 'function') refreshTabLabels();
-            }
+          if (meta.title && tabsModule && tabsModule.getActive()) {
+            var actTab = tabsModule.getActive();
+            actTab.title = meta.title;
+            tabsModule.persist();
+            tabsModule.render();
+            document.title = meta.title + ' — orOS Writer';
           }
 
           showToast('Imported .orosdoc: ' + (meta.title || 'Untitled'));
@@ -3149,7 +3156,7 @@
   }
   
     function getDocumentMetadata() {
-    var activeTab = tabsModule ? tabsModule.getActiveTab() : null;
+        var activeTab = tabsModule ? tabsModule.getActive() : null;
     var meta = {
       title: document.title || 'Untitled',
       author: 'orOS Writer',

@@ -2359,3 +2359,19 @@ body[data-zen="true"] .side-panel {
 .sync-help-list strong {
   color: var(--accent, #6d4aff);
 }
+
+/* ===== FOOTER PREVIEW VS FOOTNOTES ===== */
+.rich-wrapper {
+  position: relative;
+}
+
+.footer-preview {
+  z-index: 5;
+  pointer-events: none;
+}
+
+.footnote-area {
+  position: relative;
+  z-index: 4;
+  margin-bottom: 34px; /* χώρος για το footer preview ώστε να μη φεται */
+}
