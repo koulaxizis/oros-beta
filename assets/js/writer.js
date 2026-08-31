@@ -379,15 +379,15 @@
       this.tabs.splice(idx, 1);
       if (this.activeId === id) { var newIdx = Math.min(idx, this.tabs.length - 1); this.activeId = this.tabs[newIdx].id; }
       this.persist(); this.render();
-// ===== AUTOSYNC ON TAB CLOSE =====
+
+      // ===== AUTOSYNC ON TAB CLOSE =====
       if (window.orosSync) {
         var api = window.orosSync.get();
-        if (api && api.dirHandle) api.saveBackup().catch(function(){});
+        if (api && api.dirHandle && api.saveBackup) {
+          api.saveBackup().catch(function(){});
+        }
       }
 
-      this.fireEvent('close', tab);
-      this.fireEvent('switch', this.getActive());
-    },
       this.fireEvent('close', tab);
       this.fireEvent('switch', this.getActive());
     },
@@ -3730,14 +3730,6 @@ for (var i = 0; i < panels.length; i++) {
       showToast('Table inserted');
     });
 	
-	   function checkPlaceholder() {
-    if (!richEditor) return;
-    var html = richEditor.innerHTML.trim();
-    var isEmpty = html === '' || html === '<p><br></p>' || html === '<p></p>' || html === '<br>';
-    if (isEmpty) richEditor.classList.add('editor-empty');
-    else richEditor.classList.remove('editor-empty');
-  }
-
     // --- IMAGE ---
     var sourceType = document.getElementById('image-source-type');
     var uploadField = document.getElementById('image-upload-field');
@@ -4001,6 +3993,15 @@ for (var i = 0; i < panels.length; i++) {
         sel.addRange(range);
       }
     } catch(e) {}
+  }
+  
+    // ===== PLACEHOLDER CHECK =====
+  function checkPlaceholder() {
+    if (!richEditor) return;
+    var html = richEditor.innerHTML.trim();
+    var isEmpty = html === '' || html === '<p><br></p>' || html === '<p></p>' || html === '<br>';
+    if (isEmpty) richEditor.classList.add('editor-empty');
+    else richEditor.classList.remove('editor-empty');
   }
 
   // ===== EDITOR INPUT =====
@@ -5009,8 +5010,6 @@ for (var i = 0; i < panels.length; i++) {
           return;
         }
         cloudSync.pickDirectory().then(function(handle) {
-      bindClick('btn-cloud-connect', function() {
-        cloudSync.pickDirectory().then(function(handle) {
           if (handle) {
             showToast('Sync folder: ' + handle.name);
             cloudSync.saveBackup().then(function() {
@@ -5183,7 +5182,7 @@ for (var i = 0; i < panels.length; i++) {
       bindClick('btn-add-autocorrect', addAutocorrectRule);
       bindClick('btn-reset-autocorrect', resetAutocorrectRules);
 
-      bindClick('btn-toc-refresh', function() { if (tocList && outlineList) tocList.innerHTML = outlineList.innerHTML; });
+            bindClick('btn-toc-refresh', function() { if (tocList) toggleTocPanel(); });
 
       // ===== FULL DATABASE EXPORT — captures ALL oros* localStorage keys =====
       bindClick('btn-export-database', function() {
