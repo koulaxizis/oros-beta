@@ -407,11 +407,15 @@ body.writer-page {
 .rich-editor[data-page-size="b5"] { max-width: 760px; }
 .rich-editor[data-page-size="a3"] { max-width: 1000px; }
 
-.rich-editor:empty::before {
+.rich-editor:empty::before,
+.rich-editor.editor-empty::before {
   content: attr(data-placeholder);
   color: var(--text-muted);
   pointer-events: none;
   font-style: italic;
+  position: absolute;
+  top: 48px;
+  left: 64px;
 }
 
 .rich-editor h1 { font-size: 2em; font-weight: 700; margin: 0.8em 0 0.4em; color: var(--accent-gold-light); line-height: 1.3; }
@@ -2199,4 +2203,90 @@ body[data-zen="true"] .side-panel {
   align-items: center;
   justify-content: center;
   gap: 6px;
+}
+
+/* ===== FOOTER FIX ===== */
+#oros-footer {
+  height: auto;
+  min-height: 56px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#oros-footer .footer-inner,
+#oros-footer > div {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.save-indicator-overlay {
+  margin-bottom: 0;
+  bottom: 8px;
+}
+
+.stats-overlay {
+  bottom: 8px;
+}
+
+/* ===== MOBILE TOOLBAR WRAP ===== */
+@media (max-width: 768px) {
+  .main-toolbar {
+    flex-wrap: wrap !important;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 6px;
+    min-height: 48px;
+  }
+
+  .toolbar-group,
+  .toolbar-left,
+  .toolbar-center,
+  .toolbar-right {
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+  }
+
+  .toolbar-center {
+    flex: 1 1 100%;
+    order: 2;
+  }
+
+  .toolbar-right {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  #oros-footer {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 8px;
+  }
+
+  #oros-footer .footer-inner {
+    font-size: 11px;
+    line-height: 1.4;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-btn,
+  .fmt-text-btn {
+    min-width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .styles-dropdown {
+    max-width: 100px;
+    font-size: 11px;
+    height: 32px;
+  }
+
+  #oros-footer {
+    padding: 4px 6px;
+  }
 }

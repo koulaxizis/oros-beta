@@ -1318,3 +1318,9 @@ body.landing-page .zen-toggle,
 body.landing-page [id*="zen"]:not(.hero):not(.hero *) {
   display: none !important;
 }
+
+.header-btn.syncing i { animation: syncSpin 1s linear infinite; }
+@keyframes syncSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

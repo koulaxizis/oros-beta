@@ -558,6 +558,7 @@
       tabsModule.setTimestamp(new Date().toISOString());
       updateSaveIndicator('saved');
       updateStats();
+      checkPlaceholder();
     }
   }
 
@@ -2658,9 +2659,550 @@
   }
 
   // ===== EXPORT / IMPORT =====
-    function setupExportImport() {
+      // ===== EXPORT: TXT =====
+  function exportTXT() {
+    var meta = getDocumentMetadata();
+    var content = getEditorContentText();
+    var header = meta.title + '\n' + '='.repeat(meta.title.length) + '\n\n';
+
+    var footnotes = getFootnotesData();
+    var fnText = '';
+    if (footnotes.length > 0) {
+      fnText = '\n\n--- Footnotes ---\n';
+      footnotes.forEach(function(fn) {
+        fnText += '[' + fn.index + '] ' + fn.text + '\n';
+      });
+    }
+
+    var full = header + content + fnText;
+    downloadBlob(full, sanitizeFilename(meta.title) + '.txt', 'text/plain');
+    showToast('Exported TXT');
+  }
+
+  // ===== EXPORT: Markdown =====
+  function exportMarkdown() {
+    var meta = getDocumentMetadata();
+    var html = getEditorContentHTML();
+    var md = convertHTMLtoMarkdown(html);
+
+    var metaBlock = '---\ntitle: "' + meta.title + '"\nauthor: "' + meta.author + '"\ncreated: "' + meta.created + '"\napp: orOS Writer v' + CONFIG.VERSION + '\n---\n\n';
+
+    downloadBlob(metaBlock + md, sanitizeFilename(meta.title) + '.md', 'text/markdown');
+    showToast('Exported Markdown');
+  }
+
+  // ===== EXPORT: HTML5 (standalone, fully formatted) =====
+  function exportHTML() {
+    var meta = getDocumentMetadata();
+    var content = getEditorContentHTML();
+    var footnotes = getFootnotesData();
+
+    var fnHTML = '';
+    if (footnotes.length > 0) {
+      fnHTML = '<section class="footnotes"><hr><h3>Footnotes</h3><ol>';
+      footnotes.forEach(function(fn) {
+        fnHTML += '<li id="fn' + fn.index + '">' + escapeHTML(fn.text) + ' <a href="#fnref' + fn.index + '">↩</a></li>';
+      });
+      fnHTML += '</ol></section>';
+    }
+
+    var html = '<!DOCTYPE html>\n<html lang="' + (currentLang || 'en') + '">\n<head>\n' +
+      '<meta charset="UTF-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+      '<meta name="generator" content="orOS Writer v' + CONFIG.VERSION + '">\n' +
+      '<meta name="author" content="' + escapeHTML(meta.author) + '">\n' +
+      '<meta name="description" content="' + escapeHTML(meta.subject || meta.title) + '">\n' +
+      '<meta name="keywords" content="' + escapeHTML(meta.keywords) + '">\n' +
+      '<meta name="created" content="' + meta.created + '">\n' +
+      '<meta name="modified" content="' + meta.modified + '">\n' +
+      '<title>' + escapeHTML(meta.title) + '</title>\n' +
+      '<style>\n' + getExportCSS() + '\n</style>\n' +
+      '</head>\n<body>\n' +
+      '<article class="document">\n' +
+      '<h1 class="doc-title">' + escapeHTML(meta.title) + '</h1>\n' +
+      '<div class="doc-author">' + escapeHTML(meta.author) + '</div>\n' +
+      '<div class="doc-content">\n' + content + '\n</div>\n' +
+      fnHTML +
+      '</article>\n</body>\n</html>';
+
+    downloadBlob(html, sanitizeFilename(meta.title) + '.html', 'text/html');
+    showToast('Exported HTML');
+  }
+
+  // ===== EXPORT: .orosdoc (ZIP: HTML + CSS + metadata.json) =====
+  function exportOROSDOC() {
+    var meta = getDocumentMetadata();
+    var content = getEditorContentHTML();
+    var footnotes = getFootnotesData();
+
+    if (typeof JSZip === 'undefined') {
+      showToast('JSZip library not loaded');
+      return;
+    }
+
+    var zip = new JSZip();
+
+    var metaJSON = JSON.stringify({
+      title: meta.title,
+      author: meta.author,
+      subject: meta.subject,
+      keywords: meta.keywords,
+      created: meta.created,
+      modified: meta.modified,
+      app: 'orOS Writer',
+      version: CONFIG.VERSION,
+      language: currentLang || 'en',
+      footnotes: footnotes,
+      type: 'orosdoc'
+    }, null, 2);
+
+    var htmlContent = '<!DOCTYPE html>\n<html lang="' + (currentLang || 'en') + '">\n<head>\n' +
+      '<meta charset="UTF-8">\n' +
+      '<link rel="stylesheet" href="styles.css">\n' +
+      '<title>' + escapeHTML(meta.title) + '</title>\n' +
+      '</head>\n<body>\n' +
+      '<article class="document">\n' +
+      '<h1 class="doc-title">' + escapeHTML(meta.title) + '</h1>\n' +
+      '<div class="doc-author">' + escapeHTML(meta.author) + '</div>\n' +
+      '<div class="doc-content">\n' + content + '\n</div>\n' +
+      '</article>\n</body>\n</html>';
+
+    zip.file('index.html', htmlContent);
+    zip.file('styles.css', getExportCSS());
+    zip.file('metadata.json', metaJSON);
+    zip.file('content.html', content);
+
+    // Add footnotes separately if any
+    if (footnotes.length > 0) {
+      zip.file('footnotes.json', JSON.stringify(footnotes, null, 2));
+    }
+
+    zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }).then(function(blob) {
+      downloadBlob(blob, sanitizeFilename(meta.title) + '.orosdoc', 'application/octet-stream');
+      showToast('Exported .orosdoc');
+    }).catch(function(e) {
+      showToast('Export failed: ' + e.message);
+    });
+  }
+
+  // ===== EXPORT: PDF (via html2pdf.js) =====
+  function exportPDF() {
+    var meta = getDocumentMetadata();
+    var content = getEditorContentHTML();
+    var footnotes = getFootnotesData();
+
+    if (typeof html2pdf === 'undefined') {
+      showToast('html2pdf library not loaded. Loading…');
+      loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js', function() {
+        exportPDF(); // retry
+      });
+      return;
+    }
+
+    var fnHTML = '';
+    if (footnotes.length > 0) {
+      fnHTML = '<div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;"><h3>Footnotes</h3><ol>';
+      footnotes.forEach(function(fn) {
+        fnHTML += '<li>' + escapeHTML(fn.text) + '</li>';
+      });
+      fnHTML += '</ol></div>';
+    }
+
+    var tempDiv = document.createElement('div');
+    tempDiv.style.cssText = 'padding:48px;background:white;color:black;font-family:Georgia,serif;font-size:14px;line-height:1.8;width:210mm;max-width:100%;';
+    tempDiv.innerHTML =
+      '<h1 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:8px;">' + escapeHTML(meta.title) + '</h1>' +
+      '<p style="text-align:center;color:#666;margin-bottom:32px;">' + escapeHTML(meta.author) + '</p>' +
+      '<div>' + content + '</div>' +
+      fnHTML;
+
+    document.body.appendChild(tempDiv);
+
+    var opt = {
+      margin: [20, 20, 20, 20],
+      filename: sanitizeFilename(meta.title) + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(tempDiv).save().then(function() {
+      document.body.removeChild(tempDiv);
+      showToast('Exported PDF');
+    }).catch(function(e) {
+      document.body.removeChild(tempDiv);
+      showToast('PDF export failed: ' + e.message);
+    });
+  }
+
+  // ===== EXPORT: DOCX (using html-docx-js) =====
+  function exportDOCX() {
+    var meta = getDocumentMetadata();
+    var content = getEditorContentHTML();
+    var footnotes = getFootnotesData();
+
+    // Load html-docx-js if not available
+    if (typeof htmlDocx === 'undefined') {
+      showToast('Loading DOCX library…');
+      loadScript('https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js', function() {
+        exportDOCX(); // retry
+      });
+      return;
+    }
+
+    var fnHTML = '';
+    if (footnotes.length > 0) {
+      fnHTML = '<div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;"><h3>Footnotes</h3><ol>';
+      footnotes.forEach(function(fn) {
+        fnHTML += '<li>' + escapeHTML(fn.text) + '</li>';
+      });
+      fnHTML += '</ol></div>';
+    }
+
+    var fullHTML = '<!DOCTYPE html>\n<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+      'xmlns="http://www.w3.org/TR/REC-html40">\n<head>\n' +
+      '<meta charset="UTF-8">\n' +
+      '<title>' + escapeHTML(meta.title) + '</title>\n' +
+      '<!--[if gte mso 9]><xml>\n' +
+      '<w:WordDocument>\n' +
+      '<w:View>Print</w:View>\n' +
+      '<w:Zoom>100</w:Zoom>\n' +
+      '<w:DoNotOptimizeForBrowser/>\n' +
+      '</w:WordDocument>\n' +
+      '</xml><![endif]-->\n' +
+      '<style>\n' +
+      '@page { size: A4; margin: 2.54cm; }\n' +
+      'body { font-family: Georgia, "Times New Roman", serif; font-size: 14px; line-height: 1.8; color: #000; }\n' +
+      'h1 { font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 8px; }\n' +
+      'h2 { font-size: 22px; font-weight: bold; margin-top: 20px; }\n' +
+      'h3 { font-size: 18px; font-weight: bold; margin-top: 16px; }\n' +
+      'p { margin: 8px 0; }\n' +
+      'blockquote { border-left: 3px solid #c8a96e; padding-left: 16px; margin: 16px 0; font-style: italic; }\n' +
+      'table { border-collapse: collapse; width: 100%; }\n' +
+      'td, th { border: 1px solid #999; padding: 6px 12px; }\n' +
+      'th { background: #c8a96e; font-weight: bold; }\n' +
+      'code { font-family: "Courier New", monospace; background: #f5f5f5; padding: 2px 6px; }\n' +
+      'pre { background: #f5f5f5; padding: 12px; border-radius: 4px; }\n' +
+      'a { color: #c8a96e; text-decoration: underline; }\n' +
+      '</style>\n</head>\n<body>\n' +
+      '<h1>' + escapeHTML(meta.title) + '</h1>\n' +
+      '<p style="text-align:center;color:#666;">' + escapeHTML(meta.author) + '</p>\n' +
+      content + '\n' +
+      fnHTML +
+      '\n</body>\n</html>';
+
+    try {
+      var converted = htmlDocx.asBlob(fullHTML);
+      downloadBlob(converted, sanitizeFilename(meta.title) + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      showToast('Exported DOCX');
+    } catch(e) {
+      showToast('DOCX export failed: ' + e.message);
+    }
+  }
+
+  // ===== HELPER: Get export CSS =====
+  function getExportCSS() {
+    return '' +
+      '* { box-sizing: border-box; }\n' +
+      'body { font-family: Georgia, "Times New Roman", serif; font-size: 16px; line-height: 1.8; color: #222; background: #fff; max-width: 800px; margin: 0 auto; padding: 48px 24px; }\n' +
+      'article.document { max-width: 800px; margin: 0 auto; }\n' +
+      'h1.doc-title { font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 4px; color: #333; }\n' +
+      'div.doc-author { text-align: center; color: #666; margin-bottom: 32px; font-size: 14px; }\n' +
+      'h1 { font-size: 24px; font-weight: bold; margin: 24px 0 12px; color: #333; }\n' +
+      'h2 { font-size: 20px; font-weight: bold; margin: 20px 0 10px; color: #333; }\n' +
+      'h3 { font-size: 17px; font-weight: bold; margin: 16px 0 8px; color: #333; }\n' +
+      'h4 { font-size: 15px; font-weight: bold; margin: 12px 0 6px; color: #333; }\n' +
+      'p { margin: 8px 0; }\n' +
+      'ul, ol { margin: 8px 0; padding-left: 32px; }\n' +
+      'li { margin: 4px 0; }\n' +
+      'blockquote { border-left: 3px solid #c8a96e; padding-left: 16px; margin: 16px 0; font-style: italic; color: #555; }\n' +
+      'strong, b { font-weight: bold; }\n' +
+      'em, i { font-style: italic; }\n' +
+      'u { text-decoration: underline; }\n' +
+      'code { font-family: "Courier New", monospace; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }\n' +
+      'pre { background: #f4f4f4; padding: 12px 16px; border-radius: 6px; overflow-x: auto; }\n' +
+      'pre code { background: none; padding: 0; }\n' +
+      'a { color: #8b6914; text-decoration: underline; }\n' +
+      'img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }\n' +
+      'table { border-collapse: collapse; width: 100%; margin: 12px 0; }\n' +
+      'td, th { border: 1px solid #ccc; padding: 6px 12px; }\n' +
+      'th { background: #c8a96e; color: #fff; font-weight: bold; }\n' +
+      'hr { border: none; border-top: 1px solid #ccc; margin: 24px 0; }\n' +
+      'mark { background: #fff3cd; padding: 0 2px; border-radius: 2px; }\n' +
+      '.footnotes { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 16px; }\n' +
+      '.footnotes ol { padding-left: 24px; }\n' +
+      '.footnotes li { margin: 4px 0; font-size: 0.9em; color: #555; }\n' +
+      '.page-break-marker { page-break-after: always; }\n';
+  }
+
+  // ===== HELPER: Escape HTML =====
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ===== HELPER: Load script dynamically =====
+  function loadScript(url, callback) {
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = callback;
+    s.onerror = function() { showToast('Failed to load: ' + url); };
+    document.head.appendChild(s);
+  }
+
+  // ===== HELPER: HTML to Markdown conversion =====
+  function convertHTMLtoMarkdown(html) {
+    var div = document.createElement('div');
+    div.innerHTML = html;
+    return nodeToMarkdown(div).trim();
+  }
+
+  function nodeToMarkdown(node) {
+    var md = '';
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var child = node.childNodes[i];
+      if (child.nodeType === Node.TEXT_NODE) {
+        md += child.textContent;
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        var tag = child.tagName.toLowerCase();
+        var inner = nodeToMarkdown(child);
+        switch(tag) {
+          case 'h1': md += '\n# ' + inner + '\n\n'; break;
+          case 'h2': md += '\n## ' + inner + '\n\n'; break;
+          case 'h3': md += '\n### ' + inner + '\n\n'; break;
+          case 'h4': md += '\n#### ' + inner + '\n\n'; break;
+          case 'h5': md += '\n##### ' + inner + '\n\n'; break;
+          case 'h6': md += '\n###### ' + inner + '\n\n'; break;
+          case 'p': md += inner + '\n\n'; break;
+          case 'br': md += '\n'; break;
+          case 'strong': case 'b': md += '**' + inner + '**'; break;
+          case 'em': case 'i': md += '*' + inner + '*'; break;
+          case 'u': md += inner; break;
+          case 'code':
+            if (child.parentElement && child.parentElement.tagName.toLowerCase() === 'pre') {
+              md += inner;
+            } else {
+              md += '`' + inner + '`';
+            }
+            break;
+          case 'pre':
+            md += '\n```\n' + inner + '\n```\n\n'; break;
+          case 'blockquote': md += '> ' + inner.replace(/\n/g, '\n> ') + '\n\n'; break;
+          case 'ul':
+            var ulItems = child.querySelectorAll(':scope > li');
+            for (var u = 0; u < ulItems.length; u++) {
+              md += '- ' + nodeToMarkdown(ulItems[u]).trim() + '\n';
+            }
+            md += '\n';
+            break;
+          case 'ol':
+            var olItems = child.querySelectorAll(':scope > li');
+            for (var o = 0; o < olItems.length; o++) {
+              md += (o + 1) + '. ' + nodeToMarkdown(olItems[o]).trim() + '\n';
+            }
+            md += '\n';
+            break;
+          case 'li': md += inner; break;
+          case 'a':
+            var href = child.getAttribute('href') || '#';
+            md += '[' + inner + '](' + href + ')';
+            break;
+          case 'img':
+            var alt = child.getAttribute('alt') || '';
+            var src = child.getAttribute('src') || '';
+            md += '![' + alt + '](' + src + ')';
+            break;
+          case 'hr': md += '\n---\n\n'; break;
+          case 'table': md += tableToMarkdown(child); break;
+          default: md += inner; break;
+        }
+      }
+    }
+    return md;
+  }
+
+  function tableToMarkdown(table) {
+    var rows = table.querySelectorAll('tr');
+    if (rows.length === 0) return '';
+    var md = '\n';
+    var cells0 = rows[0].querySelectorAll('td,th');
+    for (var c = 0; c < cells0.length; c++) {
+      md += '| ' + (cells0[c].textContent || '').trim() + ' ';
+    }
+    md += '|\n';
+    for (var s = 0; s < cells0.length; s++) md += '|---';
+    md += '|\n';
+    for (var r = 1; r < rows.length; r++) {
+      var cells = rows[r].querySelectorAll('td,th');
+      for (var c2 = 0; c2 < cells.length; c2++) {
+        md += '| ' + (cells[c2].textContent || '').trim() + ' ';
+      }
+      md += '|\n';
+    }
+    md += '\n';
+    return md;
+  }
+
+  // ===== IMPORT: .orosdoc =====
+  function importOROSDOC(file) {
+    if (typeof JSZip === 'undefined') {
+      showToast('JSZip library not loaded');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        var promises = [];
+        var files = {};
+
+        var fileList = ['index.html', 'content.html', 'styles.css', 'metadata.json', 'footnotes.json'];
+        fileList.forEach(function(fname) {
+          if (zip.file(fname)) {
+            promises.push(zip.file(fname).async('string').then(function(content) {
+              files[fname] = content;
+            }));
+          }
+        });
+
+        Promise.all(promises).then(function() {
+          var meta = files['metadata.json'] ? JSON.parse(files['metadata.json']) : {};
+          var content = files['content.html'] || '';
+
+          // Extract just the inner HTML from index.html if content.html is missing
+          if (!content && files['index.html']) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = files['index.html'];
+            var docContent = tempDiv.querySelector('.doc-content');
+            content = docContent ? docContent.innerHTML : tempDiv.innerHTML;
+          }
+
+          var editor = document.getElementById('rich-editor');
+          if (editor) {
+            editor.innerHTML = content;
+            if (typeof autoSave === 'function') autoSave();
+            if (typeof updateWordCount === 'function') updateWordCount();
+          }
+
+          // Restore footnotes if available
+          if (files['footnotes.json']) {
+            try {
+              var fns = JSON.parse(files['footnotes.json']);
+              if (Array.isArray(fns) && typeof renderFootnotes === 'function') {
+                renderFootnotes(fns);
+              }
+            } catch(err) {}
+          }
+
+          // Set document title
+          if (meta.title) {
+            document.title = meta.title;
+            if (tabsModule && tabsModule.getActiveTab()) {
+              tabsModule.getActiveTab().title = meta.title;
+              if (typeof refreshTabLabels === 'function') refreshTabLabels();
+            }
+          }
+
+          showToast('Imported .orosdoc: ' + (meta.title || 'Untitled'));
+        });
+      }).catch(function(e) {
+        showToast('Import failed: ' + e.message);
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+    function downloadBlob(content, filename, mimeType) {
+    var mt = mimeType || 'text/plain;charset=utf-8';
+    var blob;
+    if (content instanceof Blob) {
+      blob = content;
+    } else {
+      blob = new Blob([content], { type: mt + ';charset=utf-8' });
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+  
+    function getDocumentMetadata() {
+    var activeTab = tabsModule ? tabsModule.getActiveTab() : null;
+    var meta = {
+      title: document.title || 'Untitled',
+      author: 'orOS Writer',
+      subject: '',
+      keywords: '',
+      created: new Date().toISOString(),
+      modified: new Date().toISOString(),
+      app: 'orOS Writer',
+      version: CONFIG.VERSION
+    };
+
+    if (activeTab && activeTab.metadata) {
+      if (activeTab.metadata.title) meta.title = activeTab.metadata.title;
+      if (activeTab.metadata.author) meta.author = activeTab.metadata.author;
+      if (activeTab.metadata.subject) meta.subject = activeTab.metadata.subject;
+      if (activeTab.metadata.keywords) meta.keywords = activeTab.metadata.keywords;
+      if (activeTab.metadata.created) meta.created = activeTab.metadata.created;
+    }
+
+    if (activeTab && activeTab.title) {
+      meta.title = activeTab.title;
+    }
+
+    return meta;
+  }
+
+  function sanitizeFilename(name) {
+    return (name || 'untitled').replace(/[\\/:*?"<>|]/g, '_').trim().substring(0, 100);
+  }
+
+  function getEditorContentHTML() {
+    var editor = document.getElementById('rich-editor');
+    if (!editor) return '<p>No content</p>';
+    return editor.innerHTML;
+  }
+
+  function getEditorContentText() {
+    var editor = document.getElementById('rich-editor');
+    if (!editor) return '';
+    return editor.innerText || editor.textContent || '';
+  }
+
+  function getFootnotesData() {
+    var fnArea = document.getElementById('footnote-area');
+    if (!fnArea) return [];
+    var entries = fnArea.querySelectorAll('.footnote-entry');
+    var result = [];
+    for (var i = 0; i < entries.length; i++) {
+      var num = entries[i].querySelector('.footnote-number');
+      var text = entries[i].querySelector('.footnote-text') || entries[i].querySelector('td:nth-child(2)');
+      result.push({
+        index: num ? parseInt(num.textContent) || (i + 1) : (i + 1),
+        text: text ? text.textContent.trim() : ''
+      });
+    }
+    return result;
+  }
+  
+    // ===== EXPORT / IMPORT SETUP =====
+  function setupExportImport() {
     var exportBtn = document.getElementById('btn-export');
-    var exportDropdown = document.getElementById('export-dropdown');
+    exportDropdown = document.getElementById('export-dropdown');
 
     if (exportBtn && exportDropdown) {
       exportBtn.addEventListener('click', function(e) {
@@ -2669,6 +3211,7 @@
       });
     }
 
+    // Close on outside click
     document.addEventListener('click', function(e) {
       if (exportDropdown && exportDropdown.classList.contains('active')) {
         if (!e.target.closest('#export-dropdown-container')) {
@@ -2683,166 +3226,102 @@
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           var fmt = btn.getAttribute('data-format');
-          if (fmt === 'txt') exportTxt();
-          else if (fmt === 'md') exportMd();
-          else if (fmt === 'rtf') exportRtf();
-          else if (fmt === 'docx') exportDocx();
-          else if (fmt === 'pdf') exportPdf();
-          else if (fmt === 'epub') exportEpub();
+          if (fmt === 'txt') exportTXT();
+          else if (fmt === 'md') exportMarkdown();
+          else if (fmt === 'html') exportHTML();
+          else if (fmt === 'pdf') exportPDF();
+          else if (fmt === 'docx') exportDOCX();
+          else if (fmt === 'rtf') exportRTF();
+          else if (fmt === 'orosdoc') exportOROSDOC();
+          else if (fmt === 'json') exportJSON();
           if (exportDropdown) exportDropdown.classList.remove('active');
         });
       })(exportItems[i]);
     }
 
-    bindClick('btn-import-txt', importTxt);
-    bindClick('btn-close-export', hideExportOptions);
-    bindClick('btn-close-import', hideImportOptions);
     setupFileImport();
   }
 
-  function showExportOptions() { var el = document.getElementById('export-dropdown'); if (el) el.classList.add('active'); }
-  function hideExportOptions() { var el = document.getElementById('export-dropdown'); if (el) el.classList.remove('active'); }
-  function showImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.add('active'); }
-  function hideImportOptions() { var el = document.getElementById('import-dropdown'); if (el) el.classList.remove('active'); }
-
-  function getDocumentMetaHeader() {
-    var meta = tabsModule.getMetadata();
-    var lines = [];
-    if (meta.title) lines.push('Title: ' + meta.title);
-    if (meta.author) lines.push('Author: ' + meta.author);
-    if (meta.category) lines.push('Category: ' + meta.category);
-    if (meta.tags) lines.push('Tags: ' + meta.tags);
-    return lines.join('\n');
+  function showImportOptions() {
+    var el = document.getElementById('import-dropdown');
+    if (el) el.classList.add('active');
+  }
+  function hideImportOptions() {
+    var el = document.getElementById('import-dropdown');
+    if (el) el.classList.remove('active');
   }
 
-  function exportTxt() {
-    if (!richEditor) return;
-    var blob = new Blob([richEditor.innerText], { type: 'text/plain' });
-    downloadBlob(blob, getTabTitle() + '.txt');
-  }
+  // ===== EXPORT: RTF (Unicode) =====
+  function exportRTF() {
+    var meta = getDocumentMetadata();
+    var text = getEditorContentText();
 
-  function exportMd() {
-    if (!richEditor) return;
-    var blob = new Blob([richEditor.innerText], { type: 'text/markdown' });
-    downloadBlob(blob, getTabTitle() + '.md');
-  }
+    var header = meta.title + '\n' + '='.repeat(Math.min(meta.title.length, 60)) + '\n';
+    if (meta.author) header += meta.author + '\n';
+    text = header + '\n' + text;
 
-  function exportHtml() {
-    if (!richEditor) return;
-    var metaHeader = getDocumentMetaHeader();
-    var metaHtml = '';
-    if (metaHeader) {
-      metaHtml = '<div style="border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:20px;font-size:9pt;color:#666;">' +
-        escapeHtml(metaHeader).replace(/\n/g, '<br>') + '</div>';
+    var footnotes = getFootnotesData();
+    if (footnotes.length > 0) {
+      text += '\n\n--- Footnotes ---\n';
+      footnotes.forEach(function(fn) { text += '[' + fn.index + '] ' + fn.text + '\n'; });
     }
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' +
-      escapeHtml(getTabTitle()) + '</title></head><body>' + metaHtml +
-      richEditor.innerHTML + '</body></html>';
-    var blob = new Blob([html], { type: 'text/html' });
-    downloadBlob(blob, getTabTitle() + '.html');
-  }
 
-  function exportPdf() {
-    var metaHeader = getDocumentMetaHeader();
-    var content = richEditor ? richEditor.innerHTML : '';
-    var metaHtml = '';
-    if (metaHeader) {
-      metaHtml = '<div style="border-bottom:1px solid #ccc;padding:8px 0;margin-bottom:24px;font-size:9pt;color:#666;">' +
-        escapeHtml(metaHeader).replace(/\n/g, '<br>') + '</div>';
+    var rtfText = '';
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      if (code > 127) rtfText += '\\u' + code + '?';
+      else if (text[i] === '\\') rtfText += '\\\\';
+      else if (text[i] === '{') rtfText += '\\{';
+      else if (text[i] === '}') rtfText += '\\}';
+      else if (text[i] === '\n') rtfText += '\\par\n';
+      else rtfText += text[i];
     }
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-      '<style>@page{margin:2.5cm 2cm}body{font-family:Georgia,serif;font-size:12pt;line-height:1.6;}</style>' +
-      '</head><body>' + metaHtml + content + '</body></html>';
-    var blob = new Blob([html], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-    var w = window.open(url, '_blank');
-    if (w) setTimeout(function() { w.print(); }, 300);
-    else window.print();
+    var rtfText = rtfText || '';
+
+    var rtf = '{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Georgia Times New Roman;}}\n' +
+      '{\\info{\\title ' + meta.title + '}{\\author ' + meta.author + '}}\n' +
+      rtfText + '\n}';
+
+    var blob = new Blob([rtf], { type: 'application/rtf;charset=utf-8' });
+    downloadBlob(blob, sanitizeFilename(meta.title) + '.rtf', 'application/rtf');
+    showToast('Exported RTF (Unicode)');
   }
 
-  function exportDocx() {
-    try {
-      if (!window.JSZip) { showToast('JSZip not loaded'); return; }
-      var zip = new JSZip();
-      zip.file('document.txt', richEditor ? richEditor.innerText : '');
-      zip.generateAsync({ type: 'blob' }).then(function(blob) {
-        downloadBlob(blob, getTabTitle() + '.docx');
-        showToast('DOCX exported');
-      }).catch(function(e) { showToast('Export failed: ' + e.message); });
-    } catch(e) { showToast('Export failed: ' + e.message); }
-  }
-
-  function exportRtf() {
-    try {
-      var metaHeader = getDocumentMetaHeader();
-      var text = richEditor ? richEditor.innerText : '';
-      if (metaHeader) text = metaHeader + '\n\n' + text;
-      text = text.replace(/\\/g, '\\\\').replace(/{/g, '\\{').replace(/}/g, '\\}');
-      var rtf = '{\\rtf1\\ansi\\ansicpg1252 ' + text + '}';
-      var blob = new Blob([rtf], { type: 'application/rtf' });
-      downloadBlob(blob, getTabTitle() + '.rtf');
-      showToast('RTF exported');
-    } catch(e) { showToast('Export failed: ' + e.message); }
-  }
-
-  function exportJson() {
+  // ===== EXPORT: JSON (single document) =====
+  function exportJSON() {
     var tab = tabsModule.getActive();
     var exportData = {
       title: tab ? tab.title : 'Untitled',
       content: tab ? tab.content : '',
       metadata: tab ? tab.metadata : {},
       versions: tab ? tab.versions : [],
+      footnotes: getFootnotesData(),
       exportedAt: new Date().toISOString(),
       application: 'orOS Writer',
       version: CONFIG.VERSION
     };
-    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, getTabTitle() + '.json');
-  }
-
-  function exportEpub() {
-    showToast('EPUB export coming soon');
-  }
-
-  function downloadBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
+    downloadBlob(blob, sanitizeFilename(exportData.title) + '.json', 'application/json');
+    showToast('Exported JSON');
   }
 
   function importTxt() {
     showImportOptions();
   }
 
-  function setupFileImport() {
+    function setupFileImport() {
     var fileInput = document.getElementById('file-input-hidden');
     if (!fileInput) return;
     fileInput.addEventListener('change', function(e) {
       var file = e.target.files[0];
       if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var content = ev.target.result;
-        if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
-          richEditor.innerHTML = content;
-        } else if (file.name.endsWith('.rtf')) {
-          var html = (typeof window.parseRTF === 'function')
-            ? window.parseRTF(content)
-            : '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-          richEditor.innerHTML = html;
-        } else {
-          richEditor.innerHTML = '<p>' + escapeHtml(content).replace(/\n/g, '<br>') + '</p>';
-        }
-        tabsModule.setContent(richEditor.innerHTML);
-        tabsModule.setMetadata({ modified: new Date().toISOString() });
-        hideImportOptions();
-        showToast('File imported');
-        updateStats();
-      };
-      reader.readAsText(file);
+      var ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'orosdoc') {
+        importOROSDOC(file);
+        fileInput.value = '';
+        return;
+      }
+      loadFileIntoEditor(file, true);
       fileInput.value = '';
     });
   }
@@ -3241,6 +3720,14 @@ for (var i = 0; i < panels.length; i++) {
       updateStats();
       showToast('Table inserted');
     });
+	
+	  function checkPlaceholder() {
+    if (!richEditor) return;
+    var html = richEditor.innerHTML.trim();
+    var isEmpty = html === '' || html === '<p><br></p>' || html === '<p></p>' || html === '<br>';
+    if (isEmpty) richEditor.classList.add('editor-empty');
+    else richEditor.classList.remove('editor-empty');
+  }
 
     // --- IMAGE ---
     var sourceType = document.getElementById('image-source-type');
@@ -3531,6 +4018,7 @@ for (var i = 0; i < panels.length; i++) {
       playTypewriterSound();
       applyAutoCorrect();
       applySmartTypography();
+      checkPlaceholder();
       isTyping = true;
       clearTimeout(typingTimer);
       typingTimer = setTimeout(function() {
@@ -3556,6 +4044,7 @@ for (var i = 0; i < panels.length; i++) {
     tabsModule.on('switch', function(tab) {
       if (!richEditor || !tab) return;
       richEditor.innerHTML = tab.content || '<p><br></p>';
+      checkPlaceholder();
       loadPageSettingsFields();
       loadMetadataFields();
       restoreFootnotes();
@@ -4474,6 +4963,13 @@ for (var i = 0; i < panels.length; i++) {
 	  
 	        // ===== CLOUD SYNC =====
       cloudSync.init();
+	  
+	        // Register Writer's sync with the shared oros-sync framework
+      if (window.orosSync) {
+        cloudSync.id = 'writer';
+        cloudSync.toast = function(msg) { showToast(msg); };
+        window.orosSync.register(cloudSync);
+      }
 
       bindClick('btn-cloud-connect', function() {
         cloudSync.pickDirectory().then(function(handle) {

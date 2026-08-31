@@ -19,6 +19,7 @@
         '</div>' +
         '<div class="header-right">' +
           '<select id="language-select" class="lang-select" aria-label="Language"></select>' +
+          '<button id="btn-quick-sync" class="header-btn" aria-label="Quick Sync" title="Quick Sync" style="display:none;"><i class="fa fa-cloud-upload"></i></button>' +
           '<button id="btn-zen" class="header-btn" data-i18n-aria="aria_zen" aria-label="Zen Mode" title="Zen Mode (F9)"><i class="fa fa-eye-slash"></i></button>' +
           '<button id="theme-toggle" class="header-btn" data-i18n-aria="aria_theme" aria-label="Toggle Theme" title="Toggle Theme"><i class="fa fa-sun-o"></i></button>' +
           '<button id="btn-settings" class="header-btn" data-i18n-aria="aria_settings" aria-label="Settings" title="Settings"><i class="fa fa-cog"></i></button>' +
@@ -26,4 +27,25 @@
         '</div>' +
       '</div>' +
     '</header>';
+
+  // ===== QUICK SYNC BUTTON =====
+  var syncBtn = document.getElementById('btn-quick-sync');
+  if (syncBtn) {
+    // Hide until an app registers a sync instance
+    document.addEventListener('oros-sync-ready', function() {
+      syncBtn.style.display = '';
+    });
+
+    syncBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var api = window.orosSync && window.orosSync.get();
+      if (!api) {
+        syncBtn.style.display = 'none';
+        return;
+      }
+      syncBtn.classList.add('syncing');
+      api.syncNow();
+      setTimeout(function() { syncBtn.classList.remove('syncing'); }, 1500);
+    });
+  }
 })();
