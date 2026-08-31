@@ -956,7 +956,9 @@
     if (footerPageNum) meta.footerPageNum = footerPageNum.checked;
     meta.modified = new Date().toISOString();
     tabsModule.setMetadata(meta);
-    if (metaModified) metaModified.textContent = meta.modified;
+    if (metaModified) metaModified.textContent = 'Modified: ' + new Date(meta.modified).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
+    var metaDates = document.getElementById('meta-dates');
+    if (metaDates) metaDates.style.display = '';
 
     // Εφαρμογή άμεσα
     applyPageSize(meta.pageSize || 'a4');
@@ -3437,6 +3439,33 @@
 
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
+		        // ===== EXIT FROM PRE/BLOCKQUOTE VIA ESCAPE =====
+      if (richEditor) {
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          var escNode = sel.getRangeAt(0).startContainer;
+          if (escNode.nodeType === Node.TEXT_NODE) escNode = escNode.parentElement;
+          while (escNode && escNode !== richEditor) {
+            var escTag = escNode.tagName.toLowerCase();
+            if (escTag === 'pre' || escTag === 'blockquote') {
+              e.preventDefault();
+              e.stopPropagation();
+              var exitPara = document.createElement('p');
+              exitPara.innerHTML = '<br>';
+              escNode.parentNode.insertBefore(exitPara, escNode.nextSibling);
+              var exitRange = document.createRange();
+              exitRange.setStart(exitPara, 0);
+              exitRange.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(exitRange);
+              if (stylesSelect) stylesSelect.value = 'normal';
+              showToast(escTag === 'pre' ? 'Exited code block' : 'Exited quote');
+              return;
+            }
+            escNode = escNode.parentElement;
+          }
+        }
+      }
         if (qfmMenu && qfmMenu.classList.contains('visible')) { qfmMenu.classList.remove('visible'); return; }
         var dialogs = ['link-dialog-overlay', 'table-dialog-overlay', 'image-dialog-overlay',
                        'templates-dialog-overlay', 'special-chars-dialog-overlay',
@@ -3474,6 +3503,45 @@ for (var i = 0; i < panels.length; i++) {
   // ===== COMMAND EXECUTION =====
   function execCmd(command, value) {
     if (!richEditor) return;
+	    richEditor.addEventListener('keydown', function(e) {
+      // ===== DOUBLE ENTER EXITS PRE/BLOCKQUOTE =====
+      if (e.key === 'Enter' && !e.shiftKey) {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var node = sel.getRangeAt(0).startContainer;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        while (node && node !== richEditor) {
+          if (node.tagName === 'PRE' || node.tagName === 'BLOCKQUOTE') {
+            var range = sel.getRangeAt(0);
+            // Αν ο cursor είναι στο τέλος του pre/blockquote και η τελευταία γραμμή είναι άδεια
+            var blockText = node.textContent.trim();
+            var lastChild = node.lastChild;
+            var isAtEnd = range.endContainer === node || 
+                          (node.contains(range.endContainer) && 
+                           (range.endContainer === lastChild || 
+                            (lastChild && lastChild.nodeType === Node.TEXT_NODE && 
+                             range.endOffset >= lastChild.textContent.length)));
+            
+            // Έλεγχος: αν το τελευταίο child είναι <br> ή άδειο <p>, έξοδος
+            if (isAtEnd && blockText === '') {
+              e.preventDefault();
+              var exitP = document.createElement('p');
+              exitP.innerHTML = '<br>';
+              node.parentNode.insertBefore(exitP, node.nextSibling);
+              var exitRange = document.createRange();
+              exitRange.setStart(exitP, 0);
+              exitRange.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(exitRange);
+              if (stylesSelect) stylesSelect.value = 'normal';
+              return;
+            }
+            return;
+          }
+          node = node.parentElement;
+        }
+      }
+    });
     if (command === 'insertImage' && value) {
       var img = document.createElement('img');
       img.src = value;
@@ -5048,7 +5116,52 @@ for (var i = 0; i < panels.length; i++) {
           syncPageSizeToUI(this.value);
         });
       }
-	  
+
+      // ===== REAL-TIME HEADER / FOOTER LISTENERS =====
+      var headerTextInput = document.getElementById('header-text');
+      if (headerTextInput) {
+        headerTextInput.addEventListener('input', function() {
+          var meta = tabsModule.getMetadata();
+          meta.headerText = this.value;
+          tabsModule.setMetadata(meta);
+          applyHeaderFooter();
+        });
+      }
+
+      var footerTextInput = document.getElementById('footer-text');
+      if (footerTextInput) {
+        footerTextInput.addEventListener('input', function() {
+          var meta = tabsModule.getMetadata();
+          meta.footerText = this.value;
+          tabsModule.setMetadata(meta);
+          applyHeaderFooter();
+        });
+      }
+
+      var footerPageNumInput = document.getElementById('footer-page-num');
+      if (footerPageNumInput) {
+        footerPageNumInput.addEventListener('change', function() {
+          var meta = tabsModule.getMetadata();
+          meta.footerPageNum = this.checked;
+          tabsModule.setMetadata(meta);
+          applyHeaderFooter();
+        });
+      }
+
+      [document.getElementById('margin-top'), document.getElementById('margin-bottom'),
+       document.getElementById('margin-left'), document.getElementById('margin-right')].forEach(function(el) {
+        if (el) el.addEventListener('change', function() {
+          var meta = tabsModule.getMetadata();
+          meta.marginTop = document.getElementById('margin-top').value;
+          meta.marginBottom = document.getElementById('margin-bottom').value;
+          meta.marginLeft = document.getElementById('margin-left').value;
+          meta.marginRight = document.getElementById('margin-right').value;
+          tabsModule.setMetadata(meta);
+          applyPageMargins();
+          applyHeaderFooter();
+        });
+      });
+
       clampToViewport();
 
       var tab = tabsModule.getActive();
