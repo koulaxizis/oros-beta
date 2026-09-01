@@ -3445,8 +3445,8 @@
     }, 100);
   }
   
-    function getDocumentMetadata() {
-        var activeTab = tabsModule ? tabsModule.getActive() : null;
+      function getDocumentMetadata() {
+    var activeTab = tabsModule ? tabsModule.getActive() : null;
     var meta = {
       title: document.title || 'Untitled',
       author: 'orOS Writer',
@@ -3459,12 +3459,8 @@
       app: 'orOS Writer',
       version: CONFIG.VERSION
     };
-      modified: new Date().toISOString(),
-      app: 'orOS Writer',
-      version: CONFIG.VERSION
-    };
 
-        if (activeTab && activeTab.metadata) {
+    if (activeTab && activeTab.metadata) {
       if (activeTab.metadata.title) meta.title = activeTab.metadata.title;
       if (activeTab.metadata.author) meta.author = activeTab.metadata.author;
       if (activeTab.metadata.subject) meta.subject = activeTab.metadata.subject;
