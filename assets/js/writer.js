@@ -612,7 +612,7 @@
     }
 
     updateReadingProgress();
-       updateGoalProgress();;
+       updateGoalProgress();
   }
 
   function setupStatsToggle() {
@@ -637,32 +637,6 @@
     var scrollTop = richEditor.scrollTop;
     var pct = Math.min(100, (scrollTop / totalHeight) * 100);
     container.style.width = pct + '%';
-  }
-
-  function updateOutline() {
-    if (!outlineList || !richEditor) return;
-    var heads = richEditor.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    if (heads.length === 0) { outlineList.innerHTML = '<div class="outline-empty">' + (getTrans('outline_empty') !== 'outline_empty' ? getTrans('outline_empty') : 'No headings found') + '</div>'; return; }
-    var html = '';
-    for (var i = 0; i < heads.length; i++) {
-      var tag = heads[i].tagName.toLowerCase();
-      var text = heads[i].textContent.trim() || '(empty)';
-      html += '<div class="outline-item outline-item-' + tag + '" data-heading-index="' + i + '">' + escapeHtml(text) + '</div>';
-    }
-    outlineList.innerHTML = html;
-    var items = outlineList.querySelectorAll('.outline-item');
-    for (var j = 0; j < items.length; j++) {
-      (function(item, idx) {
-        item.addEventListener('click', function() {
-          var heading = richEditor.querySelectorAll('h1, h2, h3, h4, h5, h6')[idx];
-          if (heading) {
-            heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            heading.classList.add('outline-flash');
-            setTimeout(function() { heading.classList.remove('outline-flash'); }, 1200);
-          }
-        });
-      })(items[j], j);
-    }
   }
 
   // ===== SETTINGS =====
@@ -1205,55 +1179,7 @@
 
   function saveCustomTemplates() {
     try { localStorage.setItem(CONFIG.CUSTOM_TEMPLATES_KEY, JSON.stringify(customTemplates)); } catch(e) {}
-  }
-
-  function renderCustomTemplates() {
-    var list = document.getElementById('custom-templates-list');
-    if (!list) return;
-    if (customTemplates.length === 0) {
-      list.innerHTML = '<div class="template-empty">' + (getTrans('no_custom_templates') !== 'no_custom_templates' ? getTrans('no_custom_templates') : 'No custom templates yet') + '</div>';
-      return;
-    }
-    var html = '';
-    for (var i = 0; i < customTemplates.length; i++) {
-      var t = customTemplates[i];
-      html += '<div class="template-item" data-id="' + t.id + '">' +
-        '<i class="fa fa-file-o template-icon"></i>' +
-        '<div class="template-info"><strong>' + escapeHtml(t.title) + '</strong>' +
-        '<small>' + escapeHtml(t.desc || '') + '</small></div>' +
-        '<button class="template-action template-edit" data-id="' + t.id + '" title="' + (getTrans('edit') !== 'edit' ? getTrans('edit') : 'Edit') + '"><i class="fa fa-pencil"></i></button>' +
-        '<button class="template-action template-delete" data-id="' + t.id + '" title="' + (getTrans('delete') !== 'delete' ? getTrans('delete') : 'Delete') + '"><i class="fa fa-trash"></i></button></div>';
-    }
-    list.innerHTML = html;
-
-    var deleteBtns = list.querySelectorAll('.template-delete');
-    for (var d = 0; d < deleteBtns.length; d++) {
-      (function(btn) {
-        btn.addEventListener('click', function() {
-          var id = btn.getAttribute('data-id');
-          customTemplates = customTemplates.filter(function(ct) { return ct.id !== id; });
-          saveCustomTemplates();
-          renderCustomTemplates();
-          renderTemplateSelect();
-          showToast('Template deleted');
-        });
-      })(deleteBtns[d]);
-    }
-
-    var editBtns = list.querySelectorAll('.template-edit');
-    for (var e = 0; e < editBtns.length; e++) {
-      (function(btn) {
-        btn.addEventListener('click', function() {
-          var id = btn.getAttribute('data-id');
-          var t = null;
-          for (var j = 0; j < customTemplates.length; j++) { if (customTemplates[j].id === id) { t = customTemplates[j]; break; } }
-          if (!t) return;
-          openTemplateEditor(t);
-        });
-      })(editBtns[e]);
-    }
-  }
-  
+  }  
   
       function renderTemplatesGrid() {
     var grid = document.getElementById('templates-grid');
@@ -2679,9 +2605,13 @@
   // ===== EXPORT / IMPORT =====
       // ===== EXPORT: TXT =====
   function exportTXT() {
-    var meta = getDocumentMetadata();
+        var meta = getDocumentMetadata();
     var content = getEditorContentText();
-    var header = meta.title + '\n' + '='.repeat(meta.title.length) + '\n\n';
+    var header = meta.title + '\n' + '='.repeat(Math.min(meta.title.length, 60)) + '\n';
+    if (meta.author) header += 'Author: ' + meta.author + '\n';
+    if (meta.category) header += 'Category: ' + meta.category + '\n';
+    if (meta.tags) header += 'Tags: ' + meta.tags + '\n';
+    header += '\n';
 
     var footnotes = getFootnotesData();
     var fnText = '';
@@ -2703,7 +2633,10 @@
     var html = getEditorContentHTML();
     var md = convertHTMLtoMarkdown(html);
 
-    var metaBlock = '---\ntitle: "' + meta.title + '"\nauthor: "' + meta.author + '"\ncreated: "' + meta.created + '"\napp: orOS Writer v' + CONFIG.VERSION + '\n---\n\n';
+        var metaBlock = '---\ntitle: "' + meta.title + '"\nauthor: "' + meta.author + '"\n' +
+      (meta.category ? 'category: "' + meta.category + '"\n' : '') +
+      (meta.tags ? 'tags: "' + meta.tags + '"\n' : '') +
+      'created: "' + meta.created + '"\napp: orOS Writer v' + CONFIG.VERSION + '\n---\n\n';
 
     downloadBlob(metaBlock + md, sanitizeFilename(meta.title) + '.md', 'text/markdown');
     showToast('Exported Markdown');
@@ -2730,7 +2663,7 @@
       '<meta name="generator" content="orOS Writer v' + CONFIG.VERSION + '">\n' +
       '<meta name="author" content="' + escapeHTML(meta.author) + '">\n' +
       '<meta name="description" content="' + escapeHTML(meta.subject || meta.title) + '">\n' +
-      '<meta name="keywords" content="' + escapeHTML(meta.keywords) + '">\n' +
+      '<meta name="keywords" content="' + escapeHTML(meta.tags || '') + '">\n' +
       '<meta name="created" content="' + meta.created + '">\n' +
       '<meta name="modified" content="' + meta.modified + '">\n' +
       '<title>' + escapeHTML(meta.title) + '</title>\n' +
@@ -2738,7 +2671,8 @@
       '</head>\n<body>\n' +
       '<article class="document">\n' +
       '<h1 class="doc-title">' + escapeHTML(meta.title) + '</h1>\n' +
-      '<div class="doc-author">' + escapeHTML(meta.author) + '</div>\n' +
+      '<div class="doc-author">' + escapeHTML(meta.author) +
+  (meta.category ? ' · ' + escapeHTML(meta.category) : '') + '</div>' +
       '<div class="doc-content">\n' + content + '\n</div>\n' +
       fnHTML +
       '</article>\n</body>\n</html>';
@@ -2765,6 +2699,8 @@
       author: meta.author,
       subject: meta.subject,
       keywords: meta.keywords,
+	  category: meta.category || '',
+        tags: meta.tags || '',
       created: meta.created,
       modified: meta.modified,
       app: 'orOS Writer',
@@ -2830,7 +2766,9 @@
     tempDiv.style.cssText = 'padding:48px;background:white;color:black;font-family:Georgia,serif;font-size:14px;line-height:1.8;width:210mm;max-width:100%;';
     tempDiv.innerHTML =
       '<h1 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:8px;">' + escapeHTML(meta.title) + '</h1>' +
-      '<p style="text-align:center;color:#666;margin-bottom:32px;">' + escapeHTML(meta.author) + '</p>' +
+      '<p style="text-align:center;color:#666;margin-bottom:32px;">' + escapeHTML(meta.author) +
+  (meta.category ? ' · ' + escapeHTML(meta.category) : '') +
+  (meta.tags ? ' · ' + escapeHTML(meta.tags) : '') + '</p>' +
       '<div>' + content + '</div>' +
       fnHTML;
 
@@ -2854,70 +2792,397 @@
     });
   }
 
-  // ===== EXPORT: DOCX (using html-docx-js) =====
+  // ===== EXPORT: DOCX (native OOXML via JSZip — no external library) =====
   function exportDOCX() {
+    if (typeof JSZip === 'undefined') { showToast('JSZip library not loaded'); return; }
+
     var meta = getDocumentMetadata();
     var content = getEditorContentHTML();
     var footnotes = getFootnotesData();
+    var media = [];
 
-    // Load html-docx-js if not available
-    if (typeof htmlDocx === 'undefined') {
-      showToast('Loading DOCX library…');
-      loadScript('https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js', function() {
-        exportDOCX(); // retry
-      });
-      return;
+    // -- Helper: XML escape --
+    function escapeXML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
     }
 
-    var fnHTML = '';
-    if (footnotes.length > 0) {
-      fnHTML = '<div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;"><h3>Footnotes</h3><ol>';
-      footnotes.forEach(function(fn) {
-        fnHTML += '<li>' + escapeHTML(fn.text) + '</li>';
-      });
-      fnHTML += '</ol></div>';
+    // -- Helper: create a single text run --
+    function textRun(text, fmt) {
+      fmt = fmt || {};
+      var rpr = '<w:rPr>';
+      if (fmt.mono) rpr += '<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>';
+      if (fmt.bold) rpr += '<w:b/><w:bCs/>';
+      if (fmt.italic) rpr += '<w:i/><w:iCs/>';
+      if (fmt.underline) rpr += '<w:u w:val="single"/>';
+      if (fmt.strike) rpr += '<w:strike/>';
+      if (fmt.sup) rpr += '<w:vertAlign w:val="superscript"/>';
+      if (fmt.sub) rpr += '<w:vertAlign w:val="subscript"/>';
+      if (fmt.size) rpr += '<w:sz w:val="' + fmt.size + '"/><w:szCs w:val="' + fmt.size + '"/>';
+      if (fmt.color) rpr += '<w:color w:val="' + fmt.color + '"/>';
+      rpr += '</w:rPr>';
+      if (!text) return '';
+      return '<w:r>' + rpr + '<w:t xml:space="preserve">' + escapeXML(text) + '</w:t></w:r>';
     }
 
-    var fullHTML = '<!DOCTYPE html>\n<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-      'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
-      'xmlns="http://www.w3.org/TR/REC-html40">\n<head>\n' +
-      '<meta charset="UTF-8">\n' +
-      '<title>' + escapeHTML(meta.title) + '</title>\n' +
-      '<!--[if gte mso 9]><xml>\n' +
-      '<w:WordDocument>\n' +
-      '<w:View>Print</w:View>\n' +
-      '<w:Zoom>100</w:Zoom>\n' +
-      '<w:DoNotOptimizeForBrowser/>\n' +
-      '</w:WordDocument>\n' +
-      '</xml><![endif]-->\n' +
-      '<style>\n' +
-      '@page { size: A4; margin: 2.54cm; }\n' +
-      'body { font-family: Georgia, "Times New Roman", serif; font-size: 14px; line-height: 1.8; color: #000; }\n' +
-      'h1 { font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 8px; }\n' +
-      'h2 { font-size: 22px; font-weight: bold; margin-top: 20px; }\n' +
-      'h3 { font-size: 18px; font-weight: bold; margin-top: 16px; }\n' +
-      'p { margin: 8px 0; }\n' +
-      'blockquote { border-left: 3px solid #c8a96e; padding-left: 16px; margin: 16px 0; font-style: italic; }\n' +
-      'table { border-collapse: collapse; width: 100%; }\n' +
-      'td, th { border: 1px solid #999; padding: 6px 12px; }\n' +
-      'th { background: #c8a96e; font-weight: bold; }\n' +
-      'code { font-family: "Courier New", monospace; background: #f5f5f5; padding: 2px 6px; }\n' +
-      'pre { background: #f5f5f5; padding: 12px; border-radius: 4px; }\n' +
-      'a { color: #c8a96e; text-decoration: underline; }\n' +
-      '</style>\n</head>\n<body>\n' +
-      '<h1>' + escapeHTML(meta.title) + '</h1>\n' +
-      '<p style="text-align:center;color:#666;">' + escapeHTML(meta.author) + '</p>\n' +
-      content + '\n' +
-      fnHTML +
-      '\n</body>\n</html>';
+    // -- Helper: process inline nodes recursively --
+    function inlineRuns(node, fmt) {
+      fmt = fmt || {};
+      var out = '';
+      for (var i = 0; i < node.childNodes.length; i++) {
+        var c = node.childNodes[i];
+        if (c.nodeType === Node.TEXT_NODE) {
+          if (c.textContent) out += textRun(c.textContent, fmt);
+        } else if (c.nodeType === Node.ELEMENT_NODE) {
+          var t = c.tagName.toLowerCase();
+          if (t === 'br') { out += '<w:r><w:br/></w:r>'; continue; }
+          if (t === 'img') { out += imageRun(c); continue; }
+          var nf = {
+            bold: fmt.bold || t === 'b' || t === 'strong',
+            italic: fmt.italic || t === 'i' || t === 'em',
+            underline: fmt.underline || t === 'u',
+            strike: fmt.strike || t === 's' || t === 'strike' || t === 'del',
+            mono: fmt.mono || t === 'code',
+            sub: fmt.sub || t === 'sub',
+            sup: fmt.sup || t === 'sup',
+            size: fmt.size,
+            color: fmt.color
+          };
+          out += inlineRuns(c, nf);
+        }
+      }
+      return out;
+    }
 
-    try {
-      var converted = htmlDocx.asBlob(fullHTML);
-      downloadBlob(converted, sanitizeFilename(meta.title) + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    // -- Helper: create image run from data URI --
+    function imageRun(img) {
+      var src = img.getAttribute('src') || '';
+      var m = src.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (!m) return '';
+      var idx = media.length + 1;
+      var ext = (m[1] === 'jpeg' || m[1] === 'jpg') ? 'jpeg' : m[1];
+      media.push({ id: idx, ext: ext, data: m[2] });
+      var wPx = parseInt(img.getAttribute('width') || '500', 10);
+      var hPx = parseInt(img.getAttribute('height') || '300', 10);
+      var wEmu = wPx * 9525;
+      var hEmu = hPx * 9525;
+      return '<w:r><w:drawing>' +
+        '<wp:inline distT="0" distB="0" distL="0" distR="0" ' +
+        'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+        '<wp:extent cx="' + wEmu + '" cy="' + hEmu + '"/>' +
+        '<wp:docPr id="' + (idx + 100) + '" name="Image' + idx + '"/>' +
+        '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+        '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+        '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+        '<pic:nvPicPr><pic:cNvPr id="' + (idx + 100) + '" name="Image' + idx + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+        '<pic:blipFill>' +
+        '<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdImg' + idx + '"/>' +
+        '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + wEmu + '" cy="' + hEmu + '"/></a:xfrm>' +
+        '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+        '</pic:pic></a:graphicData></a:graphic></wp:inline></w:r>';
+    }
+
+    // -- Helper: alignment from element style/class --
+    function getAlign(el) {
+      if (!el || !el.getAttribute) return '';
+      var st = el.getAttribute('style') || '';
+      var cs = el.className || '';
+      if (st.indexOf('text-align') !== -1) {
+        var m = st.match(/text-align\s*:\s*(\w+)/);
+        if (m) {
+          if (m[1] === 'center') return '<w:jc w:val="center"/>';
+          if (m[1] === 'right') return '<w:jc w:val="right"/>';
+          if (m[1] === 'justify') return '<w:jc w:val="both"/>';
+        }
+      }
+      if (cs.indexOf('ql-align-center') !== -1) return '<w:jc w:val="center"/>';
+      if (cs.indexOf('ql-align-right') !== -1) return '<w:jc w:val="right"/>';
+      if (cs.indexOf('ql-align-justify') !== -1) return '<w:jc w:val="both"/>';
+      return '';
+    }
+
+    // -- Helper: indent from element style --
+    function getIndent(el) {
+      if (!el || !el.style) return '';
+      var ml = parseInt(el.style.marginLeft || '0', 10);
+      var pl = parseInt(el.style.paddingLeft || '0', 10);
+      var total = ml + pl;
+      return (total > 0) ? '<w:ind w:left="' + Math.round(total * 15) + '"/>' : '';
+    }
+
+    // -- Helper: block element → OOXML --
+    function blockToOOXML(el) {
+      var tag = el.tagName.toLowerCase();
+      var align = getAlign(el);
+
+      // Headings h1–h6
+      if (/^h[1-6]$/.test(tag)) {
+        var sizes = { h1: 36, h2: 32, h3: 28, h4: 26, h5: 24, h6: 24 };
+        return '<w:p><w:pPr>' + align + '</w:pPr>' +
+          inlineRuns(el, { bold: true, size: sizes[tag] }) + '</w:p>';
+      }
+
+      // Paragraph
+      if (tag === 'p') {
+        return '<w:p><w:pPr>' + align + getIndent(el) + '</w:pPr>' +
+          inlineRuns(el, {}) + '</w:p>';
+      }
+
+      // Blockquote
+      if (tag === 'blockquote') {
+        return '<w:p><w:pPr>' +
+          '<w:pBdr><w:left w:val="single" w:sz="18" w:color="C8A96E"/></w:pBdr>' +
+          '<w:ind w:left="567"/></w:pPr>' +
+          inlineRuns(el, { italic: true }) + '</w:p>';
+      }
+
+      // Pre (code block) — each line becomes its own paragraph
+      if (tag === 'pre') {
+        var lines = el.textContent.split('\n');
+        var preXml = '';
+        for (var i = 0; i < lines.length; i++) {
+          preXml += '<w:p><w:pPr>' +
+            '<w:shd w:val="clear" w:color="auto" w:fill="F4F4F4"/>' +
+            '<w:spacing w:after="0"/>' +
+            '</w:pPr>' + textRun(lines[i] || ' ', { mono: true }) + '</w:p>';
+        }
+        return preXml;
+      }
+
+      // Unordered / ordered lists
+      if (tag === 'ul' || tag === 'ol') {
+        var listXml = '';
+        var items = el.children;
+        var numId = tag === 'ul' ? 1 : 2;
+        for (var k = 0; k < items.length; k++) {
+          if (items[k].tagName.toLowerCase() !== 'li') continue;
+          listXml += '<w:p><w:pPr>' +
+            '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="' + numId + '"/></w:numPr>' +
+            '</w:pPr>' + inlineRuns(items[k], {}) + '</w:p>';
+        }
+        return listXml;
+      }
+
+      // Table
+      if (tag === 'table') return tableToOOXML(el);
+
+      // Horizontal rule
+      if (tag === 'hr') {
+        return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="CCCCCC"/></w:pBdr></w:pPr></w:p>';
+      }
+
+      // Container divs — recurse children
+      if (tag === 'div' || tag === 'article' || tag === 'section') {
+        var inner = '';
+        for (var d = 0; d < el.childNodes.length; d++) {
+          var cd = el.childNodes[d];
+          if (cd.nodeType === Node.TEXT_NODE) {
+            if (cd.textContent.trim())
+              inner += '<w:p><w:pPr></w:pPr>' + textRun(cd.textContent, {}) + '</w:p>';
+          } else if (cd.nodeType === Node.ELEMENT_NODE) {
+            if ((cd.className || '').indexOf('page-break') !== -1) {
+              inner += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+            } else {
+              inner += blockToOOXML(cd);
+            }
+          }
+        }
+        return inner;
+      }
+
+      // Standalone image
+      if (tag === 'img') return '<w:p>' + imageRun(el) + '</w:p>';
+
+      // Unknown block — treat as paragraph
+      return '<w:p><w:pPr>' + align + '</w:pPr>' + inlineRuns(el, {}) + '</w:p>';
+    }
+
+    // -- Helper: table → OOXML --
+    function tableToOOXML(table) {
+      var rows = table.querySelectorAll('tr');
+      if (!rows.length) return '';
+      var xml = '<w:tbl><w:tblPr>' +
+        '<w:tblW w:w="5000" w:type="pct"/>' +
+        '<w:tblBorders>' +
+        '<w:top w:val="single" w:sz="4" w:color="999999"/>' +
+        '<w:left w:val="single" w:sz="4" w:color="999999"/>' +
+        '<w:bottom w:val="single" w:sz="4" w:color="999999"/>' +
+        '<w:right w:val="single" w:sz="4" w:color="999999"/>' +
+        '<w:insideH w:val="single" w:sz="4" w:color="999999"/>' +
+        '<w:insideV w:val="single" w:sz="4" w:color="999999"/>' +
+        '</w:tblBorders></w:tblPr>';
+      for (var r = 0; r < rows.length; r++) {
+        var cells = rows[r].querySelectorAll('td,th');
+        xml += '<w:tr>';
+        for (var c = 0; c < cells.length; c++) {
+          var isTh = cells[c].tagName.toLowerCase() === 'th';
+          var tcPr = '<w:tcPr>';
+          if (isTh) tcPr += '<w:shd w:val="clear" w:color="auto" w:fill="C8A96E"/>';
+          tcPr += '<w:tcW w:w="2500" w:type="dxa"/></w:tcPr>';
+          xml += '<w:tc>' + tcPr +
+            '<w:p><w:pPr></w:pPr>' +
+            inlineRuns(cells[c], { bold: isTh }) + '</w:p></w:tc>';
+        }
+        xml += '</w:tr>';
+      }
+      return xml + '</w:tbl><w:p/>';
+    }
+	
+	    // ===== BUILD BODY XML =====
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+
+    var bodyXml = '';
+
+    // — Title (centered, 24pt bold) —
+    bodyXml += '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+      textRun(meta.title || 'Untitled', { bold: true, size: 48 }) + '</w:p>';
+
+    // — Meta line: author · category · tags (centered, italic, gray) —
+    var metaParts = [];
+    if (meta.author) metaParts.push(meta.author);
+    if (meta.category) metaParts.push('Category: ' + meta.category);
+    if (meta.tags) metaParts.push('Tags: ' + meta.tags);
+    if (metaParts.length) {
+      bodyXml += '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+        textRun(metaParts.join(' · '), { italic: true, color: '666666' }) + '</w:p>';
+    }
+
+    // — Spacer —
+    bodyXml += '<w:p/>';
+
+    // — Walk top-level content blocks —
+    for (var i = 0; i < tempDiv.childNodes.length; i++) {
+      var node = tempDiv.childNodes[i];
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent.trim()) {
+          bodyXml += '<w:p><w:pPr></w:pPr>' + textRun(node.textContent, {}) + '</w:p>';
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        bodyXml += blockToOOXML(node);
+      }
+    }
+
+    // — Footnotes (appended as text at end) —
+    if (footnotes && footnotes.length > 0) {
+      bodyXml += '<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:color="CCCCCC"/></w:pBdr></w:pPr></w:p>';
+      bodyXml += '<w:p><w:pPr></w:pPr>' + textRun('Footnotes', { bold: true }) + '</w:p>';
+      for (var f = 0; f < footnotes.length; f++) {
+        bodyXml += '<w:p><w:pPr><w:ind w:left="340"/></w:pPr>' +
+          textRun('[' + (f + 1) + '] ' + (footnotes[f].text || ''), {}) + '</w:p>';
+      }
+    }
+
+    // ===== DOCUMENT.XML =====
+    var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<w:body>' + bodyXml +
+      '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+      '<w:pgMar w:top="1440" w:right="1134" w:bottom="1134" w:left="1134" ' +
+      'w:header="709" w:footer="708" w:gutter="0"/></w:sectPr>' +
+      '</w:body></w:document>';
+
+    // ===== [CONTENT_TYPES].XML =====
+    var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Default Extension="png" ContentType="image/png"/>' +
+      '<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+      '<Default Extension="jpg" ContentType="image/jpeg"/>' +
+      '<Default Extension="gif" ContentType="image/gif"/>' +
+      '<Override PartName="/word/document.xml" ' +
+      'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '<Override PartName="/word/styles.xml" ' +
+      'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+      '<Override PartName="/word/numbering.xml" ' +
+      'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+      '</Types>';
+
+    // ===== _RELS/.RELS =====
+    var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" ' +
+      'Target="word/document.xml"/>' +
+      '</Relationships>';
+
+    // ===== WORD/_RELS/DOCUMENT.XML.RELS =====
+    var docRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rIdStyles" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" ' +
+      'Target="styles.xml"/>' +
+      '<Relationship Id="rIdNumbering" ' +
+      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" ' +
+      'Target="numbering.xml"/>';
+    for (var ri = 0; ri < media.length; ri++) {
+      docRelsXml += '<Relationship Id="rIdImg' + media[ri].id + '" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ' +
+        'Target="media/image' + media[ri].id + '.' + media[ri].ext + '"/>';
+    }
+    docRelsXml += '</Relationships>';
+
+    // ===== WORD/STYLES.XML =====
+    var stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>' +
+      '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
+      '</w:rPr></w:rPrDefault></w:docDefaults>' +
+      '</w:styles>';
+
+    // ===== WORD/NUMBERING.XML =====
+    var numberingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/>' +
+      '<w:lvlText w:val="\u2022"/><w:lvlJc w:val="left"/>' +
+      '<w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>' +
+      '<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/>' +
+      '<w:lvlText w:val="\u25E6"/><w:lvlJc w:val="left"/>' +
+      '<w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr></w:lvl>' +
+      '</w:abstractNum>' +
+      '<w:abstractNum w:abstractNumId="1">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/>' +
+      '<w:lvlText w:val="%1."/><w:lvlJc w:val="left"/>' +
+      '<w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>' +
+      '<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/>' +
+      '<w:lvlText w:val="%2."/><w:lvlJc w:val="left"/>' +
+      '<w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr></w:lvl>' +
+      '</w:abstractNum>' +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      '<w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>' +
+      '</w:numbering>';
+
+    // ===== BUILD ZIP =====
+    var zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypesXml);
+    zip.file('_rels/.rels', rootRelsXml);
+    zip.file('word/document.xml', documentXml);
+    zip.file('word/_rels/document.xml.rels', docRelsXml);
+    zip.file('word/styles.xml', stylesXml);
+    zip.file('word/numbering.xml', numberingXml);
+
+    for (var mi = 0; mi < media.length; mi++) {
+      zip.file('word/media/image' + media[mi].id + '.' + media[mi].ext,
+        media[mi].data, { base64: true });
+    }
+
+    zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }).then(function(blob) {
+      downloadBlob(blob, sanitizeFilename(meta.title || 'document') + '.docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       showToast('Exported DOCX');
-    } catch(e) {
-      showToast('DOCX export failed: ' + e.message);
-    }
+    }).catch(function(err) {
+      showToast('DOCX export failed: ' + err.message);
+    });
   }
 
   // ===== HELPER: Get export CSS =====
@@ -3170,11 +3435,13 @@
       version: CONFIG.VERSION
     };
 
-    if (activeTab && activeTab.metadata) {
+        if (activeTab && activeTab.metadata) {
       if (activeTab.metadata.title) meta.title = activeTab.metadata.title;
       if (activeTab.metadata.author) meta.author = activeTab.metadata.author;
       if (activeTab.metadata.subject) meta.subject = activeTab.metadata.subject;
       if (activeTab.metadata.keywords) meta.keywords = activeTab.metadata.keywords;
+      if (activeTab.metadata.tags) meta.tags = activeTab.metadata.tags;
+      if (activeTab.metadata.category) meta.category = activeTab.metadata.category;
       if (activeTab.metadata.created) meta.created = activeTab.metadata.created;
     }
 
@@ -3215,6 +3482,50 @@
       });
     }
     return result;
+  }
+  
+    // ===== IMPORT: JSON (single document export) =====
+  function importJSONFile(file) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+
+        // Αν είναι Full Database export, ζήτα επαναφορά
+        if (data && data._meta && data._meta.type === 'full-database') {
+          if (!confirm('This is a Full Database export. Restore ALL data?\n\nCurrent data will be replaced.')) return;
+          Object.keys(data.localStorage).forEach(function(key) {
+            localStorage.setItem(key, data.localStorage[key]);
+          });
+          showToast('Database restored. Reloading…');
+          setTimeout(function() { location.reload(); }, 800);
+          return;
+        }
+
+        if (!data || typeof data.content !== 'string') {
+          showToast('Invalid document JSON');
+          return;
+        }
+
+        var meta = data.metadata || {};
+        tabsModule.create({
+          content: data.content,
+          title: data.title || 'Imported',
+          metadata: meta
+        });
+        setTimeout(function() {
+          restoreFootnotes();
+          loadAndRestoreComments();
+          loadPageSettingsFields();
+          loadMetadataFields();
+          updateStats();
+        }, 50);
+        showToast('Imported JSON: ' + (data.title || 'Untitled'));
+      } catch(err) {
+        showToast('Import failed: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
   }
   
     // ===== EXPORT / IMPORT SETUP =====
@@ -3276,6 +3587,8 @@
 
     var header = meta.title + '\n' + '='.repeat(Math.min(meta.title.length, 60)) + '\n';
     if (meta.author) header += meta.author + '\n';
+	    if (meta.category) header += 'Category: ' + meta.category + '\n';
+    if (meta.tags) header += 'Tags: ' + meta.tags + '\n';
     text = header + '\n' + text;
 
     var footnotes = getFootnotesData();
@@ -3330,12 +3643,17 @@
     function setupFileImport() {
     var fileInput = document.getElementById('file-input-hidden');
     if (!fileInput) return;
-    fileInput.addEventListener('change', function(e) {
+        fileInput.addEventListener('change', function(e) {
       var file = e.target.files[0];
       if (!file) return;
       var ext = file.name.split('.').pop().toLowerCase();
       if (ext === 'orosdoc') {
         importOROSDOC(file);
+        fileInput.value = '';
+        return;
+      }
+      if (ext === 'json') {
+        importJSONFile(file);
         fileInput.value = '';
         return;
       }
@@ -3503,45 +3821,6 @@ for (var i = 0; i < panels.length; i++) {
   // ===== COMMAND EXECUTION =====
   function execCmd(command, value) {
     if (!richEditor) return;
-	    richEditor.addEventListener('keydown', function(e) {
-      // ===== DOUBLE ENTER EXITS PRE/BLOCKQUOTE =====
-      if (e.key === 'Enter' && !e.shiftKey) {
-        var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return;
-        var node = sel.getRangeAt(0).startContainer;
-        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-        while (node && node !== richEditor) {
-          if (node.tagName === 'PRE' || node.tagName === 'BLOCKQUOTE') {
-            var range = sel.getRangeAt(0);
-            // Αν ο cursor είναι στο τέλος του pre/blockquote και η τελευταία γραμμή είναι άδεια
-            var blockText = node.textContent.trim();
-            var lastChild = node.lastChild;
-            var isAtEnd = range.endContainer === node || 
-                          (node.contains(range.endContainer) && 
-                           (range.endContainer === lastChild || 
-                            (lastChild && lastChild.nodeType === Node.TEXT_NODE && 
-                             range.endOffset >= lastChild.textContent.length)));
-            
-            // Έλεγχος: αν το τελευταίο child είναι <br> ή άδειο <p>, έξοδος
-            if (isAtEnd && blockText === '') {
-              e.preventDefault();
-              var exitP = document.createElement('p');
-              exitP.innerHTML = '<br>';
-              node.parentNode.insertBefore(exitP, node.nextSibling);
-              var exitRange = document.createRange();
-              exitRange.setStart(exitP, 0);
-              exitRange.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(exitRange);
-              if (stylesSelect) stylesSelect.value = 'normal';
-              return;
-            }
-            return;
-          }
-          node = node.parentElement;
-        }
-      }
-    });
     if (command === 'insertImage' && value) {
       var img = document.createElement('img');
       img.src = value;
@@ -4082,7 +4361,42 @@ for (var i = 0; i < panels.length; i++) {
   // ===== EDITOR INPUT =====
   function setupEditorInput() {
     if (!richEditor) return;
-	
+	    richEditor.addEventListener('keydown', function(e) {
+      // ===== DOUBLE ENTER EXITS PRE/BLOCKQUOTE =====
+      if (e.key === 'Enter' && !e.shiftKey) {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        var node = sel.getRangeAt(0).startContainer;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        while (node && node !== richEditor) {
+          if (node.tagName === 'PRE' || node.tagName === 'BLOCKQUOTE') {
+            var range = sel.getRangeAt(0);
+            var blockText = node.textContent.trim();
+            var lastChild = node.lastChild;
+            var isAtEnd = range.endContainer === node ||
+                          (node.contains(range.endContainer) &&
+                           (range.endContainer === lastChild ||
+                            (lastChild && lastChild.nodeType === Node.TEXT_NODE &&
+                             range.endOffset >= lastChild.textContent.length)));
+            if (isAtEnd && blockText === '') {
+              e.preventDefault();
+              var exitP = document.createElement('p');
+              exitP.innerHTML = '<br>';
+              node.parentNode.insertBefore(exitP, node.nextSibling);
+              var exitRange = document.createRange();
+              exitRange.setStart(exitP, 0);
+              exitRange.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(exitRange);
+              if (stylesSelect) stylesSelect.value = 'normal';
+              return;
+            }
+            return;
+          }
+          node = node.parentElement;
+        }
+      }
+    });
 	    richEditor.addEventListener('keydown', function(e) {
       if (!goalLockCheckbox || !goalLockCheckbox.checked) return;
       var goal = parseInt(localStorage.getItem('oros_writer_goal'), 10) || 0;
@@ -4196,8 +4510,13 @@ for (var i = 0; i < panels.length; i++) {
       if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
 
       for (var i = 0; i < e.dataTransfer.files.length; i++) {
-        var file = e.dataTransfer.files[i];
+                var file = e.dataTransfer.files[i];
         var fileName = file.name.toLowerCase();
+        var ext = fileName.split('.').pop();
+
+        if (ext === 'orosdoc') { importOROSDOC(file); continue; }
+        if (ext === 'json') { importJSONFile(file); continue; }
+
         var valid = ['.txt', '.md', '.markdown', '.rtf', '.html', '.htm', '.docx', '.odt'].some(function(ext) {
           return fileName.endsWith(ext);
         });
@@ -4345,20 +4664,6 @@ for (var i = 0; i < panels.length; i++) {
     if (metadataPanel && metadataPanel.style.display !== 'none') {
       if (metaModified) metaModified.textContent = meta.modified || '-';
     }
-  }
-
-  // ===== OUTLINE PANEL =====
-  function setupOutlinePanel() {
-    bindClick('btn-outline', toggleOutlinePanel);
-  }
-
-  function toggleOutlinePanel() {
-    if (!outlinePanel) return;
-    var isVisible = outlinePanel.style.display !== 'none';
-    outlinePanel.style.display = isVisible ? 'none' : '';
-    var btn = document.getElementById('btn-outline');
-    if (btn) btn.classList.toggle('active', !isVisible);
-    if (!isVisible) updateOutline();
   }
 
   // ===== TABLE OF CONTENTS =====
@@ -5487,7 +5792,13 @@ for (var i = 0; i < panels.length; i++) {
       var html = '';
 
       if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
-        html = content;
+        var parsed = new DOMParser().parseFromString(content, 'text/html');
+        var bodyEl = parsed.body || parsed.documentElement;
+        var junk = bodyEl.querySelectorAll('script, style, link, meta, noscript');
+        for (var s = 0; s < junk.length; s++) {
+          if (junk[s].parentNode) junk[s].parentNode.removeChild(junk[s]);
+        }
+        html = bodyEl.innerHTML || '<p><br></p>';
       } else if (fileName.endsWith('.rtf')) {
         html = (typeof window.parseRTF === 'function')
           ? window.parseRTF(content)
