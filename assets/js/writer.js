@@ -3347,6 +3347,144 @@
     md += '\n';
     return md;
   }
+  
+  // ===== IMPORT: ODT =====
+  function odtBuildStyleMap(doc) {
+    var map = {};
+    var styles = doc.getElementsByTagName('style:style');
+    for (var i = 0; i < styles.length; i++) {
+      var tp = styles[i].getElementsByTagName('style:text-properties')[0];
+      if (!tp) continue;
+      var st = {};
+      if (tp.getAttribute('fo:font-weight') === 'bold') st.bold = true;
+      if (tp.getAttribute('fo:font-style') === 'italic') st.italic = true;
+      var us = tp.getAttribute('style:text-underline-style');
+      if (us && us !== 'none') st.underline = true;
+      var ls = tp.getAttribute('style:text-line-through-style');
+      if (ls && ls !== 'none') st.strike = true;
+      map[styles[i].getAttribute('style:name')] = st;
+    }
+    return map;
+  }
+
+  function odtInlineToHtml(node, styleMap) {
+    var html = '';
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var n = node.childNodes[i];
+      if (n.nodeType === Node.TEXT_NODE) {
+        html += escapeHtml(n.textContent);
+      } else if (n.nodeType === Node.ELEMENT_NODE) {
+        var tn = n.nodeName;
+        if (tn === 'text:span') {
+          var st = styleMap[n.getAttribute('text:style-name')] || {};
+          var inner = odtInlineToHtml(n, styleMap);
+          if (st.bold) inner = '<strong>' + inner + '</strong>';
+          if (st.italic) inner = '<em>' + inner + '</em>';
+          if (st.underline) inner = '<u>' + inner + '</u>';
+          if (st.strike) inner = '<s>' + inner + '</s>';
+          html += inner;
+        } else if (tn === 'text:s') {
+          var c = parseInt(n.getAttribute('text:c') || '1', 10);
+          for (var k = 0; k < c; k++) html += '\u00A0';
+        } else if (tn === 'text:tab') {
+          html += '\u2003';
+        } else if (tn === 'text:line-break') {
+          html += '<br>';
+        } else if (tn === 'text:a') {
+          html += '<a href="' + escapeHtml(n.getAttribute('xlink:href') || '#') + '">' + odtInlineToHtml(n, styleMap) + '</a>';
+        } else {
+          html += odtInlineToHtml(n, styleMap);
+        }
+      }
+    }
+    return html;
+  }
+
+  function odtListToHtml(listNode, ordered, styleMap) {
+    var items = [];
+    for (var i = 0; i < listNode.childNodes.length; i++) {
+      var n = listNode.childNodes[i];
+      if (n.nodeName === 'text:list-item') {
+        var itemHtml = '';
+        for (var j = 0; j < n.childNodes.length; j++) {
+          var c = n.childNodes[j];
+          if (c.nodeName === 'text:p' || c.nodeName === 'text:h') {
+            itemHtml += '<li>' + (odtInlineToHtml(c, styleMap) || '<br>') + '</li>';
+          } else if (c.nodeName === 'text:list') {
+            itemHtml += odtListToHtml(c, ordered, styleMap);
+          }
+        }
+        items.push(itemHtml);
+      } else if (n.nodeName === 'text:list') {
+        items.push(odtListToHtml(n, ordered, styleMap));
+      }
+    }
+    var tag = ordered ? 'ol' : 'ul';
+    return '<' + tag + '>' + items.join('') + '</' + tag + '>';
+  }
+
+  function odtBlockToHtml(node, styleMap) {
+    var html = '';
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var n = node.childNodes[i];
+      if (n.nodeType !== Node.ELEMENT_NODE) continue;
+      if (n.nodeName === 'text:h') {
+        var lvl = parseInt(n.getAttribute('text:outline-level') || '1', 10);
+        if (lvl < 1) lvl = 1;
+        if (lvl > 6) lvl = 6;
+        html += '<h' + lvl + '>' + (odtInlineToHtml(n, styleMap) || '<br>') + '</h' + lvl + '>';
+      } else if (n.nodeName === 'text:p') {
+        html += '<p>' + (odtInlineToHtml(n, styleMap) || '<br>') + '</p>';
+      } else if (n.nodeName === 'text:list') {
+        html += odtListToHtml(n, false, styleMap);
+      } else if (n.nodeName === 'text:section' || n.nodeName === 'office:text') {
+        html += odtBlockToHtml(n, styleMap);
+      }
+    }
+    return html;
+  }
+
+  function importODT(file, asNewTab) {
+    if (typeof JSZip === 'undefined') {
+      showToast('JSZip library not loaded');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        var cf = zip.file('content.xml');
+        if (!cf) throw new Error('content.xml missing');
+        return cf.async('string');
+      }).then(function(xml) {
+        var doc = new DOMParser().parseFromString(xml, 'application/xml');
+        var parserError = doc.getElementsByTagName('parsererror');
+        if (parsererrorCheck(parsererror_length)) { /* noop — placeholder removed */ }
+        var officeText = doc.getElementsByTagName('office:text')[0];
+        if (!officeText) throw new Error('No office:text found');
+        var styleMap = odtBuildStyleMap(doc);
+        var html = odtBlockToHtml(officeText, styleMap);
+        if (!html) html = '<p><br></p>';
+
+        var title = file.name.replace(/\.odt$/i, '');
+        if (asNewTab) {
+          tabsModule.create({
+            content: html,
+            title: title,
+            metadata: { created: new Date().toISOString() }
+          });
+        } else {
+          if (richEditor) richEditor.innerHTML = html;
+          saveCurrentTabContent();
+        }
+        showToast(file.name + ' opened');
+        updateStats();
+      }).catch(function(err) {
+        console.error('ODT import failed:', err);
+        showToast('Failed to read .odt');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
 
   // ===== IMPORT: .orosdoc =====
   function importOROSDOC(file) {
@@ -3607,6 +3745,7 @@
           else if (fmt === 'html') exportHTML();
           else if (fmt === 'pdf') exportPDF();
           else if (fmt === 'docx') exportDOCX();
+		  else if (fmt === 'odt') exportODT();
           else if (fmt === 'rtf') exportRTF();
           else if (fmt === 'orosdoc') exportOROSDOC();
           else if (fmt === 'json') exportJSON();
@@ -3701,6 +3840,11 @@
       }
       if (ext === 'json') {
         importJSONFile(file);
+        fileInput.value = '';
+        return;
+      }
+	        if (ext === 'odt') {
+        importODT(file, true);
         fileInput.value = '';
         return;
       }
@@ -4563,6 +4707,7 @@ for (var i = 0; i < panels.length; i++) {
 
         if (ext === 'orosdoc') { importOROSDOC(file); continue; }
         if (ext === 'json') { importJSONFile(file); continue; }
+		        if (ext === 'odt') { importODT(file, true); continue; }
 
         var valid = ['.txt', '.md', '.markdown', '.rtf', '.html', '.htm', '.docx', '.odt'].some(function(ext) {
           return fileName.endsWith(ext);
