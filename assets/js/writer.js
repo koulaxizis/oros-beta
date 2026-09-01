@@ -970,10 +970,10 @@
 
     var reserved = headerH + footerH + (40 + 36) + 40;
 
-    // Reserve χώρο για ορατά header/footer preview
+        // Reserve χώρο για ορατά header/footer preview
     var previews = ['.header-preview', '.footer-preview'];
-    for (var i = 0; i < extras.length; i++) {
-      var el = document.querySelector(extras[i]);
+    for (var i = 0; i < previews.length; i++) {
+      var el = document.querySelector(previews[i]);
       if (el && el.style.display !== 'none' && el.offsetHeight > 0) {
         reserved += el.offsetHeight;
       }
