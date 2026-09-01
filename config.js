@@ -3,7 +3,7 @@
 // ============================================
 
 var OROS_CONFIG = {
-  version: '0.9',
+  version: '1.0.1',
   channel: 'beta',
   domain: 'https://koulaxizis.github.io/oros-beta',
   baseHref: (function() {

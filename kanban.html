@@ -108,16 +108,22 @@
       </div>
 
       <div class="kanban-toolbar-right">
+        <!-- Sync status indicator (File System Access API) -->
+        <button id="btn-sync" class="header-btn sync-btn" data-i18n-tooltip="kanban_sync_tt" title="Sync">
+          <i class="fa fa-cloud"></i>
+          <span id="sync-status-dot" class="sync-status-dot off"></span>
+        </button>
+
         <button id="btn-new-board" class="header-btn" data-i18n-tooltip="kanban_new_board_tt" title="New Board">
           <i class="fa fa-plus"></i>
         </button>
-        <button id="btn-import" class="header-btn" data-i18n-tooltip="kanban_import_tt" title="Import Board">
+        <button id="btn-import" class="header-btn" data-i18n-tooltip="kanban_import_tt" title="Import Database">
           <i class="fa fa-upload"></i>
         </button>
         <input type="file" id="import-file" accept=".json" style="display:none;">
 
         <div class="kanban-export-group">
-          <button id="btn-export" class="header-btn" data-i18n-tooltip="kanban_export_tt" title="Export Board">
+          <button id="btn-export" class="header-btn" data-i18n-tooltip="kanban_export_tt" title="Export">
             <i class="fa fa-download"></i>
           </button>
           <div id="export-options" class="kanban-export-menu">
@@ -140,6 +146,12 @@
 
     <!-- Board area -->
     <main id="kanban-board-area" class="kanban-board-area">
+      <!-- Archive bar (visible when showArchived is on) -->
+      <div id="archive-bar" class="archive-bar" style="display:none;">
+        <i class="fa fa-archive"></i>
+        <span data-i18n="kanban_archive_mode">Showing archived cards — they stay in their columns until restored.</span>
+      </div>
+
       <div id="kanban-empty-state" class="empty-state">
         <div class="empty-icon"><i class="fa fa-tasks"></i></div>
         <h2 data-i18n="kanban_empty_title">No boards yet</h2>
@@ -220,6 +232,13 @@
           <button id="btn-add-assignment" class="btn-small" data-i18n="kanban_add_assignment">Add Assignment</button>
         </div>
 
+        <div class="card-edit-section">
+          <label data-i18n="kanban_restore_archive">Restore / Unarchive:</label>
+          <button id="btn-unarchive-card" class="btn-secondary" data-i18n="kanban_unarchive_card" style="display:none;">
+            <i class="fa fa-undo"></i> Restore from Archive
+          </button>
+        </div>
+
         <div class="card-meta-info">
           <span id="card-meta-created"></span>
           <span id="card-meta-modified"></span>
@@ -259,6 +278,25 @@
       </div>
     </div>
 
+    <!-- Welcome / Feedback Modal (stable channel only, one-time with dismiss options) -->
+    <div id="welcome-overlay" class="modal-overlay"></div>
+    <div id="welcome-modal" class="modal welcome-modal">
+      <div class="modal-header welcome-modal-header">
+        <h3 data-i18n="kanban_welcome_title">Welcome to orOS Kanban</h3>
+        <button id="welcome-modal-close" class="modal-close"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="modal-body welcome-modal-body">
+        <p data-i18n="kanban_welcome_body">Thanks for using the stable release! Your feedback makes orOS better. Send your criticism, suggestions or bug reports to:</p>
+        <p class="welcome-email"><a href="mailto:koulaxizis@glarolykoi.net?subject=orOS%20Kanban%20Feedback">koulaxizis@glarolykoi.net</a></p>
+      </div>
+      <div class="modal-footer card-modal-footer">
+        <button id="welcome-remind-later" class="btn-secondary" data-i18n="kanban_welcome_remind">Remind me in 7 days</button>
+        <button id="welcome-dont-show" class="btn-secondary" data-i18n="kanban_welcome_never">Don't show again</button>
+        <div class="spacer"></div>
+        <button id="welcome-continue" class="btn-primary" data-i18n="kanban_welcome_continue">Continue</button>
+      </div>
+    </div>
+
     <!-- Settings Modal — matches editor/converter pattern -->
     <div class="settings-modal">
       <div class="settings-modal-overlay"></div>
@@ -270,10 +308,11 @@
         <div class="settings-nav">
           <button class="tab-btn active" data-tab="global-settings" data-i18n="tab_global">Global</button>
           <button class="tab-btn" data-tab="kanban-settings" data-i18n="tab_kanban">Kanban</button>
+          <button class="tab-btn" data-tab="sync-settings" data-i18n="tab_sync">Sync</button>
         </div>
         <div class="settings-body">
           <!-- Global Tab -->
-          <div class="tab-panel" id="global-settings" style="display:flex;">
+          <div class="tab-panel active" id="global-settings">
             <div class="toggles-container">
               <div class="toggle-row">
                 <span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>
@@ -300,7 +339,7 @@
             </div>
           </div>
           <!-- Kanban Tab -->
-          <div class="tab-panel" id="kanban-settings" style="display:none;">
+          <div class="tab-panel" id="kanban-settings">
             <div class="toggles-container">
               <div class="toggle-row">
                 <span class="toggle-label" data-i18n="kanban_auto_save">Auto-save</span>
@@ -325,6 +364,7 @@
                 <tbody>
                   <tr><td data-i18n="kanban_save">Save / Export board</td><td><kbd>Ctrl+S</kbd></td></tr>
                   <tr><td>Export menu</td><td><kbd>Ctrl+B</kbd></td></tr>
+                  <tr><td data-i18n="kanban_sync_now_tt">Sync now</td><td><kbd>Ctrl+Shift+S</kbd></td></tr>
                   <tr><td>Save card (in modal)</td><td><kbd>Ctrl+Enter</kbd></td></tr>
                   <tr><td>Delete card (in modal)</td><td><kbd>Ctrl+Delete</kbd></td></tr>
                   <tr><td>Edit card</td><td><kbd>Click card</kbd></td></tr>
@@ -334,6 +374,44 @@
                   <tr><td>Close modal / dropdown</td><td><kbd>Esc</kbd></td></tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+          <!-- Sync Tab -->
+          <div class="tab-panel" id="sync-settings">
+            <div class="toggles-container">
+              <div class="sync-status-box">
+                <div class="sync-status-row">
+                  <span class="toggle-label" data-i18n="sync_status">Status</span>
+                  <span id="sync-status-text" class="sync-status-badge off">Off</span>
+                </div>
+                <div class="sync-status-row">
+                  <span class="toggle-label" data-i18n="sync_folder">Folder</span>
+                  <span id="sync-folder-name" class="sync-folder-name">Not set</span>
+                </div>
+                <div class="sync-status-row">
+                  <span class="toggle-label" data-i18n="sync_last">Last sync</span>
+                  <span id="sync-last-time" class="sync-folder-name">—</span>
+                </div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label" data-i18n="sync_choose_folder">Choose Sync Folder</span>
+                <button id="btn-choose-sync-folder" class="btn-small"><i class="fa fa-folder-open"></i> Choose</button>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label" data-i18n="sync_autosync">Auto-sync</span>
+                <label class="switch"><input type="checkbox" id="sync-auto-toggle" checked><span class="slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label" data-i18n="sync_disable">Disable Sync</span>
+                <button id="btn-disable-sync" class="btn-small"><i class="fa fa-power-off"></i> Disable</button>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label" data-i18n="sync_now">Sync Now</span>
+                <button id="btn-sync-now" class="btn-small"><i class="fa fa-refresh"></i> Sync</button>
+              </div>
+              <p class="sync-explainer" data-i18n="sync_explainer">
+                Sync stores the entire Kanban database as kanban.json inside a folder you pick (e.g. your Syncthing folder). All orOS apps can share the same folder — each writes its own file.
+              </p>
             </div>
           </div>
         </div>
