@@ -35,8 +35,6 @@
   <meta name="rating" content="general">
 
   <!-- Resource Hints -->
-  <link rel="preconnect" href="https://koulaxizis.github.io">
-  <link rel="dns-prefetch" href="https://koulaxizis.github.io">
   <link rel="prefetch" href="assets/js/writer.js" as="script">
   <link rel="prefetch" href="assets/js/converter.js" as="script">
   <link rel="prefetch" href="assets/js/kanban.js" as="script">
@@ -90,7 +88,7 @@
   <link rel="preload" href="assets/fonts/nunito-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-semibold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito-bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/nunito-extrabold.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" href="assets/css/icons.css">
@@ -397,7 +395,7 @@
         <p data-i18n="tools_intro">Select a tool below. All applications work offline and respect your personal data.</p>
       </div>
 
-      <div class="tools-grid">
+            <div class="tools-grid">
         <div class="tool-card-wrapper">
           <a href="writer.html" class="tool-card" aria-label="Open Writer — rich text editor with autosave">
             <div class="tool-icon"><i class="fa fa-pencil"></i></div>
@@ -408,6 +406,7 @@
             <i class="fa fa-question-circle"></i>
           </button>
         </div>
+        <!--
         <a href="converter.html" class="tool-card" aria-label="Open Case Converter — text transformation tool">
           <div class="tool-icon"><i class="fa fa-text-width"></i></div>
           <h2 class="tool-name" data-i18n="converter_name">Case Converter</h2>
@@ -438,6 +437,7 @@
           <h2 class="tool-name" data-i18n="habits_name">Habits</h2>
           <p class="tool-desc" data-i18n="habits_desc">Track habits &amp; streaks</p>
         </a>
+        -->
       </div>
     </div>
   </section>
@@ -450,7 +450,7 @@
         <button class="dialog-close" id="btn-close-writer-features"><i class="fa fa-times"></i></button>
       </div>
       <div class="dialog-body">
-        <ul class="help-list" style="columns:2;column-gap:32px;line-height:2;">
+                <ul class="help-list" style="columns:2;column-gap:32px;line-height:2;">
           <li>Multiple document tabs</li>
           <li>Auto-save on every keystroke</li>
           <li>Writing goals with lock option</li>
@@ -467,10 +467,12 @@
           <li>Quick format menu (Alt + Right-click)</li>
           <li>Smart typography (auto-convert quotes, symbols)</li>
           <li>Custom auto-correction rules</li>
-          <li>Typewriter sound effect</li>
+          <li>Page setup (A4, Letter, Legal, A3, A5, B5)</li>
+          <li>Custom header &amp; footer with page numbers</li>
+          <li>Cloud sync via Syncthing (File System Access API)</li>
           <li>Ctrl+Click links open in new tab</li>
-          <li>Import .txt, .md, .rtf, .html</li>
-          <li>Export to .txt, .md, .html, .rtf, .pdf</li>
+          <li>Import .txt, .md, .rtf, .html, .docx, .orosdoc</li>
+          <li>Export to .txt, .md, .html, .rtf, .pdf, .docx, .orosdoc</li>
           <li>Database export (settings + all documents)</li>
         </ul>
       </div>
@@ -490,8 +492,8 @@
       <div class="settings-body">
         <div class="toggles-container">
   <div class="toggle-row">
-    <span class="toggle-label" data-i18n="install_app">Install as App</span>
-    <button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
+    <span class="toggle-label" data-i18n="install_app_label">Install as App</span>
+<button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>
   </div>
 </div>
       </div>
@@ -728,15 +730,10 @@
         // Set correct stable link based on baseHref
         var stableLink = document.getElementById('beta-to-stable-link');
         if (stableLink) {
-          var base = getBaseHref();
-          if (base && base.indexOf('/beta/') !== -1) {
-            // Currently in beta repo → link to parent (stable)
-            stableLink.href = '../index.html';
-          } else if (base === '/') {
-            stableLink.href = '/oros/index.html';
-          } else {
-            stableLink.href = 'index.html';
-          }
+          // The href is already set correctly in the HTML
+          // (https://useoros.online for beta → stable,
+          //  https://koulaxizis.github.io/oros-beta/ for stable → beta)
+          // No JS override needed — let the HTML href stand.
         }
       }
 
@@ -863,16 +860,6 @@
         init();
       }
     })();
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('service-worker.js').catch(function(err) {
-          console.warn('SW registration failed:', err);
-        });
-      });
-    }
   </script>
 
 </body>

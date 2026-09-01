@@ -84,7 +84,6 @@
     "export_rtf": "Rich Text (.rtf)",
     "export_docx": "Microsoft Word (.docx)",
     "export_pdf": "PDF (.pdf)",
-    "export_epub": "EPUB (.epub)",
     "export_html": "HTML (.html)",
     "text_words": "words",
     "text_chars": "chars",
@@ -698,7 +697,16 @@
 "sync_help_step2": "<strong>Syncthing:</strong> Share that folder with your Android device",
 "sync_help_step3": "<strong>Desktop:</strong> Data syncs automatically every 5 min",
 "sync_help_step4": "<strong>Android:</strong> Writer → Import Database → select oros-writer-sync.json",
-"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, place file in synced folder, use Restore from Cloud"
+"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, place file in synced folder, use Restore from Cloud",
+    "find_format_strikethrough": "Strikethrough text",
+    "install_app_label": "Install as App",
+    "page_size_a3": "A3 (297×420mm)",
+    "page_size_a5": "A5 (148×210mm)",
+    "page_size_b5": "B5 (176×250mm)",
+    "page_size_full_width": "Full Width (Screen)",
+    "page_margin_reset": "Reset Margins",
+    "tooltip_screen_play": "Screen Play mode",
+    "tooltip_formal_letter": "Formal Letter mode"
   },
 
   "el": {
@@ -786,7 +794,6 @@
     "export_rtf": "Rich Text (.rtf)",
     "export_docx": "Microsoft Word (.docx)",
     "export_pdf": "PDF (.pdf)",
-    "export_epub": "EPUB (.epub)",
     "export_html": "HTML (.html)",
     "text_words": "λέξεις",
     "text_chars": "χαρακτήρες",
@@ -1400,6 +1407,15 @@
 "sync_help_step2": "<strong>Syncthing:</strong> Κοινή χρήση φακέλου με τη συσκευή Android",
 "sync_help_step3": "<strong>Desktop:</strong> Τα δεδομένα συγχρονίζονται αυτόματα κάθε 5 λεπτά",
 "sync_help_step4": "<strong>Android:</strong> Writer → Import Database → επίλεξε oros-writer-sync.json",
-"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, τοποθέτησε το αρχείο στον synced φάκελο, χρήση Restore from Cloud"
+"sync_help_step5": "<strong>Android → Desktop:</strong> Export Database, τοποθέτησε το αρχείο στον synced φάκελο, χρήση Restore from Cloud",
+    "find_format_strikethrough": "Διακριτή διαγραφή",
+    "install_app_label": "Εγκατάσταση ως Εφαρμογή",
+    "page_size_a3": "A3 (297×420mm)",
+    "page_size_a5": "A5 (148×210mm)",
+    "page_size_b5": "B5 (176×250mm)",
+    "page_size_full_width": "Πλήρες Πλάτος (Οθόνη)",
+    "page_margin_reset": "Επαναφορά Περιθωρίων",
+    "tooltip_screenplay": "Λειτουργία Σεναρίου",
+    "tooltip_letter": "Λειτουργία Επιστολής"
   }
 }

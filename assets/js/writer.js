@@ -2768,14 +2768,6 @@
     var content = getEditorContentHTML();
     var footnotes = getFootnotesData();
 
-    if (typeof html2pdf === 'undefined') {
-      showToast('html2pdf library not loaded. Loading…');
-      loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js', function() {
-        exportPDF(); // retry
-      });
-      return;
-    }
-
     var fnHTML = '';
     if (footnotes.length > 0) {
       fnHTML = '<div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;"><h3>Footnotes</h3><ol>';

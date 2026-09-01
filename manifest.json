@@ -2,7 +2,7 @@
   "name": "orOS — The Artist's Operating System",
   "short_name": "orOS",
   "description": "Privacy-first creative toolkit. Writer, Case Converter, Kanban, Notes. Works offline. No tracking.",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -111,12 +111,12 @@
     {
       "action": "./writer.html",
       "launch_type": "single-client",
-      "accept": {
+            "accept": {
         "text/plain": [".txt", ".md", ".markdown"],
         "text/html": [".html", ".htm"],
         "application/rtf": [".rtf"],
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-        "application/vnd.oasis.opendocument.text": [".odt"]
+        "application/zip": [".orosdoc"]
       }
     }
   ],
