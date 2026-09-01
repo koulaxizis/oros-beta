@@ -781,7 +781,21 @@
     "kanban_welcome_never": "Never show again",
     "kanban_show_archived": "Show Archived",
     "kanban_restore": "Restore",
-    "kanban_card_restored": "Card restored"
+    "kanban_card_restored": "Card restored",
+	    "tab_sync": "Sync",
+    "kanban_archive_mode": "Archived",
+    "kanban_restore_archive": "Restore",
+    "kanban_unarchive_card": "Unarchive",
+    "kanban_welcome_body": "v2.4 brings full database backup/restore, folder sync with auto-sync, and card archiving. Feedback is always welcome:",
+    "kanban_sync_now_tt": "Sync Now (Ctrl+Shift+S)",
+    "sync_status": "Sync Status",
+    "sync_folder": "Folder",
+    "sync_last": "Last sync",
+    "sync_choose_folder": "Choose Folder...",
+    "sync_autosync": "Auto-sync",
+    "sync_disable": "Disable Sync",
+    "sync_now": "Sync Now",
+    "sync_explainer": "Sync the full database to a local folder (e.g. your Syncthing folder). Requires Chrome, Edge or Brave on desktop. On other browsers, use Import/Export instead."
   },
 
   "el": {
@@ -1568,6 +1582,20 @@
     "kanban_welcome_never": "Να μην εμφανιστεί ξανά",
     "kanban_show_archived": "Εμφάνιση Αρχειοθετημένων",
     "kanban_restore": "Επαναφορά",
-    "kanban_card_restored": "Η κάρτα επαναφέρθηκε"
+    "kanban_card_restored": "Η κάρτα επαναφέρθηκε",
+	    "tab_sync": "Συγχρονισμός",
+    "kanban_archive_mode": "Αρχειοθετημένα",
+    "kanban_restore_archive": "Επαναφορά",
+    "kanban_unarchive_card": "Επαναφορά από Αρχείο",
+    "kanban_welcome_body": "Η έκδοση 2.4 φέρνει πλήρες backup/επαναφορά βάσης, συγχρονισμό με τοπικό φάκελο και αρχειοθέτηση καρτών. Τα σχόλιά σου είναι ευπρόσδεκτα:",
+    "kanban_sync_now_tt": "Συγχρονισμός Τώρα (Ctrl+Shift+S)",
+    "sync_status": "Κατάσταση Συγχρονισμού",
+    "sync_folder": "Φάκελος",
+    "sync_last": "Τελευταίος συγχρονισμός",
+    "sync_choose_folder": "Επιλογή Φακέλου...",
+    "sync_autosync": "Αυτόματος συγχρονισμός",
+    "sync_disable": "Απενεργοποίηση Συγχρονισμού",
+    "sync_now": "Συγχρονισμός Τώρα",
+    "sync_explainer": "Συγχρονισμός ολόκληρης της βάσης με τοπικό φάκελο (π.χ. φάκελο Syncthing). Απαιτεί Chrome, Edge ή Brave σε desktop. Σε άλλους browsers χρησιμοποίησε Import/Export."
   }
 }

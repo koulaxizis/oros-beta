@@ -192,7 +192,12 @@
     if (dot) dot.className = 'sync-status-dot ' + state;
 
     if (badge) {
-      const labelsMap = { off: 'Off', ok: 'Synced', pending: 'Pending', error: 'Error' };
+      const labelsMap = {
+        off: getTrans('kanban_sync_off', 'Off'),
+        ok: getTrans('kanban_sync_ok', 'Synced'),
+        pending: getTrans('kanban_sync_pending', 'Pending'),
+        error: getTrans('kanban_sync_error', 'Error')
+      };
       badge.textContent = labelsMap[state] || 'Off';
       badge.className = 'sync-status-badge ' + state;
     }
