@@ -27,9 +27,7 @@
   <link rel="preconnect" href="https://koulaxizis.github.io">
   <link rel="dns-prefetch" href="https://koulaxizis.github.io">
   
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 
   <link rel="alternate" hreflang="en" id="hreflang-en">
   <link rel="alternate" hreflang="el" id="hreflang-el">
@@ -258,13 +256,11 @@
       <input type="text" id="find-input" placeholder="Find..." />
       <input type="text" id="replace-input" placeholder="Replace..." />
       <select id="find-format-filter" class="find-format-filter" data-i18n-tooltip="tooltip_find_format" title="Find by formatting">
-        <option value="" data-i18n="find_format_any">Any format</option>
+        <option value="all" data-i18n="find_format_any">Any format</option>
         <option value="bold" data-i18n="find_format_bold">Bold text</option>
         <option value="italic" data-i18n="find_format_italic">Italic text</option>
         <option value="underline" data-i18n="find_format_underline">Underlined text</option>
-        <option value="h1" data-i18n="find_format_h1">Heading 1</option>
-        <option value="h2" data-i18n="find_format_h2">Heading 2</option>
-        <option value="h3" data-i18n="find_format_h3">Heading 3</option>
+        <option value="strikethrough" data-i18n="find_format_strikethrough">Strikethrough text</option>
       </select>
 	  <button class="mini-btn" id="btn-find-search" title="Search"><i class="fa fa-search"></i></button>
       <button class="mini-btn" id="btn-find-prev" title="Previous"><i class="fa fa-chevron-up"></i></button>
@@ -370,7 +366,7 @@
         <label data-i18n="header_footer_title">Header / Footer</label>
         <input type="text" id="header-text" placeholder="Header text" />
         <input type="text" id="footer-text" placeholder="Footer text" style="margin-top:4px;" />
-        <label style="display:block;margin-top:4px;"><input type="checkbox" id="footer-page-num" checked> <span data-i18n="footer_page_number">Page number in footer</span></label>
+        <label style="display:block;margin-top:4px;"><input type="checkbox" id="footer-page-num"> <span data-i18n="footer_page_number">Page number in footer</span></label>
       </div>
     </div>
     <button class="btn-primary" id="btn-apply-page-settings" style="width:100%;margin-top:12px;"><i class="fa fa-check"></i> <span data-i18n="btn_apply">Apply</span></button>

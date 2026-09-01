@@ -216,7 +216,7 @@
       content: '<h1>Meeting Notes</h1>' +
         '<p><strong>Date:</strong> [YYYY-MM-DD] · <strong>Time:</strong> [HH:MM]<br>' +
         '<strong>Location:</strong> [Room / Virtual link]<br>' +
-        '<strong>F facilitator:</strong> [Name] · <strong>Note-taker:</strong> [Name]</p>' +
+        '<strong>Facilitator:</strong> [Name] · <strong>Note-taker:</strong> [Name]</p>' +
         '<p><br></p>' +
         '<h2>Attendees</h2>' +
         '<ul><li>[Name — Role]</li><li>[Name — Role]</li><li>[Name — Role]</li></ul>' +
@@ -259,7 +259,7 @@
     currency: ['\u20AC','$','\u00A3','\u00A5','\u20BD','\u00A2','\u20B9','\u20A9','\u20AA','\u20AB','\u20B4','\u20B8','\u20BA','\u20B1','\u0E3F','\u20A1','\u20A8','\u20AE'],
     punctuation: ['\u00AB','\u00BB','\u2039','\u203A','\u201E','\u201C','\u201D','\u2018','\u2019','\u201A','\u201B','\u201F','\u00A1','\u00BF','\u00B7','\u2022','\u25E6','\u00A7','\u00B6','\u2030','\u2020','\u2021'],
     symbols: ['\u00A9','\u00AE','\u2122','\u00B0','\u2116','\u266A','\u266B','\u266C','\u266F','\u266D','\u266E','\u2611\uFE0E','\u2612\uFE0E','\u2610\uFE0E','\u2713','\u2717','\u2605','\u2606','\u261E\uFE0E','\u261C\uFE0E','\u261D\uFE0E','\u261F\uFE0E','\u2690','\u2691','\u2693','\u2694\uFE0E','\u2696\uFE0E','\u2697','\u2699\uFE0E','\u26A0\uFE0E'],
-	emoji: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✌️','🤞','🤟','🤘','👌','🤌','🤏','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','💪','🦾','🙏','👀','👁️','👅','👄','🧠','🗣️','👤','👥','🫂','👶','👧','👦','👩','👨','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👩‍🦳','👨‍🦳','👩‍🦲','👨‍🦲','👵','👴','👲','👳‍♀️','👳‍♂️','🧕','👮‍♀️','👮‍♂️','👷‍♀️','👷‍♂️','💂‍♀️','💂‍♂️','🕵️‍♀️','🕵️‍♂️','👩‍⚕️','👨‍⚕️','👩‍🌾','👨‍🌾','👩‍🍳','👨‍🍳','👩‍🎓','👨‍🎓','👩‍🎤','👨‍🎤','👩‍🏫','👨‍🏫','👩‍🏭','👨‍🏭','👩‍💻','👨‍💻','👩‍💼','👨‍💼','👩‍🔧','👨‍🔧','👩‍🔬','👨‍🔬','👩‍🎨','👨‍🎨','👩‍🚒','👨‍🚒','✍️','📝','💻','⌨️','🖥️','🖨️','🖱️','💾','💿','📀','📷','📸','📹','🎥','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','🗑️','🛢️','💸','💵','💴','💶','💷','💰','💳','💎','⚖️','🔧','🔨','⚒️','🛠️','⚙️','🔗','⛓️','🧰','🧲','🔬','🔭','📡','💉','💊','🚪','🛏️','🛋️','🚽','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🧼','🧽','🧯','🛒',' cigarette','🚬','⚰️','⚱️','🗿','⚠️','🚸',' ⛔','🚫','🚷','🔞','☢️','☣️','⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️','↕️','↔️','↩️','↪️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','〰️','➕','➖','➗','✖️','💲','💱','™️','©️','®️','〽️','‼️','⁉️','❓','❔','❕','❗','〰️','♻️','✅','🆚','💯','❌','⭕','🛑','🔥','🌟','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤']
+	emoji: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✌️','🤞','🤟','🤘','👌','🤌','🤏','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','💪','🦾','🙏','👀','👁️','👅','👄','🧠','🗣️','👤','👥','🫂','👶','👧','👦','👩','👨','👩‍🦰','👨‍🦰','👩‍🦱','👨‍🦱','👩‍🦳','👨‍🦳','👩‍🦲','👨‍🦲','👵','👴','👲','👳‍♀️','👳‍♂️','🧕','👮‍♀️','👮‍♂️','👷‍♀️','👷‍♂️','💂‍♀️','💂‍♂️','🕵️‍♀️','🕵️‍♂️','👩‍⚕️','👨‍⚕️','👩‍🌾','👨‍🌾','👩‍🍳','👨‍🍳','👩‍🎓','👨‍🎓','👩‍🎤','👨‍🎤','👩‍🏫','👨‍🏫','👩‍🏭','👨‍🏭','👩‍💻','👨‍💻','👩‍💼','👨‍💼','👩‍🔧','👨‍🔧','👩‍🔬','👨‍🔬','👩‍🎨','👨‍🎨','👩‍🚒','👨‍🚒','✍️','📝','💻','⌨️','🖥️','🖨️','🖱️','💾','💿','📀','📷','📸','📹','🎥','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','🗑️','🛢️','💸','💵','💴','💶','💷','💰','💳','💎','⚖️','🔧','🔨','⚒️','🛠️','⚙️','🔗','⛓️','🧰','🧲','🔬','🔭','📡','💉','💊','🚪','🛏️','🛋️','🚽','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🧼','🧽','🧯','🛒','🚬','⚰️','⚱️','🗿','⚠️','🚸','⛔','🚫','🚷','🔞','☢️','☣️','⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️','↕️','↔️','↩️','↪️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','〰️','➕','➖','➗','✖️','💲','💱','™️','©️','®️','〽️','‼️','⁉️','❓','❔','❕','❗','〰️','♻️','✅','🆚','💯','❌','⭕','🛑','🔥','🌟','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤']
   };
 
   // ===== TABS MODULE =====
@@ -3389,31 +3389,61 @@
             content = docContent ? docContent.innerHTML : tempDiv.innerHTML;
           }
 
+          // Φόρτωση περιεχομένου στον editor
           var editor = document.getElementById('rich-editor');
           if (editor) {
-            editor.innerHTML = content;
-            if (typeof autoSave === 'function') autoSave();
-            if (typeof updateWordCount === 'function') updateWordCount();
+            editor.innerHTML = content || '<p><br></p>';
           }
 
-          // Restore footnotes if available
-          if (files['footnotes.json']) {
-            try {
-              var fns = JSON.parse(files['footnotes.json']);
-              if (Array.isArray(fns) && typeof renderFootnotes === 'function') {
-                renderFootnotes(fns);
-              }
-            } catch(err) {}
-          }
+          // Εφαρμογή metadata στο ενεργό tab
+          var actTab = tabsModule ? tabsModule.getActive() : null;
+          if (actTab) {
+            actTab.metadata = actTab.metadata || {};
+            if (meta.title) {
+              actTab.metadata.title = meta.title;
+              actTab.title = meta.title;
+            }
+            if (meta.pageSize) actTab.metadata.pageSize = meta.pageSize;
+            if (meta.marginTop) actTab.metadata.marginTop = meta.marginTop;
+            if (meta.marginBottom) actTab.metadata.marginBottom = meta.marginBottom;
+            if (meta.marginLeft) actTab.metadata.marginLeft = meta.marginLeft;
+            if (meta.marginRight) actTab.metadata.marginRight = meta.marginRight;
+            if (meta.headerText !== undefined) actTab.metadata.headerText = meta.headerText;
+            if (meta.footerText !== undefined) actTab.metadata.footerText = meta.footerText;
+            if (meta.footerPageNum !== undefined) actTab.metadata.footerPageNum = meta.footerPageNum;
 
-          // Set document title
-          if (meta.title && tabsModule && tabsModule.getActive()) {
-            var actTab = tabsModule.getActive();
-            actTab.title = meta.title;
+            // Restore footnotes από metadata.json (στοιχείο footnotes)
+            if (meta.footnotes && Array.isArray(meta.footnotes)) {
+              actTab.metadata.footnotes = meta.footnotes;
+            }
+            // Ή από footnotes.json αν υπάρχει ξεχωριστά
+            if (files['footnotes.json']) {
+              try {
+                var fns = JSON.parse(files['footnotes.json']);
+                if (Array.isArray(fns)) actTab.metadata.footnotes = fns;
+              } catch(err) {}
+            }
+
+            tabsModule.setMetadata(actTab.metadata);
+            tabsModule.setContent(editor ? editor.innerHTML : content);
+
+            // Επαναφορά footnotes & comments
+            restoreFootnotes();
+            loadAndRestoreComments();
+            loadPageSettingsFields();
+            loadMetadataFields();
+
             tabsModule.persist();
             tabsModule.render();
-            document.title = meta.title + ' — orOS Writer';
+
+            if (meta.title) {
+              document.title = meta.title + ' — orOS Writer';
+            }
           }
+
+          saveCurrentTabContent();
+          updateStats();
+          checkPlaceholder();
 
           showToast('Imported .orosdoc: ' + (meta.title || 'Untitled'));
         });
@@ -5391,6 +5421,7 @@ for (var i = 0; i < panels.length; i++) {
   }
 
   function startApp() {
+    if (initialized) return;
     applyTheme();
 
     if (localStorage.getItem('oros_zen_mode') === 'true') {
@@ -5806,7 +5837,11 @@ for (var i = 0; i < panels.length; i++) {
     findFormatFilter = document.getElementById('find-format-filter');
   }
 
-  document.addEventListener('DOMContentLoaded', startApp);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
 
   // Expose for external access
   window.orosWriter = {
