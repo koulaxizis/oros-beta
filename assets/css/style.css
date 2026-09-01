@@ -1324,3 +1324,18 @@ body.landing-page [id*="zen"]:not(.hero):not(.hero *) {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* ===== Support email link ===== */
+.support-link {
+  color: var(--oro-accent, #8b7ec8);
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+  padding-bottom: 1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.support-link:hover,
+.support-link:focus {
+  color: var(--oro-accent-bright, #a99df0);
+  border-bottom-style: solid;
+}
