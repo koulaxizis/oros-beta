@@ -97,13 +97,6 @@
     }
   }
 
-  // ===== TRANSLATIONS HELPER =====
-  function getTrans(key, fallback = '') {
-    if (!window.OROS_TRANSLATIONS) return fallback;
-    const val = window.OROS_TRANSLATIONS[key];
-    return val === undefined || val === null ? fallback : val;
-  }
-
   // ===== INDEXEDDB: SYNC HANDLE STORE =====
   function idbOpen() {
     return new Promise((resolve, reject) => {
@@ -422,10 +415,15 @@
 
   // ===== TRANSLATIONS HELPER =====
   function getTrans(key, fallback = '') {
-    if (!window.OROS_TRANSLATIONS) return fallback;
-    const val = window.OROS_TRANSLATIONS[key];
-    return val === undefined || val === null ? fallback : val;
-  }
+  const root = window.OROS_TRANSLATIONS;
+  if (!root) return fallback;
+  const lang = localStorage.getItem('oros-language') || 'en';
+  const flat = (root && typeof root[lang] === 'object') ? root
+             : (root && typeof root.en === 'object') ? root.en
+             : root;                                  // backward-compat: ήδη flat
+  const val = flat ? flat[key] : undefined;
+  return (val === undefined || val === null) ? fallback : val;
+}
 
   // ===== STORAGE =====
   function getStorageKey() {
