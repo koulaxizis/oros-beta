@@ -349,7 +349,9 @@
       var tab = this.getActive();
       if (!tab) return;
       tab.content = html;
-      var newTitle = this.deriveTitle(html);
+      // Αν υπάρχει τίτλος από metadata, αυτός υπερισχύει — ΜΗΝ τον Derive από το κείμενο
+      var metaTitle = (tab.metadata && tab.metadata.title) ? tab.metadata.title : null;
+      var newTitle = metaTitle || this.deriveTitle(html);
       if (newTitle !== tab.title) { tab.title = newTitle; this.persist(); this.render(); } else { this.persist(); }
     },
     setMetadata: function(meta) { var tab = this.getActive(); if (!tab) return; tab.metadata = meta || {}; this.persist(); },
@@ -2692,7 +2694,8 @@
       '<article class="document">\n' +
       '<h1 class="doc-title">' + escapeHTML(meta.title) + '</h1>\n' +
       '<div class="doc-author">' + escapeHTML(meta.author) +
-  (meta.category ? ' · ' + escapeHTML(meta.category) : '') + '</div>' +
+  (meta.category ? ' · ' + escapeHTML(meta.category) : '') +
+  (meta.tags ? ' · ' + escapeHTML(meta.tags) : '') + '</div>' +
       '<div class="doc-content">\n' + content + '\n</div>\n' +
       fnHTML +
       '</article>\n</body>\n</html>';
@@ -3449,7 +3452,13 @@
       author: 'orOS Writer',
       subject: '',
       keywords: '',
+      tags: '',
+      category: '',
       created: new Date().toISOString(),
+      modified: new Date().toISOString(),
+      app: 'orOS Writer',
+      version: CONFIG.VERSION
+    };
       modified: new Date().toISOString(),
       app: 'orOS Writer',
       version: CONFIG.VERSION
@@ -4565,13 +4574,48 @@ for (var i = 0; i < panels.length; i++) {
     });
   }
 
-  // ===== CLOSE WARNING =====
+    // ===== CLOSE WARNING (sync-aware) =====
   function setupCloseWarning() {
-    var warned = false;
     window.addEventListener('beforeunload', function(e) {
-      if (warned) return;
-      warned = true;
-      setTimeout(function() { warned = false; }, 2000);
+      if (!richEditor) return;
+      var hasContent = (richEditor.innerText || '').trim().length > 0;
+      if (!hasContent) return;
+
+      // Τελευταία προσπάθεια αποθήκευσης πριν το κλείσιμο
+      saveCurrentTabContent();
+      if (cloudSync && cloudSync.dirHandle) {
+        try { cloudSync.saveBackup().catch(function(){}); } catch(err) {}
+      }
+
+      var syncActive = !!(cloudSync && cloudSync.dirHandle);
+      var lastSync = localStorage.getItem('oros_writer_last_sync');
+      var syncFresh = false;
+
+      if (syncActive && lastSync) {
+        var ageMs = Date.now() - new Date(lastSync).getTime();
+        syncFresh = ageMs < 2 * 60 * 1000; // sync πριν από λιγότερο από 2 λεπτά
+      }
+
+      var message;
+      if (syncActive && syncFresh) {
+        message = 'Sync is active and up to date. Leave orOS Writer anyway?';
+      } else if (syncActive) {
+        var syncDate = lastSync ? new Date(lastSync).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US') : 'unknown';
+        message = 'Sync is enabled, but the last completed backup was: ' + syncDate +
+          '.\n\nRecent changes may not be synced yet. Leave anyway?';
+        console.warn(message);
+      } else {
+        message = 'SYNC IS NOT ENABLED. To avoid data loss, either:\n' +
+          '1. Enable Cloud Sync (folder-based sync), or\n' +
+          '2. Keep a manual local copy via Export → Full Database Export.\n\n' +
+          'Your current data exists only in this browser. Leave anyway?';
+        console.warn(message);
+        showToast('⚠ Sync disabled — enable sync or export a manual backup!');
+      }
+
+      e.preventDefault();
+      e.returnValue = message; // custom κείμενο: το δείχνουν κάποια browsers
+      return message;
     });
   }
 
