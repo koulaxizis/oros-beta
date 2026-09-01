@@ -892,6 +892,7 @@
     }
     css += '}';
     hfStyle.textContent = css;
+	    clampToViewport();
   }
 
     function applyPageSettings() {
@@ -958,17 +959,35 @@
     applyHeaderFooter();
   }
 
-  function clampToViewport() {
+    function clampToViewport() {
     if (!richEditor) return;
     var headerH = 0;
     var footerH = 0;
     var headerEl = document.getElementById('oros-header');
     var footerEl = document.getElementById('oros-footer');
     if (headerEl) headerH = headerEl.offsetHeight || 56;
-    if (footerEl) footerH = footerEl.offsetHeight || 48;
-    var toolbarH = 40 + 36;
-    var availHeight = window.innerHeight - headerH - footerH - toolbarH - 40;
-    if (window.innerWidth <= 768) availHeight -= 20;
+    if (footerEl) footerH = footerEl.offsetHeight || 56;
+
+    var reserved = headerH + footerH + (40 + 36) + 40;
+
+    // Reserve χώρο για ορατά header/footer preview
+    var previews = ['.header-preview', '.footer-preview'];
+    for (var i = 0; i < extras.length; i++) {
+      var el = document.querySelector(extras[i]);
+      if (el && el.style.display !== 'none' && el.offsetHeight > 0) {
+        reserved += el.offsetHeight;
+      }
+    }
+
+    // Reserve χώρο για ορατό footnote area (max-height: 200px στο CSS)
+    var fnArea = document.getElementById('footnote-area');
+    if (fnArea && fnArea.style.display !== 'none' && fnArea.offsetHeight > 0) {
+      reserved += fnArea.offsetHeight;
+    }
+
+    if (window.innerWidth <= 768) reserved += 20;
+
+    var availHeight = window.innerHeight - reserved;
     if (availHeight < 200) availHeight = 200;
     richEditor.style.minHeight = availHeight + 'px';
   }
@@ -2015,6 +2034,7 @@
 
     if (txtInput) txtInput.value = '';
     renumberFootnotes();
+	    clampToViewport();
     showToast('Footnote added');
   }
 

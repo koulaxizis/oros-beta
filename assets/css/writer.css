@@ -2368,10 +2368,10 @@ body[data-zen="true"] .side-panel {
 .footer-preview {
   z-index: 5;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .footnote-area {
   position: relative;
   z-index: 4;
-  margin-bottom: 34px; /* χώρος για το footer preview ώστε να μη φεται */
 }
