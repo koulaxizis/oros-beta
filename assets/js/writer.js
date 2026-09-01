@@ -824,7 +824,7 @@
     var meta = tabsModule.getMetadata ? tabsModule.getMetadata() : {};
     var headerText = meta.headerText || '';
     var footerText = meta.footerText || '';
-    var showPageNum = meta.footerPageNum !== false;
+    var showPageNum = meta.footerPageNum === true;
 
     // Attributes για print
     if (richEditor) {
@@ -955,7 +955,7 @@
     setVal('header-text', meta.headerText, '');
     setVal('footer-text', meta.footerText, '');
     var fpn = document.getElementById('footer-page-num');
-    if (fpn) fpn.checked = meta.footerPageNum !== false;
+    if (fpn) fpn.checked = meta.footerPageNum === true;
     applyPageSize(meta.pageSize || 'a4');
     applyPageMargins();
     applyHeaderFooter();
@@ -5282,7 +5282,11 @@ for (var i = 0; i < panels.length; i++) {
     },
 
     // ===== Actions =====
-    syncNow: function() {
+        syncNow: function() {
+      if (!cloudSync.dirHandle) {
+        showToast('No sync folder connected. Click "Choose Sync Folder" first.');
+        return;
+      }
       cloudSync.updateStatus('syncing', null);
       cloudSync.saveBackup().then(function() {
         showToast('Sync complete');
