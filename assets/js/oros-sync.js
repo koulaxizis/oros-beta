@@ -48,6 +48,13 @@
   var sharedDB = null;
 
   function isFSA() { return typeof window.showDirectoryPicker === 'function'; }
+    function tr(key, fallback) {
+    var T = window.OROS_TRANSLATIONS;
+    var lang = localStorage.getItem('oros-language') || 'en';
+    var dict = (T && (T[lang] || T.en)) || null;
+    var val = dict ? dict[key] : undefined;
+    return (val === undefined || val === null) ? fallback : val;
+  }
 
   // ---------- tiny IndexedDB helpers ----------
   function idbOpen(name) {
@@ -257,12 +264,13 @@
 
       var data = S.collectDatabase();
       var jobs = [idbPut(S.db, S.LAST_SYNC_KEY, data)];
+      var fileWritten = false;
 
       if (S.dirHandle) {
         jobs.push(
           S.writeToFile(data)
-            .then(function() { return true; })
-            .catch(function(e) { console.warn('[oros-sync] file write failed:', e); return false; })
+            .then(function() { fileWritten = true; })
+            .catch(function(e) { console.warn('[oros-sync] file write failed:', e); })
         );
         // Shared settings (theme/language/zen) — harmless if written by multiple apps
         jobs.push(
@@ -273,13 +281,18 @@
         );
       }
 
-    return Promise.all(jobs).then(function() {
-        var now = new Date().toISOString();
-        localStorage.setItem(S.LAST_SYNC_LOCAL, now);
-        // idle = FSA supported but no folder picked; unsupported = no FSA at all
-        S.updateStatus(S.dirHandle ? 'synced' : (isFSA() ? 'idle' : 'unsupported'), now);
+      return Promise.all(jobs).then(function() {
+        // Only a SUCCESSFUL file write counts as a sync. IDB-only saves
+        // must NOT update the "last sync" timestamp or show "✓ Synced".
+        if (fileWritten) {
+          var now = new Date().toISOString();
+          localStorage.setItem(S.LAST_SYNC_LOCAL, now);
+          S.updateStatus('synced', now);
+        } else {
+          S.updateStatus(isFSA() ? 'idle' : 'unsupported', null);
+        }
         S.updateDirDisplay();
-        return true;
+        return fileWritten;
       });
     };
 
@@ -337,13 +350,27 @@
     };
 
     // ----- Actions -----
-    S.syncNow = function() {
+        S.syncNow = function() {
+      // Guard: no folder configured → honest failure, NO success toast
+      if (!S.dirHandle) {
+        var st = isFSA() ? 'idle' : 'unsupported';
+        S.updateStatus(st, null);
+        S.toast(tr('sync_not_configured',
+          'Sync is not configured — choose a folder first.'));
+        return Promise.resolve(false);
+      }
       S.updateStatus('syncing', null);
-      return S.saveBackup().then(function() {
-        S.toast('Sync complete');
+      return S.saveBackup().then(function(ok) {
+        if (ok) {
+          S.toast(tr('sync_complete', 'Sync complete'));
+        } else {
+          S.updateStatus('error', null);
+          S.toast(tr('sync_failed', 'Sync failed:') + ' file write error');
+        }
+        return ok;
       }).catch(function(e) {
         S.updateStatus('error', null);
-        S.toast('Sync failed: ' + (e.message || e));
+        S.toast(tr('sync_failed', 'Sync failed:') + ' ' + (e.message || e));
       });
     };
 
