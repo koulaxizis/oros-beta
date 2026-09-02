@@ -795,7 +795,16 @@
     "sync_autosync": "Auto-sync",
     "sync_disable": "Disable Sync",
     "sync_now": "Sync Now",
-    "sync_explainer": "Sync the full database to a local folder (e.g. your Syncthing folder). Requires Chrome, Edge or Brave on desktop. On other browsers, use Import/Export instead."
+    "sync_explainer": "Sync the full database to a local folder (e.g. your Syncthing folder). Requires Chrome, Edge or Brave on desktop. On other browsers, use Import/Export instead.",
+	"tab_cloud_sync": "Cloud Sync",
+"sync_not_ready": "Sync not ready yet",
+"sync_connected": "Sync folder:",
+"sync_failed": "Sync failed:",
+"sync_restore_cloud": "Restore from Cloud File",
+"sync_restore_idb": "Restore from IndexedDB",
+"sync_autosync_on": "Auto-sync ON",
+"sync_autosync_off": "Auto-sync OFF",
+"sync_help_idb_only": "✗ IndexedDB only"
   },
 
   "el": {
@@ -1596,6 +1605,15 @@
     "sync_autosync": "Αυτόματος συγχρονισμός",
     "sync_disable": "Απενεργοποίηση Συγχρονισμού",
     "sync_now": "Συγχρονισμός Τώρα",
-    "sync_explainer": "Συγχρονισμός ολόκληρης της βάσης με τοπικό φάκελο (π.χ. φάκελο Syncthing). Απαιτεί Chrome, Edge ή Brave σε desktop. Σε άλλους browsers χρησιμοποίησε Import/Export."
+    "sync_explainer": "Συγχρονισμός ολόκληρης της βάσης με τοπικό φάκελο (π.χ. φάκελο Syncthing). Απαιτεί Chrome, Edge ή Brave σε desktop. Σε άλλους browsers χρησιμοποίησε Import/Export.",
+	"tab_cloud_sync": "Συγχρονισμός",
+"sync_not_ready": "Ο συγχρονισμός δεν είναι έτοιμος",
+"sync_connected": "Φάκελος συγχρονισμού:",
+"sync_failed": "Αποτυχία συγχρονισμού:",
+"sync_restore_cloud": "Επαναφορά από αρχείο Cloud",
+"sync_restore_idb": "Επαναφορά από IndexedDB",
+"sync_autosync_on": "Αυτόματος συγχρονισμός ON",
+"sync_autosync_off": "Αυτόματος συγχρονισμός OFF",
+"sync_help_idb_only": "✗ Μόνο IndexedDB"
   }
 }

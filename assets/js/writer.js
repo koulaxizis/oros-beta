@@ -63,6 +63,8 @@
   var initialized = false;
   var typingTimer = null;
   var isTyping = false;
+  var writerIsDirty = false;
+  var writerIsDirty = false;
   var smartPasteEnabled = true;
   var smartTypographyEnabled = true;
   var typewriterSoundEnabled = false;
@@ -384,7 +386,7 @@
 
       // ===== AUTOSYNC ON TAB CLOSE =====
       if (window.orosSync) {
-        var api = window.orosSync.get();
+                var api = window.orosSync.get('writer');
         if (api && api.dirHandle && api.saveBackup) {
           api.saveBackup().catch(function(){});
         }
@@ -570,6 +572,7 @@
       updateSaveIndicator('saved');
       updateStats();
       checkPlaceholder();
+      writerIsDirty = false;
     }
   }
 
@@ -3457,8 +3460,9 @@
         return cf.async('string');
       }).then(function(xml) {
         var doc = new DOMParser().parseFromString(xml, 'application/xml');
-        var parserError = doc.getElementsByTagName('parsererror');
-        if (parsererrorCheck(parsererror_length)) { /* noop — placeholder removed */ }
+                if (doc.getElementsByTagName('parsererror').length > 0) {
+          throw new Error('Malformed ODT XML');
+        }
         var officeText = doc.getElementsByTagName('office:text')[0];
         if (!officeText) throw new Error('No office:text found');
         var styleMap = odtBuildStyleMap(doc);
@@ -3745,7 +3749,6 @@
           else if (fmt === 'html') exportHTML();
           else if (fmt === 'pdf') exportPDF();
           else if (fmt === 'docx') exportDOCX();
-		  else if (fmt === 'odt') exportODT();
           else if (fmt === 'rtf') exportRTF();
           else if (fmt === 'orosdoc') exportOROSDOC();
           else if (fmt === 'json') exportJSON();
@@ -4605,6 +4608,7 @@ for (var i = 0; i < panels.length; i++) {
     });
 
         richEditor.addEventListener('input', function() {
+      writerIsDirty = true;
       playTypewriterSound();
       applyAutoCorrect();
       applySmartTypography();
@@ -4737,78 +4741,38 @@ for (var i = 0; i < panels.length; i++) {
     });
   }
 
-    // ===== CLOSE WARNING (sync-aware) =====
+  // ===== CLOSE WARNING (sync-aware, v2.5.1) =====
   function setupCloseWarning() {
     window.addEventListener('beforeunload', function(e) {
       if (!richEditor) return;
       var hasContent = (richEditor.innerText || '').trim().length > 0;
       if (!hasContent) return;
 
-      // Τελευταία προσπάθεια αποθήκευσης πριν το κλείσιμο
+      // Σιωπηλή τελευταία αποθήκευση του tab content
       saveCurrentTabContent();
-      if (cloudSync && cloudSync.dirHandle) {
-        try { cloudSync.saveBackup().catch(function(){}); } catch(err) {}
+
+      var api = (window.orosSync && typeof window.orosSync.get === 'function')
+        ? window.orosSync.get('writer') : null;
+
+      if (api && api.dirHandle) {
+        // Sync configured: σιωπηλό best-effort backup — καμία προειδοποίηση
+        try { if (api.saveBackup) api.saveBackup().catch(function() {}); } catch(err) {}
+        return;
       }
 
-      var syncActive = !!(cloudSync && cloudSync.dirHandle);
-      var lastSync = localStorage.getItem('oros_writer_last_sync');
-      var syncFresh = false;
+      // Χωρίς sync: προειδοποίηση ΜΟΝΟ αν υπάρχουν unsaved changes
+      if (!writerIsDirty) return;
 
-      if (syncActive && lastSync) {
-        var ageMs = Date.now() - new Date(lastSync).getTime();
-        syncFresh = ageMs < 2 * 60 * 1000; // sync πριν από λιγότερο από 2 λεπτά
-      }
-
-      var message;
-      if (syncActive && syncFresh) {
-        message = 'Sync is active and up to date. Leave orOS Writer anyway?';
-      } else if (syncActive) {
-        var syncDate = lastSync ? new Date(lastSync).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US') : 'unknown';
-        message = 'Sync is enabled, but the last completed backup was: ' + syncDate +
-          '.\n\nRecent changes may not be synced yet. Leave anyway?';
-        console.warn(message);
-      } else {
-        message = 'SYNC IS NOT ENABLED. To avoid data loss, either:\n' +
-          '1. Enable Cloud Sync (folder-based sync), or\n' +
+      var msg = getTrans('sync_unload_no_sync');
+      if (msg === 'sync_unload_no_sync') {
+        msg = 'SYNC IS NOT ENABLED. To avoid data loss, either:\n' +
+          '1. Enable Cloud Sync (Settings → Sync), or\n' +
           '2. Keep a manual local copy via Export → Full Database Export.\n\n' +
           'Your current data exists only in this browser. Leave anyway?';
-        console.warn(message);
-        showToast('⚠ Sync disabled — enable sync or export a manual backup!');
       }
-
       e.preventDefault();
-      e.returnValue = message; // custom κείμενο: το δείχνουν κάποια browsers
-      return message;
-    });
-  }
-
-  // ===== PWA INSTALL BUTTON =====
-  function setupPWAInstallButton() {
-    var btn = document.getElementById('btn-install');
-    if (!btn) return;
-    btn.disabled = true;
-
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      window.deferredPrompt = e;
-      btn.disabled = false;
-      btn.style.display = '';
-    });
-
-    btn.addEventListener('click', function() {
-      if (window.deferredPrompt) {
-        window.deferredPrompt.prompt();
-        window.deferredPrompt.userChoice.then(function(choiceResult) {
-          if (choiceResult.outcome === 'accepted') {
-            showToast('App installed');
-          }
-          window.deferredPrompt = null;
-          btn.disabled = true;
-          btn.style.display = 'none';
-        }).catch(function() {});
-      } else {
-        showToast('Install not available in this browser');
-      }
+      e.returnValue = msg;
+      return msg;
     });
   }
 
@@ -5163,368 +5127,7 @@ for (var i = 0; i < panels.length; i++) {
     }
   }, true);
 
-  // ===== CLOUD SYNC MODULE =====
-  var cloudSync = {
-    DB_NAME: 'oros_writer_sync',
-    DB_VERSION: 1,
-    STORE_NAME: 'kv',
-    DIR_HANDLE_KEY: 'directory_handle',
-    LAST_SYNC_KEY: 'last_backup',
-    AUTO_INTERVAL_MS: 300000,
-    FILE_NAME: 'oros-writer-sync.json',
 
-    idb: null,
-    dirHandle: null,
-    autoTimer: null,
-
-    // ===== IndexedDB Core =====
-    initIDB: function() {
-      return new Promise(function(resolve, reject) {
-        if (!('indexedDB' in window)) { reject(new Error('No IndexedDB')); return; }
-        var req = indexedDB.open(cloudSync.DB_NAME, cloudSync.DB_VERSION);
-        req.onupgradeneeded = function(e) {
-          var db = e.target.result;
-          if (!db.objectStoreNames.contains(cloudSync.STORE_NAME)) {
-            db.createObjectStore(cloudSync.STORE_NAME);
-          }
-        };
-        req.onsuccess = function(e) { cloudSync.idb = e.target.result; resolve(); };
-        req.onerror = function(e) { reject(e.target.error); };
-      });
-    },
-
-    idbPut: function(key, value) {
-      return new Promise(function(resolve, reject) {
-        if (!cloudSync.idb) { reject(new Error('IDB not ready')); return; }
-        var tx = cloudSync.idb.transaction(cloudSync.STORE_NAME, 'readwrite');
-        tx.objectStore(cloudSync.STORE_NAME).put(value, key);
-        tx.oncomplete = function() { resolve(); };
-        tx.onerror = function(e) { reject(e.target.error); };
-      });
-    },
-
-    idbGet: function(key) {
-      return new Promise(function(resolve, reject) {
-        if (!cloudSync.idb) { reject(new Error('IDB not ready')); return; }
-        var tx = cloudSync.idb.transaction(cloudSync.STORE_NAME, 'readonly');
-        var req = tx.objectStore(cloudSync.STORE_NAME).get(key);
-        req.onsuccess = function() { resolve(req.result); };
-        req.onerror = function(e) { reject(e.target.error); };
-      });
-    },
-
-    idbDel: function(key) {
-      return new Promise(function(resolve, reject) {
-        if (!cloudSync.idb) { resolve(); return; }
-        var tx = cloudSync.idb.transaction(cloudSync.STORE_NAME, 'readwrite');
-        tx.objectStore(cloudSync.STORE_NAME).delete(key);
-        tx.oncomplete = function() { resolve(); };
-        tx.onerror = function(e) { reject(e.target.error); };
-      });
-    },
-
-    // ===== Database Collection =====
-    collectDatabase: function() {
-      var data = {
-        _meta: {
-          app: 'orOS Writer',
-          version: CONFIG.VERSION,
-          exportedAt: new Date().toISOString(),
-          type: 'full-database',
-          keyCount: 0
-        },
-        localStorage: {}
-      };
-      for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        if (key && key.indexOf('oros') === 0) {
-          data.localStorage[key] = localStorage.getItem(key);
-        }
-      }
-      data._meta.keyCount = Object.keys(data.localStorage).length;
-      return data;
-    },
-
-    applyRestoredData: function(data) {
-      if (!data || !data._meta || data._meta.type !== 'full-database') return false;
-      var keysToRemove = [];
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf('oros') === 0) keysToRemove.push(k);
-      }
-      for (var r = 0; r < keysToRemove.length; r++) localStorage.removeItem(keysToRemove[r]);
-      Object.keys(data.localStorage).forEach(function(key) {
-        localStorage.setItem(key, data.localStorage[key]);
-      });
-      return true;
-    },
-
-    // ===== File System Access API =====
-    isSupported: function() {
-      return typeof window.showDirectoryPicker === 'function';
-    },
-
-    pickDirectory: function() {
-      if (!cloudSync.isSupported()) {
-        showToast('File System Access API not available. Using IndexedDB only.');
-        return Promise.resolve(null);
-      }
-      return window.showDirectoryPicker({ mode: 'readwrite' }).then(function(handle) {
-        cloudSync.dirHandle = handle;
-        return cloudSync.idbPut(cloudSync.DIR_HANDLE_KEY, handle).then(function() {
-          return handle;
-        });
-      });
-    },
-	
-	    reauthorizeDirHandle: function() {
-      if (!cloudSync._pendingDirHandle) return Promise.resolve(null);
-      return cloudSync._pendingDirHandle.requestPermission({ mode: 'readwrite' }).then(function(rp) {
-        if (rp === 'granted') {
-          cloudSync.dirHandle = cloudSync._pendingDirHandle;
-          cloudSync._pendingDirHandle = null;
-          cloudSync.updateStatus('synced', null);
-          cloudSync.updateDirDisplay();
-          cloudSync.saveBackup();
-          showToast('Sync folder reconnected: ' + cloudSync.dirHandle.name);
-          return cloudSync.dirHandle;
-        }
-        showToast('Permission denied');
-        return null;
-      }).catch(function() { return null; });
-    },
-
-       restoreDirHandle: function() {
-      return cloudSync.idbGet(cloudSync.DIR_HANDLE_KEY).then(function(handle) {
-        if (!handle) return null;
-        if (!handle.queryPermission) { cloudSync.dirHandle = handle; return handle; }
-        return handle.queryPermission({ mode: 'readwrite' }).then(function(perms) {
-          if (perms === 'granted') {
-            cloudSync.dirHandle = handle;
-            return handle;
-          }
-          // Permission not granted on reload — store handle for later user-gesture grant
-          cloudSync._pendingDirHandle = handle;
-          cloudSync.updateStatus('idle', null);
-          // Show a reconnect button or notification
-          cloudSync.updateDirDisplay();
-          if (cloudSync._pendingDirHandle) {
-            showToast('Click "Choose Sync Folder" to re-authorize');
-          }
-          return null;
-        });
-      }).catch(function() { return null; });
-    },
-
-    writeToFile: function(data) {
-      if (!cloudSync.dirHandle) return Promise.reject(new Error('No directory handle'));
-      return cloudSync.dirHandle.getFileHandle(cloudSync.FILE_NAME, { create: true })
-        .then(function(fh) { return fh.createWritable(); })
-        .then(function(writable) {
-          return writable.write(JSON.stringify(data, null, 2)).then(function() {
-            return writable.close();
-          });
-        });
-    },
-
-    readFromFile: function() {
-      if (!cloudSync.dirHandle) return Promise.reject(new Error('No directory handle'));
-      return cloudSync.dirHandle.getFileHandle(cloudSync.FILE_NAME)
-        .then(function(fh) { return fh.getFile(); })
-        .then(function(file) { return file.text(); })
-        .then(function(text) { return JSON.parse(text); });
-    },
-
-    // ===== Backup (File + IndexedDB) =====
-    saveBackup: function() {
-      var data = cloudSync.collectDatabase();
-      var promises = [];
-
-      // Always save to IndexedDB
-      promises.push(cloudSync.idbPut(cloudSync.LAST_SYNC_KEY, data));
-
-      // If directory handle, also save to file
-      if (cloudSync.dirHandle) {
-        promises.push(
-          cloudSync.writeToFile(data).then(function() { return true; })
-            .catch(function(e) { console.warn('File write failed:', e); return false; })
-        );
-      }
-
-      return Promise.all(promises).then(function() {
-        var now = new Date().toISOString();
-        localStorage.setItem('oros_writer_last_sync', now);
-        cloudSync.updateStatus(cloudSync.dirHandle ? 'synced' : 'unsupported', now);
-        cloudSync.updateDirDisplay();
-        return true;
-      });
-    },
-
-    loadBackup: function() {
-      return cloudSync.idbGet(cloudSync.LAST_SYNC_KEY).then(function(idbData) {
-        if (!cloudSync.dirHandle) return idbData;
-        return cloudSync.readFromFile().then(function(fileData) {
-          var fTime = fileData && fileData._meta ? new Date(fileData._meta.exportedAt).getTime() : 0;
-          var iTime = idbData && idbData._meta ? new Date(idbData._meta.exportedAt).getTime() : 0;
-          return fTime >= iTime ? fileData : idbData;
-        }).catch(function() { return idbData; });
-      });
-    },
-
-    // ===== Auto-Sync =====
-    startAutoSync: function() {
-      cloudSync.stopAutoSync();
-      cloudSync.autoTimer = setInterval(function() {
-        cloudSync.saveBackup().catch(function(e) {
-          console.warn('Auto-sync failed:', e);
-        });
-      }, cloudSync.AUTO_INTERVAL_MS);
-    },
-
-    stopAutoSync: function() {
-      if (cloudSync.autoTimer) { clearInterval(cloudSync.autoTimer); cloudSync.autoTimer = null; }
-    },
-
-    // ===== UI =====
-    updateStatus: function(status, timestamp) {
-      var statusEl = document.getElementById('cloud-sync-status');
-      var lastEl = document.getElementById('cloud-sync-last');
-      if (statusEl) {
-        statusEl.className = 'sync-status sync-' + status;
-        var labels = {
-          'idle': '● Not configured',
-          'synced': '✓ Synced',
-          'syncing': '⟳ Syncing…',
-          'error': '⚠ Sync error',
-          'unsupported': '● IndexedDB only'
-        };
-        statusEl.textContent = labels[status] || status;
-      }
-      if (lastEl && timestamp) {
-        lastEl.textContent = new Date(timestamp).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-      } else if (lastEl && !timestamp) {
-        var saved = localStorage.getItem('oros_writer_last_sync');
-        if (saved) lastEl.textContent = new Date(saved).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-        else lastEl.textContent = '';
-      }
-    },
-
-    updateDirDisplay: function() {
-      var display = document.getElementById('sync-dir-display');
-      var nameEl = document.getElementById('sync-dir-name');
-      var connectBtn = document.getElementById('btn-cloud-connect');
-      var disconnectBtn = document.getElementById('btn-cloud-disconnect');
-
-      if (cloudSync.dirHandle && display && nameEl) {
-        nameEl.textContent = cloudSync.dirHandle.name || 'Unknown folder';
-        display.style.display = '';
-        if (connectBtn) connectBtn.style.display = 'none';
-        if (disconnectBtn) disconnectBtn.style.display = '';
-      } else {
-        if (display) display.style.display = 'none';
-        if (connectBtn) connectBtn.style.display = '';
-        if (disconnectBtn) disconnectBtn.style.display = 'none';
-      }
-    },
-
-    // ===== Remote Check =====
-    checkRemoteUpdate: function() {
-      if (!cloudSync.dirHandle) return;
-      cloudSync.readFromFile().then(function(fileData) {
-        if (!fileData || !fileData._meta) return;
-        var fileTime = new Date(fileData._meta.exportedAt).getTime();
-        var lastSync = localStorage.getItem('oros_writer_last_sync');
-        var localTime = lastSync ? new Date(lastSync).getTime() : 0;
-
-        if (fileTime > localTime) {
-          var dateStr = new Date(fileTime).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-          if (confirm('A newer sync file was found from another device (' + dateStr + ').\n\nRestore data from cloud? Your current local data will be replaced.')) {
-            cloudSync.applyRestoredData(fileData);
-            localStorage.setItem('oros_writer_last_sync', new Date().toISOString());
-            showToast('Data restored from cloud. Reloading…');
-            setTimeout(function() { location.reload(); }, 800);
-          }
-        }
-      }).catch(function() {});
-    },
-
-    // ===== Actions =====
-        syncNow: function() {
-      if (!cloudSync.dirHandle) {
-        showToast('No sync folder connected. Click "Choose Sync Folder" first.');
-        return;
-      }
-      cloudSync.updateStatus('syncing', null);
-      cloudSync.saveBackup().then(function() {
-        showToast('Sync complete');
-      }).catch(function(e) {
-        cloudSync.updateStatus('error', null);
-        showToast('Sync failed: ' + e.message);
-      });
-    },
-
-    disconnect: function() {
-      cloudSync.dirHandle = null;
-      cloudSync.idbDel(cloudSync.DIR_HANDLE_KEY).then(function() {
-        cloudSync.updateStatus('idle', null);
-        cloudSync.updateDirDisplay();
-        showToast('Cloud sync disconnected. IndexedDB backup continues.');
-      });
-    },
-
-    restoreFromIDB: function() {
-      cloudSync.idbGet(cloudSync.LAST_SYNC_KEY).then(function(data) {
-        if (!data || !data._meta) { showToast('No IndexedDB backup found'); return; }
-        var dateStr = new Date(data._meta.exportedAt).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-        if (!confirm('Restore from IndexedDB backup (' + dateStr + ')?\n\nThis replaces ALL current data.')) return;
-        cloudSync.applyRestoredData(data);
-        showToast('Restored from IndexedDB. Reloading…');
-        setTimeout(function() { location.reload(); }, 800);
-      }).catch(function(e) {
-        showToast('Restore failed: ' + e.message);
-      });
-    },
-
-    restoreFromCloud: function() {
-      if (!cloudSync.dirHandle) { showToast('No sync folder connected'); return; }
-      cloudSync.readFromFile().then(function(data) {
-        if (!data || !data._meta) { showToast('No sync file found in folder'); return; }
-        var dateStr = new Date(data._meta.exportedAt).toLocaleString(currentLang === 'el' ? 'el-GR' : 'en-US');
-        if (!confirm('Restore from cloud file (' + dateStr + ')?\n\nThis replaces ALL current data.')) return;
-        cloudSync.applyRestoredData(data);
-        localStorage.setItem('oros_writer_last_sync', new Date().toISOString());
-        showToast('Restored from cloud. Reloading…');
-        setTimeout(function() { location.reload(); }, 800);
-      }).catch(function(e) {
-        showToast('No sync file found or read error');
-      });
-    },
-
-    // ===== Init =====
-    init: function() {
-      if (!('indexedDB' in window)) {
-        cloudSync.updateStatus('error', null);
-        return;
-      }
-      cloudSync.initIDB().then(function() {
-        return cloudSync.restoreDirHandle();
-      }).then(function(handle) {
-        if (handle) {
-          cloudSync.updateStatus('synced', localStorage.getItem('oros_writer_last_sync'));
-          cloudSync.updateDirDisplay();
-          cloudSync.checkRemoteUpdate();
-        } else {
-          cloudSync.updateStatus(cloudSync.isSupported() ? 'idle' : 'unsupported', null);
-          cloudSync.updateDirDisplay();
-        }
-        // Always start auto-backup (IndexedDB at minimum)
-        cloudSync.startAutoSync();
-      }).catch(function(e) {
-        console.warn('Cloud sync init failed:', e);
-        cloudSync.updateStatus('error', null);
-      });
-    }
-  };
 
   // ===== SETTINGS TAB SWITCHING (universal handler) =====
   document.addEventListener('click', function(e) {
@@ -5598,47 +5201,59 @@ for (var i = 0; i < panels.length; i++) {
 	  setupDragDrop();
       setupWindowResize();
       setupCloseWarning();
-      setupPWAInstallButton();
       setupMetadataPanel();
       setupTableOfContents();
       setupLoremIpsum();
       setupQuickFormatMenu();
 	  setupLaunchQueue();
       applyPageSettings();
-	  
-	        // ===== CLOUD SYNC =====
-      cloudSync.init();
-	  
-	        // Register Writer's sync with the shared oros-sync framework
+
+      // ===== CLOUD SYNC — shared oros-sync engine (one folder for all apps) =====
       if (window.orosSync) {
-        cloudSync.id = 'writer';
-        cloudSync.toast = function(msg) { showToast(msg); };
-        window.orosSync.register(cloudSync);
-      }
-
-      bindClick('btn-cloud-connect', function() {
-        if (cloudSync._pendingDirHandle) {
-          cloudSync.reauthorizeDirHandle();
-          return;
-        }
-        cloudSync.pickDirectory().then(function(handle) {
-          if (handle) {
-            showToast('Sync folder: ' + handle.name);
-            cloudSync.saveBackup().then(function() {
-              cloudSync.updateDirDisplay();
-            });
-          }
-        }).catch(function(e) {
-          if (e && e.name !== 'AbortError') {
-            showToast('Folder selection failed: ' + (e.message || e.name));
-          }
+        var cloudSync = window.orosSync.create({
+          id: 'writer',
+          prefixes: ['oros_writer_'],
+          intervalMinutes: 5,
+          ui: {
+            status: 'cloud-sync-status',
+            last: 'cloud-sync-last',
+            dir: 'sync-dir-display',
+            dirName: 'sync-dir-name',
+            connect: 'btn-cloud-connect',
+            disconnect: 'btn-cloud-disconnect'
+          },
+          toast: function(msg) { showToast(msg); }
         });
-      });
+        cloudSync.isDirty = function() { return writerIsDirty; };
+        window.orosSync.register(cloudSync);
+        cloudSync.init();
 
-      bindClick('btn-cloud-sync-now', function() { cloudSync.syncNow(); });
-      bindClick('btn-cloud-disconnect', function() { cloudSync.disconnect(); });
-      bindClick('btn-cloud-restore', function() { cloudSync.restoreFromCloud(); });
-      bindClick('btn-idb-restore', function() { cloudSync.restoreFromIDB(); });
+        bindClick('btn-cloud-connect', function() {
+          // 1η προτεραιότητα: re-authorize υπάρχοντος handle (user gesture)
+          cloudSync.reauthorizeDirHandle().then(function(handle) {
+            if (handle) {
+              showToast('Sync folder: ' + handle.name);
+              return null;
+            }
+            // 2. Κανένας handle → fresh folder pick (κοινός για όλα τα orOS apps)
+            return window.orosSync.get('writer').pickDirectory().then(function(h) {
+              if (h) {
+                showToast('Sync folder: ' + h.name);
+                return cloudSync.saveBackup();
+              }
+            });
+          }).catch(function(e) {
+            if (e && e.name !== 'AbortError') {
+              showToast('Folder selection failed: ' + (e.message || e.name));
+            }
+          });
+        });
+
+        bindClick('btn-cloud-sync-now', function() { cloudSync.syncNow(); });
+        bindClick('btn-cloud-disconnect', function() { cloudSync.disconnect(); });
+        bindClick('btn-cloud-restore', function() { cloudSync.restoreFromCloud(); });
+        bindClick('btn-idb-restore', function() { cloudSync.restoreFromIDB(); });
+      }
 	  
             // Event listener για αλλαγή page size
       var pageSizeSelect = document.getElementById('page-size-select');
@@ -5756,11 +5371,6 @@ for (var i = 0; i < panels.length; i++) {
       });
 	        bindClick('btn-apply-page-settings', function() {
         savePageSettings();
-      });
-      bindClick('btn-close-goal', function() {
-        if (goalBar) goalBar.style.display = 'none';
-        var gbtn = document.getElementById('btn-goal');
-        if (gbtn) gbtn.classList.remove('active');
       });
       bindClick('btn-close-footnotes', function() { if (footnoteArea) footnoteArea.style.display = 'none'; });
 

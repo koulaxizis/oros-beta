@@ -1,6 +1,11 @@
 // ============================================
-// orOS Main.js — Shared Functionality
-// Fixed: Theme application, Escape handling, Translations
+// orOS Main.js — Shared Functionality v2.0
+// CHANGED: settings modal tab switching removed
+//          (handled by global-settings.js universal tabs)
+// CHANGED: zen-mode settings toggle binding removed
+//          (handled by global-settings.js common bindings)
+// KEPT:    translations, theme, language, toasts, zen button,
+//          shortcuts, PWA handler, app-specific toggles
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -38,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var currentLang = detectLanguage();
   localStorage.setItem('oros-language', currentLang);
 
-  // ========== THEME TOGGLE ==========
+  // ========== HEADER THEME TOGGLE (header.js #theme-toggle) ==========
   var themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
     var storedTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'dark';
@@ -116,14 +121,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-      // ========== LOAD TRANSLATIONS ==========
+  // ========== LOAD TRANSLATIONS ==========
   fetch('assets/js/translations.json')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       window.OROS_TRANSLATIONS = data;
       translatePage();
 
-      // Dispatch translation loaded event for dependent apps
       window.dispatchEvent(new CustomEvent('oros-translations-loaded', {
         detail: {
           translations: data,
@@ -131,14 +135,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }));
 
-      // Also dispatch language change
       window.dispatchEvent(new CustomEvent('oros-language-changed', {
         detail: { lang: localStorage.getItem('oros-language') || 'en' }
       }));
     })
     .catch(function(e) { console.error('Failed to load translations:', e); });
 
-  // ========== ZEN MODE ==========
+  // ========== ZEN MODE (header button) ==========
   var zenBtn = document.getElementById('btn-zen');
   if (zenBtn) {
     zenBtn.addEventListener('click', function(e) {
@@ -173,21 +176,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ========== KEYBOARD SHORTCUTS — FIX #7 ESCAPE HANDLER ==========
+  // ========== KEYBOARD SHORTCUTS — ESCAPE HANDLER ==========
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9') {
       e.preventDefault();
       if (zenBtn) zenBtn.click();
     }
     if (e.key === 'Escape') {
-      // FIX #7: Check if Writer already handled the Escape key
       if (document.body.hasAttribute('data-zen') && !e.isHandledByWriter) {
         if (zenBtn) zenBtn.click();
       }
     }
   });
 
-  // ========== SETTINGS MODAL ==========
+  // ========== SETTINGS MODAL — OPEN/CLOSE ONLY ==========
+  // (Tab switching is owned by global-settings.js — do NOT bind tabs here)
   var settingsBtn = document.getElementById('btn-settings');
   var settingsModal = document.querySelector('.settings-modal');
 
@@ -202,31 +205,9 @@ document.addEventListener('DOMContentLoaded', function() {
         settingsModal.classList.remove('visible');
       });
     }
-
-    var backdrop = settingsModal.querySelector('.settings-modal-overlay');
-    if (backdrop) {
-      backdrop.addEventListener('click', function() {
-        settingsModal.classList.remove('visible');
-      });
-    }
-
-    var tabBtns = settingsModal.querySelectorAll('.tab-btn');
-    var tabPanels = settingsModal.querySelectorAll('.tab-panel');
-
-    tabBtns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        tabBtns.forEach(function(b) { b.classList.remove('active'); });
-        tabPanels.forEach(function(p) { p.style.display = 'none'; });
-
-        this.classList.add('active');
-        var panelId = this.getAttribute('data-tab');
-        var panel = settingsModal.querySelector('#' + panelId);
-        if (panel) panel.style.display = 'flex';
-      });
-    });
   }
 
-  // ========== SETTINGS TOGGLES — WRITER ==========
+  // ========== SETTINGS TOGGLES — WRITER (app-specific tab) ==========
 
   var readingProgressToggle = document.getElementById('toggle-reading-progress');
   if (readingProgressToggle) {
@@ -292,11 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideGoalBtnToggle) {
     hideGoalBtnToggle.checked = localStorage.getItem('oros_hide_goal_btn') === 'true';
     hideGoalBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_goal_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-goal-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_goal_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-goal-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
 
@@ -304,11 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideOutlineBtnToggle) {
     hideOutlineBtnToggle.checked = localStorage.getItem('oros_hide_outline_btn') === 'true';
     hideOutlineBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_outline_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-outline-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_outline_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-outline-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
 
@@ -316,11 +291,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideMetadataBtnToggle) {
     hideMetadataBtnToggle.checked = localStorage.getItem('oros_hide_metadata_btn') === 'true';
     hideMetadataBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_metadata_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-metadata-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_metadata_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-metadata-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
 
@@ -328,11 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideFindBtnToggle) {
     hideFindBtnToggle.checked = localStorage.getItem('oros_hide_find_btn') === 'true';
     hideFindBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_find_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-find-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_find_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-find-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
 
@@ -340,11 +309,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideWordFreqBtnToggle) {
     hideWordFreqBtnToggle.checked = localStorage.getItem('oros_hide_wordfreq_btn') === 'true';
     hideWordFreqBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_wordfreq_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-wordfreq-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_wordfreq_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-wordfreq-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
 
@@ -352,14 +318,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hideLoremBtnToggle) {
     hideLoremBtnToggle.checked = localStorage.getItem('oros_hide_lorem_btn') === 'true';
     hideLoremBtnToggle.addEventListener('change', function() {
-      var hidden = this.checked;
-      localStorage.setItem('oros_hide_lorem_btn', hidden ? 'true' : 'false');
-      window.dispatchEvent(new CustomEvent('oros-hide-lorem-btn-changed', {
-        detail: { hidden: hidden }
-      }));
+      localStorage.setItem('oros_hide_lorem_btn', this.checked ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('oros-hide-lorem-btn-changed', { detail: { hidden: this.checked } }));
     });
   }
-  
+
   var typewriterSoundToggle = document.getElementById('toggle-typewriter-sound');
   if (typewriterSoundToggle) {
     typewriterSoundToggle.checked = localStorage.getItem('oros_typewriter_sound') === 'true';
@@ -416,25 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ========== ZEN MODE TOGGLE FROM SETTINGS ==========
-  var zenModeToggle = document.getElementById('toggle-zen-mode');
-  if (zenModeToggle) {
-    zenModeToggle.checked = localStorage.getItem('oros_zen_mode') === 'true';
-    zenModeToggle.addEventListener('change', function() {
-      var enabled = this.checked;
-      localStorage.setItem('oros_zen_mode', enabled ? 'true' : 'false');
-      if (enabled) {
-        document.body.setAttribute('data-zen', 'true');
-      } else {
-        document.body.removeAttribute('data-zen');
-      }
-      window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', {
-        detail: { enabled: enabled }
-      }));
-    });
-  }
-
-    // ========== PWA INSTALL PROMPT (Shared Handler) ==========
+  // ========== PWA INSTALL PROMPT (Shared Handler) ==========
   var installBtn = document.getElementById('btn-install');
   var deferredPrompt = null;
 
@@ -459,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Expose for Writer Settings modal
+  // Expose for Writer Settings modal / global-settings.js
   window.orosShowInstallPrompt = function(onComplete) {
     if (!deferredPrompt) return false;
     deferredPrompt.prompt();

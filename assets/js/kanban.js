@@ -1,10 +1,9 @@
 /* ============================================
-   orOS Kanban — Main Application Logic (v2.4)
-   Full implementation matching editor/writer pattern:
-   - Fixed audit bugs #1-#9
-   - Full Database Import/Export (v3 format + legacy support)
-   - File System Access sync + autosync on close
-   - Welcome popup (stable channel only)
+   orOS Kanban — Main Application Logic (v2.5)
+   CHANGED: local File System Access sync engine REMOVED
+            (replaced by shared oros-sync.js engine)
+   KEPT:    boards/cards/labels logic, Full DB Import/Export (v3 + legacy),
+            welcome popup, toolbar sync dot (mapped from shared engine)
    ============================================ */
 
 (function() {
@@ -30,24 +29,17 @@
   let isBeta = typeof OROS_CONFIG !== 'undefined' && OROS_CONFIG.isBeta;
   let autoSaveInterval = null;
 
-  // Sync state
-  let syncDirHandle = null;
-  let syncEnabled = false;
-  let syncAutoEnabled = true;
-  let syncPending = false;
-  let lastSyncTime = null;
-  let syncInProgress = false;
-  let syncDirName = null;
-  let syncDebounceTimer = null;
-  let syncIntervalId = null;
+  // Unsaved-data tracking (close-tab warning when sync is NOT configured)
   let hasUnsavedChanges = false;
   let lastSavedJson = null;
 
-  const SYNC_FILE_NAME = 'kanban.json';
+  // Shared engine reference (set by setupSharedSync)
+  let sharedSync = null;
+  let syncDebounceTimer = null;
 
   // ===== INITIALIZATION =====
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('orOS Kanban initializing (v2.4)...');
+    console.log('orOS Kanban initializing (v2.5)...');
 
     waitForTranslations().then(() => {
       initApp();
@@ -78,304 +70,179 @@
       setupEventListeners();
       setupThemeToggle();
       renderBoards();
-      setupPWA();
       setupKeyboardShortcuts();
-      setupSyncLifecycle();
 
-      // Restore sync handle from IndexedDB (async, non-blocking)
-      initSync().catch(err => console.warn('Sync init skipped:', err.message));
+      // Shared cloud sync engine (oros-sync.js) — replaces local sync engine
+      setupSharedSync();
 
       // Welcome popup on stable channel only
       maybeShowWelcome();
 
       if (autoSaveEnabled) startAutoSave();
 
-      console.log('orOS Kanban initialized (v2.4)');
+      console.log('orOS Kanban initialized (v2.5)');
     } catch (err) {
       console.error('Initialization error:', err);
       showErrorToast('Failed to initialize. Try clearing localStorage.');
     }
   }
 
-  // ===== INDEXEDDB: SYNC HANDLE STORE =====
-  function idbOpen() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open('oros-kanban-sync', 1);
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains('handles')) {
-          req.result.createObjectStore('handles');
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
+  // ===== SHARED CLOUD SYNC (oros-sync.js) =====
+  function setupSharedSync() {
+    if (!window.orosSync) {
+      console.warn('[kanban] oros-sync.js not loaded');
+      return;
+    }
 
-  async function idbSet(key, value) {
-    const db = await idbOpen();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('handles', 'readwrite');
-      tx.objectStore('handles').put(value, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  async function idbGet(key) {
-    const db = await idbOpen();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('handles', 'readonly');
-      const req = tx.objectStore('handles').get(key);
-      req.onsuccess = () => resolve(req.result);
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  async function idbDelete(key) {
-    const db = await idbOpen();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('handles', 'readwrite');
-      tx.objectStore('handles').delete(key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  // ===== SYNC: FILE SYSTEM ACCESS ENGINE =====
-  function syncSupported() {
-    return typeof window.showDirectoryPicker === 'function';
-  }
-
-  function buildSyncPayload() {
-    const data = {
-      app: 'orOS Kanban',
-      version: 3,
-      isBeta: !!isBeta,
-      exportedAt: Date.now(),
-      boards,
-      currentBoardId,
-      labels,
-      assignments,
-      autoSaveEnabled,
-      settings: {
-        hideAddColumnBtn: document.getElementById('toggle-hide-add-column-btn')?.checked || false,
-        hideImportBtn: document.getElementById('toggle-hide-import-btn')?.checked || false,
-        hideExportBtn: document.getElementById('toggle-hide-export-btn')?.checked || false
+    // Hyphen prefixes — kanban stores 'oros-kanban-*' keys.
+    // Underscore variant kept for backward compatibility.
+    sharedSync = window.orosSync.create({
+      id: 'kanban',
+      prefixes: ['oros-kanban-', 'oros_kanban_'],
+      intervalMinutes: 5,
+      ui: {
+        status: 'cloud-sync-status',
+        last: 'cloud-sync-last',
+        dir: 'sync-dir-display',
+        dirName: 'sync-dir-name',
+        connect: 'btn-cloud-connect',
+        disconnect: 'btn-cloud-disconnect'
       },
-      boardData: {}
+      toast: function(msg) { showNotification(msg); }
+    });
+
+    // Hook into engine status changes → toolbar dot + tooltip
+    var origUpdateStatus = sharedSync.updateStatus.bind(sharedSync);
+    sharedSync.updateStatus = function(status, timestamp) {
+      engineLastStatus = status;
+      origUpdateStatus(status, timestamp);
+      updateSyncUI(mapEngineToDot(status));
+      updateSyncButton();
     };
 
-    Object.keys(boards).forEach(id => {
-      const raw = localStorage.getItem(getStorageKey() + 'board-' + id);
-      if (raw) {
-        try { data.boardData[id] = JSON.parse(raw); } catch (err) { /* skip corrupt board */ }
-      }
-    });
+    sharedSync.isDirty = function() { return hasUnsavedChanges; };
+    window.orosSync.register(sharedSync);
+    sharedSync.init();
+	    // Initial UI paint (dot + tooltip reflect persisted state)
+    updateSyncUI(mapEngineToDot());
+    updateSyncButton();
+  }
+  
 
-    return data;
+  var engineLastStatus = 'idle';
+
+  function mapEngineToDot(engineStatus) {
+    if (engineLastStatus === 'syncing') return 'pending';
+    if (engineLastStatus === 'error') return 'error';
+    if (sharedSync && sharedSync.dirHandle) {
+      return engineLastStatus === 'pending' ? 'pending' : 'ok';
+    }
+    return hasUnsavedChanges ? 'pending' : 'off';
   }
 
   function updateSyncUI(state) {
-    // state: 'off' | 'ok' | 'pending' | 'error'
     const dot = document.getElementById('sync-status-dot');
-    const badge = document.getElementById('sync-status-text');
+    // Toolbar owns its own element — the modal's cloud-sync-status is
+    // written exclusively by the oros-sync engine (no dual ownership).
+    const badge = document.getElementById('sync-toolbar-status');
     const folderEl = document.getElementById('sync-folder-name');
     const lastEl = document.getElementById('sync-last-time');
 
     if (dot) dot.className = 'sync-status-dot ' + state;
 
     if (badge) {
-      const labelsMap = {
-        off: getTrans('kanban_sync_off', 'Off'),
-        ok: getTrans('kanban_sync_ok', 'Synced'),
-        pending: getTrans('kanban_sync_pending', 'Pending'),
-        error: getTrans('kanban_sync_error', 'Error')
+      var labelsMap = {
+        off: getTrans('kanban_sync_off', '● Not configured'),
+        ok: getTrans('kanban_sync_ok', '✓ Synced'),
+        pending: getTrans('kanban_sync_pending', '⟳ Syncing…'),
+        error: getTrans('kanban_sync_error', '⚠ Sync error')
       };
-      badge.textContent = labelsMap[state] || 'Off';
+      badge.textContent = labelsMap[state] || '●';
       badge.className = 'sync-status-badge ' + state;
     }
 
     if (folderEl) {
-      folderEl.textContent = (syncEnabled && syncDirName) ? syncDirName : 'Not set';
+      folderEl.textContent = (sharedSync && sharedSync.dirHandle)
+        ? (sharedSync.dirHandle.name || 'Folder')
+        : 'Not set';
     }
 
     if (lastEl) {
-      lastEl.textContent = lastSyncTime ? new Date(lastSyncTime).toLocaleString() : '—';
+      var saved = localStorage.getItem('oros_kanban_last_sync');
+      lastEl.textContent = saved ? new Date(saved).toLocaleString() : '—';
     }
   }
 
   function updateSyncButton() {
-    const btn = document.getElementById('btn-sync');
+    var btn = document.getElementById('btn-sync');
     if (!btn) return;
-    btn.title = syncEnabled
-      ? 'Sync ON — ' + (syncDirName || 'folder') + ' (Ctrl+Shift+S)'
-      : 'Sync OFF — click to configure (Ctrl+Shift+S)';
+    var configured = !!(sharedSync && sharedSync.dirHandle);
+    btn.title = configured
+      ? getTrans('kanban_sync_tt', 'Sync ON') + ' — ' + ((sharedSync && sharedSync.dirHandle && sharedSync.dirHandle.name) || '') + ' (Ctrl+Shift+S)'
+      : getTrans('kanban_sync_off_tt', 'Sync OFF — click to configure (Ctrl+Shift+S)');
   }
 
-  async function initSync() {
-    if (!syncSupported()) {
-      updateSyncUI('off');
+  function connectSharedFolder() {
+       if (!sharedSync) return;
+    // Handle needs permission re-grant after restart (needs user gesture — we're in a click)
+    if (!sharedSync.dirHandle && sharedSync.isSupported()) {
+      sharedSync.reauthorizeDirHandle().then(function(handle) {
+        if (handle) {
+          engineLastStatus = 'synced';
+          updateSyncUI('ok');
+          updateSyncButton();
+        } else {
+          // No persisted handle at all → open picker
+          connectSharedFolderPick();
+        }
+      });
       return;
     }
-    try {
-      const handle = await idbGet('syncDir');
-      if (!handle) { updateSyncUI('off'); return; }
-
-      const perm = await handle.queryPermission({ mode: 'readwrite' });
-      syncDirName = handle.name;
-      syncDirHandle = handle;
-
-      if (perm === 'granted') {
-        syncEnabled = true;
-        startPeriodicSync();
+    Promise.resolve(sharedSync.pickDirectory()).then(function(handle) {
+      if (!handle) return;
+      showNotification(getTrans('SYNC_FOLDER_SET', 'Sync folder:') + ' ' + handle.name);
+      Promise.resolve(sharedSync.saveBackup()).then(function() {
+        sharedSync.updateDirDisplay();
+        engineLastStatus = 'synced';
         updateSyncUI('ok');
-        updateSyncButton();
-        await syncNow(false);
-      } else {
-        // Handle remembered, permission needs re-grant — user clicks sync button
-        updateSyncUI('pending');
-        updateSyncButton();
-      }
-    } catch (err) {
-      console.warn('Sync handle restore failed:', err);
-      updateSyncUI('off');
-    }
-  }
-
-  async function chooseSyncFolder() {
-    if (!syncSupported()) {
-      showErrorToast('File System Access not supported. Use Chrome/Edge on desktop.');
-      return;
-    }
-    try {
-      const handle = await window.showDirectoryPicker({ id: 'oros-sync', mode: 'readwrite' });
-      if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
-        showErrorToast('Permission denied for folder.');
-        return;
-      }
-      syncDirHandle = handle;
-      syncDirName = handle.name;
-      syncEnabled = true;
-      await idbSet('syncDir', handle);
-      updateSyncUI('ok');
-      updateSyncButton();
-      startPeriodicSync();
-      showNotification('Sync folder: ' + handle.name);
-      await syncNow(true);
-    } catch (err) {
-      if (err && err.name === 'AbortError') return; // user cancelled
-      console.error('Sync folder selection failed:', err);
-      showErrorToast('Could not open folder: ' + (err.message || err.name));
-    }
-  }
-
-  async function disableSync() {
-    if (!confirm('Disable sync? Local data stays untouched.')) return;
-    syncEnabled = false;
-    syncDirHandle = null;
-    syncDirName = null;
-    syncPending = false;
-    try { await idbDelete('syncDir'); } catch (err) { /* ignore */ }
-    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-    if (syncIntervalId) clearInterval(syncIntervalId);
-    updateSyncUI('off');
-    updateSyncButton();
-    showNotification('Sync disabled');
-  }
-
-  async function requestSyncPermission() {
-    if (!syncDirHandle) {
-      await chooseSyncFolder();
-      return;
-    }
-    try {
-      const perm = await syncDirHandle.requestPermission({ mode: 'readwrite' });
-      if (perm === 'granted') {
-        syncEnabled = true;
-        updateSyncUI('ok');
-        updateSyncButton();
-        await syncNow(false);
-        return;
-      }
-    } catch (err) {
-      console.warn('Sync permission denied:', err);
-    }
-    showErrorToast('Sync permission denied.');
-  }
-
-  async function syncNow(notify = true) {
-    if (!syncEnabled || !syncDirHandle) {
-      if (notify) showErrorToast('Sync not configured. Settings → Sync → Choose folder.');
-      return false;
-    }
-    if (syncInProgress) return false;
-    syncInProgress = true;
-
-    try {
-      const data = buildSyncPayload();
-      const fileHandle = await syncDirHandle.getFileHandle(SYNC_FILE_NAME, { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(JSON.stringify(data, null, 2));
-      await writable.close();
-
-      lastSyncTime = Date.now();
-      syncPending = false;
-      hasUnsavedChanges = false;
-      updateSyncUI('ok');
-      if (notify) showNotification('Synced ✓');
-      return true;
-    } catch (err) {
-      console.error('Sync failed:', err);
-      updateSyncUI('error');
-      if (notify) showErrorToast('Sync failed: ' + (err.message || err.name));
-      return false;
-    } finally {
-      syncInProgress = false;
-    }
-  }
-
-  function scheduleAutoSync() {
-    // Debounced sync ~2s after each data change
-    if (!syncEnabled || !syncAutoEnabled) return;
-    syncPending = true;
-    updateSyncUI('pending');
-    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-    syncDebounceTimer = setTimeout(() => syncNow(false), 2000);
-  }
-
-  function startPeriodicSync() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
-    syncIntervalId = setInterval(() => {
-      if (syncEnabled && syncAutoEnabled && syncPending) syncNow(false);
-    }, 30000);
-  }
-
-  function setupSyncLifecycle() {
-    window.addEventListener('beforeunload', (e) => {
-      if (syncEnabled && syncPending) {
-        syncNow(false); // best-effort last-chance sync
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-      if (!syncEnabled && hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && syncEnabled && syncPending) {
-        syncNow(false);
+      });
+    }).catch(function(e) {
+      if (e && e.name !== 'AbortError') {
+        showErrorToast(getTrans('SYNC_FOLDER_FAIL', 'Folder selection failed:') + ' ' + (e.message || e.name));
       }
     });
   }
 
-  // Marks unsynced/unsaved state and schedules sync — call after real changes
+  function hotkeySync() {
+    // Ctrl+Shift+S — Sync Now if configured, otherwise open folder picker
+    if (sharedSync && sharedSync.dirHandle) {
+      sharedSync.syncNow();
+    } else if (sharedSync) {
+      connectSharedFolder();
+    }
+  }
+
   function markDirty() {
     hasUnsavedChanges = true;
-    scheduleAutoSync();
+    if (!sharedSync) return;
+
+    engineLastStatus = 'pending';
+    updateSyncUI('pending');
+
+    // Debounced push to the shared engine (~2s after last change)
+    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => {
+      if (sharedSync.dirHandle && localStorage.getItem('oros_sync_auto') !== '0') {
+        Promise.resolve(sharedSync.saveBackup()).then(function() {
+          engineLastStatus = 'synced';
+          updateSyncUI('ok');
+        }).catch(function(e) {
+          console.warn('[kanban] sync failed:', e);
+          engineLastStatus = 'error';
+          updateSyncUI('error');
+        });
+      }
+    }, 2000);
   }
 
   // ===== WELCOME POPUP (stable channel only) =====
@@ -415,15 +282,15 @@
 
   // ===== TRANSLATIONS HELPER =====
   function getTrans(key, fallback = '') {
-  const root = window.OROS_TRANSLATIONS;
-  if (!root) return fallback;
-  const lang = localStorage.getItem('oros-language') || 'en';
-  const flat = (root && typeof root[lang] === 'object') ? root
-             : (root && typeof root.en === 'object') ? root.en
-             : root;                                  // backward-compat: ήδη flat
-  const val = flat ? flat[key] : undefined;
-  return (val === undefined || val === null) ? fallback : val;
-}
+    const root = window.OROS_TRANSLATIONS;
+    if (!root) return fallback;
+    const lang = localStorage.getItem('oros-language') || 'en';
+    const flat = (root && typeof root[lang] === 'object') ? root[lang]
+           : (root && typeof root.en === 'object') ? root.en
+           : root;
+    const val = flat ? flat[key] : undefined;
+    return (val === undefined || val === null) ? fallback : val;
+  }
 
   // ===== STORAGE =====
   function getStorageKey() {
@@ -450,7 +317,7 @@
       localStorage.setItem(getStorageKey() + 'data', JSON.stringify(data));
     } catch (err) {
       console.error('Storage save failed:', err);
-      showErrorToast('Save failed — storage full?');
+      showErrorToast(getTrans('SAVE_FAILED', 'Save failed — storage full?'));
     }
   }
 
@@ -467,11 +334,6 @@
 
         if (data.settings) updateSettingsUI(data.settings);
       }
-
-      // Sync preference (the handle itself is restored via initSync from IndexedDB)
-      syncAutoEnabled = localStorage.getItem(getStorageKey() + 'sync-auto') !== '0';
-      const syncAutoToggle = document.getElementById('sync-auto-toggle');
-      if (syncAutoToggle) syncAutoToggle.checked = syncAutoEnabled;
 
       if (Object.keys(boards).length === 0) {
         createDefaultBoard();
@@ -492,7 +354,6 @@
   }
 
   function updateSettingsUI(settings) {
-    // Restore toggle checkboxes
     const addCol = document.getElementById('toggle-hide-add-column-btn');
     const impBtnToggle = document.getElementById('toggle-hide-import-btn');
     const expBtnToggle = document.getElementById('toggle-hide-export-btn');
@@ -500,7 +361,6 @@
     if (impBtnToggle) impBtnToggle.checked = settings.hideImportBtn || false;
     if (expBtnToggle) expBtnToggle.checked = settings.hideExportBtn || false;
 
-    // Apply visibility to toolbar buttons
     const btnAddCol = document.getElementById('btn-add-column');
     const btnImport = document.getElementById('btn-import');
     const btnExport = document.getElementById('btn-export');
@@ -536,7 +396,7 @@
     saveToStorage();
     saveBoardToStorage();
     renderColumns();
-    showNotification('Welcome! Create your first board.');
+    showNotification(getTrans('WELCOME_FIRST_BOARD', 'Welcome! Create your first board.'));
   }
 
   function loadBoard(boardId) {
@@ -579,10 +439,6 @@
     saveBoardToStorage();
   }
 
-  function currentBoardSnapshot() {
-    return JSON.stringify({ columns, cards, columnOrder, archivedCards });
-  }
-
   function snapshotBoard() {
     try {
       lastSavedJson = JSON.stringify({ columns, cards, columnOrder, archivedCards });
@@ -604,7 +460,6 @@
 
     try {
       const json = JSON.stringify(boardData);
-      const snapshot = JSON.stringify({ columns, cards, columnOrder, archivedCards });
       const changed = snapshotCompare();
 
       localStorage.setItem(getStorageKey() + 'board-' + currentBoardId, json);
@@ -621,7 +476,6 @@
   }
 
   function snapshotCompare() {
-    // Internal: compares last saved vs in-memory before persisting
     try {
       const candidate = JSON.stringify({ columns, cards, columnOrder, archivedCards });
       return candidate !== lastSavedJson;
@@ -741,7 +595,6 @@
     el.className = 'kanban-column';
     el.dataset.columnId = column.id;
 
-    // Archived cards render IN their columns when showArchived is on
     const visibleCardIds = column.cardIds.filter(cardId => {
       const card = cards.find(c => c.id === cardId);
       if (!card) return false;
@@ -939,7 +792,6 @@
       swatch.classList.toggle('active', swatch.dataset.color === (card.color || ''));
     });
 
-    // Unarchive button visible only for archived cards
     const unarchiveBtn = document.getElementById('btn-unarchive-card');
     if (unarchiveBtn) unarchiveBtn.style.display = card.archived ? 'inline-flex' : 'none';
 
@@ -970,7 +822,7 @@
         span.textContent = label.name;
         span.dataset.labelId = labelId;
         span.style.cursor = 'pointer';
-        span.title = 'Click to remove';
+        span.title = getTrans('CLICK_REMOVE', 'Click to remove');
         span.addEventListener('click', () => {
           editedCard.labels = (editedCard.labels || []).filter(id => id !== labelId);
           renderCardLabelsEditor(editedCard.labels);
@@ -1208,7 +1060,6 @@
     card.updatedAt = Date.now();
     archivedCards = archivedCards.filter(id => id !== cardId);
 
-    // If card is not attached to any column, put it back at the end of the first column
     const inAnyColumn = columns.some(c => c.cardIds.includes(cardId));
     if (!inAnyColumn && columns.length > 0) {
       columns[0].cardIds.push(cardId);
@@ -1247,14 +1098,12 @@
     const targetColId = e.currentTarget.dataset.columnId;
 
     if (!cardId || !targetColId) return;
-    // Same-column reorder now allowed (audit fix #4)
 
     const sourceCol = columns.find(c => c.cardIds.includes(cardId));
     const targetCol = columns.find(c => c.id === targetColId);
 
     if (!sourceCol || !targetCol) return;
 
-    // Drop index computed BEFORE mutating arrays
     const dropIndex = getDropIndex(e, targetCol, cardId);
 
     sourceCol.cardIds = sourceCol.cardIds.filter(id => id !== cardId);
@@ -1268,7 +1117,6 @@
     const cardsContainer = document.querySelector(`.column-cards[data-column-id="${column.id}"]`);
     if (!cardsContainer) return column.cardIds.length;
 
-    // Include ALL cards (even the dragged one) — the DOM still contains it
     const cardElements = Array.from(cardsContainer.querySelectorAll('.kanban-card'));
     if (cardElements.length === 0) return 0;
 
@@ -1283,7 +1131,6 @@
       }
     }
 
-    // Convert DOM position to array position after removing the dragged card
     const draggedPos = domIds.indexOf(draggedCardId);
     if (draggedPos !== -1 && draggedPos < dropPos) dropPos--;
 
@@ -1435,7 +1282,7 @@
 
     const newCol = {
       id: 'col-' + Date.now(),
-      title: title, // raw value — escape happens at render (audit fix #6)
+      title: title,
       cardIds: [],
       order: []
     };
@@ -1470,7 +1317,7 @@
     const save = () => {
       const newTitle = input.value.trim();
       if (newTitle && newTitle !== col.title) {
-        col.title = newTitle; // raw value
+        col.title = newTitle;
         saveBoardToStorage();
         renderColumns();
       }
@@ -1511,7 +1358,7 @@
 
     const newCard = {
       id: 'card-' + Date.now(),
-      title: title, // raw
+      title: title,
       description: '',
       priority: 0,
       color: null,
@@ -1557,7 +1404,6 @@
     card.archived = true;
     card.updatedAt = Date.now();
 
-    // Card STAYS in its column.cardIds — visibility controlled by showArchived (audit fix #5)
     if (!archivedCards.includes(cardId)) archivedCards.push(cardId);
 
     if (editedCard && editedCard.id === cardId) closeCardModal();
@@ -1612,8 +1458,7 @@
 
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (syncEnabled) syncNow(true);
-        else chooseSyncFolder();
+        hotkeySync();
         return;
       }
 
@@ -1633,7 +1478,7 @@
 
       if (e.key === 'Escape') {
         if (cardModalOpen) closeCardModal();
-        const picker = document.getElementById('label-picker'); // audit fix #9
+        const picker = document.getElementById('label-picker');
         if (picker) picker.style.display = 'none';
         document.querySelectorAll('.modal-overlay.visible').forEach(el => el.classList.remove('visible'));
         document.querySelectorAll('.modal.visible').forEach(el => el.classList.remove('visible'));
@@ -1646,9 +1491,7 @@
 
   // ===== THEMING =====
   function setupThemeToggle() {
-    const settingsToggle = document.getElementById('btn-theme-toggle');
-    if (settingsToggle) settingsToggle.addEventListener('click', toggleTheme);
-
+    // Header toggle only — #btn-theme-toggle (injected Global tab) is owned by global-settings.js
     const headerToggle = document.querySelector('#oros-header .btn-theme-toggle');
     if (headerToggle) headerToggle.addEventListener('click', toggleTheme);
   }
@@ -1666,28 +1509,7 @@
     document.documentElement.setAttribute('data-theme', saved);
   }
 
-  // ===== PWA INSTALL =====
-  function setupPWA() {
-    let deferredPrompt = null;
-    const installBtn = document.getElementById('btn-install');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (installBtn) installBtn.disabled = false;
-    });
-
-    if (installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') showNotification(getTrans('INSTALLED', 'App installed!'));
-        deferredPrompt = null;
-        installBtn.disabled = true;
-      });
-    }
-  }
+  // ===== PWA INSTALL — handled by main.js shared handler (removed here) =====
 
   // ===== UTILITIES =====
   function escapeHtml(str) {
@@ -1732,13 +1554,13 @@
     document.body.appendChild(toast);
 
     setTimeout(() => toast.classList.add('visible'), 10);
-    setTimeout(() => {
+        setTimeout(() => {
       toast.classList.remove('visible');
       setTimeout(() => toast.remove(), 300);
     }, 2000);
   }
-  
-    function showErrorToast(msg) {
+
+  function showErrorToast(msg) {
     const existing = document.querySelector('.notification-toast');
     if (existing) existing.remove();
 
@@ -1783,7 +1605,7 @@
         document.getElementById('board-list')?.classList.remove('visible');
       }
       if (!e.target.closest('.kanban-export-group')) {
-        toggleExportMenu(true); // audit fix #3 — closes both menu and group class
+        toggleExportMenu(true); // audit fix #3
       }
     });
 
@@ -1802,10 +1624,15 @@
     document.getElementById('export-full')?.addEventListener('click', exportFullBackup);
     document.getElementById('export-csv')?.addEventListener('click', exportCSV);
 
-    // Sync toolbar button
+    // NOTE: btn-sync toolbar — bound here (kanban-specific dot/tooltip),
+    // but ALL settings-modal sync buttons (choose/disable/sync-now/auto-toggle)
+    // are owned by global-settings.js — do NOT bind them again here.
     document.getElementById('btn-sync')?.addEventListener('click', () => {
-      if (syncEnabled) syncNow(true);
-      else requestSyncPermission();
+      if (sharedSync && sharedSync.dirHandle) {
+        sharedSync.syncNow();
+      } else {
+        connectSharedFolder();
+      }
     });
 
     // Archive toggle (audit fix #5)
@@ -1818,24 +1645,11 @@
     document.getElementById('btn-labels')?.addEventListener('click', openLabelModal);
     document.getElementById('btn-stats')?.addEventListener('click', openStatsModal);
 
-    // Settings modal
+    // Settings modal — open/close ONLY (tabs owned by global-settings.js)
     document.querySelector('.settings-modal .settings-close')?.addEventListener('click', closeSettingsModal);
     document.querySelector('.settings-modal-overlay')?.addEventListener('click', closeSettingsModal);
-    document.querySelectorAll('.settings-modal .tab-btn').forEach(btn => {
-      btn.addEventListener('click', switchTab);
-    });
 
-    // Sync settings
-    document.getElementById('btn-choose-sync-folder')?.addEventListener('click', chooseSyncFolder);
-    document.getElementById('btn-disable-sync')?.addEventListener('click', disableSync);
-    document.getElementById('btn-sync-now')?.addEventListener('click', () => syncNow(true));
-    document.getElementById('sync-auto-toggle')?.addEventListener('change', (e) => {
-      syncAutoEnabled = e.target.checked;
-      localStorage.setItem(getStorageKey() + 'sync-auto', syncAutoEnabled ? '1' : '0');
-      if (syncAutoEnabled) scheduleAutoSync();
-    });
-
-    // Kanban settings toggles
+    // Kanban settings toggles (app-specific tab)
     document.getElementById('kanban-auto-save-toggle')?.addEventListener('change', (e) => {
       autoSaveEnabled = e.target.checked;
       if (autoSaveEnabled) startAutoSave();
@@ -1849,13 +1663,15 @@
       saveToStorage();
     });
 
-    document.getElementById('toggle-hide-import-btn')?.addEventListener('change', (e) => {
-      document.getElementById('btn-import').style.display = e.target.checked ? 'none' : 'flex';
+       document.getElementById('toggle-hide-import-btn')?.addEventListener('change', (e) => {
+      const btn = document.getElementById('btn-import');
+      if (btn) btn.style.display = e.target.checked ? 'none' : 'flex';
       saveToStorage();
     });
 
-    document.getElementById('toggle-hide-export-btn')?.addEventListener('change', (e) => {
-      document.getElementById('btn-export').style.display = e.target.checked ? 'none' : 'flex';
+        document.getElementById('toggle-hide-export-btn')?.addEventListener('change', (e) => {
+      const btn = document.getElementById('btn-export');
+      if (btn) btn.style.display = e.target.checked ? 'none' : 'flex';
       saveToStorage();
     });
 
@@ -1869,7 +1685,7 @@
 
     setupSearch();
     setupFilterDropdown();
-    initTheme(); // audit fix #8 — theme restore always runs
+    initTheme(); // audit fix #8
   }
 
   // ===== BOARD MANAGEMENT =====
@@ -1880,7 +1696,7 @@
     const boardId = 'board-' + Date.now();
     boards[boardId] = {
       id: boardId,
-      name: name, // raw — escape at render (audit fix #6)
+      name: name,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
@@ -1907,7 +1723,7 @@
     const newName = prompt(getTrans('RENAME_BOARD', 'New name:'), board.name);
     if (!newName) return;
 
-    board.name = newName; // raw
+    board.name = newName;
     board.updatedAt = Date.now();
     saveToStorage();
     renderBoards();
@@ -1936,6 +1752,37 @@
   }
 
   // ===== IMPORT / EXPORT (FULL DATABASE) =====
+  function buildSyncPayload() {
+    // Kept: needed by import/export (v3 format). The shared sync engine
+    // uses its own localStorage-prefix collector — both stay valid.
+    const data = {
+      app: 'orOS Kanban',
+      version: 3,
+      isBeta: !!isBeta,
+      exportedAt: Date.now(),
+      boards,
+      currentBoardId,
+      labels,
+      assignments,
+      autoSaveEnabled,
+      settings: {
+        hideAddColumnBtn: document.getElementById('toggle-hide-add-column-btn')?.checked || false,
+        hideImportBtn: document.getElementById('toggle-hide-import-btn')?.checked || false,
+        hideExportBtn: document.getElementById('toggle-hide-export-btn')?.checked || false
+      },
+      boardData: {}
+    };
+
+    Object.keys(boards).forEach(id => {
+      const raw = localStorage.getItem(getStorageKey() + 'board-' + id);
+      if (raw) {
+        try { data.boardData[id] = JSON.parse(raw); } catch (err) { /* skip corrupt board */ }
+      }
+    });
+
+    return data;
+  }
+
   function importDatabase(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -1952,7 +1799,6 @@
           assignments = data.assignments || [];
           if (typeof data.autoSaveEnabled === 'boolean') autoSaveEnabled = data.autoSaveEnabled;
 
-          // Restore each board's data to its own storage slot (full DB restore)
           Object.keys(data.boardData || {}).forEach(id => {
             if (boards[id]) {
               localStorage.setItem(getStorageKey() + 'board-' + id, JSON.stringify(data.boardData[id]));
@@ -1996,13 +1842,12 @@
 
     const willOpen = !menu.classList.contains('open');
     menu.classList.toggle('open', willOpen);
-    group.classList.toggle('open', willOpen); // audit fix #3 — class on parent group
+    group.classList.toggle('open', willOpen);
   }
 
   function exportFullBackup() {
     toggleExportMenu(true);
-    const data = buildSyncPayload(); // identical payload: full DB snapshot (v3)
-
+    const data = buildSyncPayload();
     downloadJSON(data, 'oros-kanban-backup-' + new Date().toISOString().slice(0, 10) + '.json');
     hasUnsavedChanges = false;
     showNotification(getTrans('EXPORT_SUCCESS', 'Backup downloaded'));
@@ -2022,7 +1867,7 @@
           }).join('; ');
 
           csvRows.push([
-            card.title,        // raw — no escaped entities in CSV (audit fix #6)
+            card.title,
             col.title,
             card.priority || 0,
             labelNames,
@@ -2049,7 +1894,6 @@
 
   function downloadCSV(rows, filename) {
     const csv = rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
-    // BOM prefix so Excel opens Greek characters correctly
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2096,13 +1940,13 @@
       });
 
       item.querySelector('.label-manage-text').addEventListener('input', (e) => {
-        label.name = e.target.value; // raw
+        label.name = e.target.value;
         saveBoardToStorage();
         debouncedRender();
       });
 
       item.querySelector('.label-manage-delete').addEventListener('click', () => {
-        if (!confirm('Delete this label?')) return;
+        if (!confirm(getTrans('DEL_LABEL_CONFIRM', 'Delete this label?'))) return;
         labels = labels.filter(l => l.id !== label.id);
         cards.forEach(c => {
           c.labels = (c.labels || []).filter(id => id !== label.id);
@@ -2124,7 +1968,7 @@
 
     const newLabel = {
       id: 'label-' + Date.now(),
-      name: name, // raw
+      name: name,
       color: '#6d4aff'
     };
 
@@ -2195,9 +2039,9 @@
     let html = `
       <div class="stat-category">
         <div class="stat-category-title">${getTrans('OVERVIEW', 'Overview')}</div>
-        <div class="stat-item"><span>Total cards</span><span class="stat-value">${totalCards}</span></div>
-        <div class="stat-item"><span>Archived</span><span class="stat-value">${archivedCount}</span></div>
-        <div class="stat-item"><span>Completed</span><span class="stat-value">${completedCount}</span></div>
+        <div class="stat-item"><span>${getTrans('TOTAL_CARDS', 'Total cards')}</span><span class="stat-value">${totalCards}</span></div>
+        <div class="stat-item"><span>${getTrans('ARCHIVED', 'Archived')}</span><span class="stat-value">${archivedCount}</span></div>
+        <div class="stat-item"><span>${getTrans('COMPLETED', 'Completed')}</span><span class="stat-value">${completedCount}</span></div>
       </div>
       <div class="stat-category">
         <div class="stat-category-title">${getTrans('BY_COLUMN', 'By column')}</div>
@@ -2215,18 +2059,10 @@
     container.innerHTML = html;
   }
 
-  // ===== SETTINGS MODAL =====
+  // ===== SETTINGS MODAL — open/close only =====
+  // (Tab switching is owned by global-settings.js universal handler — switchTab() DELETED)
   function closeSettingsModal() {
-    document.querySelector('.settings-modal')?.classList.remove('visible');
-  }
-
-  function switchTab(e) {
-    document.querySelectorAll('.settings-modal .tab-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-
-    document.querySelectorAll('.settings-modal .tab-panel').forEach(p => p.classList.remove('active'));
-    const tabId = e.target.dataset.tab;
-    document.getElementById(tabId)?.classList.add('active');
-  }
-
+  document.querySelector('.settings-modal-overlay')?.classList.remove('visible');
+  document.querySelector('.settings-modal')?.classList.remove('visible');
+}
 })();

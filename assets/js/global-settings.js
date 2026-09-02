@@ -1,15 +1,18 @@
 // ============================================
-// orOS Global Settings Manager
+// orOS Global Settings Manager v2.1
 // Single source of truth for ALL apps
-// Listens to localStorage events for real-time sync
+// Common Settings Tabs (Global + Cloud Sync) — injected once, shared everywhere
+// v2.1 REPAIR: fixed corrupted bindSyncControls() (unclosed oros-sync-ready
+//              listener), fixed setupSyncLifecycle() (undefined syncOn /
+//              mangled tail), restored missing bindCommonControls(),
+//              removed dead COMMON_TAB_IDS
 // ============================================
 
 (function() {
   'use strict';
 
-  // Global app settings (shared by all pages)
+  // ===== SETTINGS STATE (unchanged from v1) =====
   var SETTINGS = {
-    // Theme & display
     zenModeEnabled: false,
     readingProgressEnabled: true,
     focusModeEnabled: true,
@@ -19,7 +22,6 @@
     hideStatsOverlay: false,
     hideSaveIndicator: false,
 
-    // Writer specific
     hideGoalBtn: false,
     hideOutlineBtn: false,
     hideMetadataBtn: false,
@@ -27,7 +29,6 @@
     hideWordFreqBtn: false,
     hideLoremBtn: false,
 
-    // Converter specific
     hideCopyBtn: false,
     hideSaveBtn: false,
     hideOpenBtn: false,
@@ -39,10 +40,8 @@
     hideStatsPanelBtn: false
   };
 
-  // Storage keys
   var STORAGE_PREFIX = 'oros_';
 
-  // Mapping of localStorage keys to SETTINGS properties
   var KEY_MAP = {
     'zen_mode': 'zenModeEnabled',
     'reading_progress': 'readingProgressEnabled',
@@ -72,7 +71,7 @@
   // Event dispatchers for inter-app communication
   window.orosSettings = {
     getSetting: function(key) { return SETTINGS[key]; },
-    setSetting: function(key, value) { 
+    setSetting: function(key, value) {
       if (SETTINGS.hasOwnProperty(key)) {
         SETTINGS[key] = value;
         localStorage.setItem(STORAGE_PREFIX + key, value ? 'true' : 'false');
@@ -89,15 +88,14 @@
     loadAllSettings();
     setupLocalStorageListener();
     setupLiveVisibilityListeners();
-    
+
     if (window.orosAppElements) {
       applyVisibility();
     }
   }
 
-  // ========== LIVE VISIBILITY LISTENERS ==========
-  // Listen for Writer/Converter settings changes in same tab
-  
+  // ========== LIVE VISIBILITY LISTENERS (unchanged) ==========
+
   function setupLiveVisibilityListeners() {
     var VIS_EVENTS = [
       'oros-reading-progress-changed',
@@ -113,7 +111,6 @@
       'oros-hide-lorem-btn-changed',
       'oros-typewriter-sound-changed',
       'oros-zen-mode-changed'
-      // Note: quick_tbar changed event will be handled separately in Phase 4
     ];
 
     VIS_EVENTS.forEach(function(eventName) {
@@ -126,7 +123,7 @@
     });
   }
 
-  // ========== LOAD SETTINGS ==========
+  // ========== LOAD SETTINGS (unchanged) ==========
 
   function loadAllSettings() {
     SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen_mode') === 'true';
@@ -156,7 +153,7 @@
     SETTINGS.hideStatsPanelBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_converter_stats_btn') === 'true';
   }
 
-  // ========== REAL-TIME SYNC ==========
+  // ========== REAL-TIME SYNC (unchanged) ==========
 
   function setupLocalStorageListener() {
     window.addEventListener('storage', function(e) {
@@ -189,7 +186,7 @@
     });
   }
 
-  // ========== VISIBILITY APPLICATION ==========
+  // ========== VISIBILITY APPLICATION (unchanged) ==========
 
   function applyVisibility() {
     var btnGoal = document.getElementById('btn-goal');
@@ -208,8 +205,6 @@
     if (btnFind) btnFind.style.display = SETTINGS.hideFindBtn ? 'none' : '';
     if (btnWordFreq) btnWordFreq.style.display = SETTINGS.hideWordFreqBtn ? 'none' : '';
     if (btnLorem) btnLorem.style.display = SETTINGS.hideLoremBtn ? 'none' : '';
-    // NOTE: .toolbar-center is ALWAYS visible — removed quickTbarShow logic
-    // The toggle-quick-tbar will control Quick Format Menu (Alt+Right-click) in Phase 4
     if (progressBar) progressBar.style.display = SETTINGS.readingProgressEnabled ? '' : 'none';
     if (statsOverlay) statsOverlay.style.display = SETTINGS.hideStatsOverlay ? 'none' : '';
     if (saveIndicator) saveIndicator.style.visibility = SETTINGS.hideSaveIndicator ? 'hidden' : 'visible';
@@ -235,9 +230,419 @@
     if (btnStatsConv) btnStatsConv.style.display = SETTINGS.hideStatsPanelBtn ? 'none' : '';
   }
 
+  // ============================================================
+  // ===== v2.0: COMMON SETTINGS TABS (GLOBAL + CLOUD SYNC) =====
+  // ============================================================
+
+  function qs(sel, root) { return (root || document).querySelector(sel); }
+  function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function tr(key, fallback) {
+    var T = window.OROS_TRANSLATIONS;
+    var lang = localStorage.getItem('oros-language') || 'en';
+    var dict = (T && (T[lang] || T.en)) || null;
+    var val = dict ? dict[key] : undefined;
+    return (val === undefined || val === null) ? fallback : val;
+  }
+
+  function showToast(msg) {
+    if (typeof window.orosShowToast === 'function') window.orosShowToast(msg);
+    else console.log('[oros-global]', msg);
+  }
+
+  function syncInstance() {
+    return (window.orosSync && typeof window.orosSync.get === 'function') ? window.orosSync.get() : null;
+  }
+
+  function isBetaChannel() {
+    return typeof OROS_CONFIG !== 'undefined' && !!OROS_CONFIG.isBeta;
+  }
+
+  function pageHasApp() {
+    // index page shows ONLY the Global tab (no app data to sync)
+    return document.body ? !document.body.classList.contains('index-page') : false;
+  }
+  
+    // ----- Markers of tabs this module owns -----
+  function removeLegacyCommonTabs(modal) {
+    // Strip the per-app copies of Global / Sync tabs so the shared ones take over.
+    // Covers old naming variants: sync-settings (kanban), cloud-sync (writer)
+    qsa('.tab-btn', modal).forEach(function(btn) {
+      var t = btn.getAttribute('data-tab');
+      if (t === 'global-settings' || t === 'sync-settings' || t === 'cloud-sync') {
+        btn.remove();
+      }
+    });
+    ['global-settings', 'sync-settings', 'cloud-sync'].forEach(function(pid) {
+      var p = qs('#' + pid, modal);
+      if (p) p.remove();
+    });
+  }
+
+  function buildGlobalPanel() {
+    var betaBlock = isBetaChannel() ? (
+      '<div class="settings-divider"></div>' +
+      '<div class="beta-section">' +
+      '<div class="beta-header" data-i18n="beta_title">Beta Channel</div>' +
+      '<p class="beta-warning" data-i18n="beta_warning">This is a beta version. Features may change.</p>' +
+      '<div class="beta-links">' +
+      '<a href="https://github.com/koulaxizis/oros-beta" target="_blank" rel="noopener" class="beta-btn" data-i18n="beta_repo_link">GitHub Repository</a>' +
+      '<a href="https://koulaxizis.github.io/oros-beta/" target="_blank" rel="noopener" class="beta-btn" data-i18n="link_live_beta">Live Beta</a>' +
+      '</div></div>'
+    ) : '';
+
+    var div = document.createElement('div');
+    div.className = 'tab-panel active';
+    div.id = 'global-settings';
+    div.style.display = 'flex';
+    div.innerHTML =
+      '<div class="toggles-container">' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="toggle_zen">Zen Mode</span>' +
+      '<label class="switch"><input type="checkbox" id="toggle-zen-mode"><span class="slider"></span></label>' +
+      '</div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="install_app">Install as App</span>' +
+      '<button class="btn-install" id="btn-install" disabled data-i18n="install_app">Install</button>' +
+      '</div>' +
+      '<div class="settings-divider"></div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="kanban_theme">Theme</span>' +
+      '<button id="btn-theme-toggle" class="btn-small" data-i18n="kanban_toggle_theme"><i class="fa fa-adjust"></i> Toggle</button>' +
+      '</div>' +
+      betaBlock +
+      '</div>';
+    return div;
+  }
+
+  function buildSyncPanel() {
+    var div = document.createElement('div');
+    div.className = 'tab-panel';
+    div.id = 'cloud-sync';
+    div.style.display = 'none';
+    div.innerHTML =
+      '<div class="toggles-container">' +
+      '<div class="sync-status-box">' +
+      '<div class="sync-status-row">' +
+      '<span class="toggle-label" data-i18n="sync_status">Status</span>' +
+      '<span id="cloud-sync-status" class="sync-status sync-idle">' + tr('sync_status_idle', '●') + '</span>' +
+      '</div>' +
+      '<div class="sync-status-row">' +
+      '<span class="toggle-label" data-i18n="sync_folder">Folder</span>' +
+      '<span id="sync-dir-display" style="display:none;"><i class="fa fa-folder-o"></i> <span id="sync-dir-name"></span></span>' +
+      '</div>' +
+      '<div class="sync-status-row">' +
+      '<span class="toggle-label" data-i18n="sync_last">Last sync</span>' +
+      '<span id="cloud-sync-last">—</span>' +
+      '</div>' +
+      '</div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="sync_choose_folder">Choose Sync Folder</span>' +
+      '<button id="btn-cloud-connect" class="btn-small"><i class="fa fa-plug"></i> ' + tr('sync_choose_folder', 'Choose') + '</button>' +
+      '</div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="sync_autosync">Auto-sync</span>' +
+      '<label class="switch"><input type="checkbox" id="sync-auto-toggle" checked><span class="slider"></span></label>' +
+      '</div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="sync_now">Sync Now</span>' +
+      '<button id="btn-cloud-sync-now" class="btn-small"><i class="fa fa-refresh"></i> ' + tr('sync_now', 'Sync') + '</button>' +
+      '</div>' +
+      '<div class="toggle-row">' +
+      '<span class="toggle-label" data-i18n="sync_disable">Disable Sync</span>' +
+      '<button id="btn-cloud-disconnect" class="btn-small" style="display:none;"><i class="fa fa-power-off"></i> ' + tr('sync_disable', 'Disable') + '</button>' +
+      '</div>' +
+      '<div class="settings-divider"></div>' +
+      '<button id="btn-cloud-restore" class="btn-small" style="width:100%;"><i class="fa fa-cloud-download"></i> ' + tr('sync_restore_cloud', 'Restore from Cloud File') + '</button>' +
+      '<button id="btn-idb-restore" class="btn-small" style="width:100%;margin-top:8px;"><i class="fa fa-database"></i> ' + tr('sync_restore_idb', 'Restore from IndexedDB') + '</button>' +
+      '<p class="sync-explainer" data-i18n="sync_explainer">Sync stores each orOS app database as its own .json file inside a folder you pick (e.g. your Syncthing folder).</p>' +
+      '<div class="sync-help" style="margin-top:12px;">' +
+      '<table class="shortcut-table sync-help-table">' +
+      '<thead><tr><th data-i18n="sync_help_col_browser">Browser</th><th data-i18n="sync_help_col_access">File Access</th></tr></thead>' +
+      '<tbody>' +
+      '<tr><td data-i18n="sync_help_br_chrome">Chrome / Edge / Brave (Desktop)</td><td data-i18n="sync_help_full">✓ Full</td></tr>' +
+      '<tr><td data-i18n="sync_help_br_firefox">Firefox</td><td data-i18n="sync_help_idb_only">✗ IndexedDB only</td></tr>' +
+      '<tr><td data-i18n="sync_help_br_android">All browsers (Android)</td><td data-i18n="sync_help_use_import">✗ Use Import / Export</td></tr>' +
+      '</tbody></table>' +
+      '</div>' +
+      '</div>';
+    return div;
+  }
+
+  function setupUniversalTabs(modal) {
+    // Delegated tab switching that works with BOTH switching conventions:
+    // class-based (kanban.js) and inline-style (legacy main.js) — converges safely.
+    var nav = qs('.settings-nav', modal);
+    if (!nav || nav.dataset.universalTabs === '1') return;
+    nav.dataset.universalTabs = '1';
+
+    nav.addEventListener('click', function(e) {
+      var btn = e.target.closest ? e.target.closest('.tab-btn') : null;
+      if (!btn) return;
+      var targetId = btn.getAttribute('data-tab');
+      var panel = qs('#' + targetId, modal);
+      if (!panel) return;
+
+      qsa('.tab-btn', modal).forEach(function(b) { b.classList.remove('active'); });
+      qsa('.tab-panel', modal).forEach(function(p) {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      });
+
+      btn.classList.add('active');
+      panel.classList.add('active');
+      panel.style.display = 'flex';
+    });
+  }
+
+  function injectCommonTabs() {
+    var modal = document.querySelector('.settings-modal');
+    if (!modal) return;
+    var nav = qs('.settings-nav', modal);
+    var body = qs('.settings-body', modal);
+    if (!nav || !body) return;
+
+    removeLegacyCommonTabs(modal);
+
+    // Global tab — always first
+    var gBtn = document.createElement('button');
+    gBtn.className = 'tab-btn active';
+    gBtn.setAttribute('data-tab', 'global-settings');
+    gBtn.setAttribute('data-i18n', 'tab_global');
+    gBtn.textContent = tr('tab_global', 'Global');
+    nav.insertBefore(gBtn, nav.firstChild);
+
+    var gPanel = buildGlobalPanel();
+    body.appendChild(gPanel);
+
+    // Cloud Sync tab — app pages only (index shows Global only)
+    if (pageHasApp()) {
+      var sBtn = document.createElement('button');
+      sBtn.className = 'tab-btn';
+      sBtn.setAttribute('data-tab', 'cloud-sync');
+      sBtn.setAttribute('data-i18n', 'tab_cloud_sync');
+      sBtn.textContent = tr('tab_cloud_sync', 'Cloud Sync');
+      nav.appendChild(sBtn);
+
+      body.appendChild(buildSyncPanel());
+
+      // Old app-specific first tab loses "active" (Global is default now)
+      qsa('.tab-btn', nav).forEach(function(b) {
+        if (b.getAttribute('data-tab') !== 'global-settings') b.classList.remove('active');
+      });
+      qsa('.tab-panel', body).forEach(function(p) {
+        if (p.id !== 'global-settings') {
+          p.classList.remove('active');
+          p.style.display = 'none';
+        }
+      });
+    }
+
+    setupUniversalTabs(modal);
+  }
+
+  // ============================================================
+  // ===== v2.0: COMMON BINDINGS =====
+  // ============================================================
+
+  function onClick(id, handler) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', handler);
+  }
+
+  function bindZenToggle() {
+    var zenToggle = qs('#toggle-zen-mode');
+    if (!zenToggle) return;
+    zenToggle.checked = localStorage.getItem('oros_zen_mode') === 'true';
+    zenToggle.addEventListener('change', function() {
+      var enabled = this.checked;
+      localStorage.setItem('oros_zen_mode', enabled ? 'true' : 'false');
+      if (enabled) document.body.setAttribute('data-zen', 'true');
+      else document.body.removeAttribute('data-zen');
+      window.dispatchEvent(new CustomEvent('oros-zen-mode-changed', { detail: { enabled: enabled } }));
+    });
+  }
+
+  function bindThemeToggle() {
+    onClick('btn-theme-toggle', function() {
+      var current = document.documentElement.getAttribute('data-theme') || localStorage.getItem('oros-theme') || 'dark';
+      var next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('oros-theme', next);
+      showToast(next === 'dark' ? tr('theme_dark', 'Dark mode') : tr('theme_light', 'Light mode'));
+    });
+  }
+
+  function bindInstallButton() {
+    var installBtn = document.getElementById('btn-install');
+    if (!installBtn) return;
+    // PWA deferredPrompt event handler lives in main.js; here we only mirror state.
+    // ONE click owner, ONE state mirror — no duplicate prompt() anywhere.
+    window.addEventListener('beforeinstallprompt', function() {
+      installBtn.disabled = false;
+    });
+    window.addEventListener('appinstalled', function() {
+      installBtn.disabled = true;
+    });
+  }
+
+  // ----- Manual sync flow (shared by all buttons) -----
+  function connectFlow(s) {
+    if (!s) { showToast(tr('sync_not_ready', 'Sync not ready yet')); return; }
+    if (!s.dirHandle && typeof s.reauthorizeDirHandle === 'function' && s.isSupported && s.isSupported()) {
+      s.reauthorizeDirHandle().then(function(handle) {
+        if (handle) {
+          if (typeof s.updateDirDisplay === 'function') s.updateDirDisplay();
+        }
+      });
+      return;
+    }
+    Promise.resolve(s.pickDirectory()).then(function(handle) {
+      if (!handle) return;
+      showToast(tr('sync_connected', 'Sync folder:') + ' ' + handle.name);
+      if (typeof s.saveBackup === 'function') {
+        Promise.resolve(s.saveBackup()).then(function() {
+          if (typeof s.updateDirDisplay === 'function') s.updateDirDisplay();
+        });
+      }
+    }).catch(function(e) {
+      if (e && e.name !== 'AbortError') {
+        showToast(tr('sync_failed', 'Sync failed:') + ' ' + ((e && (e.message || e.name)) || e));
+      }
+    });
+  }
+
+  // ----- Sync controls: bindings FLAT, listener ONCE (v2.1 repair) -----
+  function bindSyncControls() {
+    // Writer IDs (canonical, also used by the injected panel)
+    onClick('btn-cloud-connect', function() { connectFlow(syncInstance()); });
+    onClick('btn-cloud-sync-now', function() {
+      var s = syncInstance();
+      if (s && typeof s.syncNow === 'function') s.syncNow();
+    });
+    onClick('btn-cloud-disconnect', function() {
+      var s = syncInstance();
+      if (s && typeof s.disconnect === 'function') s.disconnect();
+    });
+    onClick('btn-cloud-restore', function() {
+      var s = syncInstance();
+      if (s && typeof s.restoreFromCloud === 'function') s.restoreFromCloud();
+    });
+    onClick('btn-idb-restore', function() {
+      var s = syncInstance();
+      if (s && typeof s.restoreFromIDB === 'function') s.restoreFromIDB();
+    });
+
+    // Kanban legacy aliases (kept so existing toolbars keep working)
+    onClick('btn-choose-sync-folder', function() { connectFlow(syncInstance()); });
+    onClick('btn-sync-now', function() {
+      var s = syncInstance();
+      if (s && typeof s.syncNow === 'function') s.syncNow();
+    });
+    onClick('btn-disable-sync', function() {
+      var s = syncInstance();
+      if (s && typeof s.disconnect === 'function') s.disconnect();
+    });
+
+    // Auto-sync toggle
+    var autoToggle = document.getElementById('sync-auto-toggle');
+    if (autoToggle) {
+      var autoOn = localStorage.getItem('oros_sync_auto') !== '0';
+      autoToggle.checked = autoOn;
+      autoToggle.addEventListener('change', function() {
+        localStorage.setItem('oros_sync_auto', this.checked ? '1' : '0');
+        var s = syncInstance();
+        if (s) {
+          if (this.checked) {
+            if (typeof s.startAutoSync === 'function') s.startAutoSync();
+          } else {
+            if (typeof s.stopAutoSync === 'function') s.stopAutoSync();
+          }
+        }
+        showToast(this.checked ? tr('sync_autosync_on', 'Auto-sync ON') : tr('sync_autosync_off', 'Auto-sync OFF'));
+      });
+    }
+
+    // When an app registers its sync instance (later at DOMContentLoaded), refresh UI.
+    // ONE listener — the old file had TWO, with the second nested inside the first.
+    document.addEventListener('oros-sync-ready', function() {
+      var s = syncInstance();
+      if (!s) return;
+      // Localize the engine's hardcoded English status labels
+      if (typeof s.STATUS_LABELS === 'object') {
+        s.STATUS_LABELS = {
+          'idle': tr('sync_status_idle', '● Not configured'),
+          'synced': tr('sync_status_synced', '✓ Synced'),
+          'syncing': tr('sync_status_syncing', '⟳ Syncing…'),
+          'error': tr('sync_status_error', '⚠ Sync error'),
+          'unsupported': tr('sync_status_unsupported', '● IndexedDB only')
+        };
+      }
+      if (typeof s.updateDirDisplay === 'function') s.updateDirDisplay();
+      if (typeof s.updateStatus === 'function') {
+        var saved = localStorage.getItem(s.LAST_SYNC_LOCAL || '');
+        s.updateStatus(s.dirHandle ? 'synced' : (s.isSupported && s.isSupported() ? 'idle' : 'unsupported'), saved || null);
+      }
+      if (localStorage.getItem('oros_sync_auto') === '0' && typeof s.stopAutoSync === 'function') {
+        s.stopAutoSync();
+      }
+    });
+  }
+
+  // ----- Auto-sync lifecycle (close tab / hide tab) — repaired -----
+  function setupSyncLifecycle() {
+    function bestEffortSync() {
+      var s = syncInstance();
+      if (!s || !s.dirHandle) return; // no misleading "success" when not configured
+      if (typeof s.saveBackup === 'function') {
+        Promise.resolve(s.saveBackup()).catch(function() {});
+      }
+    }
+
+    window.addEventListener('beforeunload', function(e) {
+      var s = syncInstance();
+      var syncConfigured = !!(s && s.dirHandle);
+
+      if (syncConfigured && localStorage.getItem('oros_sync_auto') !== '0') {
+        // Configured + auto on → silent best-effort save, NO prompt
+        bestEffortSync();
+        return;
+      }
+
+      // Not configured (or auto off) → warn ONLY if there are unsaved changes
+      if (!syncConfigured && s && typeof s.isDirty === 'function' && s.isDirty()) {
+        e.preventDefault();
+        e.returnValue = tr('unsaved_warning', 'You have unsaved changes.');
+        return e.returnValue;
+      }
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden' && localStorage.getItem('oros_sync_auto') !== '0') {
+        bestEffortSync();
+      }
+    });
+  }
+
+  // ========== COMMON BINDINGS ENTRY POINT (was missing) ==========
+  function bindCommonControls() {
+    bindZenToggle();
+    bindThemeToggle();
+    bindInstallButton();
+    bindSyncControls();
+    setupSyncLifecycle();
+  }
+
+  // ========== BOOTSTRAP ==========
   document.addEventListener('DOMContentLoaded', function() {
     window.orosAppElements = {};
     init();
+
+    // Common tabs must be injected BEFORE main.js binds its tab handlers.
+    // global-settings.js is loaded first and its DOMContentLoaded listener
+    // therefore fires before main.js's (same event, FIFO order).
+    injectCommonTabs();
+    bindCommonControls();
   });
 
 })();

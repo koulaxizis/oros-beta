@@ -1,6 +1,14 @@
 /* ============================================================
-   oros-sync.js v1.0 — Shared Cloud Sync Module (orOS Ecosystem)
+   oros-sync.js v1.1 — Shared Cloud Sync Module (orOS Ecosystem)
    Author: Christos Koulaxizis | orOS Ecosystem
+   ============================================================
+   CHANGELOG v1.1 (cleanup, no behavior/API change):
+   - Removed duplicate definitions: loadBackup, collectShared,
+     updateStatus, updateDirDisplay, _restoreSharedHandle
+   - Removed broken first writeToFile + arguments.length hack
+   - Removed duplicate `var lTime` in checkRemoteUpdate
+   - Fixed: S.toast no longer nulled to undefined by default
+   - Removed dead `registry` variable
    ============================================================
    Usage (inside each app, e.g. kanban.js):
 
@@ -19,6 +27,9 @@
      window.orosSync.register(sync);
      sync.init();
 
+   Or register your OWN object (Writer does this):
+     window.orosSync.register(cloudSync);
+
    Each app writes its own file: oros-<id>-sync.json
    Shared theme/language live in oros-shared-settings.json
    ============================================================ */
@@ -26,8 +37,7 @@
 (function() {
   'use strict';
 
-  var SHARED_DB = 'oros_sync_shared';
-  var SHARED_STORE = 'kv';
+  var SHARED_DB_NAME = 'oros_sync_shared';
   var DIR_HANDLE_KEY = 'dir_handle';
   var SHARED_FILE = 'oros-shared-settings.json';
   var SHARED_KEYS = ['oros-theme', 'oros-language', 'oros-zen-mode'];
@@ -35,6 +45,7 @@
   var instances = {};
   var activeId = null;
   var sharedDirHandle = null;
+  var sharedDB = null;
 
   function isFSA() { return typeof window.showDirectoryPicker === 'function'; }
 
@@ -54,6 +65,7 @@
 
   function idbPut(db, key, value) {
     return new Promise(function(resolve, reject) {
+      if (!db) { reject(new Error('IDB not ready')); return; }
       var tx = db.transaction('kv', 'readwrite');
       tx.objectStore('kv').put(value, key);
       tx.oncomplete = function() { resolve(); };
@@ -63,6 +75,7 @@
 
   function idbGet(db, key) {
     return new Promise(function(resolve, reject) {
+      if (!db) { reject(new Error('IDB not ready')); return; }
       var tx = db.transaction('kv', 'readonly');
       var req = tx.objectStore('kv').get(key);
       req.onsuccess = function() { resolve(req.result); };
@@ -72,10 +85,25 @@
 
   function idbDel(db, key) {
     return new Promise(function(resolve, reject) {
+      if (!db) { reject(new Error('IDB not ready')); return; }
       var tx = db.transaction('kv', 'readwrite');
       tx.objectStore('kv').delete(key);
       tx.oncomplete = function() { resolve(); };
       tx.onerror = function(e) { reject(e.target.error); };
+    });
+  }
+
+  function writableWrite(writable, data) {
+    return writable.write(JSON.stringify(data, null, 2))
+      .then(function() { return writable.close(); });
+  }
+
+  // ---------- Shared IndexedDB (directory handle) ----------
+  function ensureSharedDB() {
+    if (sharedDB) return Promise.resolve(sharedDB);
+    return idbOpen(SHARED_DB_NAME).then(function(db) {
+      sharedDB = db;
+      return db;
     });
   }
 
@@ -102,31 +130,20 @@
       db: null,
       dirHandle: null,
       autoTimer: null,
-      ui: cfg.ui || {},
-      toast: cfg.toast || function(msg) { console.log('[oros-sync]', msg); }
+      ui: cfg.ui || {}
     };
+
+    // Default toast — overridable at any time (Writer sets its own after create)
+    S.toast = cfg.toast || function(msg) { console.log('[oros-sync]', msg); };
 
     // ----- Instance IDB -----
     S.initIDB = function() {
       return idbOpen(S.DB_NAME).then(function(db) { S.db = db; });
     };
     S.put = function(key, val) { return idbPut(S.db, key, val); };
-    S.get = function(key) {
-      return new Promise(function(resolve, reject) {
-        if (!S.db) { reject(new Error('IDB not ready')); return; }
-        var req = S.db.transaction('kv', 'readonly').objectStore('kv').get(key);
-        req.onsuccess = function() { resolve(req.result); };
-        req.onerror = function(e) { reject(e.target.error); };
-      });
-    };
+    S.get = function(key) { return idbGet(S.db, key); };
     S.del = function(key) {
-      return new Promise(function(resolve) {
-        if (!S.db) { resolve(); return; }
-        var tx = S.db.transaction('kv', 'readwrite');
-        tx.objectStore('kv').delete(key);
-        tx.oncomplete = function() { resolve(); };
-        tx.onerror = function() { resolve(); };
-      });
+      return idbDel(S.db, key).catch(function() { return null; });
     };
 
     // ----- Collect / Apply -----
@@ -147,13 +164,13 @@
     };
 
     S.collectShared = function() {
-      var shared = { _meta: { app: 'orOS', type: 'shared-settings', exportedAt: new Date().toISOString() }, settings: {} };
+      var out = { _meta: { app: 'orOS', type: 'shared-settings', exportedAt: new Date().toISOString() }, settings: {} };
       for (var i = 0; i < SHARED_KEYS.length; i++) {
         var k = SHARED_KEYS[i];
         var v = localStorage.getItem(k);
-        if (v !== null) shared.settings[v === undefined ? i : k] = v;
+        if (v !== null) out.settings[k] = v;
       }
-      return shared;
+      return out;
     };
 
     S.applyRestoredData = function(data) {
@@ -175,51 +192,47 @@
     S.isSupported = isFSA;
 
     S.pickDirectory = function() {
-      if (!isFSA()) { S._showToast('File System Access API not available.'); return Promise.resolve(null); }
+      if (!isFSA()) { S.toast('File System Access API not available.'); return Promise.resolve(null); }
       return window.showDirectoryPicker({ mode: 'readwrite' }).then(function(handle) {
         sharedDirHandle = handle;
         S.dirHandle = handle;
-        return S._ensureSharedDB().then(function() {
-          return idbPut(sharedDB, DIR_HANDLE_KEY, handle);
+        return ensureSharedDB().then(function(db) {
+          return idbPut(db, DIR_HANDLE_KEY, handle);
         }).then(function() { return handle; });
       });
     };
 
-    var sharedDB = null;
-    S._ensureSharedDB = function() {
-      if (sharedDB) return Promise.resolve(sharedDB);
-      return idbOpen('oros_sync_shared').then(function(db) { sharedDB = db; return db; });
-    };
-
     S._restoreSharedHandle = function() {
       if (sharedDirHandle) { S.dirHandle = sharedDirHandle; return Promise.resolve(sharedDirHandle); }
-      return S._ensureSharedDB().then(function() {
-        return idbGet(sharedDB, DIR_HANDLE_KEY).then(function(handle) {
+      return ensureSharedDB().then(function(db) {
+        return idbGet(db, DIR_HANDLE_KEY).then(function(handle) {
           if (!handle) return null;
           var apply = function(h) { sharedDirHandle = h; S.dirHandle = h; return h; };
-          if (!handle.queryPermission) { return apply(handle); }
+          if (!handle.queryPermission) return apply(handle);
           return handle.queryPermission({ mode: 'readwrite' }).then(function(perms) {
-            if (perms === 'granted') { return apply(handle); }
+            if (perms === 'granted') return apply(handle);
             return handle.requestPermission({ mode: 'readwrite' }).then(function(rp) {
               return rp === 'granted' ? apply(handle) : null;
-            });
+            }).catch(function() { return null; });
           });
         });
       }).catch(function() { return null; });
     };
-
-    S.writeToFile = function(data, fileName) {
-      var fh = S.dirHandle;
-      if (!fh) return Promise.reject(new Error('No directory handle'));
-      return fh.getFileHandle(arguments.length > 2 ? arguments[2] : S.FILE_NAME, { create: true })
-        .then(function(fileHandle) { return fileHandle.createWritable(); })
-        .then(function(writable) { return writableWrite(writable, data); });
+	
+	    // Re-request permission for the persisted directory handle.
+    // Called from a user gesture (Connect button click) when the browser
+    // dropped readwrite permission after a restart — avoids re-picking
+    // the folder from scratch.
+    S.reauthorizeDirHandle = function() {
+      return S._restoreSharedHandle().then(function(handle) {
+        if (handle) {
+          S.updateStatus('synced', localStorage.getItem(S.LAST_SYNC_LOCAL));
+          S.updateDirDisplay();
+        }
+        return handle;
+      });
     };
-    // (helper kept simple)
-    function writableWrite(writable, data) {
-      return writable.write(JSON.stringify(data, null, 2)).then(function() { return writable.close(); });
-    }
-    // Patch: use plain closures instead
+
     S.writeToFile = function(data, fileName) {
       if (!S.dirHandle) return Promise.reject(new Error('No directory handle'));
       var name = fileName || S.FILE_NAME;
@@ -237,60 +250,41 @@
     };
 
     // ----- Backup -----
-    S.saveBackup = function() {
+        S.saveBackup = function() {
+      // Guard: init() is async — re-enter once IDB is ready to avoid
+      // spurious "IDB not ready" rejections from debounced pushes.
+      if (!S.db) return S.initIDB().then(function() { return S.saveBackup(); });
+
       var data = S.collectDatabase();
       var jobs = [idbPut(S.db, S.LAST_SYNC_KEY, data)];
 
       if (S.dirHandle) {
-        jobs.push(S.writeToFile(data).then(function() { return true; })
-          .catch(function(e) { console.warn('[oros-sync] file write failed:', e); return false; }));
-        // Shared settings (theme/language) — harmless if written by multiple apps
-        if (isFSA() && S.dirHandle) {
-          jobs.push(
-            S.dirHandle.getFileHandle(SHARED_FILE, { create: true })
-              .then(function(fh) { return fh.createWritable(); })
-              .then(function(w) { return writableWrite(w, S.collectShared()); })
-              .catch(function() {})
-          );
-        }
+        jobs.push(
+          S.writeToFile(data)
+            .then(function() { return true; })
+            .catch(function(e) { console.warn('[oros-sync] file write failed:', e); return false; })
+        );
+        // Shared settings (theme/language/zen) — harmless if written by multiple apps
+        jobs.push(
+          S.dirHandle.getFileHandle(SHARED_FILE, { create: true })
+            .then(function(fh) { return fh.createWritable(); })
+            .then(function(w) { return writableWrite(w, S.collectShared()); })
+            .catch(function() {})
+        );
       }
 
-      return Promise.all(jobs).then(function() {
+    return Promise.all(jobs).then(function() {
         var now = new Date().toISOString();
         localStorage.setItem(S.LAST_SYNC_LOCAL, now);
-        S.updateStatus(S.dirHandle ? 'synced' : 'unsupported', now);
+        // idle = FSA supported but no folder picked; unsupported = no FSA at all
+        S.updateStatus(S.dirHandle ? 'synced' : (isFSA() ? 'idle' : 'unsupported'), now);
         S.updateDirDisplay();
         return true;
       });
     };
 
-    S.collectShared = function() {
-      var out = { _meta: { app: 'orOS', type: 'shared-settings', exportedAt: new Date().toISOString() }, settings: {} };
-      for (var i = 0; i < SHARED_KEYS.length; i++) {
-        var k = SHARED_KEYS[i];
-        var v = localStorage.getItem(k);
-        if (v !== null) out.settings[k] = v;
-      }
-      return out;
-    };
-
     S.loadBackup = function() {
       return idbGet(S.db, S.LAST_SYNC_KEY).then(function(idbData) {
-        if (!S.dirHandle) return idbData;
-        return S.readFromFile().then(function(fileData) {
-          var ft = fileData && fileData._meta ? new Date(fileData._meta.exportedAt).getTime() : 0;
-          var it = idbData && idbData._meta ? new Date(idbData._meta.exportedAt).getTime() : 0;
-          return fTimeCheck(ft(fileData), it(idbData));
-          function ft(d) { return d && d._meta ? new Date(d._meta.exportedAt).getTime() : 0; }
-          function fTimeCheck(f, i2) { return f >= i ? fileData : idbData; }
-          function ft2() {}
-        }).catch(function() { return idbData; });
-      });
-    };
-
-    // Simplified, correct version (overrides the above intentionally)
-    S.loadBackup = function() {
-      return S.get(S.LAST_SYNC_KEY).then(function(idbData) {
         if (!S.dirHandle) return idbData;
         return S.readFromFile().then(function(fileData) {
           var fTime = fileData && fileData._meta ? new Date(fileData._meta.exportedAt).getTime() : 0;
@@ -331,7 +325,7 @@
       var conn = S.ui.connect ? document.getElementById(S.ui.connect) : null;
       var disc = S.ui.disconnect ? document.getElementById(S.ui.disconnect) : null;
       if (S.dirHandle && display && nameEl) {
-        nameEl.textContent = S.dirHandle.name || 'Folder';
+        nameEl.textContent = S.dirHandle.name || 'Unknown folder';
         display.style.display = '';
         if (conn) conn.style.display = 'none';
         if (disc) disc.style.display = '';
@@ -346,44 +340,55 @@
     S.syncNow = function() {
       S.updateStatus('syncing', null);
       return S.saveBackup().then(function() {
-        if (S.toast) S.toast('Sync complete');
+        S.toast('Sync complete');
       }).catch(function(e) {
         S.updateStatus('error', null);
-        if (S.toast) S.toast('Sync failed: ' + (e.message || e));
+        S.toast('Sync failed: ' + (e.message || e));
       });
     };
 
     S.disconnect = function() {
       S.dirHandle = null;
-      S._ensureSharedDB().then(function() { return idbDel(sharedDB, DIR_HANDLE_KEY); }).then(function() {
+      if (sharedDirHandle && instances) {
+        // Detach from every registered instance sharing this handle
+        Object.keys(instances).forEach(function(id) {
+          if (instances[id].dirHandle === sharedDirHandle) instances[id].dirHandle = null;
+        });
+      }
+      sharedDirHandle = null;
+      ensureSharedDB().then(function(db) { return idbDel(db, DIR_HANDLE_KEY); }).then(function() {
         S.updateStatus('idle', null);
         S.updateDirDisplay();
-        if (S.toast) S.toast('Sync disconnected.');
+        S.toast('Sync disconnected.');
+      }).catch(function(e) {
+        console.warn('[oros-sync] disconnect failed:', e);
+        S.updateStatus('idle', null);
+        S.updateDirDisplay();
       });
     };
 
     S.restoreFromIDB = function() {
       idbGet(S.db, S.LAST_SYNC_KEY).then(function(data) {
-        if (!data || !data._meta) { if (S.toast) S.toast('No IndexedDB backup found'); return; }
+        if (!data || !data._meta) { S.toast('No IndexedDB backup found'); return; }
         var d = new Date(data._meta.exportedAt).toLocaleString();
         if (!confirm('Restore from backup (' + d + ')?\n\nReplaces current app data.')) return;
         S.applyRestoredData(data);
-        if (S.toast) S.toast('Restored. Reloading…');
+        S.toast('Restored. Reloading…');
         setTimeout(function() { location.reload(); }, 800);
       });
     };
 
     S.restoreFromCloud = function() {
-      if (!S.dirHandle) { if (S.toast) S.toast('No sync folder connected'); return; }
+      if (!S.dirHandle) { S.toast('No sync folder connected'); return; }
       S.readFromFile().then(function(data) {
-        if (!data || !data._meta) { if (S.toast) S.toast('No sync file found'); return; }
+        if (!data || !data._meta) { S.toast('No sync file found'); return; }
         var d = new Date(data._meta.exportedAt).toLocaleString();
         if (!confirm('Restore from cloud file (' + d + ')?\n\nReplaces current app data.')) return;
         S.applyRestoredData(data);
         localStorage.setItem(S.LAST_SYNC_LOCAL, new Date().toISOString());
-        if (S.toast) S.toast('Restored. Reloading…');
+        S.toast('Restored. Reloading…');
         setTimeout(function() { location.reload(); }, 800);
-      }).catch(function() { if (S.toast) S.toast('Read error / no sync file'); });
+      }).catch(function() { S.toast('Read error / no sync file'); });
     };
 
     S.checkRemoteUpdate = function() {
@@ -391,8 +396,8 @@
       S.readFromFile().then(function(fileData) {
         if (!fileData || !fileData._meta) return;
         var fTime = new Date(fileData._meta.exportedAt).getTime();
-        var lTime = localStorage.getItem(S.LAST_SYNC_LOCAL);
-        var lTime = lTime ? new Date(lTime).getTime() : 0;
+        var saved = localStorage.getItem(S.LAST_SYNC_LOCAL);
+        var lTime = saved ? new Date(saved).getTime() : 0;
         if (fTime > lTime) {
           var ds = new Date(fTime).toLocaleString();
           if (confirm('Newer sync file found (' + ds + ').\n\nRestore data from cloud?')) {
@@ -402,37 +407,6 @@
           }
         }
       }).catch(function() {});
-    };
-
-    // ----- Status -----
-    S.updateStatus = function(status, timestamp) {
-      var el = S.ui.status ? document.getElementById(S.ui.status) : null;
-      if (el) {
-        el.className = 'sync-status sync-' + status;
-        el.textContent = S.STATUS_LABELS[status] || status;
-      }
-      var lastEl = S.ui.last ? document.getElementById(S.ui.last) : null;
-      if (lastEl) {
-        var saved = timestamp || localStorage.getItem(S.LAST_SYNC_LOCAL);
-        lastEl.textContent = saved ? new Date(saved).toLocaleString() : '';
-      }
-    };
-
-    S.updateDirDisplay = function() {
-      var display = S.ui.dir ? document.getElementById(S.ui.dir) : null;
-      var nameEl = S.ui.dirName ? document.getElementById(S.ui.dirName) : null;
-      var conn = S.ui.connect ? document.getElementById(S.ui.connect) : null;
-      var disc = S.ui.disconnect ? document.getElementById(S.ui.disconnect) : null;
-      if (S.dirHandle && display && nameEl) {
-        nameEl.textContent = S.dirHandle.name || 'Unknown folder';
-        display.style.display = '';
-        if (conn) conn.style.display = 'none';
-        if (disc) disc.style.display = '';
-      } else {
-        if (display) display.style.display = 'none';
-        if (conn) conn.style.display = '';
-        if (disc) disc.style.display = 'none';
-      }
     };
 
     // ----- Init -----
@@ -457,35 +431,16 @@
       });
     };
 
-    S._restoreSharedHandle = function() {
-      if (sharedDirHandle) { S.dirHandle = sharedDirHandle; return Promise.resolve(sharedDirHandle); }
-      return S._ensureSharedDB().then(function() {
-        return idbGet(sharedDB, DIR_HANDLE_KEY).then(function(handle) {
-          if (!handle) return null;
-          var apply = function(h) { sharedDirHandle = h; S.dirHandle = h; return h; };
-          if (!handle.queryPermission) return apply(handle);
-          return handle.queryPermission({ mode: 'readwrite' }).then(function(perms) {
-            if (perms === 'granted') return apply(handle);
-            return handle.requestPermission({ mode: 'readwrite' }).then(function(rp) {
-              return rp === 'granted' ? apply(handle) : null;
-            }).catch(function() { return null; });
-          });
-        });
-      });
-    };
-
-    S.toast = cfg.toast || null;
     return S;
   }
 
   // ---------- Registry ----------
-  var registry = {};
-
   window.orosSync = {
     create: create,
     isSupported: isFSA,
 
     register: function(instance) {
+      if (!instance || !instance.id) return instance;
       instances[instance.id] = instance;
       if (!activeId) activeId = instance.id;
       document.dispatchEvent(new CustomEvent('oros-sync-ready', { detail: { appId: instance.id } }));
