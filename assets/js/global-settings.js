@@ -445,7 +445,7 @@
   // ===== v2.0: COMMON BINDINGS =====
   // ============================================================
 
-    function onClick(id, handler) {
+      function onClick(id, handler) {
     document.addEventListener('click', function(e) {
       var el = e.target.closest ? e.target.closest('#' + id) : null;
       if (el) handler.call(el, e);
@@ -514,7 +514,7 @@
     });
   }
 
-  // ----- Sync controls: bindings FLAT, listener ONCE (v2.1 repair) -----
+    // ----- Sync controls: bindings FLAT, delegated clicks, listener ONCE -----
   function bindSyncControls() {
     // Writer IDs (canonical, also used by the injected panel)
     onClick('btn-cloud-connect', function() { connectFlow(syncInstance()); });
@@ -549,8 +549,7 @@
     // Auto-sync toggle
     var autoToggle = document.getElementById('sync-auto-toggle');
     if (autoToggle) {
-      var autoOn = localStorage.getItem('oros_sync_auto') !== '0';
-      autoToggle.checked = autoOn;
+      autoToggle.checked = localStorage.getItem('oros_sync_auto') !== '0';
       autoToggle.addEventListener('change', function() {
         localStorage.setItem('oros_sync_auto', this.checked ? '1' : '0');
         var s = syncInstance();
@@ -564,6 +563,36 @@
         showToast(this.checked ? tr('sync_autosync_on', 'Auto-sync ON') : tr('sync_autosync_off', 'Auto-sync OFF'));
       });
     }
+
+    // When an app registers its sync instance (later at DOMContentLoaded), refresh UI.
+    // ONE listener — no nesting, no duplicates.
+    document.addEventListener('oros-sync-ready', function() {
+      var s = syncInstance();
+      if (!s) return;
+
+      // Route the engine's toasts through the shared toast system
+      if (typeof window.orosShowToast === 'function') s.toast = window.orosShowToast;
+
+      // Localize the engine's hardcoded English status labels
+      if (typeof s.STATUS_LABELS === 'object') {
+        s.STATUS_LABELS = {
+          'idle': tr('sync_status_idle', '● Not configured'),
+          'synced': tr('sync_status_synced', '✓ Synced'),
+          'syncing': tr('sync_status_syncing', '⟳ Syncing…'),
+          'error': tr('sync_status_error', '⚠ Sync error'),
+          'unsupported': tr('sync_status_unsupported', '● IndexedDB only')
+        };
+      }
+      if (typeof s.updateDirDisplay === 'function') s.updateDirDisplay();
+      if (typeof s.updateStatus === 'function') {
+        var saved = localStorage.getItem(s.LAST_SYNC_LOCAL || '');
+        s.updateStatus(s.dirHandle ? 'synced' : (s.isSupported && s.isSupported() ? 'idle' : 'unsupported'), saved || null);
+      }
+      if (localStorage.getItem('oros_sync_auto') === '0' && typeof s.stopAutoSync === 'function') {
+        s.stopAutoSync();
+      }
+    });
+  }
 
     // When an app registers its sync instance (later at DOMContentLoaded), refresh UI.
     // ONE listener — the old file had TWO, with the second nested inside the first.
