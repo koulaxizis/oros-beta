@@ -140,8 +140,12 @@
       ui: cfg.ui || {}
     };
 
-    // Default toast — overridable at any time (Writer sets its own after create)
-    S.toast = cfg.toast || function(msg) { console.log('[oros-sync]', msg); };
+        // Default toast — uses the shared orosShowToast when available,
+    // otherwise console only (never silently swallowed)
+    S.toast = cfg.toast || function(msg) {
+      if (typeof window.orosShowToast === 'function') window.orosShowToast(msg);
+      else console.log('[oros-sync]', msg);
+    };
 
     // ----- Instance IDB -----
     S.initIDB = function() {

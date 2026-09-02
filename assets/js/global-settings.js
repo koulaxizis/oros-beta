@@ -445,9 +445,11 @@
   // ===== v2.0: COMMON BINDINGS =====
   // ============================================================
 
-  function onClick(id, handler) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('click', handler);
+    function onClick(id, handler) {
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest ? e.target.closest('#' + id) : null;
+      if (el) handler.call(el, e);
+    });
   }
 
   function bindZenToggle() {
@@ -568,6 +570,11 @@
     document.addEventListener('oros-sync-ready', function() {
       var s = syncInstance();
       if (!s) return;
+	      document.addEventListener('oros-sync-ready', function() {
+      var s = syncInstance();
+      if (!s) return;
+      if (typeof window.orosShowToast === 'function') s.toast = window.orosShowToast;
+      // ... υπόλοιπο αναλλοίωτο (STATUS_LABELS, updateDirDisplay κ.λπ.)
       // Localize the engine's hardcoded English status labels
       if (typeof s.STATUS_LABELS === 'object') {
         s.STATUS_LABELS = {
