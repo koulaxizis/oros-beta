@@ -206,3 +206,6 @@
 .fa-html5:before          { content: '\f13b'; }
 .fa-file-code-o:before    { content: '\f1c9'; }
 .fa-file-archive-o:before { content: '\f1c6'; }
+
+.fa-adjust:before           { content: '\f042'; }
+.fa-power-off:before        { content: '\f011'; }

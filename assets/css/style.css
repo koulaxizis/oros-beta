@@ -1339,3 +1339,163 @@ body.landing-page [id*="zen"]:not(.hero):not(.hero *) {
   color: var(--oro-accent-bright, #a99df0);
   border-bottom-style: solid;
 }
+
+/* ============================================
+   SHARED SETTINGS TABS — injected by global-settings.js v2.1
+   (Global + Cloud Sync tabs, all orOS apps)
+   ============================================ */
+
+/* ----- Compact action buttons (theme toggle, sync actions) ----- */
+.btn-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.btn-small:hover {
+  color: var(--accent-gold-light);
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-dim);
+}
+
+.btn-small:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-small i { font-size: 12px; }
+
+/* ----- Sync status card ----- */
+.sync-status-box {
+  padding: 12px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sync-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Status pills */
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  letter-spacing: 0.3px;
+}
+
+.sync-status.sync-synced {
+  background: rgba(129, 199, 132, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(129, 199, 132, 0.3);
+}
+
+.sync-status.sync-syncing {
+  background: rgba(200, 169, 110, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(200, 169, 110, 0.3);
+}
+
+.sync-status.sync-error {
+  background: rgba(229, 115, 115, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(229, 115, 115, 0.3);
+}
+
+.sync-status.sync-idle {
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.sync-status.sync-unsupported {
+  background: rgba(230, 126, 34, 0.15);
+  color: #e67e22;
+  border: 1px solid rgba(230, 126, 34, 0.3);
+}
+
+/* ----- Folder & last-sync values (IDs, not classes!) ----- */
+#sync-dir-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#sync-dir-display i { color: var(--accent-gold); }
+
+#cloud-sync-last {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ----- Explainer text ----- */
+.sync-explainer {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ----- Browser support table ----- */
+.sync-help {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.sync-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.sync-help-table th {
+  text-align: left;
+  padding: 5px 8px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.sync-help-table td {
+  padding: 5px 8px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
