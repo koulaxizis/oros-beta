@@ -1,17 +1,18 @@
 // ============================================
-// orOS Global Settings Manager v2.1
+// orOS Global Settings Manager v2.2
 // Single source of truth for ALL apps
 // Common Settings Tabs (Global + Cloud Sync) — injected once, shared everywhere
-// v2.1 REPAIR: fixed corrupted bindSyncControls() (unclosed oros-sync-ready
-//              listener), fixed setupSyncLifecycle() (undefined syncOn /
-//              mangled tail), restored missing bindCommonControls(),
-//              removed dead COMMON_TAB_IDS
+// v2.2 CHANGES:
+//   - onClick() now uses event delegation (works for dynamically
+//     created buttons, e.g. toolbars built after DOMContentLoaded)
+//   - oros-sync-ready routes engine toasts through window.orosShowToast
+//   - bindSyncControls() delivered as one complete, verified block
 // ============================================
 
 (function() {
   'use strict';
 
-  // ===== SETTINGS STATE (unchanged from v1) =====
+  // ===== SETTINGS STATE =====
   var SETTINGS = {
     zenModeEnabled: false,
     readingProgressEnabled: true,
@@ -94,7 +95,7 @@
     }
   }
 
-  // ========== LIVE VISIBILITY LISTENERS (unchanged) ==========
+  // ========== LIVE VISIBILITY LISTENERS ==========
 
   function setupLiveVisibilityListeners() {
     var VIS_EVENTS = [
@@ -123,7 +124,7 @@
     });
   }
 
-  // ========== LOAD SETTINGS (unchanged) ==========
+  // ========== LOAD SETTINGS ==========
 
   function loadAllSettings() {
     SETTINGS.zenModeEnabled = localStorage.getItem(STORAGE_PREFIX + 'zen_mode') === 'true';
@@ -153,7 +154,7 @@
     SETTINGS.hideStatsPanelBtn = localStorage.getItem(STORAGE_PREFIX + 'hide_converter_stats_btn') === 'true';
   }
 
-  // ========== REAL-TIME SYNC (unchanged) ==========
+  // ========== REAL-TIME SYNC ==========
 
   function setupLocalStorageListener() {
     window.addEventListener('storage', function(e) {
@@ -186,7 +187,7 @@
     });
   }
 
-  // ========== VISIBILITY APPLICATION (unchanged) ==========
+  // ========== VISIBILITY APPLICATION ==========
 
   function applyVisibility() {
     var btnGoal = document.getElementById('btn-goal');
@@ -231,7 +232,7 @@
   }
 
   // ============================================================
-  // ===== v2.0: COMMON SETTINGS TABS (GLOBAL + CLOUD SYNC) =====
+  // ===== COMMON SETTINGS TABS (GLOBAL + CLOUD SYNC) ===========
   // ============================================================
 
   function qs(sel, root) { return (root || document).querySelector(sel); }
@@ -262,8 +263,8 @@
     // index page shows ONLY the Global tab (no app data to sync)
     return document.body ? !document.body.classList.contains('index-page') : false;
   }
-  
-    // ----- Markers of tabs this module owns -----
+
+  // ----- Markers of tabs this module owns -----
   function removeLegacyCommonTabs(modal) {
     // Strip the per-app copies of Global / Sync tabs so the shared ones take over.
     // Covers old naming variants: sync-settings (kanban), cloud-sync (writer)
@@ -370,8 +371,6 @@
   }
 
   function setupUniversalTabs(modal) {
-    // Delegated tab switching that works with BOTH switching conventions:
-    // class-based (kanban.js) and inline-style (legacy main.js) — converges safely.
     var nav = qs('.settings-nav', modal);
     if (!nav || nav.dataset.universalTabs === '1') return;
     nav.dataset.universalTabs = '1';
@@ -442,10 +441,12 @@
   }
 
   // ============================================================
-  // ===== v2.0: COMMON BINDINGS =====
+  // ===== COMMON BINDINGS =====
   // ============================================================
 
-      function onClick(id, handler) {
+  // v2.2: event delegation — works even if the button is created
+  // AFTER this call (dynamic toolbars, late-injected panels)
+  function onClick(id, handler) {
     document.addEventListener('click', function(e) {
       var el = e.target.closest ? e.target.closest('#' + id) : null;
       if (el) handler.call(el, e);
@@ -514,7 +515,7 @@
     });
   }
 
-    // ----- Sync controls: bindings FLAT, delegated clicks, listener ONCE -----
+  // ----- Sync controls: bindings FLAT, delegated clicks, listener ONCE -----
   function bindSyncControls() {
     // Writer IDs (canonical, also used by the injected panel)
     onClick('btn-cloud-connect', function() { connectFlow(syncInstance()); });
@@ -594,38 +595,7 @@
     });
   }
 
-    // When an app registers its sync instance (later at DOMContentLoaded), refresh UI.
-    // ONE listener — the old file had TWO, with the second nested inside the first.
-    document.addEventListener('oros-sync-ready', function() {
-      var s = syncInstance();
-      if (!s) return;
-	      document.addEventListener('oros-sync-ready', function() {
-      var s = syncInstance();
-      if (!s) return;
-      if (typeof window.orosShowToast === 'function') s.toast = window.orosShowToast;
-      // ... υπόλοιπο αναλλοίωτο (STATUS_LABELS, updateDirDisplay κ.λπ.)
-      // Localize the engine's hardcoded English status labels
-      if (typeof s.STATUS_LABELS === 'object') {
-        s.STATUS_LABELS = {
-          'idle': tr('sync_status_idle', '● Not configured'),
-          'synced': tr('sync_status_synced', '✓ Synced'),
-          'syncing': tr('sync_status_syncing', '⟳ Syncing…'),
-          'error': tr('sync_status_error', '⚠ Sync error'),
-          'unsupported': tr('sync_status_unsupported', '● IndexedDB only')
-        };
-      }
-      if (typeof s.updateDirDisplay === 'function') s.updateDirDisplay();
-      if (typeof s.updateStatus === 'function') {
-        var saved = localStorage.getItem(s.LAST_SYNC_LOCAL || '');
-        s.updateStatus(s.dirHandle ? 'synced' : (s.isSupported && s.isSupported() ? 'idle' : 'unsupported'), saved || null);
-      }
-      if (localStorage.getItem('oros_sync_auto') === '0' && typeof s.stopAutoSync === 'function') {
-        s.stopAutoSync();
-      }
-    });
-  }
-
-  // ----- Auto-sync lifecycle (close tab / hide tab) — repaired -----
+  // ----- Auto-sync lifecycle (close tab / hide tab) -----
   function setupSyncLifecycle() {
     function bestEffortSync() {
       var s = syncInstance();
@@ -660,7 +630,7 @@
     });
   }
 
-  // ========== COMMON BINDINGS ENTRY POINT (was missing) ==========
+  // ========== COMMON BINDINGS ENTRY POINT ==========
   function bindCommonControls() {
     bindZenToggle();
     bindThemeToggle();
